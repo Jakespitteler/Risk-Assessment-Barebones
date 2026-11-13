@@ -1,5 +1,6 @@
 import type {
   FieldError,
+  FieldWarning,
   HazardDraft,
   Take5Draft,
   TemplateResponse,
@@ -21,6 +22,7 @@ export function FormPage({
   errors,
   onErrorsChange,
   onGaps,
+  onOpenWarning,
 }: {
   stage: Stage;
   take5: Take5DraftState;
@@ -28,6 +30,7 @@ export function FormPage({
   errors: FieldError[];
   onErrorsChange: (errors: FieldError[]) => void;
   onGaps: (errors: FieldError[]) => void;
+  onOpenWarning: (warning: FieldWarning) => void;
 }) {
   const { draft, change, remove } = take5;
   const errorFor = (path: string) =>
@@ -92,7 +95,10 @@ export function FormPage({
         }}
       />
     );
-  if (!("hazard" in stage)) return <ReviewPage draft={draft} onGaps={onGaps} />;
+  if (!("hazard" in stage))
+    return (
+      <ReviewPage draft={draft} onGaps={onGaps} onOpenWarning={onOpenWarning} />
+    );
 
   const index = stage.hazard;
   const hazard = draft.hazards[index];

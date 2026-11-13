@@ -10,8 +10,10 @@ export type ControlDraft = Schemas["ControlDraft"];
 export type RatingChoice = Schemas["RatingChoice"];
 export type DraftCheck = Schemas["DraftCheck"];
 export type FieldError = Schemas["FieldError"];
+export type FieldWarning = Schemas["FieldWarning"];
 export type Hazard = Schemas["Hazard"];
 export type Take5Response = Schemas["Take5Response"];
+export type SavedTake5 = Schemas["SavedTake5"];
 type FormErrors = Schemas["FormErrors"];
 
 // Long enough for one bar of signal, short enough that the worker isn't left waiting.

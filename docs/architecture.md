@@ -87,7 +87,8 @@ backend/
                                    Take 5 is filled in on. BOOKLET_TEMPLATE is the only one for now
                 take5.py           Take5, Hazard: the filled-in card                      (spec R4 to R6)
                 draft.py           Take5Draft (what the phone sends) and check_draft(): every
-                                   gap, named by its field's dotted path                  (spec R5, R6)
+                                   gap and warning, named by its field's dotted path      (spec R5, R6, V2)
+                fix.py             which saved Take 5 a new one may fix                   (spec F3)
                 saved.py           SavedTake5: a Take 5 as it was saved, with its verdict
                 verdict.py         verdict(take5) -> Verdict with its reasons            (spec V1 to V3)
                 thinking.py        the pushback rules                                     (spec T2 to T4)
@@ -117,7 +118,7 @@ frontend/
     src/
         api/               the generated types and a small typed client (the only place TanStack Query is set up)
         components/        pieces any feature can use: rating picker, Yes / No / N/A buttons, risk badge,
-                           control editor, button, card, field, guidance, notice, undo bar
+                           control editor, button, card, field, guidance, notice, warning, undo bar
         features/take5/    the Take 5's screens: the four parts of the form, the question, the result, the list.
                            stage.ts is which page shows (kept in the URL); useTake5Draft.ts keeps the draft
         test-utils.tsx     the fake card, drafts and API replies the Vitest tests share
@@ -140,11 +141,11 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 | Endpoint | What it does |
 | --- | --- |
 | `GET /api/take5/template` | The template a new Take 5 is filled in on: its questions, its matrix and its guidance, plus the control kinds |
-| `POST /api/take5s/check` | Checks a draft and returns what is missing and which thinking rules apply. Saves nothing |
+| `POST /api/take5s/check` | Checks a draft and returns what is missing, its warnings (allowed, but they will stop the job) and which thinking rules apply. Saves nothing |
 | `POST /api/take5s` | Checks and saves a Take 5, asks the AI (or the fallback) for its question, and returns both |
 | `POST /api/take5s/{id}/answer` | Saves the answer, works out the verdict, and returns the finished Take 5 |
 | `GET /api/take5s` | The list, newest first |
-| `GET /api/take5s/{id}` | One Take 5 |
+| `GET /api/take5s/{id}` | One Take 5, with `fixed_by`: the newest Take 5 that fixes it, if any |
 
 Every error reply is declared in the OpenAPI description, so the front end's generated types know it. A 422 is
 always `FormErrors` (`detail` and a list of field errors, each with its dotted `path`), whether the draft has a
@@ -168,7 +169,7 @@ the built front-end files itself, so there is still only one program to run.
 | Entity | Key fields | Notes |
 | --- | --- | --- |
 | `Take5` | `id`, `created_at`, `worker_name`, `job`, `location`, `think_through` (question to answer), `hazard_questions` (question to answer), `hazards`, `challenge`, `finished_at`, `verdict`, `template` | One filled-in card. `template` is a copy of the template it was filled in on, so it always shows the questions and matrix the worker was given. `finished_at` and `verdict` are empty until the challenge question is answered (spec C6). Never changed once finished |
-| `SavedTake5` (task 0004) | Extends the scoring `Take5` with `id`, `created_at`, `worker_name`, `job`, `location`, `finished_at`, `verdict` | The implemented submitted document. Until task 0008 it is finished immediately. The base `Take5` retains its reusable scoring fields; later tasks add the remaining card fields |
+| `SavedTake5` (task 0004) | Extends the scoring `Take5` with `id`, `created_at`, `worker_name`, `job`, `location`, `finished_at`, `verdict`, `fixes` | The implemented submitted document. Until task 0008 it is finished immediately. The base `Take5` retains its reusable scoring fields; later tasks add the remaining card fields. `fixes` (task 0010) is the ID of the Don't start yet it fixes, or empty. It points back only, so the first one is never changed; its fix is found by searching for its ID in `fixes` |
 | `Hazard` | `description`, `before` (rating), `controls`, `after` (rating), `weak_controls_reason` | Belongs to one Take 5. With no controls `after` is `before` (spec R6). `weak_controls_reason` is the worker's answer to spec T3, when it was asked |
 | `Control` | `description`, `kind` (`ControlKind`) | Belongs to one hazard |
 | `RiskRating` | `likelihood`, `consequence`, and from the matrix: `score`, `band` | A value, not a stored row. Score and band are always worked out, never typed in |

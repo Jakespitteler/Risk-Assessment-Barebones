@@ -69,6 +69,7 @@ export const RATED_HAZARD = {
 
 export const PASSING_CHECK: DraftCheck = {
   errors: [],
+  warnings: [],
   can_submit: true,
   assessment: { template: SMALL_TEMPLATE, hazards: [RATED_HAZARD] },
 };
@@ -91,6 +92,24 @@ export const SAVED: Take5Response = {
     score: 1,
     band: "Minimal",
   },
+  fixed_by: null,
+};
+
+// A saved Don't start yet: its one hazard has no controls, so it is rated once.
+export const STOPPED: Take5Response = {
+  take5: {
+    ...SAVED.take5,
+    id: "22222222-2222-4222-8222-222222222222",
+    hazards: [
+      { ...RATED_HAZARD, controls: [], after: { ...RATED_HAZARD.before } },
+    ],
+    verdict: {
+      can_start: false,
+      reasons: ["Say how you will control: Moving wheel"],
+    },
+  },
+  rating: { ...RATED_HAZARD.before },
+  fixed_by: null,
 };
 
 type Reply = { status: number; body: unknown } | "offline";

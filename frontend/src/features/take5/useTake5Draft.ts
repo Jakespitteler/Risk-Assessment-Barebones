@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import type { HazardDraft, Take5Draft } from "../../api/take5";
+import type {
+  Hazard,
+  HazardDraft,
+  SavedTake5,
+  Take5Draft,
+} from "../../api/take5";
 import { newSubmissionId } from "../../api/submissionId";
 
 const WORKER_NAME_KEY = "take5-worker-name";
@@ -28,6 +33,36 @@ export function blankHazard(): HazardDraft {
     before: { ...NOTHING_PICKED },
     controls: [],
     after: { ...NOTHING_PICKED },
+  };
+}
+
+/** A saved hazard as a draft again. With no controls it was never rated after them. */
+function hazardDraftOf(hazard: Hazard): HazardDraft {
+  const { likelihood, consequence } = hazard.after;
+  return {
+    description: hazard.description,
+    before: {
+      likelihood: hazard.before.likelihood,
+      consequence: hazard.before.consequence,
+    },
+    controls: hazard.controls.map(({ description, kind }) => ({
+      description,
+      kind,
+    })),
+    after: hazard.controls.length
+      ? { likelihood, consequence }
+      : { ...NOTHING_PICKED },
+  };
+}
+
+/** A new draft holding a saved Take 5's answers, which says it fixes that Take 5. */
+export function fixDraftOf(saved: SavedTake5): Take5Draft {
+  return {
+    worker_name: saved.worker_name,
+    job: saved.job,
+    location: saved.location,
+    hazards: saved.hazards.map(hazardDraftOf),
+    fixes: saved.id,
   };
 }
 
@@ -62,6 +97,19 @@ function storedDraft(): StoredDraft | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Keep a copy of a saved Take 5's answers as this tab's draft, with a new submission ID,
+ * so the form opens on it. The saved Take 5 itself is never changed.
+ */
+export function keepFixDraft(saved: SavedTake5) {
+  const value: StoredDraft = {
+    version: DRAFT_VERSION,
+    draft: fixDraftOf(saved),
+    submissionId: newSubmissionId(),
+  };
+  write(() => sessionStorage, DRAFT_KEY, JSON.stringify(value));
 }
 
 /**

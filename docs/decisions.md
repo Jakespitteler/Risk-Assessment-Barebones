@@ -2,6 +2,24 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-13: Fix a Don't start yet in a new Take 5 that points back (task 0010)
+
+- Decision: A worker told Don't start yet can copy its answers into a new Take 5 and fix them there. The new
+  Take 5 records the first one's ID in `fixes`. The first one is never written to: opening it finds its newest
+  fix by searching the saved documents (`json_extract` on `fixes`), and the reply carries it as `fixed_by`.
+  The copy opens on the review. Once a Take 5 has a fix it links to it and no longer offers another. The back
+  end refuses (422) a `fixes` that is not a saved Don't start yet. Before Finish, the check warns about each
+  hazard with no controls; a warning never blocks Finish.
+- Why: A saved Take 5 is final, so the only way to add a forgotten control was to type everything again. The
+  link lets a supervisor see that a job was first planned without a control. Searching for the fix keeps the
+  rule that a finished Take 5 never changes, and needs no new column or table change.
+- Alternatives considered: Editing the saved Take 5 (breaks "never changed"). Writing `fixed_by` into the first
+  one (changes a finished Take 5). A `fixes` column beside the document (faster to search, but existing
+  databases would need a table change; add one if the list of Take 5s grows large). Opening the copy on the
+  first page (more thinking, but slower; the review's warning already points at what to fix).
+- Decided by: the human (the fix and the warning, the `fixes` data model change, the copy opening on the review,
+  one offered fix, and refusing a fix of a Good to go); claude proposed the search and the warning's shape
+
 ## 2026-11-13: Bound the automated review and skip its own pushes (task 0012)
 
 - Decision: Use the approved Claude App and subscription OAuth authentication. Share the review policy in

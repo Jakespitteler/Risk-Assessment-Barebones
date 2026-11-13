@@ -1,17 +1,28 @@
 import { useEffect, useRef } from "react";
+import type { SavedTake5 } from "../../api/take5";
 import { ApiError, useSavedTake5 } from "../../api/take5";
 import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
 import { RiskBadge } from "../../components/RiskBadge";
 import { Screen } from "../../components/Screen";
+import { FixPanel } from "./FixPanel";
 import { HazardSummary } from "./HazardSummary";
 import { VerdictPanel } from "./VerdictPanel";
 
 const NEW_TAKE5_LINK =
   "flex min-h-14 items-center justify-center rounded-xl bg-slate-900 px-5 text-lg font-bold text-white";
 
-/** A saved Take 5 exactly as it was saved: the verdict, the ratings and the controls. */
-export function Take5ResultScreen({ id }: { id: string }) {
+/**
+ * A saved Take 5 exactly as it was saved: the verdict, the ratings and the controls,
+ * and its link to the Take 5 that fixes it or that it fixes.
+ */
+export function Take5ResultScreen({
+  id,
+  onFix,
+}: {
+  id: string;
+  onFix: (take5: SavedTake5) => void;
+}) {
   const result = useSavedTake5(id);
   const page = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -48,7 +59,7 @@ export function Take5ResultScreen({ id }: { id: string }) {
       </Screen>
     );
   }
-  const { take5, rating } = result.data;
+  const { take5, rating, fixed_by } = result.data;
   const details = [
     { term: "Worker", value: take5.worker_name },
     { term: "Job", value: take5.job },
@@ -58,6 +69,13 @@ export function Take5ResultScreen({ id }: { id: string }) {
     <Screen subtitle="Saved Take 5">
       <div ref={page} className="flex flex-col gap-6">
         <VerdictPanel verdict={take5.verdict} />
+        <FixPanel
+          take5={take5}
+          fixedBy={fixed_by}
+          onFix={() => {
+            onFix(take5);
+          }}
+        />
         <Card>
           <h2 className="text-xl font-bold">Overall risk after controls</h2>
           <RiskBadge score={rating.score} band={rating.band} />
