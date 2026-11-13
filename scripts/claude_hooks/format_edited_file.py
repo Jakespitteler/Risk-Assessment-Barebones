@@ -63,11 +63,13 @@ def format_command_for(edited_file: Path, repo_root: Path) -> FormatCommand | No
         )
     if file_type in FRONTEND_SUFFIXES and top_folder == "frontend":
         return FormatCommand(
-            [NPX, "prettier", "--write", str(edited_file)], repo_root / "frontend"
+            [NPX, "--no-install", "prettier", "--write", str(edited_file)],
+            repo_root / "frontend",
         )
     if file_type == ".md":
+        literal_path: str = f":{edited_file}"  # `:` stops brackets being read as a glob
         return FormatCommand(
-            [NPX, "--yes", MARKDOWNLINT, "--fix", str(edited_file)], repo_root
+            [NPX, "--yes", MARKDOWNLINT, "--fix", literal_path], repo_root
         )
     return None
 
@@ -92,7 +94,7 @@ def main() -> int:
     Returns:
         2 when the formatter failed, so Claude sees why, otherwise 0.
     """
-    edited_file: Path | None = edited_file_in(json.load(sys.stdin))
+    edited_file: Path | None = edited_file_in(json.load(sys.stdin.buffer))  # UTF-8
     format_command: FormatCommand | None = (
         format_command_for(edited_file, REPO_ROOT) if edited_file else None
     )
@@ -103,7 +105,8 @@ def main() -> int:
         cwd=format_command.folder,
         env=FORMAT_ENVIRONMENT,
         capture_output=True,
-        text=True,
+        encoding="utf-8",
+        errors="replace",
         check=False,
     )
     if result.returncode == 0:

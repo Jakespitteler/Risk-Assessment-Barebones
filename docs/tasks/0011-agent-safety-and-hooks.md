@@ -16,17 +16,20 @@ pull request stays small.
 ## Acceptance criteria
 
 - [x] `.claude/settings.json` denies Claude's file tools reading or editing secrets and worker data: `.env` and
-  `.env.*` files (not `.env.example` or `.env.sample`), private keys (`*.pem`, `*.key`), any `secrets/` folder,
-  `backend/.data/` (saved Take 5s), and `~/.ssh`. It pre-approves the commands in AGENTS.md, so agents ask less
-  often for safe things. The git rules are in the guard only, so they are written down once.
-- [x] A `PreToolUse` hook blocks, with a reason the agent can read, a shell command that names a secret file or
-  `backend/.data/`, a commit or push while on `main`, a push to `main`, a force push and `--no-verify`. Deny rules
-  only see the file tools and simple commands such as `cat .env`; the hook also catches `python -c` and pipes.
+  `.env.*` files, private keys and certificates, `.netrc`, any `secrets/`, `.ssh/` or `.aws/` folder, and
+  `.data/` (where `backend/.data/` keeps saved Take 5s), wherever they are on the computer. It pre-approves the
+  commands in AGENTS.md for Bash and PowerShell, so agents ask less often for safe things. The git rules are in
+  the guard only, so they are written down once.
+- [x] A `PreToolUse` hook blocks, with a reason the agent can read, a Bash or PowerShell command that names a
+  secret file or `backend/.data/`, a commit, merge or push while on `main`, a push to `main`, a force push,
+  `--no-verify` and `gh pr merge`. Deny rules only see the file tools and simple commands such as `cat .env`;
+  the hook also catches `python -c`, pipes and chains. Commit and PR text may mention these names.
 - [x] A `PostToolUse` hook formats each file an agent edits: Ruff for Python, Prettier for the front end, and
   markdownlint's safe fixes for Markdown. It never blocks; the checks still decide.
 - [x] The hooks are Python scripts run with `uv`, so they work the same on Windows and Linux, and live in
   `scripts/claude_hooks/` so `check.py` lints and type checks them.
-- [x] pytest covers every block and every allow in the guard, and the formatter's choice of tool per file.
+- [x] pytest covers every block and every allow in the guard, the formatter's choice of tool per file, both
+  hooks' exit codes, and that `.claude/settings.json` points at scripts that exist.
 - [x] AGENTS.md, CLAUDE.md and `docs/dev-setup.md` say what the settings and hooks do, and that they protect
   Claude Code on a computer only (see Notes). `docs/decisions.md` records the choice.
 - [x] AGENTS.md step 7 says an agent that did not write a PR reviews it before Jake, and the PR template asks
@@ -70,9 +73,16 @@ this task, and cloud threads' own branch limit). Recommended: soft guards now, P
 signs in with his Claude subscription (an OAuth token, `CLAUDE_CODE_OAUTH_TOKEN`), not an API key. It replaces
 the other agent's review in AGENTS.md step 7. `main` stays on soft guards for now, not GitHub Pro.
 
-**If a hook can't run.** The guard fails closed when `uv` can't start it (uv exits with code 2, which blocks
-every call and shows uv's error), so a broken set-up is noticed at once. A bug inside the guard exits with code
-1, which Claude Code treats as a warning and lets the call through.
+**If a hook can't run.** Any error inside the guard, or a missing guard script, exits with code 2, so every
+call is blocked and the error is shown: a broken guard is noticed at once rather than waving calls through. If
+`uv` itself is missing, Claude Code can't start the hook and lets calls through, so `uv` is a requirement
+(AGENTS.md already needs it). The hooks use exec form (`"command": "uv"` with `args`), so no shell or Git Bash
+is involved.
+
+**Independent review (2026-11-13).** A separate reviewer agent found that on Windows commands go through the
+PowerShell tool, which the guard first missed; that commit messages naming `.env` were blocked; that Windows
+reads hook input in the wrong code page; and a list of bypasses. All were fixed and tested, except those that
+only a sandbox could stop, which are listed under Limits in `docs/decisions.md`.
 
 **Follow-up tasks, approved by Jake (task files `0012` and `0013`):**
 

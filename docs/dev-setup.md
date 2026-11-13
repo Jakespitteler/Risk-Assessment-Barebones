@@ -13,11 +13,16 @@ pytest from `backend/` and use Ruff to format and sort imports.
 
 ## Claude Code's hooks
 
-`.claude/settings.json` runs two hooks from `scripts/claude_hooks/`. Before each tool call a guard blocks
-anything that names a secret or saved Take 5s, and risky git commands. After each edit a formatter tidies the
-file. They need `uv` on your `PATH` and, on Windows, Git Bash, which comes with Git for Windows. The
-pre-approved commands start once you trust the folder in Claude Code. Run `/hooks` in Claude Code to see the
-hooks. Put personal changes in `.claude/settings.local.json`, which git ignores.
+`.claude/settings.json` runs two hooks from `scripts/claude_hooks/`. Before each file tool and Bash or
+PowerShell command, a guard blocks anything that names a secret or saved Take 5s, and risky git commands. After
+each edit a formatter tidies the file.
+
+- Start Claude Code in the repository root. It reads `.claude/settings.json` from the folder it starts in.
+- The hooks need `uv` on your `PATH` and a current Claude Code. The formatter also needs the install step above
+  (`uv sync` in `backend/`, `npm ci` in `frontend/`).
+- The pre-approved commands start once you trust the folder in Claude Code. Run `/hooks` to see the hooks.
+- If the guard itself breaks, it blocks every call and says why, rather than letting calls through.
+- Put personal changes in `.claude/settings.local.json`, which git ignores.
 
 ## How type checking is set up
 

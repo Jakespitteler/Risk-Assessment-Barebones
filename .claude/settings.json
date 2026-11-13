@@ -2,26 +2,36 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "deny": [
-      "Read(**/.env)",
-      "Read(**/.env.*)",
-      "Read(!**/.env.example)",
-      "Read(!**/.env.sample)",
-      "Read(**/.envrc)",
-      "Read(**/*.pem)",
-      "Read(**/*.key)",
-      "Read(**/secrets/**)",
-      "Read(./backend/.data/**)",
-      "Read(~/.ssh/**)",
-      "Edit(**/.env)",
-      "Edit(**/.env.*)",
-      "Edit(!**/.env.example)",
-      "Edit(!**/.env.sample)",
-      "Edit(**/.envrc)",
-      "Edit(**/*.pem)",
-      "Edit(**/*.key)",
-      "Edit(**/secrets/**)",
-      "Edit(./backend/.data/**)",
-      "Edit(~/.ssh/**)"
+      "Read(//**/.env)",
+      "Read(//**/.env.*)",
+      "Read(//**/.envrc)",
+      "Read(//**/.netrc)",
+      "Read(//**/.git-credentials)",
+      "Read(//**/*.pem)",
+      "Read(//**/*.key)",
+      "Read(//**/*.p12)",
+      "Read(//**/*.pfx)",
+      "Read(//**/id_rsa*)",
+      "Read(//**/id_ed25519*)",
+      "Read(//**/secrets/**)",
+      "Read(//**/.ssh/**)",
+      "Read(//**/.aws/**)",
+      "Read(//**/.data/**)",
+      "Edit(//**/.env)",
+      "Edit(//**/.env.*)",
+      "Edit(//**/.envrc)",
+      "Edit(//**/.netrc)",
+      "Edit(//**/.git-credentials)",
+      "Edit(//**/*.pem)",
+      "Edit(//**/*.key)",
+      "Edit(//**/*.p12)",
+      "Edit(//**/*.pfx)",
+      "Edit(//**/id_rsa*)",
+      "Edit(//**/id_ed25519*)",
+      "Edit(//**/secrets/**)",
+      "Edit(//**/.ssh/**)",
+      "Edit(//**/.aws/**)",
+      "Edit(//**/.data/**)"
     ],
     "allow": [
       "Bash(uv run scripts/check.py)",
@@ -39,17 +49,38 @@
       "Bash(npx markdownlint-cli2@0.24.0 *)",
       "Bash(git status)",
       "Bash(git diff *)",
-      "Bash(git log *)"
+      "Bash(git log *)",
+      "PowerShell(uv run scripts/check.py)",
+      "PowerShell(uv run pytest)",
+      "PowerShell(uv run pytest *)",
+      "PowerShell(uv run ruff *)",
+      "PowerShell(uv run pyright *)",
+      "PowerShell(npm test)",
+      "PowerShell(npm run lint)",
+      "PowerShell(npm run format)",
+      "PowerShell(npm run format:check)",
+      "PowerShell(npm run typecheck)",
+      "PowerShell(npm run test:e2e)",
+      "PowerShell(npm run generate:api)",
+      "PowerShell(npx markdownlint-cli2@0.24.0 *)",
+      "PowerShell(git status)",
+      "PowerShell(git diff *)",
+      "PowerShell(git log *)"
     ]
   },
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash|Read|Edit|Write|Grep|Glob|NotebookEdit",
+        "matcher": "Bash|PowerShell|Read|Edit|Write|Grep|Glob|NotebookEdit",
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --quiet \"${CLAUDE_PROJECT_DIR}/scripts/claude_hooks/guard_tool_use.py\"",
+            "command": "uv",
+            "args": [
+              "run",
+              "--quiet",
+              "${CLAUDE_PROJECT_DIR}/scripts/claude_hooks/guard_tool_use.py"
+            ],
             "timeout": 30
           }
         ]
@@ -61,7 +92,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --quiet \"${CLAUDE_PROJECT_DIR}/scripts/claude_hooks/format_edited_file.py\"",
+            "command": "uv",
+            "args": [
+              "run",
+              "--quiet",
+              "${CLAUDE_PROJECT_DIR}/scripts/claude_hooks/format_edited_file.py"
+            ],
             "timeout": 120
           }
         ]

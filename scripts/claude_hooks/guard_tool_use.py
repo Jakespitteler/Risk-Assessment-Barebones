@@ -3,14 +3,16 @@
 # ///
 """Stop a Claude Code tool call that would touch a secret or break the repo's git rules.
 
-Claude Code runs this before every tool call (a `PreToolUse` hook, set in
-`.claude/settings.json`) and passes the call as JSON on standard input. Exit code 2
-blocks the call, and what is printed to standard error is the reason Claude sees.
-Exit code 0 leaves the decision to the normal permission rules.
+Claude Code runs this before each file tool and shell command (a `PreToolUse` hook,
+set in `.claude/settings.json`) and passes the call as JSON on standard input. Exit
+code 2 blocks the call, and what is printed to standard error is the reason Claude
+sees. Exit code 0 leaves the decision to the normal permission rules.
 
 The deny rules in `.claude/settings.json` only cover Claude's file tools and simple
-commands such as `cat .env`. This hook reads the words of every shell command too, so
-`python -c "print(open('.env').read())"` is caught as well.
+commands such as `cat .env`. This hook reads every word of a shell command too, so
+`python -c "print(open('.env').read())"` is caught as well. It is a soft guard: it
+matches words, so a command that reads a file without naming it (`grep -r KEY .`) or
+a script that opens one gets past it. `docs/decisions.md` lists the limits.
 """
 
 import json
@@ -23,86 +25,124 @@ from pathlib import Path
 from typing import Any
 
 PROTECTED_BRANCH: str = "main"
+SHELL_TOOLS: frozenset[str] = frozenset({"Bash", "PowerShell"})
+PATH_FIELDS: tuple[str, ...] = ("file_path", "path", "notebook_path", "glob")
 
-# A name that holds secrets or worker data. `.env.example` and `.env.sample` are
-# templates with no real values, so they are allowed. The look-behinds and look-aheads
-# only match whole names: `.venv`, `os.environ` and `monkey.keyboard` don't match.
+# A name that holds secrets or worker data. The look-behind and look-aheads only match
+# whole names, so `.venv`, `os.environ` and `process.env.PORT` don't match. Key files
+# ending in `.key` are left to the deny rules, because `event.key` is ordinary code.
 SECRET_PATH_PATTERN: re.Pattern[str] = re.compile(
     r"""
-    (?<![\w.])
+    (?<![\w.-])
     (
-        \.env(?!\.(?:example|sample)(?![\w.-]))(?:\.[\w.-]+)?(?![\w-])
+        \.env(?:\.[\w.-]+)?(?![\w-])           # .env, .env.local
       | \.envrc(?![\w-])
-      | [\w.-]+\.(?:pem|key)(?![\w-])      # private keys
-      | secrets[/\\]                       # anything in a secrets folder
-      | \.ssh[/\\]
-      | backend[/\\]\.data(?![\w-])        # saved Take 5s: real workers' answers
+      | \.netrc(?![\w-])
+      | \.git-credentials(?![\w-])
+      | [\w.-]+\.(?:pem|p12|pfx)(?![\w-])     # private keys and certificates
+      | id_(?:rsa|dsa|ecdsa|ed25519)(?![\w-])
+      | (?:secrets|\.ssh|\.aws)(?=[/\\'"]|$)  # folders of secrets
+      | \.data(?=[/\\'"]|$)                   # backend/.data: real workers' answers
     )
     """,
-    re.VERBOSE,
+    re.VERBOSE | re.IGNORECASE,
 )
 
-SHELL_SEPARATOR_PATTERN: re.Pattern[str] = re.compile(r"&&|\|\||[;|\n]")
+SHELL_OPERATORS: str = "();<>|&\n"
+COMMAND_WRAPPERS: frozenset[str] = frozenset(
+    {"env", "command", "time", "sudo", "nohup", "exec"}
+)
+ENVIRONMENT_ASSIGNMENT_PATTERN: re.Pattern[str] = re.compile(r"[A-Za-z_]\w*=")
 GIT_OPTIONS_WITH_A_VALUE: frozenset[str] = frozenset(
     {"-C", "-c", "--git-dir", "--work-tree"}
 )
-COMMIT_MESSAGE_OPTIONS: frozenset[str] = frozenset({"-m", "--message"})
-FORCE_PUSH_OPTIONS: frozenset[str] = frozenset(
-    {"-f", "--force", "--force-with-lease", "--force-if-includes"}
+# Commands that only write a message. Their text may mention `.env` freely.
+MESSAGE_SUBCOMMANDS: frozenset[tuple[str, ...]] = frozenset(
+    {("git", "commit"), ("git", "tag"), ("gh", "pr"), ("gh", "issue")}
 )
-PATH_FIELDS: tuple[str, ...] = ("file_path", "path", "notebook_path")
+SUBCOMMANDS_THAT_CHANGE_A_BRANCH: frozenset[str] = frozenset(
+    {"commit", "merge", "cherry-pick", "revert", "am", "rebase", "push"}
+)
 
-type GitCommand = list[str]
-"""A git command's words from the subcommand on, for example `["push", "origin"]`."""
+type Words = list[str]
+"""One simple command, split into words, such as `["git", "push", "origin"]`."""
 
-type GitRule = Callable[[GitCommand, str], str | None]
-"""A check on a git command and the current branch: why it is blocked, or None."""
-
-
-def split_shell_command(command: str) -> list[list[str]]:
-    """Split a command line into simple commands, each as a list of words.
-
-    Args:
-        command: The full command line. It may chain commands with `&&`, `||`, `;`
-            or `|`.
-
-    Returns:
-        One list of words per simple command, with quotes removed as a shell would.
-    """
-    simple_commands: list[list[str]] = []
-    for part in SHELL_SEPARATOR_PATTERN.split(command):
-        try:
-            words: list[str] = shlex.split(part)
-        except ValueError:  # an unclosed quote: fall back to plain spaces
-            words = part.split()
-        if words:
-            simple_commands.append(words)
-    return simple_commands
+type GitRule = Callable[[Words, str], str | None]
+"""A check on a git subcommand's words and the branch it runs on: why it is blocked."""
 
 
-def without_commit_messages(words: list[str]) -> list[str]:
-    """Drop the text after `-m` or `--message`, so a message may mention `.env`.
+def split_into_simple_commands(command: str) -> list[Words]:
+    """Split a command line into simple commands, keeping quoted text in one word.
+
+    Quotes and backslashes are kept as written, because PowerShell and Windows paths
+    use backslashes as folder separators.
 
     Args:
-        words: One git command's words.
+        command: The full command line. It may chain commands with `&&`, `||`, `;`,
+            `|`, `&` or new lines, and group them with brackets.
 
     Returns:
-        The same words without any commit message.
+        The words of each simple command, without the operators between them.
     """
-    kept_words: list[str] = []
-    skip_next_word: bool = False
-    for word in words:
-        if skip_next_word:
-            skip_next_word = False
-        elif word in COMMIT_MESSAGE_OPTIONS:
-            skip_next_word = True
-        elif not word.startswith("--message="):
-            kept_words.append(word)
-    return kept_words
+    lexer = shlex.shlex(command, posix=False, punctuation_chars=SHELL_OPERATORS)
+    lexer.whitespace = " \t\r"
+    lexer.whitespace_split = True
+    try:
+        all_words: Words = list(lexer)
+    except ValueError:  # an unclosed quote: fall back to plain spaces
+        all_words = command.split()
+    simple_commands: list[Words] = [[]]
+    for word in all_words:
+        if set(word) <= set(SHELL_OPERATORS):
+            simple_commands.append([])
+        else:
+            simple_commands[-1].append(word)
+    return [words for words in simple_commands if words]
+
+
+def unquoted(word: str) -> str:
+    """Remove the quotes around a word, as a shell would."""
+    return word.strip("'\"")
+
+
+def program_and_arguments(words: Words) -> Words:
+    """Drop `NAME=value` settings and wrappers such as `env` or `sudo` before a program.
+
+    Args:
+        words: One simple command's words, such as `["HUSKY=0", "git", "commit"]`.
+
+    Returns:
+        The program's name, without folder or `.exe`, then its unquoted arguments.
+    """
+    position: int = 0
+    while position < len(words) and (
+        ENVIRONMENT_ASSIGNMENT_PATTERN.match(words[position])
+        or words[position] in COMMAND_WRAPPERS
+    ):
+        position += 1
+    if position == len(words):
+        return []
+    program: str = Path(unquoted(words[position]).replace("\\", "/")).stem.lower()
+    return [program, *(unquoted(word) for word in words[position + 1 :])]
+
+
+def git_subcommand(arguments: Words) -> Words:
+    """Skip git's own options, such as `-C folder`, to reach the subcommand.
+
+    Args:
+        arguments: Everything after `git`, such as `["-C", "repo", "push"]`.
+
+    Returns:
+        The subcommand and its arguments (`["push"]`), or [] when there is none.
+    """
+    position: int = 0
+    while position < len(arguments) and arguments[position].startswith("-"):
+        position += 2 if arguments[position] in GIT_OPTIONS_WITH_A_VALUE else 1
+    return arguments[position:]
 
 
 def secret_named_in(text: str) -> str | None:
-    """Find the first secret or worker-data path named in some text.
+    """Find the first secret or worker-data name in some text.
 
     Args:
         text: A file path or one word of a shell command.
@@ -115,62 +155,62 @@ def secret_named_in(text: str) -> str | None:
 
 
 def secret_reason(secret: str) -> str:
-    """Say why a call that names a secret is blocked.
-
-    Args:
-        secret: The secret or worker-data name that was found.
-
-    Returns:
-        The reason Claude is shown.
-    """
+    """Say why a call that names a secret is blocked."""
     return f"{secret} may hold secrets or worker data. Agents never read or change it."
 
 
-def git_command_in(words: list[str]) -> GitCommand | None:
-    """Pick out the git subcommand and its arguments from one simple command.
+def is_short_option_with(letter: str, word: str) -> bool:
+    """Tell whether a word is a group of short options that includes a letter.
 
     Args:
-        words: One simple command's words, such as `["git", "-C", "repo", "push"]`.
+        letter: The option's letter, such as `f` for `-f`.
+        word: One argument, such as `-fu`.
 
     Returns:
-        The words from the subcommand on (`["push"]`), or None when this is not git.
+        True for `-f`, `-fu` or `-uf` when the letter is `f`.
     """
-    if not words or Path(words[0]).stem != "git":
-        return None
-    position: int = 1
-    while position < len(words) and words[position].startswith("-"):
-        position += 2 if words[position] in GIT_OPTIONS_WITH_A_VALUE else 1
-    return words[position:] or None
+    return re.fullmatch(rf"-[a-zA-Z]*{letter}[a-zA-Z]*", word) is not None
 
 
-def block_no_verify(git_command: GitCommand, current_branch: str) -> str | None:
-    """Block skipping git's own checks."""
-    if "--no-verify" in git_command:
+def block_no_verify(git_words: Words, branch: str) -> str | None:
+    """Block skipping git's own checks: `--no-verify`, or `-n` on a commit."""
+    names_no_verify: bool = any(
+        word.startswith("--no-v") and "--no-verify".startswith(word)
+        for word in git_words
+    )
+    commits_with_n: bool = git_words[0] == "commit" and any(
+        is_short_option_with("n", word) for word in git_words
+    )
+    if names_no_verify or commits_with_n:
         return "--no-verify skips the repo's checks. Fix what the check reports."
     return None
 
 
-def block_force_push(git_command: GitCommand, current_branch: str) -> str | None:
-    """Block a push that could overwrite commits already on GitHub."""
-    if git_command[0] == "push" and FORCE_PUSH_OPTIONS.intersection(git_command):
+def block_force_push(git_words: Words, branch: str) -> str | None:
+    """Block a push that could overwrite or delete commits already on GitHub."""
+    forces: bool = any(
+        word.startswith(("--forc", "--mirror", "+")) or is_short_option_with("f", word)
+        for word in git_words[1:]
+    )
+    if git_words[0] == "push" and forces:
         return "A force push can throw away commits. Ask the human to do it."
     return None
 
 
-def block_push_to_main(git_command: GitCommand, current_branch: str) -> str | None:
-    """Block a push to `main`, such as `git push origin main` or `HEAD:main`."""
+def block_push_to_main(git_words: Words, branch: str) -> str | None:
+    """Block a push to `main`: `git push origin main`, `HEAD:main` or `--all`."""
     main_names: tuple[str, ...] = (PROTECTED_BRANCH, f"refs/heads/{PROTECTED_BRANCH}")
     targets_main: bool = any(
-        word.split(":")[-1] in main_names for word in git_command[1:]
+        word == "--all" or word.split(":")[-1] in main_names for word in git_words[1:]
     )
-    if git_command[0] == "push" and targets_main:
+    if git_words[0] == "push" and targets_main:
         return f"Never push to {PROTECTED_BRANCH}. Push the task branch (AGENTS.md)."
     return None
 
 
-def block_work_on_main(git_command: GitCommand, current_branch: str) -> str | None:
-    """Block a commit or push made while `main` is checked out."""
-    if git_command[0] in ("commit", "push") and current_branch == PROTECTED_BRANCH:
+def block_work_on_main(git_words: Words, branch: str) -> str | None:
+    """Block a commit, merge or push made while `main` is checked out."""
+    if git_words[0] in SUBCOMMANDS_THAT_CHANGE_A_BRANCH and branch == PROTECTED_BRANCH:
         return f"You are on {PROTECTED_BRANCH}. Create the task branch (AGENTS.md)."
     return None
 
@@ -183,29 +223,50 @@ GIT_RULES: tuple[GitRule, ...] = (
 )
 
 
+def branch_after(git_words: Words, branch: str) -> str:
+    """Work out which branch is checked out after a `git checkout` or `git switch`.
+
+    Args:
+        git_words: A git subcommand and its arguments, such as `["switch", "main"]`.
+        branch: The branch checked out before it.
+
+    Returns:
+        The branch it switches to, or the same branch for any other command.
+    """
+    if git_words[0] not in ("checkout", "switch") or "--" in git_words:
+        return branch
+    names: Words = [word for word in git_words[1:] if not word.startswith("-")]
+    return names[0] if names else branch
+
+
 def reason_to_block_command(command: str, current_branch: str) -> str | None:
     """Decide whether a shell command must be blocked.
 
     Args:
-        command: The full command line Claude wants to run.
-        current_branch: The branch checked out where the command runs, or "".
+        command: The full command line Claude wants to run, in Bash or PowerShell.
+        current_branch: The branch checked out where the command starts, or "".
 
     Returns:
         Why the command is blocked, or None when it may run.
     """
-    for words in split_shell_command(command):
-        git_command: GitCommand | None = git_command_in(words)
-        words_to_scan: list[str] = (
-            without_commit_messages(words) if git_command else words
-        )
-        for word in words_to_scan:
-            if secret := secret_named_in(word):
-                return secret_reason(secret)
-        if git_command is None:
+    branch: str = current_branch
+    for words in split_into_simple_commands(command):
+        program_words: Words = program_and_arguments(words)
+        if tuple(program_words[:2]) not in MESSAGE_SUBCOMMANDS:
+            for word in words:
+                if secret := secret_named_in(word):
+                    return secret_reason(secret)
+        if program_words[:3] == ["gh", "pr", "merge"]:
+            return "Only the human merges a pull request (AGENTS.md)."
+        if program_words[:1] != ["git"]:
+            continue
+        git_words: Words = git_subcommand(program_words[1:])
+        if not git_words:
             continue
         for rule in GIT_RULES:
-            if reason := rule(git_command, current_branch):
+            if reason := rule(git_words, branch):
                 return reason
+        branch = branch_after(git_words, branch)
     return None
 
 
@@ -215,19 +276,22 @@ def reason_to_block_tool_call(
     """Decide whether a tool call must be blocked.
 
     Args:
-        tool_name: The tool Claude wants to use, such as `Bash`, `Read` or `Edit`.
+        tool_name: The tool Claude wants to use, such as `Bash`, `Read` or `Glob`.
         tool_input: The tool's arguments, as Claude Code sends them.
         current_branch: The branch checked out where Claude is working, or "".
 
     Returns:
         Why the call is blocked, or None when it may go ahead.
     """
-    for field in PATH_FIELDS:
+    path_fields: tuple[str, ...] = (
+        (*PATH_FIELDS, "pattern") if tool_name == "Glob" else PATH_FIELDS
+    )
+    for field in path_fields:
         path: object = tool_input.get(field)
         if isinstance(path, str) and (secret := secret_named_in(path)):
             return secret_reason(secret)
     command: object = tool_input.get("command")
-    if tool_name == "Bash" and isinstance(command, str):
+    if tool_name in SHELL_TOOLS and isinstance(command, str):
         return reason_to_block_command(command, current_branch)
     return None
 
@@ -239,15 +303,19 @@ def current_branch_in(folder: str) -> str:
         folder: The folder Claude is working in, or "" for the current folder.
 
     Returns:
-        The branch name, or "" when the folder is not in a git repository.
+        The branch name, or "" when git can't tell (no repository, no git, no folder).
     """
-    result: subprocess.CompletedProcess[str] = subprocess.run(
-        ["git", "branch", "--show-current"],
-        cwd=folder or None,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        result: subprocess.CompletedProcess[str] = subprocess.run(
+            ["git", "branch", "--show-current"],
+            cwd=folder or None,
+            capture_output=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+    except OSError:
+        return ""
     return result.stdout.strip()
 
 
@@ -257,11 +325,16 @@ def main() -> int:
     Returns:
         2 to block the call, otherwise 0.
     """
-    hook_input: dict[str, Any] = json.load(sys.stdin)
+    hook_input: dict[str, Any] = json.load(sys.stdin.buffer)  # Claude sends UTF-8
+    tool_name: str = hook_input.get("tool_name", "")
     tool_input: dict[str, Any] = hook_input.get("tool_input") or {}
-    current_branch: str = current_branch_in(hook_input.get("cwd", ""))
+    command_text: str = str(tool_input.get("command", ""))
+    needs_branch: bool = tool_name in SHELL_TOOLS and "git" in command_text
+    current_branch: str = (
+        current_branch_in(hook_input.get("cwd", "")) if needs_branch else ""
+    )
     reason: str | None = reason_to_block_tool_call(
-        hook_input.get("tool_name", ""), tool_input, current_branch
+        tool_name, tool_input, current_branch
     )
     if reason is None:
         return 0
@@ -272,4 +345,11 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except Exception as error:  # a broken guard must not wave calls through
+        print(
+            f"guard_tool_use.py failed, so the call is blocked: {error!r}",
+            file=sys.stderr,
+        )
+        sys.exit(2)

@@ -61,7 +61,8 @@ Run each from the folder shown.
 - Don't edit another agent's in-progress task or branch.
 - No secrets, credentials, or real personal data in the repo. Use obviously fake sample data.
 - Never read or change `.env` files, keys, `secrets/` or `backend/.data/` (saved Take 5s). Never skip checks
-  (`--no-verify`), force push, or push to `main`. Claude Code enforces this with `.claude/settings.json`.
+  (`--no-verify`), force push, push to `main`, or merge a PR. On a computer, Claude Code's settings and hooks
+  (`.claude/settings.json`) back this up, but they only match words, so the rule stands without them.
 - Prefer small PRs (one task, ideally under ~400 changed lines).
 
 ## Conventions
