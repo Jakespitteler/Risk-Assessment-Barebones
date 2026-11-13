@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("a worker rates a risk on the matrix the back end sends", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/rate-risk");
   await expect(
     page.getByRole("heading", { name: "Rate a risk" }),
   ).toBeVisible();
