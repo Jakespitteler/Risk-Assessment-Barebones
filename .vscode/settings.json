@@ -1,4 +1,5 @@
 {
+    "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv",
     "cSpell.words": [
         "Barebones",
         "creationflags",

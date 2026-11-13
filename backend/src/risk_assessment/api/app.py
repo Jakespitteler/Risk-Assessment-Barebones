@@ -14,6 +14,6 @@ def create_app() -> FastAPI:
     Returns:
         The app, ready for uvicorn to serve or for a test client to call.
     """
-    app = FastAPI(title="Take 5", version="0.1.0")
+    app: FastAPI = FastAPI(title="Take 5", version="0.1.0")
     app.include_router(take5_routes.router)
     return app

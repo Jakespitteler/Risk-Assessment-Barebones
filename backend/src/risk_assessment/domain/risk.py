@@ -4,7 +4,7 @@ Nothing here knows about a Take 5 or about any one company's card. A matrix is d
 that is handed to `rate()`, so another company's matrix needs no new code.
 """
 
-from typing import Self
+from typing import ClassVar, Self
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, model_validator
 class RiskCell(BaseModel):
     """One square of a risk matrix: the score it gives and the band that score is in."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     score: int
     band: str
@@ -31,7 +31,7 @@ class RiskMatrix(BaseModel):
         jha_threshold: The lowest score that needs a Job Hazard Analysis (spec R3).
     """
 
-    model_config = ConfigDict(frozen=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     likelihoods: tuple[str, ...]
     consequences: tuple[str, ...]
@@ -41,8 +41,10 @@ class RiskMatrix(BaseModel):
     @model_validator(mode="after")
     def _has_one_cell_per_pair(self) -> Self:
         """Refuse a matrix whose grid of cells doesn't match its two scales."""
-        rows_match = len(self.cells) == len(self.likelihoods)
-        columns_match = all(len(row) == len(self.consequences) for row in self.cells)
+        rows_match: bool = len(self.cells) == len(self.likelihoods)
+        columns_match: bool = all(
+            len(row) == len(self.consequences) for row in self.cells
+        )
         if not (rows_match and columns_match):
             raise ValueError(
                 "A risk matrix needs one row per likelihood"
@@ -62,7 +64,7 @@ class RiskRating(BaseModel):
     make one.
     """
 
-    model_config = ConfigDict(frozen=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     likelihood: str
     consequence: str
@@ -84,9 +86,9 @@ def rate(matrix: RiskMatrix, likelihood: str, consequence: str) -> RiskRating:
     Raises:
         ValueError: If the likelihood or the consequence is not on the matrix's scale.
     """
-    row = _position_on_scale(matrix.likelihoods, likelihood, "likelihood")
-    column = _position_on_scale(matrix.consequences, consequence, "consequence")
-    cell = matrix.cells[row][column]
+    row: int = _position_on_scale(matrix.likelihoods, likelihood, "likelihood")
+    column: int = _position_on_scale(matrix.consequences, consequence, "consequence")
+    cell: RiskCell = matrix.cells[row][column]
     return RiskRating(
         likelihood=likelihood, consequence=consequence, score=cell.score, band=cell.band
     )

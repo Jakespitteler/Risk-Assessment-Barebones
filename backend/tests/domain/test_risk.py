@@ -8,7 +8,7 @@ from risk_assessment.domain.take5.template import BOOKLET_MATRIX
 
 def test_example_1_rare_low_is_1_low_with_no_jha() -> None:
     """Worked example 1: the lowest cell of the booklet's matrix."""
-    rating = rate(BOOKLET_MATRIX, "Rare", "Low")
+    rating: RiskRating = rate(BOOKLET_MATRIX, "Rare", "Low")
 
     assert rating == RiskRating(
         likelihood="Rare", consequence="Low", score=1, band="Low"
@@ -18,7 +18,7 @@ def test_example_1_rare_low_is_1_low_with_no_jha() -> None:
 
 def test_a_score_on_the_threshold_needs_a_jha() -> None:
     """The JHA threshold comes from the matrix, and a score equal to it needs a JHA."""
-    matrix = RiskMatrix(
+    matrix: RiskMatrix = RiskMatrix(
         likelihoods=("Likely",),
         consequences=("Bad",),
         cells=((RiskCell(score=7, band="Serious"),),),

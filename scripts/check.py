@@ -13,13 +13,13 @@ import sys
 from pathlib import Path
 from typing import NamedTuple
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-NPM = shutil.which("npm") or "npm"
-NPX = shutil.which("npx") or "npx"
+REPO_ROOT: Path = Path(__file__).resolve().parent.parent
+NPM: str = shutil.which("npm") or "npm"
+NPX: str = shutil.which("npx") or "npx"
 
 # `uv run` points VIRTUAL_ENV at this script's own throwaway environment. The back end
 # must use its own `.venv`, so the checks are run without it.
-CHECK_ENVIRONMENT = {
+CHECK_ENVIRONMENT: dict[str, str] = {
     name: value for name, value in os.environ.items() if name != "VIRTUAL_ENV"
 }
 
@@ -32,12 +32,12 @@ class Check(NamedTuple):
     folder: str
 
 
-# The back end's ruff and pyright settings also cover the scripts in this folder.
-PYTHON_FOLDERS = [".", "../scripts"]
-RUFF = ["uv", "run", "ruff"]
-RUFF_SETTINGS = ["--config", "pyproject.toml"]
+# Ruff uses the back end's settings; pyright uses the repo's pyrightconfig.json.
+PYTHON_FOLDERS: list[str] = [".", "../scripts"]
+RUFF: list[str] = ["uv", "run", "ruff"]
+RUFF_SETTINGS: list[str] = ["--config", "pyproject.toml"]
 
-CHECKS = [
+CHECKS: list[Check] = [
     Check("Markdown", [NPX, "--yes", "markdownlint-cli2@0.24.0", "**/*.md"], "."),
     Check(
         "Back end lint", [*RUFF, "check", *RUFF_SETTINGS, *PYTHON_FOLDERS], "backend"
@@ -71,7 +71,7 @@ def run_checks() -> int:
     """
     for check in CHECKS:
         print(f"\n=== {check.name} ===", flush=True)
-        result = subprocess.run(
+        result: subprocess.CompletedProcess[bytes] = subprocess.run(
             check.command,
             cwd=REPO_ROOT / check.folder,
             env=CHECK_ENVIRONMENT,

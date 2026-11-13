@@ -2,6 +2,17 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-13: One type-checking configuration for the editor and checks (task 0002 review)
+
+- Decision: Put strict Pyright settings in the root `pyrightconfig.json`, including `backend/src` and
+  `backend/.venv`. VS Code defaults to that environment. Explicitly annotate assigned Python variables and
+  constants even when their types can be inferred.
+- Why: Opening the whole repository left Pylance unable to resolve the app import in `export_openapi.py`.
+  A shared root configuration gives the editor and command-line checks the same paths and strict rules.
+  Strict checking alone permits inferred types, while Jake wants explicit annotations.
+- Alternatives considered: Editor-only import paths, which could diverge from the command-line checks.
+- Decided by: chatgpt for configuration placement, following Jake's import and annotation review requests.
+
 ## 2026-11-13: Tools and the first end-to-end path for the walking skeleton (task 0002)
 
 - Decision:

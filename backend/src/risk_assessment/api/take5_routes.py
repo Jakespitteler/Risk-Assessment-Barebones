@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from risk_assessment.api.schemas import TemplateResponse
 from risk_assessment.domain.take5.template import BOOKLET_MATRIX
 
-router = APIRouter(tags=["take5"])
+router: APIRouter = APIRouter(tags=["take5"])
 
 
 @router.get("/api/take5/template")

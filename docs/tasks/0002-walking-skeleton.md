@@ -1,7 +1,7 @@
 ---
 id: 0002
 title: Walking skeleton with CI
-status: in-progress
+status: review
 owner: chatgpt
 branch: chatgpt/0002-review-fixes
 ---
@@ -52,3 +52,24 @@ This branch will target that branch, so Jake can merge the corrections into his 
 - Resolve Pylance imports when opening the repository root in VS Code.
 - Add explicit Python variable annotations throughout the application, scripts and tests.
 - Keep the existing product behaviour, dependencies and risk scoring rules.
+
+Completed corrections:
+
+- `scripts/dev.py` syncs the back end before launch, detects a missing Vite package or command shim even in
+  an existing `node_modules`, and waits for the API before starting Vite. Startup failures clean up the back end.
+- The root `pyrightconfig.json` supplies strict checking, the source path and the back-end environment to both
+  Pylance and the command-line checks. VS Code defaults to `backend/.venv`.
+- All named Python assignments in app code, scripts and tests have explicit annotations. `AGENTS.md` records
+  that inferred types alone do not meet this convention.
+- `frontend/.npmrc` selects the HTTPS registry. README explains interpreter selection and the stale
+  `VIRTUAL_ENV` warning that uv can emit before the launcher itself runs.
+
+Validation: `uv run scripts/check.py` passed: markdown, Ruff, strict Pyright, 14 Python tests (nine launcher
+regression cases), ESLint, Prettier, TypeScript, three front-end tests, unchanged generated API types and the
+browser test. The real launcher served the API before starting Vite; the browser test used those servers.
+Phone-width screenshots were inspected; no screen code changed. An AST audit found no unannotated named
+assignments. Windows Vite shims are covered by tests; native Windows execution still needs Jake's check.
+
+Environment limitation: Playwright's browser download was denied by this cloud environment's network policy.
+The browser test passed using installed system Chromium 156 through a temporary browser-cache link outside
+the repo. The application's Playwright configuration was unchanged.

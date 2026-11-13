@@ -19,7 +19,7 @@ Run each from the folder shown.
 - Test: in `backend/`, `uv run pytest`. In `frontend/`, `npm test` and `npm run test:e2e`.
 - Lint/format: in `backend/`, `uv run ruff check .` and `uv run ruff format .`. In `frontend/`, `npm run lint`
   and `npm run format`. Markdown, in the repo root: `npx markdownlint-cli2@0.24.0 "**/*.md"`.
-  `check.py` also lints and type checks `scripts/` with the back end's settings.
+  `check.py` also lints `scripts/` with the back end's settings and type checks it with `pyrightconfig.json`.
 - Typecheck: in `backend/`, `uv run pyright`. In `frontend/`, `npm run typecheck`.
 - API types: in `frontend/`, `npm run generate:api` after any change to the API. Commit both files it writes.
 - All checks (what CI runs): in the repo root, `uv run scripts/check.py`.
@@ -67,7 +67,8 @@ Run each from the folder shown.
   `snake_case` and `PascalCase` classes; TypeScript uses `camelCase`, and each file exports one `PascalCase` component.
 - **Python.** Type hints everywhere (pyright strict). A Google-style docstring on every module, class and
   function, in plain words. Small single-purpose functions; plain data and pure functions in `domain/`.
-  Values are frozen pydantic models.
+  Values are frozen pydantic models. Explicitly annotate assigned variables and module constants, even when
+  pyright can infer their types. Pyright and Pylance share the root `pyrightconfig.json`.
 - **TypeScript.** Strict mode. API types only come from the generated `src/api/schema.d.ts`; never write them
   by hand. The front end holds no rules: it draws what the back end sends.
 - **Errors.** `domain/` raises `ValueError` with a message a person can read. Routes turn errors into HTTP

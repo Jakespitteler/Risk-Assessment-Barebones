@@ -20,9 +20,6 @@ select = ["E", "W", "F", "I", "N", "UP", "B", "SIM", "ANN", "D"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-[tool.pyright]
-typeCheckingMode = "strict"
-pythonVersion = "3.13"
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = [".."]
