@@ -1,7 +1,7 @@
 ---
 id: 0002
 title: Walking skeleton with CI
-status: review
+status: in-progress
 owner: chatgpt
 branch: chatgpt/0002-review-fixes
 ---
@@ -73,3 +73,8 @@ assignments. Windows Vite shims are covered by tests; native Windows execution s
 Environment limitation: Playwright's browser download was denied by this cloud environment's network policy.
 The browser test passed using installed system Chromium 156 through a temporary browser-cache link outside
 the repo. The application's Playwright configuration was unchanged.
+
+Follow-up review from Jake: cover test imports and VS Code tool discovery, replace JSON Pyright
+configuration with TOML, associate ignore files correctly, and allow inferred types for constructor calls.
+Fetching the review branch on 2026-11-13 found no commits beyond `88ba9e8`; any additional local edits
+on Jake's computer were not visible on GitHub at that point.
