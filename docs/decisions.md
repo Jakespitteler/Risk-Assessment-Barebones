@@ -10,7 +10,8 @@ Newest first. One short entry per non-obvious decision.
   everything again is what makes people stop doing Take 5s properly. Keeping the first one unchanged keeps the
   record of what was first planned.
 - Alternatives considered: Only the warning (a fix after saving would still mean typing it all again). Only the
-  copy (the worker would only find out after saving). Editing a saved Take 5 (a finished Take 5 never changes, so its record could not be trusted).
+  copy (the worker would only find out after saving). Editing a saved Take 5 (a finished Take 5 never changes,
+  so its record can be trusted).
 - Decided by: human (Jake, 2026-11-13).
 
 ## 2026-11-13: The card's guidance belongs to the template (task 0004 review)
