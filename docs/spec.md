@@ -141,7 +141,7 @@ cell is a unique rank, so the app records it as 19. Its band, Extreme, is the sa
   worker's controls). The **after** rating is the one that counts for R3 and R5 (*proposed*, decision D6).
 - **R5 The Take 5's rating.** The Take 5's rating is the highest *after* rating of its hazards. A Take 5 always
   has at least one hazard, so it always has a rating.
-- **R6 Controls can't make it worse, and nothing can't make it better.** A hazard's *after* score must not be
+- **R6 Controls can't make it worse, and no controls can't make it better.** A hazard's *after* score must not be
   higher than its *before* score; the form asks the worker to fix it. A hazard with no controls is not rated
   again: its *after* rating is its *before* rating.
 
@@ -157,7 +157,8 @@ with it, so a saved Take 5 always shows the verdict the worker was given.
   start. Talk to your supervisor.") The app does not write JHAs.
 
 N/A never stops a job. A Take 5 with anything missing (the name, the job, where it is, an answer to a question,
-a rating, a first hazard, or the weak-controls question in T3 below) can't be submitted at all, so "missing" is a form error, not a verdict.
+a rating, a first hazard, or the weak-controls question in T3 below) can't be submitted at all, so "missing"
+is a form error, not a verdict.
 
 ### Thinking rules
 
@@ -168,11 +169,11 @@ in code, with no AI.
 - **T2 Say what you'll do.** A control that is only a vague phrase is not accepted. The form says "Say what
   you'll actually do." The phrases, ignoring capitals and punctuation: *be careful*, *take care*, *take 5*,
   *watch out*, *stay alert*, *pay attention*, *use common sense*, *be aware*.
-- **T3 Weak controls on a serious hazard.** When a hazard's *before* rating is 11 or more, it has at least
-  one control, and every one of its controls is weak, the app asks: "Everything here relies on people getting it right. Could you remove, isolate
-  or barricade it?" The worker must either add a strong control or write why none is possible before the Take 5
-  can be submitted. What they write is saved with the Take 5 and does not change the verdict. A hazard with no controls is not
-  asked; V2 already covers it.
+- **T3 Weak controls on a serious hazard.** When a hazard's *before* rating is 11 or more, it has at least one
+  control, and every one of its controls is weak, the app asks: "Everything here relies on people getting it
+  right. Could you remove, isolate or barricade it?" The worker must either add a strong control or write why
+  none is possible before the Take 5 can be submitted. What they write is saved with the Take 5 and does not
+  change the verdict. A hazard with no controls is not asked; V2 already covers it.
 - **T4 A real job description.** The job must be at least four words. "Change tyre" is not enough; "Change the
   front left tyre on LV12" is.
 
