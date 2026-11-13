@@ -2,8 +2,8 @@
 id: 0004
 title: Fill in a Take 5, part 1 - the job, hazards, ratings and controls (spec F2, F3)
 status: done
-owner: chatgpt
-branch: chatgpt/0004-take5-ui
+owner: claude
+branch: claude/project-thread-k14nwr
 ---
 
 ## Goal
@@ -45,55 +45,32 @@ screen with the verdict. The card's questions come in task 0005 and the challeng
 
 ## Notes / assumptions
 
-Don't start until the spec is approved (task 0001 is `done`). Depends on 0003. Until task 0008 adds the challenge
-question, a Take 5 is finished as soon as it is submitted. This is the largest slice; if it passes about 400
-changed lines, do the API in one PR and the screens in the next.
+Built by ChatGPT in PRs #8 (API) and #9 (screens), then reworked by Claude after review
+(the findings are listed in the follow-up PR's description).
 
-Claimed by ChatGPT. Plan: implement and test verdicts, draft validation, a repository port, SQLite storage
-and the four endpoints first, then the worker screens in a second branch/PR based on this branch, as the
-size note above directs. No new dependencies. Jake's answers below direct the UI.
+What there is:
 
-Jake answered: own phone at the job; one hazard at a time; labels with expandable guidance. These choices
-are recorded in the spec and decision log. The browser keeps its in-progress answers in memory
-while the form stays open; closing or reloading loses them.
+- API: the four endpoints in `docs/architecture.md`. Every error reply is declared in OpenAPI: a 422 is always
+  `FormErrors`, a 404 or 409 is `ErrorMessage`. `POST /api/take5s` takes `{id, draft}`; the phone makes the
+  UUID once, so a retry can't save twice, and other answers with the same ID get a 409 (Jake approved this).
+- Domain: `draft.py` checks a draft in one pass and names each gap by its dotted path. R6 is checked
+  directly. The card's guidance is part of `Take5Template`, so a saved Take 5 keeps it (Jake approved this).
+- Screens: job, hazards, then each hazard's before, controls and after, then review and result. The page is in
+  the URL, so the back gesture steps back a page. Each Continue asks `POST /api/take5s/check` and shows that
+  page's gaps there. The review and result draw what the back end returns. Removing a hazard or control can be
+  undone. The saved Take 5 goes straight into the result screen's cache.
 
-Backend implementation: `SavedTake5` extends the existing scoring model with submission details and a saved
-verdict. Drafts accept scale choices only, never scores/bands. `/check` returns dotted field paths/messages
-and a valid scoring model without writing storage. `/api/take5s` accepts `{id, draft}`; keep the UUID stable
-across retries. Submitting different input with the same ID returns 409. The first stored document wins
-atomically, including concurrent requests. Retrieval returns the stored verdict and template snapshot.
-The response envelope contains `take5` and its overall `rating`. The template endpoint also supplies card
-guidance and control kinds. SQLite defaults to ignored `backend/.data/take5.sqlite3`; `TAKE5_DATABASE_PATH`
-overrides it. No new dependencies. The UI is implemented in the next PR on top of this backend branch.
+Assumptions:
 
-Backend validation passed: `uv run scripts/check.py`, including 74 Python tests, strict Pyright, Ruff,
-markdown, front-end lint/format/types, three front-end tests, generated API consistency and the original
-browser test. API tests cover empty/partial drafts, increased after risk, missing controls, retrieval,
-immutable documents and safe retries; a service test also races duplicate submissions. UI acceptance
-criteria remain in progress in the stacked screens PR.
+- The draft and its submission ID are kept in the tab's `sessionStorage`, so a reload or a slip of the back
+  gesture loses nothing. They are cleared when the Take 5 is saved, or when the tab is closed. Only the
+  worker's name is kept after that, in `localStorage`, as before.
+- With no signal, Continue moves on after one 5-second try; the review checks everything again, and Finish
+  stays disabled until that check has come back.
+- Reads and the submit try up to three times when they get no answer or a 5xx, each within 10 seconds. They
+  are sent even when the phone says it is offline, so a screen never waits for good.
+- Undo lasts until the next edit or page, so it can never wipe newer answers. A 409 forgets the draft in that
+  tab, so the next Take 5 starts with a new ID.
 
-Backend PR: #8 (`chatgpt/0004-take5-api`). Screens are claimed on `chatgpt/0004-take5-ui`, based on it.
-
-Screens implementation: job details, own-word hazard list, one hazard at a time (before, controls, after),
-review, then saved result. No controls skips the second rating. Nothing is preselected except the remembered
-worker name. Guidance and control kinds come from the template. Server field errors return to the matching
-screen with the first invalid answer focused. Navigation stays in document flow so it cannot cover fields.
-The result URL reopens the immutable saved assessment. Only the worker name is remembered on this phone.
-
-The form blocks repeat clicks while sending and keeps its UUID after a failed response. A retry with changed
-answers cannot replace an assessment already saved; it offers a link to that original assessment instead.
-No card questions, thinking rules or AI challenge have been brought forward from later tasks.
-
-Final validation: `uv run scripts/check.py` passes: 74 Python tests, five component tests and ten browser tests,
-plus all lint, format, strict type and generated API checks. Browser tests cover both verdicts, multiple
-hazards, missing answers, R6, no controls, back navigation, duplicate clicks and lost-response retries including
-changed answers. At 360 px they check horizontal overflow and visible tap targets of at least 48 px.
-Screenshots were visually inspected. The cloud's browser-download CDN is blocked, so these tests used installed
-Chromium 156 through the external Playwright cache; project browser configuration is unchanged. This verifies
-browser layout and interaction, not physical use in sunlight or gloves.
-
-[Review guide and all nine phone screenshots](../reviews/0004/README.md). API PR #8 targets main; the screens
-PR targets `chatgpt/0004-take5-api`. Both are ready for human review. No PR has been merged by the agent.
-
-Browser tests require their own API process and refuse to reuse a running development API, so fake test
-assessments cannot be written to the development database. Stop the development server before running them.
+For the next tasks: task 0005 adds the card's questions to `Take5Template` and `Take5Draft`; `stageOfError()` in
+`frontend/src/features/take5/stage.ts` needs to place their error paths on the right page.

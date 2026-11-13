@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { useTemplate } from "../../api/take5";
-import { NOTHING_PICKED, RatingPicker } from "../../components/RatingPicker";
+import type { RatingChoice } from "../../api/take5";
+import { RatingPicker } from "../../components/RatingPicker";
 
 /** The walking skeleton's one screen: rate a risk on the matrix the back end sends. */
 export function RateRiskScreen() {
   const template = useTemplate();
-  const [rating, setRating] = useState(NOTHING_PICKED);
+  const [rating, setRating] = useState<RatingChoice>({
+    likelihood: null,
+    consequence: null,
+  });
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-white px-4 py-6">

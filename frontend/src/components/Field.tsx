@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-/** Keep a server-provided error beside the field and connected to assistive technology. */
+/** A labelled field, with the back end's error for it shown underneath. */
 export function Field({
   name,
   label,
@@ -9,34 +9,20 @@ export function Field({
 }: {
   name: string;
   label: string;
-  error?: string;
+  error?: string | undefined;
   children: ReactNode;
 }) {
   return (
-    <div className="field">
-      <label htmlFor={name}>{label}</label>
+    <div className="flex flex-col gap-2">
+      <label htmlFor={name} className="text-lg font-bold">
+        {label}
+      </label>
       {children}
       {error && (
-        <p className="field-error" id={`${name}-error`}>
+        <p id={`${name}-error`} className="font-semibold text-red-800">
           {error}
         </p>
       )}
     </div>
-  );
-}
-
-/** Expandable supporting text leaves the worker's own answers in focus. */
-export function Guidance({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <details className="guidance">
-      <summary>{title}</summary>
-      <div>{children}</div>
-    </details>
   );
 }

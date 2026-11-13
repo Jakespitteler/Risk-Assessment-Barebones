@@ -1,35 +1,88 @@
-"""The shapes of the API's requests and responses."""
+"""The shapes of the API's requests and responses, including its error replies."""
 
+from typing import ClassVar
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from risk_assessment.domain.controls import ControlKind
 from risk_assessment.domain.risk import RiskMatrix, RiskRating
-from risk_assessment.domain.take5.draft import Take5Draft
+from risk_assessment.domain.take5.draft import FieldError, Take5Draft
 from risk_assessment.domain.take5.saved import SavedTake5
+from risk_assessment.domain.take5.template import LevelGuidance
 
 
 class TemplateResponse(BaseModel):
-    """The card and control choices; the phone keeps no copy of these rules."""
+    """The card a new Take 5 is filled in on, so the phone keeps no copy of it.
+
+    Attributes:
+        name: The template's name.
+        matrix: The risk matrix the hazards are rated on.
+        control_kinds: Every kind of control, strongest first.
+        likelihood_guidance: What each likelihood means, in the card's words.
+        consequence_guidance: What each consequence means, in the card's words.
+        control_guidance: The card's advice on choosing controls.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     name: str
     matrix: RiskMatrix
     control_kinds: tuple[ControlKind, ...]
-    likelihood_guidance: tuple[tuple[str, str], ...]
-    consequence_guidance: tuple[tuple[str, str], ...]
+    likelihood_guidance: tuple[LevelGuidance, ...]
+    consequence_guidance: tuple[LevelGuidance, ...]
     control_guidance: str
 
 
 class SubmissionRequest(BaseModel):
-    """A stable submission ID makes retries return the first saved result."""
+    """A Take 5 to save, with an ID the phone made so a retry can't save it twice.
+
+    Attributes:
+        id: Made once by the phone and sent again, unchanged, on every retry.
+        draft: The worker's answers.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     id: UUID
     draft: Take5Draft
 
 
 class Take5Response(BaseModel):
-    """The saved document, with its overall score and band derived by the domain."""
+    """A saved Take 5, with the overall rating the back end worked out for it.
+
+    Attributes:
+        take5: The saved Take 5, with its verdict and a copy of its template.
+        rating: The Take 5's rating (spec R4 and R5).
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     take5: SavedTake5
     rating: RiskRating
+
+
+class ErrorMessage(BaseModel):
+    """The reply for a 404 or a 409: one message a person can read.
+
+    Attributes:
+        detail: What went wrong, in plain words.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    detail: str
+
+
+class FormErrors(BaseModel):
+    """The reply for every 422: what is missing or wrong, field by field.
+
+    Attributes:
+        detail: A summary for the top of the screen.
+        errors: Each problem, with the dotted path of the field it belongs beside.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    detail: str
+    errors: tuple[FieldError, ...]

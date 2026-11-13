@@ -1,29 +1,64 @@
-"""Check incomplete worker input and turn valid choices into matrix ratings."""
+"""Check a Take 5 the worker is still filling in, and rate it once it is complete.
 
-from pydantic import BaseModel, Field, ValidationError
+The phone sends only the worker's choices, never a score or a band. Every gap is
+reported in one pass, each with the dotted path of the field it belongs beside, such as
+`hazards.0.before.likelihood`.
+"""
+
+from typing import ClassVar
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from risk_assessment.domain.controls import Control, ControlKind
-from risk_assessment.domain.risk import RiskRating, rate
+from risk_assessment.domain.risk import RiskMatrix, RiskRating, rate
 from risk_assessment.domain.take5.take5 import Hazard, Take5
 from risk_assessment.domain.take5.template import Take5Template
 
+FILL_IN_MESSAGE: str = "Fill in this field."
+NO_HAZARD_MESSAGE: str = "List at least one hazard."
+NO_KIND_MESSAGE: str = "Pick a control kind."
+HIGHER_AFTER_MESSAGE: str = "Controls cannot make the after risk higher than before."
+
 
 class RatingChoice(BaseModel):
-    """The two choices a worker makes, with neither selected by default."""
+    """A likelihood and a consequence as the worker picked them; neither is preset.
+
+    Attributes:
+        likelihood: The picked likelihood, or None until one is picked.
+        consequence: The picked consequence, or None until one is picked.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     likelihood: str | None = None
     consequence: str | None = None
 
 
 class ControlDraft(BaseModel):
-    """A control while its description or kind may still be missing."""
+    """A control whose wording or kind may still be missing.
+
+    Attributes:
+        description: What the worker will do, in their own words.
+        kind: The kind of control, or None until one is picked.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     description: str = ""
     kind: ControlKind | None = None
 
 
 class HazardDraft(BaseModel):
-    """A hazard while the worker is filling in its ratings and controls."""
+    """A hazard while the worker is still rating it and writing its controls.
+
+    Attributes:
+        description: The hazard in the worker's own words.
+        before: The rating before controls.
+        controls: The controls, possibly none.
+        after: The rating after controls. Ignored when there are no controls (R6).
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     description: str = ""
     before: RatingChoice = Field(default_factory=RatingChoice)
@@ -32,7 +67,16 @@ class HazardDraft(BaseModel):
 
 
 class Take5Draft(BaseModel):
-    """Unsaved worker input; scores and bands are never accepted from the phone."""
+    """A Take 5 that hasn't been saved, as the phone sends it.
+
+    Attributes:
+        worker_name: Who is doing the Take 5.
+        job: What the job is.
+        location: Where the job is.
+        hazards: The hazards, in the order the worker listed them.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     worker_name: str = ""
     job: str = ""
@@ -41,113 +85,190 @@ class Take5Draft(BaseModel):
 
 
 class FieldError(BaseModel):
-    """A message and the field it belongs beside, using a dotted field path."""
+    """One gap or mistake, and the field it belongs beside.
+
+    Attributes:
+        path: The field's dotted path, such as `hazards.0.controls.1.kind`.
+        message: What to do about it, in plain words.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     path: str
     message: str
 
 
 class DraftCheck(BaseModel):
-    """The form errors, and the scoring model only when every field is valid."""
+    """What checking a draft found.
+
+    Attributes:
+        errors: Every gap or mistake, in the order of the form.
+        assessment: The rated Take 5, or None while there are errors.
+        can_submit: True when there are no errors.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     errors: tuple[FieldError, ...]
     assessment: Take5 | None
     can_submit: bool
 
 
-def _required_text(value: str, path: str, errors: list[FieldError]) -> str:
-    """Trim an answer and report a blank field without discarding other errors."""
-    cleaned: str = value.strip()
-    if not cleaned:
-        errors.append(FieldError(path=path, message="Fill in this field."))
-    return cleaned
-
-
-def _rating(
-    choice: RatingChoice, template: Take5Template, path: str, errors: list[FieldError]
-) -> RiskRating | None:
-    """Validate both scale choices, then ask the matrix for the score and band."""
-    for field, picked, scale in (
-        ("likelihood", choice.likelihood, template.matrix.likelihoods),
-        ("consequence", choice.consequence, template.matrix.consequences),
-    ):
-        if picked not in scale:
-            errors.append(
-                FieldError(path=f"{path}.{field}", message=f"Pick a {field}.")
-            )
-    if (
-        choice.likelihood not in template.matrix.likelihoods
-        or choice.consequence not in template.matrix.consequences
-    ):
-        return None
-    assert choice.likelihood is not None and choice.consequence is not None
-    return rate(template.matrix, choice.likelihood, choice.consequence)
-
-
-def _hazard(
-    draft: HazardDraft, template: Take5Template, path: str, errors: list[FieldError]
-) -> Hazard | None:
-    """Check one hazard and reuse the before rating when no controls were listed."""
-    error_count: int = len(errors)
-    description: str = _required_text(draft.description, f"{path}.description", errors)
-    before: RiskRating | None = _rating(
-        draft.before, template, f"{path}.before", errors
-    )
-    controls: list[Control] = []
-    for index, control in enumerate(draft.controls):
-        prefix: str = f"{path}.controls.{index}"
-        wording: str = _required_text(
-            control.description, f"{prefix}.description", errors
-        )
-        if control.kind is None:
-            errors.append(
-                FieldError(path=f"{prefix}.kind", message="Pick a control kind.")
-            )
-        elif wording:
-            controls.append(Control(description=wording, kind=control.kind))
-    after: RiskRating | None = (
-        _rating(draft.after, template, f"{path}.after", errors)
-        if draft.controls
-        else before
-    )
-    if len(errors) != error_count or before is None or after is None:
-        return None
-    try:
-        return Hazard(
-            description=description,
-            before=before,
-            controls=tuple(controls),
-            after=after,
-        )
-    except ValidationError as error:
-        message: str = error.errors(include_context=False)[0]["msg"].removeprefix(
-            "Value error, "
-        )
-        errors.append(FieldError(path=f"{path}.after", message=message))
-        return None
-
-
 def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
-    """Check all fields in one pass, returning errors without saving anything."""
+    """Check every field of a draft in one pass, and rate it if nothing is missing.
+
+    Args:
+        draft: The worker's answers so far.
+        template: The template the draft is filled in on.
+
+    Returns:
+        The errors, and the rated Take 5 when there are none.
+    """
     errors: list[FieldError] = []
-    for field, value in (
+    for path, value in (
         ("worker_name", draft.worker_name),
         ("job", draft.job),
         ("location", draft.location),
     ):
-        _required_text(value, field, errors)
+        _required_text(value, path, errors)
     if not draft.hazards:
-        errors.append(FieldError(path="hazards", message="List at least one hazard."))
+        errors.append(FieldError(path="hazards", message=NO_HAZARD_MESSAGE))
     hazards: list[Hazard] = []
-    for index, draft_hazard in enumerate(draft.hazards):
+    for index, hazard_draft in enumerate(draft.hazards):
         hazard: Hazard | None = _hazard(
-            draft_hazard, template, f"hazards.{index}", errors
+            hazard_draft, template.matrix, f"hazards.{index}", errors
         )
         if hazard is not None:
             hazards.append(hazard)
     assessment: Take5 | None = (
-        Take5(template=template, hazards=tuple(hazards)) if not errors else None
+        None if errors else Take5(template=template, hazards=tuple(hazards))
     )
     return DraftCheck(
         errors=tuple(errors), assessment=assessment, can_submit=not errors
     )
+
+
+def _hazard(
+    draft: HazardDraft, matrix: RiskMatrix, path: str, errors: list[FieldError]
+) -> Hazard | None:
+    """Check one hazard and rate it.
+
+    With no controls the after rating is the before rating (R6), and controls can't
+    make the after score higher than the before score (R6).
+
+    Args:
+        draft: The hazard as the worker filled it in.
+        matrix: The matrix to rate it on.
+        path: The hazard's dotted path, such as `hazards.0`.
+        errors: Where to add any errors found.
+
+    Returns:
+        The rated hazard, or None if it has any error.
+    """
+    errors_before: int = len(errors)
+    description: str = _required_text(draft.description, f"{path}.description", errors)
+    before: RiskRating | None = _rating(draft.before, matrix, f"{path}.before", errors)
+    controls: list[Control] = []
+    for index, control_draft in enumerate(draft.controls):
+        control: Control | None = _control(
+            control_draft, f"{path}.controls.{index}", errors
+        )
+        if control is not None:
+            controls.append(control)
+    after: RiskRating | None = (
+        _rating(draft.after, matrix, f"{path}.after", errors)
+        if draft.controls
+        else before
+    )
+    if before is not None and after is not None and after.score > before.score:
+        errors.append(FieldError(path=f"{path}.after", message=HIGHER_AFTER_MESSAGE))
+    if len(errors) > errors_before or before is None or after is None:
+        return None
+    return Hazard(
+        description=description, before=before, controls=tuple(controls), after=after
+    )
+
+
+def _control(
+    draft: ControlDraft, path: str, errors: list[FieldError]
+) -> Control | None:
+    """Check one control.
+
+    Args:
+        draft: The control as the worker filled it in.
+        path: The control's dotted path, such as `hazards.0.controls.1`.
+        errors: Where to add any errors found.
+
+    Returns:
+        The control, or None if its wording or its kind is missing.
+    """
+    description: str = _required_text(draft.description, f"{path}.description", errors)
+    if draft.kind is None:
+        errors.append(FieldError(path=f"{path}.kind", message=NO_KIND_MESSAGE))
+        return None
+    if not description:
+        return None
+    return Control(description=description, kind=draft.kind)
+
+
+def _rating(
+    choice: RatingChoice, matrix: RiskMatrix, path: str, errors: list[FieldError]
+) -> RiskRating | None:
+    """Check that both halves of a rating are picked, then look it up (R1).
+
+    Args:
+        choice: What the worker picked.
+        matrix: The matrix to look the rating up on.
+        path: The rating's dotted path, such as `hazards.0.before`.
+        errors: Where to add any errors found.
+
+    Returns:
+        The rating, or None if either half is missing or not on the matrix's scale.
+    """
+    likelihood: str | None = _picked(
+        choice.likelihood, matrix.likelihoods, f"{path}.likelihood", errors
+    )
+    consequence: str | None = _picked(
+        choice.consequence, matrix.consequences, f"{path}.consequence", errors
+    )
+    if likelihood is None or consequence is None:
+        return None
+    return rate(matrix, likelihood, consequence)
+
+
+def _picked(
+    level: str | None, scale: tuple[str, ...], path: str, errors: list[FieldError]
+) -> str | None:
+    """Check that a level was picked from a scale.
+
+    Args:
+        level: The level the worker picked, or None.
+        scale: The levels that can be picked.
+        path: The field's dotted path, ending in `likelihood` or `consequence`.
+        errors: Where to add an error if the level is missing.
+
+    Returns:
+        The level, or None if it is missing or not on the scale.
+    """
+    if level is None or level not in scale:
+        scale_name: str = path.rsplit(".", 1)[-1]
+        errors.append(FieldError(path=path, message=f"Pick a {scale_name}."))
+        return None
+    return level
+
+
+def _required_text(value: str, path: str, errors: list[FieldError]) -> str:
+    """Trim an answer, and report it if it is blank.
+
+    Args:
+        value: What the worker typed.
+        path: The field's dotted path.
+        errors: Where to add an error if the answer is blank.
+
+    Returns:
+        The answer without spaces at either end.
+    """
+    cleaned: str = value.strip()
+    if not cleaned:
+        errors.append(FieldError(path=path, message=FILL_IN_MESSAGE))
+    return cleaned

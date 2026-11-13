@@ -8,6 +8,7 @@ it("starts without a control kind selected and draws the API choices", () => {
   render(
     <ControlEditor
       control={{ description: "", kind: null }}
+      number={1}
       kinds={["Isolate the hazard", "Wear PPE"]}
       path="hazards.0.controls.0"
       errorFor={() => undefined}
@@ -32,6 +33,7 @@ it("connects field errors to the control inputs", () => {
   render(
     <ControlEditor
       control={{ description: "", kind: null }}
+      number={1}
       kinds={["Wear PPE"]}
       path="hazards.0.controls.0"
       errorFor={() => "Fill in this field."}
@@ -45,4 +47,21 @@ it("connects field errors to the control inputs", () => {
   expect(screen.getByRole("combobox").getAttribute("aria-invalid")).toBe(
     "true",
   );
+});
+
+it("names the control it removes", () => {
+  const onRemove = vi.fn();
+  render(
+    <ControlEditor
+      control={{ description: "Gloves", kind: "Wear PPE" }}
+      number={2}
+      kinds={["Wear PPE"]}
+      path="hazards.0.controls.1"
+      errorFor={() => undefined}
+      onChange={vi.fn()}
+      onRemove={onRemove}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Remove control 2" }));
+  expect(onRemove).toHaveBeenCalledOnce();
 });

@@ -3,7 +3,12 @@ name = "risk-assessment"
 version = "0.1.0"
 description = "The Take 5 app's back end: every rule and all the data."
 requires-python = ">=3.13"
-dependencies = ["fastapi>=0.162", "pydantic>=2.14", "uvicorn>=0.54"]
+dependencies = [
+    "fastapi>=0.162",
+    "pydantic>=2.14",
+    "pydantic-settings>=2.12",
+    "uvicorn>=0.54",
+]
 
 [dependency-groups]
 dev = ["httpx2>=2.16", "pyright>=1.1.414", "pytest>=9.2", "ruff>=0.17"]

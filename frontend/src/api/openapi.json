@@ -11,7 +11,7 @@
           "take5"
         ],
         "summary": "Get Template",
-        "description": "Return the matrix and every control kind for a new form.",
+        "description": "Return the template a new Take 5 is filled in on, and the control kinds.",
         "operationId": "get_template_api_take5_template_get",
         "responses": {
           "200": {
@@ -33,7 +33,7 @@
           "take5"
         ],
         "summary": "Check",
-        "description": "Return field errors and ratings without saving the form.",
+        "description": "Return what is missing and the ratings, without saving anything.",
         "operationId": "check_api_take5s_check_post",
         "requestBody": {
           "content": {
@@ -57,11 +57,11 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Something is missing or wrong",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/FormErrors"
                 }
               }
             }
@@ -75,7 +75,7 @@
           "take5"
         ],
         "summary": "Submit",
-        "description": "Save once and return the verdict; incomplete fields remain form errors.",
+        "description": "Check and save a Take 5 once, and return it with its verdict.\n\nA draft with gaps raises `InvalidDraftError`, which `api/errors.py` turns into\na 422.",
         "operationId": "submit_api_take5s_post",
         "requestBody": {
           "content": {
@@ -99,11 +99,21 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Something is missing or wrong",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/FormErrors"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "This ID was used for other answers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMessage"
                 }
               }
             }
@@ -117,7 +127,7 @@
           "take5"
         ],
         "summary": "Get",
-        "description": "Open the original saved document and verdict.",
+        "description": "Return a saved Take 5 with the verdict the worker was given.",
         "operationId": "get_api_take5s__take5_id__get",
         "parameters": [
           {
@@ -143,11 +153,21 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Something is missing or wrong",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/FormErrors"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No Take 5 has this ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMessage"
                 }
               }
             }
@@ -196,7 +216,7 @@
         },
         "type": "object",
         "title": "ControlDraft",
-        "description": "A control while its description or kind may still be missing."
+        "description": "A control whose wording or kind may still be missing.\n\nAttributes:\n    description: What the worker will do, in their own words.\n    kind: The kind of control, or None until one is picked."
       },
       "ControlKind": {
         "type": "string",
@@ -242,7 +262,21 @@
           "can_submit"
         ],
         "title": "DraftCheck",
-        "description": "The form errors, and the scoring model only when every field is valid."
+        "description": "What checking a draft found.\n\nAttributes:\n    errors: Every gap or mistake, in the order of the form.\n    assessment: The rated Take 5, or None while there are errors.\n    can_submit: True when there are no errors."
+      },
+      "ErrorMessage": {
+        "properties": {
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "ErrorMessage",
+        "description": "The reply for a 404 or a 409: one message a person can read.\n\nAttributes:\n    detail: What went wrong, in plain words."
       },
       "FieldError": {
         "properties": {
@@ -261,20 +295,29 @@
           "message"
         ],
         "title": "FieldError",
-        "description": "A message and the field it belongs beside, using a dotted field path."
+        "description": "One gap or mistake, and the field it belongs beside.\n\nAttributes:\n    path: The field's dotted path, such as `hazards.0.controls.1.kind`.\n    message: What to do about it, in plain words."
       },
-      "HTTPValidationError": {
+      "FormErrors": {
         "properties": {
           "detail": {
+            "type": "string",
+            "title": "Detail"
+          },
+          "errors": {
             "items": {
-              "$ref": "#/components/schemas/ValidationError"
+              "$ref": "#/components/schemas/FieldError"
             },
             "type": "array",
-            "title": "Detail"
+            "title": "Errors"
           }
         },
         "type": "object",
-        "title": "HTTPValidationError"
+        "required": [
+          "detail",
+          "errors"
+        ],
+        "title": "FormErrors",
+        "description": "The reply for every 422: what is missing or wrong, field by field.\n\nAttributes:\n    detail: A summary for the top of the screen.\n    errors: Each problem, with the dotted path of the field it belongs beside."
       },
       "Hazard": {
         "properties": {
@@ -330,7 +373,26 @@
         },
         "type": "object",
         "title": "HazardDraft",
-        "description": "A hazard while the worker is filling in its ratings and controls."
+        "description": "A hazard while the worker is still rating it and writing its controls.\n\nAttributes:\n    description: The hazard in the worker's own words.\n    before: The rating before controls.\n    controls: The controls, possibly none.\n    after: The rating after controls. Ignored when there are no controls (R6)."
+      },
+      "LevelGuidance": {
+        "properties": {
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "meaning": {
+            "type": "string",
+            "title": "Meaning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level",
+          "meaning"
+        ],
+        "title": "LevelGuidance",
+        "description": "What one level of a scale means, in the card's own words.\n\nAttributes:\n    level: The level, such as \"Rare\".\n    meaning: What it means, such as \"Could happen, but only in rare cases\"."
       },
       "RatingChoice": {
         "properties": {
@@ -359,7 +421,7 @@
         },
         "type": "object",
         "title": "RatingChoice",
-        "description": "The two choices a worker makes, with neither selected by default."
+        "description": "A likelihood and a consequence as the worker picked them; neither is preset.\n\nAttributes:\n    likelihood: The picked likelihood, or None until one is picked.\n    consequence: The picked consequence, or None until one is picked."
       },
       "RiskCell": {
         "properties": {
@@ -507,7 +569,7 @@
           "verdict"
         ],
         "title": "SavedTake5",
-        "description": "Add submission details to the scoring model without changing its rules."
+        "description": "A Take 5 as it was saved: what the worker gave, and the verdict they were shown.\n\nIt is never changed once saved, so it always shows the template and verdict the\nworker was given, even after the rules change.\n\nAttributes:\n    id: The ID the phone made when the worker started submitting.\n    created_at: When it was saved.\n    worker_name: Who did the Take 5.\n    job: What the job is.\n    location: Where the job is.\n    finished_at: When it was finished. Until task 0008 this is when it was saved.\n    verdict: The verdict the worker was shown."
       },
       "SubmissionRequest": {
         "properties": {
@@ -526,7 +588,7 @@
           "draft"
         ],
         "title": "SubmissionRequest",
-        "description": "A stable submission ID makes retries return the first saved result."
+        "description": "A Take 5 to save, with an ID the phone made so a retry can't save it twice.\n\nAttributes:\n    id: Made once by the phone and sent again, unchanged, on every retry.\n    draft: The worker's answers."
       },
       "Take5": {
         "properties": {
@@ -578,7 +640,7 @@
         },
         "type": "object",
         "title": "Take5Draft",
-        "description": "Unsaved worker input; scores and bands are never accepted from the phone."
+        "description": "A Take 5 that hasn't been saved, as the phone sends it.\n\nAttributes:\n    worker_name: Who is doing the Take 5.\n    job: What the job is.\n    location: Where the job is.\n    hazards: The hazards, in the order the worker listed them."
       },
       "Take5Response": {
         "properties": {
@@ -595,7 +657,7 @@
           "rating"
         ],
         "title": "Take5Response",
-        "description": "The saved document, with its overall score and band derived by the domain."
+        "description": "A saved Take 5, with the overall rating the back end worked out for it.\n\nAttributes:\n    take5: The saved Take 5, with its verdict and a copy of its template.\n    rating: The Take 5's rating (spec R4 and R5)."
       },
       "Take5Template": {
         "properties": {
@@ -605,6 +667,27 @@
           },
           "matrix": {
             "$ref": "#/components/schemas/RiskMatrix"
+          },
+          "likelihood_guidance": {
+            "items": {
+              "$ref": "#/components/schemas/LevelGuidance"
+            },
+            "type": "array",
+            "title": "Likelihood Guidance",
+            "default": []
+          },
+          "consequence_guidance": {
+            "items": {
+              "$ref": "#/components/schemas/LevelGuidance"
+            },
+            "type": "array",
+            "title": "Consequence Guidance",
+            "default": []
+          },
+          "control_guidance": {
+            "type": "string",
+            "title": "Control Guidance",
+            "default": ""
           }
         },
         "type": "object",
@@ -613,7 +696,7 @@
           "matrix"
         ],
         "title": "Take5Template",
-        "description": "The card a Take 5 is rated on, kept with the worker's assessment."
+        "description": "The card a Take 5 is filled in on. Each saved Take 5 keeps a copy of it.\n\nAttributes:\n    name: The card's name, such as \"Take 5 booklet\".\n    matrix: The risk matrix the hazards are rated on.\n    likelihood_guidance: What each likelihood means, shown beside the rating.\n    consequence_guidance: What each consequence means, shown beside the rating.\n    control_guidance: What makes a control strong or weak, shown beside the\n        controls."
       },
       "TemplateResponse": {
         "properties": {
@@ -633,34 +716,14 @@
           },
           "likelihood_guidance": {
             "items": {
-              "prefixItems": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ],
-              "type": "array",
-              "maxItems": 2,
-              "minItems": 2
+              "$ref": "#/components/schemas/LevelGuidance"
             },
             "type": "array",
             "title": "Likelihood Guidance"
           },
           "consequence_guidance": {
             "items": {
-              "prefixItems": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ],
-              "type": "array",
-              "maxItems": 2,
-              "minItems": 2
+              "$ref": "#/components/schemas/LevelGuidance"
             },
             "type": "array",
             "title": "Consequence Guidance"
@@ -680,47 +743,7 @@
           "control_guidance"
         ],
         "title": "TemplateResponse",
-        "description": "The card and control choices; the phone keeps no copy of these rules."
-      },
-      "ValidationError": {
-        "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
-          }
-        },
-        "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError"
+        "description": "The card a new Take 5 is filled in on, so the phone keeps no copy of it.\n\nAttributes:\n    name: The template's name.\n    matrix: The risk matrix the hazards are rated on.\n    control_kinds: Every kind of control, strongest first.\n    likelihood_guidance: What each likelihood means, in the card's words.\n    consequence_guidance: What each consequence means, in the card's words.\n    control_guidance: The card's advice on choosing controls."
       },
       "Verdict": {
         "properties": {
@@ -742,7 +765,7 @@
           "reasons"
         ],
         "title": "Verdict",
-        "description": "Whether work can start, with every applicable reason in order."
+        "description": "Whether the job can start, and why not.\n\nAttributes:\n    can_start: True for Good to go, False for Don't start yet.\n    reasons: Every reason that applies, in the order of the rules (V2, then V3)."
       }
     }
   }

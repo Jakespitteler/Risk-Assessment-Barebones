@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
-import type { RiskMatrix } from "../api/take5";
-import { NOTHING_PICKED, RatingPicker } from "./RatingPicker";
+import type { RatingChoice, RiskMatrix } from "../api/take5";
+import { RatingPicker } from "./RatingPicker";
 
 // A made-up two-by-two matrix, so the test proves nothing about the booklet is built in.
 const SMALL_MATRIX: RiskMatrix = {
@@ -22,7 +22,10 @@ const SMALL_MATRIX: RiskMatrix = {
 };
 
 function PickerOnSmallMatrix() {
-  const [rating, setRating] = useState(NOTHING_PICKED);
+  const [rating, setRating] = useState<RatingChoice>({
+    likelihood: null,
+    consequence: null,
+  });
   return (
     <RatingPicker matrix={SMALL_MATRIX} rating={rating} onChange={setRating} />
   );
@@ -62,5 +65,20 @@ describe("RatingPicker", () => {
     pick("How bad would it be?", "Serious");
 
     expect(screen.getByRole("status").textContent).toBe("3Medium");
+  });
+
+  it("shows each half's error beside its question", () => {
+    render(
+      <RatingPicker
+        matrix={SMALL_MATRIX}
+        rating={{ likelihood: "Often", consequence: null }}
+        onChange={() => undefined}
+        errors={{ consequence: "Pick a consequence." }}
+      />,
+    );
+
+    const group = screen.getByRole("group", { name: "How bad would it be?" });
+    expect(group.getAttribute("aria-invalid")).toBe("true");
+    expect(within(group).getByText("Pick a consequence.")).toBeTruthy();
   });
 });
