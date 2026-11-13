@@ -87,7 +87,7 @@ backend/
                                    filled in on. BOOKLET_TEMPLATE is the only one for now
                 take5.py           Take5, Hazard: the filled-in card                      (spec R4 to R6)
                 verdict.py         verdict(take5) -> Verdict with its reasons            (spec V1 to V3)
-                thinking.py        the pushback rules                                     (spec T2 to T4)
+                thinking.py        the push back rules                                    (spec T2 to T4)
                 challenge.py       what the AI is told, the check on its question,
                                    the fallback question, the check on the answer         (spec C1 to C4)
         services/          what the app does

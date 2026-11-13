@@ -1,6 +1,21 @@
 {
     "cSpell.words": [
+        "Barebones",
+        "creationflags",
+        "docstrings",
+        "fastapi",
+        "httpx",
+        "killpg",
+        "NONINFRINGEMENT",
         "pydantic",
-        "pytest"
+        "pydocstyle",
+        "pyproject",
+        "pytest",
+        "Starlette",
+        "sublicense",
+        "taskkill",
+        "testpaths",
+        "uvicorn",
+        "venv"
     ]
 }

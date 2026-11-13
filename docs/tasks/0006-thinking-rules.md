@@ -8,7 +8,7 @@ branch:
 
 ## Goal
 
-Add the fixed rules that stop the app being used on autopilot: own words first, no vague controls, pushback on weak
+Add the fixed rules that stop the app being used on autopilot: own words first, no vague controls, push back on weak
 controls for a serious hazard, and a real job description.
 
 ## Acceptance criteria
