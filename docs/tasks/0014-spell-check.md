@@ -46,5 +46,5 @@ spelling.
 
 Jake's follow-ups the same day, also in this pull request: the `$schema` lines came out of the cspell settings
 (VS Code would not load the schema from an untrusted address), VS Code now allows the app's typographic
-apostrophe and multiplication sign, AGENTS.md has the one-parameter-per-line rule, and tasks 0015 to 0017 were
+apostrophe and multiplication sign, AGENTS.md has the one-parameter-per-line rule, and tasks 0015 to 0018 were
 added to the order of work.
