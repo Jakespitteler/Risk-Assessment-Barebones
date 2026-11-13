@@ -3,7 +3,7 @@ id: 0004
 title: Fill in a Take 5, part 1 - the job, hazards, ratings and controls (spec F2, F3)
 status: in-progress
 owner: chatgpt
-branch: chatgpt/0004-take5-api
+branch: chatgpt/0004-take5-ui
 ---
 
 ## Goal
@@ -71,3 +71,5 @@ markdown, front-end lint/format/types, three front-end tests, generated API cons
 browser test. API tests cover empty/partial drafts, increased after risk, missing controls, retrieval,
 immutable documents and safe retries; a service test also races duplicate submissions. UI acceptance
 criteria remain in progress in the stacked screens PR.
+
+Backend PR: #8 (`chatgpt/0004-take5-api`). Screens are claimed on `chatgpt/0004-take5-ui`, based on it.
