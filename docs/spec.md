@@ -344,6 +344,9 @@ The first four screens of the core workflow, saved when the worker submits.
 - Acceptance: the result screen shows the verdict, every reason, each hazard with its controls and its before and
   after ratings, and the challenge question with the worker's answer.
 - Acceptance: no screen ever shows a score without its band.
+- Acceptance: before Finish, the review warns about each hazard with no controls (it will mean Don't start yet),
+  with a way to add one. The warning never blocks Finish.
+- Acceptance: a Don't start yet result offers to copy its answers into a new Take 5. The saved one never changes.
 
 ### F4: Thinking rules
 

@@ -2,6 +2,17 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-13: A Don't start yet can be fixed in a new Take 5 (task 0010)
+
+- Decision: The review warns about a hazard with no controls before Finish, with a way to add one. A Don't start
+  yet result offers to copy its answers into a new Take 5. The saved one stays as it was.
+- Why: Jake tried the app and was told "Say how you will control: ..." with no way to add the control. Typing
+  everything again is what makes people stop doing Take 5s properly. Keeping the first one unchanged keeps the
+  record of what was first planned.
+- Alternatives considered: Only the warning (a fix after saving would still mean typing it all again). Only the
+  copy (the worker would only find out after saving). Editing a saved Take 5 (a finished Take 5 never changes, so its record could not be trusted).
+- Decided by: human (Jake, 2026-11-13).
+
 ## 2026-11-13: The card's guidance belongs to the template (task 0004 review)
 
 - Decision: The likelihood, consequence and control guidance are fields of `Take5Template`, and
