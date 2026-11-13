@@ -57,11 +57,11 @@ tests/             mirrors src/take5/
 
 | Entity | Key fields | Notes |
 | --- | --- | --- |
-| `Take5` | `id`, `created_at`, `worker_name`, `job`, `location`, `think_through` (question to answer), `hazard_questions` (question to answer), `hazards` | One filled-in card. Never changed after it is saved |
-| `Hazard` | `description`, `before` (rating), `controls`, `after` (rating), `weak_controls_reason` | Belongs to one Take 5. `weak_controls_reason` is the worker's answer to spec T3, when it was asked |
+| `Take5` | `id`, `created_at`, `worker_name`, `job`, `location`, `think_through` (question to answer), `hazard_questions` (question to answer), `hazards`, `verdict` | One filled-in card. Never changed after it is saved |
+| `Hazard` | `description`, `before` (rating), `controls`, `after` (rating), `weak_controls_reason` | Belongs to one Take 5. With no controls `after` is `before` (spec R6). `weak_controls_reason` is the worker's answer to spec T3, when it was asked |
 | `Control` | `description`, `kind` (`ControlKind`) | Belongs to one hazard |
 | `RiskRating` | `likelihood`, `consequence`, and from the matrix: `score`, `band` | A value, not a stored row. Score and band are always worked out, never typed in |
-| `Verdict` | `can_start`, `reasons` | Worked out from a `Take5` every time it is shown; not stored |
+| `Verdict` | `can_start`, `reasons` | Worked out once by `domain/verdict.py` when the Take 5 is submitted, then saved inside it, so a later rule change never rewrites an old verdict |
 
 Storage is one table. The whole Take 5 is saved as one JSON document, with the few columns the list page needs
 beside it:
@@ -76,11 +76,14 @@ time to split it, and it is a recorded decision to revisit.
 
 ## Boundaries
 
-A package only imports from packages below it:
+What each package may import:
 
 ```
-web       ->  services  ->  domain
+domain    ->  nothing in the app
+services  ->  domain
 storage   ->  services.ports, domain
+web       ->  services, domain
+web/app.py is the one exception: it also imports storage, to plug it in
 ```
 
 - **`domain`** owns every scoring, verdict and thinking rule. It uses only the standard library and pydantic. It
@@ -95,6 +98,11 @@ storage   ->  services.ports, domain
 Anything outside the app sits behind a Protocol like `Take5Repository`, so it can be replaced without touching
 its callers. The database is the only such thing in the first version. An AI check, when it comes, will be a
 `Take5Reviewer` Protocol with one adapter per provider (Claude, ChatGPT, Gemini).
+
+The five screens are one HTML form on one page. A little plain JavaScript shows one part at a time and the score
+as ratings are picked; the server gets one post at the end, checks it again with the same domain rules, and
+either saves it or shows the form back with each error beside its field. So there is no half-finished Take 5 on
+the server and no session to manage. The worker's name is remembered in the browser's own storage.
 
 ## Testing strategy
 

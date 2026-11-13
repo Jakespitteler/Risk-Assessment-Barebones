@@ -11,7 +11,7 @@ Let a worker look back at saved Take 5s: a list, newest first, and the result pa
 
 ## Acceptance criteria
 - [ ] A list page shows the date, worker, job and verdict of each saved Take 5, newest first.
-- [ ] Opening one shows the same result page the worker saw when they submitted it.
+- [ ] Opening one shows the same result page the worker saw when they submitted it, with the verdict that was saved then.
 - [ ] There is no route or form that changes a saved Take 5.
 - [ ] Service and storage tests cover listing; an end-to-end test covers the list and opening one.
 - [ ] Phone-width (360 px) screenshots of every new or changed page are attached to the PR.

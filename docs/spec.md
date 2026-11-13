@@ -32,9 +32,11 @@ Where and when it is used (carried over from the original app; Jake to confirm):
 
 ## Core workflow
 
-The five screens follow the five steps of the Take 5 booklet.
+The five screens follow the five steps of the Take 5 booklet. They are five parts of one form: nothing is sent
+or saved until the worker submits at the end.
 
-1. **The job.** The worker types their name, what the job is and where it is, in their own words.
+1. **The job.** The worker types their name, what the job is and where it is, in their own words. All three
+   are needed.
 2. **Think through the task.** Seven questions from the card (below). Each is answered Yes, No or N/A. Nothing is
    selected to begin with and there is no "all Yes" button. A No means *sort this out first*.
 3. **Spot the hazards.** The worker first writes at least one thing that could hurt them or someone else. Only
@@ -44,10 +46,11 @@ The five screens follow the five steps of the Take 5 booklet.
 4. **Assess the risk and make the changes.** For each hazard the worker:
    1. rates how likely and how bad it is **before** any controls,
    2. writes each control and picks what kind of control it is,
-   3. rates how likely and how bad it is **after** those controls.
+   3. rates how likely and how bad it is **after** those controls. With no controls there is nothing to rate
+      again.
    The app shows the score and band from the risk matrix as soon as both parts of a rating are picked.
-5. **Result.** The Take 5 is saved and the worker sees one verdict, *Don't start yet* or *Good to go*, with the
-   reasons in plain words.
+5. **Result.** The Take 5 is saved with its verdict and the worker sees it: *Don't start yet* or *Good to go*,
+   with the reasons in plain words.
 
 Saved Take 5s can be opened again from a list. A saved Take 5 is never edited; if the job changes the worker
 does a new one.
@@ -138,21 +141,23 @@ cell is a unique rank, so the app records it as 19. Its band, Extreme, is the sa
   worker's controls). The **after** rating is the one that counts for R3 and R5 (*proposed*, decision D6).
 - **R5 The Take 5's rating.** The Take 5's rating is the highest *after* rating of its hazards. A Take 5 always
   has at least one hazard, so it always has a rating.
-- **R6 Controls can't make it worse.** A hazard's *after* score must not be higher than its *before* score. The
-  form asks the worker to fix it; it can't be saved that way.
+- **R6 Controls can't make it worse, and nothing can't make it better.** A hazard's *after* score must not be
+  higher than its *before* score; the form asks the worker to fix it. A hazard with no controls is not rated
+  again: its *after* rating is its *before* rating.
 
 ### Verdict rules
 
 The verdict is *Don't start yet* if any of the reasons below apply, and *Good to go* if none do. Every reason
-that applies is shown, in this order.
+that applies is shown, in this order. The verdict is worked out once, when the Take 5 is submitted, and saved
+with it, so a saved Take 5 always shows the verdict the worker was given.
 
 - **V1** A think-through question is answered No. ("You answered No to: ... Sort this out first.")
 - **V2** A hazard has no controls. ("Say how you will control: ...")
 - **V3** The Take 5's rating is 11 or more. ("The risk is High (12). At 11 or more you need a JHA before you
   start. Talk to your supervisor.") The app does not write JHAs.
 
-N/A never stops a job. A Take 5 with anything missing (a question, a rating, a first hazard, or the
-weak-controls question in T3 below) can't be submitted at all, so "missing" is a form error, not a verdict.
+N/A never stops a job. A Take 5 with anything missing (the name, the job, where it is, an answer to a question,
+a rating, a first hazard, or the weak-controls question in T3 below) can't be submitted at all, so "missing" is a form error, not a verdict.
 
 ### Thinking rules
 
@@ -163,10 +168,11 @@ in code, with no AI.
 - **T2 Say what you'll do.** A control that is only a vague phrase is not accepted. The form says "Say what
   you'll actually do." The phrases, ignoring capitals and punctuation: *be careful*, *take care*, *take 5*,
   *watch out*, *stay alert*, *pay attention*, *use common sense*, *be aware*.
-- **T3 Weak controls on a serious hazard.** When a hazard's *before* rating is 11 or more and every one of its
-  controls is weak, the app asks: "Everything here relies on people getting it right. Could you remove, isolate
+- **T3 Weak controls on a serious hazard.** When a hazard's *before* rating is 11 or more, it has at least
+  one control, and every one of its controls is weak, the app asks: "Everything here relies on people getting it right. Could you remove, isolate
   or barricade it?" The worker must either add a strong control or write why none is possible before the Take 5
-  can be submitted. What they write is saved with the Take 5.
+  can be submitted. What they write is saved with the Take 5 and does not change the verdict. A hazard with no controls is not
+  asked; V2 already covers it.
 - **T4 A real job description.** The job must be at least four words. "Change tyre" is not enough; "Change the
   front left tyre on LV12" is.
 
@@ -189,7 +195,8 @@ Rating a hazard (R1, R2, R3):
 | 9 | Possible | Major | 18 Extreme, JHA | Bottom of the Extreme band |
 | 10 | Unlikely | Critical | 19 Extreme, JHA | The cell the printed card misprints as 18 |
 
-Rating a Take 5 (R4, R5, R6). Ratings are written likelihood / consequence.
+Rating a Take 5 (R4, R5, R6). Ratings are written likelihood / consequence. Each hazard has one control,
+"Barricade the hazard", unless the row says otherwise.
 
 | # | Hazards (before, then after) | Expected | Why |
 |---|---|---|---|
@@ -197,8 +204,9 @@ Rating a Take 5 (R4, R5, R6). Ratings are written likelihood / consequence.
 | 12 | A: Possible / Minor (8), then Unlikely / Minor (5). B: Likely / Minor (12), then Likely / Minor (12) | Take 5 rating 12 High, JHA | R5: one hazard at 11 or more is enough |
 | 13 | A: Possible / Major (18), then Rare / Major (10) | Take 5 rating 10 High, no JHA | R4: the *after* rating counts, even though *before* was Extreme |
 | 14 | No hazards | Can't be submitted | R5: every Take 5 has at least one hazard |
-| 15 | A: Unlikely / Minor (5), then Possible / Minor (8) | Can't be saved | R6: controls can't raise the score |
-| 16 | A: Possible / Minor (8), then Possible / Minor (8) | Take 5 rating 8 Moderate | R6: an unchanged score is allowed |
+| 15 | A: Unlikely / Minor (5), then Possible / Minor (8) | Can't be submitted | R6: controls can't raise the score |
+| 16 | A: Possible / Minor (8), then Possible / Minor (8) | Take 5 rating 8 Moderate, no JHA | R6: an unchanged score is allowed |
+| 17 | A: Possible / Minor (8), with no controls | Take 5 rating 8 Moderate, no JHA | R6: with no controls the *after* rating is the *before* rating |
 
 Verdict (V1 to V3). Unless the row says otherwise: every think-through question is Yes, every hazard question
 is No, and there is one hazard rated Possible / Minor (8) then Unlikely / Minor (5) with one control, "Barricade
@@ -206,59 +214,65 @@ the hazard".
 
 | # | What is different | Expected verdict | Why |
 |---|---|---|---|
-| 17 | Nothing | Good to go | No reason applies |
-| 18 | "Do you have the necessary permits?" is No | Don't start yet | V1 |
-| 19 | "Do you have the necessary permits?" is N/A | Good to go | N/A never stops a job |
-| 20 | "Will I be working at heights?" is Yes | Good to go | A hazard question is a prompt, not a verdict rule |
-| 21 | The hazard has no controls | Don't start yet | V2 |
-| 22 | The hazard is Likely / Minor (12) before and after | Don't start yet | V3: 11 or more |
-| 23 | The hazard is Almost Certain / Low (11) before and after | Don't start yet | V3: exactly 11 |
-| 24 | The hazard is Possible / Major (18), then Rare / Major (10) | Good to go | V3: 10 is below the threshold |
-| 25 | "Do you have the correct PPE?" is No, and the hazard has no controls | Don't start yet, two reasons, V1 first | Every reason is shown, in order |
+| 18 | Nothing | Good to go | No reason applies |
+| 19 | "Do you have the necessary permits?" is No | Don't start yet | V1 |
+| 20 | "Do you have the necessary permits?" is N/A | Good to go | N/A never stops a job |
+| 21 | "Will I be working at heights?" is Yes | Good to go | A hazard question is a prompt, not a verdict rule |
+| 22 | The hazard has no controls (so it is rated 8) | Don't start yet | V2 |
+| 23 | The hazard is Likely / Minor (12) before and after | Don't start yet | V3: 11 or more |
+| 24 | The hazard is Almost Certain / Low (11) before and after | Don't start yet | V3: exactly 11 |
+| 25 | The hazard is Possible / Major (18), then Rare / Major (10) | Good to go | V3: 10 is below the threshold |
+| 26 | "Do you have the correct PPE?" is No, and the hazard has no controls | Don't start yet, with the V1 reason then the V2 reason | Every reason is shown, in order |
+| 27 | "Do you have the correct PPE?" is No, and the hazard is Likely / Minor (12) before and after | Don't start yet, with the V1 reason then the V3 reason | Every reason is shown, in order |
 
-Thinking rules (T2, T3, T4):
+Thinking rules (T2, T3, T4). T1 is about what the page shows, so it is tested through the page (see F4).
 
 | # | Input | Expected | Why |
 |---|---|---|---|
-| 26 | Control "Be careful." | Not accepted | T2, ignoring capitals and punctuation |
-| 27 | Control "Be careful of the pinch point when lowering the tray" | Accepted | T2 only catches a control that is nothing but the phrase |
-| 28 | Before Possible / Major (18); controls "Wear PPE" and "Ensure correct behaviour" | Weak-controls question asked | T3: 11 or more and all weak |
-| 29 | Before Possible / Major (18); controls "Wear PPE" and "Isolate the hazard" | Not asked | T3: one strong control is enough |
-| 30 | Before Rare / Major (10); control "Wear PPE" | Not asked | T3: 10 is below 11 |
-| 31 | Before Almost Certain / Low (11); control "Put systems in place" | Asked | T3: exactly 11 |
-| 32 | Example 28, with the question left blank | Can't be submitted | T3: it must be answered |
-| 33 | Job "Change tyre" | Not accepted | T4: two words |
-| 34 | Job "Change tyre on LV12" | Accepted | T4: exactly four words |
+| 28 | Control "Be careful." | Not accepted | T2, ignoring capitals and punctuation |
+| 29 | Control "Be careful of the pinch point when lowering the tray" | Accepted | T2 only catches a control that is nothing but the phrase |
+| 30 | Before Possible / Major (18); controls "Wear PPE" and "Ensure correct behaviour" | Weak-controls question asked | T3: 11 or more and all weak |
+| 31 | Before Possible / Major (18); controls "Wear PPE" and "Isolate the hazard" | Not asked | T3: one strong control is enough |
+| 32 | Before Rare / Major (10); control "Wear PPE" | Not asked | T3: 10 is below 11 |
+| 33 | Before Almost Certain / Low (11); control "Put systems in place" | Asked | T3: exactly 11 |
+| 34 | Before Possible / Major (18); no controls | Not asked | T3 needs at least one control; V2 covers this |
+| 35 | Example 30, with the question left blank | Can't be submitted | T3: it must be answered |
+| 36 | Example 30, answered "Live testing, so the panel can't be isolated" | Can be submitted; the answer is saved | T3: a reason is enough, and it does not change the verdict |
+| 37 | Job "Change tyre" | Not accepted | T4: two words |
+| 38 | Job "Change the tyre" | Not accepted | T4: three words, one short |
+| 39 | Job "Change tyre on LV12" | Accepted | T4: exactly four words |
 
 ## Features
 
 ### F1: Rate a risk
 The matrix, the bands and the JHA threshold, as one pure module with no web or database code.
-- Acceptance: worked examples 1 to 16 pass as tests.
+- Acceptance: worked examples 1 to 17 pass as tests.
 - Acceptance: every one of the 25 cells is checked against the matrix table above.
 
 ### F2: Fill in a Take 5
 The five screens of the core workflow, saved when the worker submits.
-- Acceptance: a Take 5 can't be submitted with a question unanswered, a rating half picked, or a blank name.
+- Acceptance: a Take 5 can't be submitted with anything missing (the list is under Verdict rules); each gap is
+  named beside its field.
 - Acceptance: no answer is selected when a screen opens.
 - Acceptance: the score and band show as soon as a likelihood and a consequence are both picked.
 - Acceptance: the Take 5 is saved before the result page is shown.
+- Acceptance: the phone remembers the worker's name for next time.
 - Acceptance: every screen is usable one-handed on a 360 px wide phone, with tap targets at least 48 px high.
 
 ### F3: The verdict
-- Acceptance: worked examples 17 to 25 pass as tests.
+- Acceptance: worked examples 18 to 27 pass as tests.
 - Acceptance: the result page shows the verdict, every reason, and each hazard with its controls and its before
   and after ratings.
 - Acceptance: the page never shows a score without its band.
 
 ### F4: Thinking rules
-- Acceptance: worked examples 26 to 34 pass as tests.
-- Acceptance: the hazard questions are not in the page until one hazard has been written (T1).
+- Acceptance: worked examples 28 to 39 pass as tests.
+- Acceptance: the hazard questions can't be seen or answered until one hazard has been written (T1).
 - Acceptance: the answer to a weak-controls question is saved and shown on the result page.
 
 ### F5: Saved Take 5s
 - Acceptance: a list of saved Take 5s, newest first, shows the date, worker, job and verdict of each.
-- Acceptance: opening one shows the same result page the worker saw.
+- Acceptance: opening one shows the same result page the worker saw, with the verdict saved at the time.
 - Acceptance: a saved Take 5 can't be changed.
 
 ## Out of scope (for now)
@@ -269,7 +283,7 @@ The five screens of the core workflow, saved when the worker submits.
 - Writing or signing a JHA. The app only says one is needed.
 - Journey plans, hazard report cards, scanning a paper card, photos, PDFs.
 - Admin tools, and a different card per company.
-- Working with no signal.
+- Working with no signal, and keeping a half-filled Take 5 if the page is closed.
 - Starting a Take 5 from an earlier one. Copying is the fastest way to stop thinking.
 
 ## Decisions waiting on Jake
