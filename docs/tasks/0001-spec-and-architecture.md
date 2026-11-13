@@ -1,7 +1,7 @@
 ---
 id: 0001
 title: Write the spec and architecture
-status: review
+status: done
 owner: claude
 branch: claude/project-thread-ih4nvm
 ---
@@ -15,7 +15,7 @@ Turn the human's description of the app into docs/spec.md and docs/architecture.
 - [x] Stack choice recorded in docs/decisions.md with rationale.
 - [x] AGENTS.md "Stack" line updated.
 - [x] Follow-up feature tasks created in docs/tasks/ (one per vertical slice).
-- [ ] Human has approved the spec.
+- [x] Human has approved the spec.
 
 ## Notes / assumptions
 - Jake made all twelve product decisions in chat on 2026-11-13; they are listed in the spec under "Decisions
@@ -28,8 +28,8 @@ Turn the human's description of the app into docs/spec.md and docs/architecture.
   is in version 1. The spec lists it under "Planned for later", and `architecture.md` was reshaped so version 1
   does not block it (shared building blocks, the card as data, one port for any AI). Tasks 0003 to 0009 were
   updated to the new file layout.
-- The last acceptance criterion, "Human has approved the spec", is met when Jake merges this PR. Whoever merges
-  it should tick that box and set `status: done` in the same merge, or in the first commit of the next task.
+- Jake approved the spec by merging pull request #1 on 2026-11-13. The status and the last box were set to done
+  in a small follow-up pull request, because nothing is committed straight to `main`.
 - The description this was built from: the project brief (make the Take 5 as good as possible, make people
   think about the real risk, a back end Jake fully understands) and the Take 5 feature of the original
   Risk-Assessment app. The card's questions, the likelihood and consequence tables and the matrix are copied
