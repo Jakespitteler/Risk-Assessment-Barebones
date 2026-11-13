@@ -47,7 +47,7 @@ def _booklet_band(score: int) -> str:
     )
 
 
-BOOKLET_MATRIX: RiskMatrix = RiskMatrix(
+BOOKLET_MATRIX = RiskMatrix(
     likelihoods=_BOOKLET_LIKELIHOODS,
     consequences=_BOOKLET_CONSEQUENCES,
     cells=tuple(

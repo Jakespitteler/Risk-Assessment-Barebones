@@ -21,13 +21,33 @@ You need git, [uv](https://docs.astral.sh/uv/) and Node.js 22 or newer.
 
 Press Ctrl+C to stop. Both halves restart by themselves when their code changes.
 
-Open the repository root in VS Code. After `uv sync`, the workspace settings select `backend/.venv` and
-`pyrightconfig.json` resolves the `backend/src` package for Pylance in strict mode. If you previously selected
-another interpreter, use **Python: Select Interpreter** to choose `backend/.venv`.
+Open the repository root in VS Code. `[tool.pyright]` in the root `pyproject.toml` resolves `backend/src`
+for the app and tests in strict mode. The back end's own `pyproject.toml` still owns its dependencies and Ruff.
+From `backend/`, use `uv run pyright --project ..` so the checker uses the repository as its import root.
+This keeps the launcher's `scripts` package distinct from the back end's OpenAPI export scripts.
+
+If Pylance reports missing app imports or `pytest`:
+
+1. Run `uv sync --locked` in `backend/` to install the app and development tools.
+2. Run **Python: Select Interpreter** in VS Code and select `backend/.venv/Scripts/python.exe` on Windows
+   (`backend/.venv/bin/python` on Linux/macOS). The workspace default only applies if you have not already
+   selected another interpreter; it cannot override a selection VS Code has saved.
+3. Run **Developer: Reload Window**. The test explorer is configured to run pytest from `backend/`.
+
+The Ruff extension uses its bundled executable and the back end's Ruff configuration, so it can format
+and sort imports without discovering a binary in a different Python environment. If it still reports a
+binary error, update or reinstall the **Ruff** extension and reload the window. Its Output log is needed
+to diagnose a remaining failure. Disable the separate **isort** extension **for this workspace**: Ruff
+already sorts imports with its `I` rules. It is not a project dependency.
+
+Ignore files such as `.prettierignore` are associated with the **Ignore** language, not Markdown. If an
+already-open file still shows Markdown diagnostics after reloading, use **Change Language Mode** to select
+**Ignore**. With no Ignore language extension installed, select **Plain Text** instead.
 
 If uv warns that `VIRTUAL_ENV` belongs to another environment, deactivate that environment first. The warning
 comes from uv before the script starts; the launcher already removes that variable for its child processes.
-The front end's `.npmrc` uses the HTTPS npm registry.
+The front end's `.npmrc` is npm's project configuration. Its one line selects `https://registry.npmjs.org/`
+to avoid the plaintext HTTP registry warning; it contains no credentials or additional dependencies.
 
 ## Test it
 

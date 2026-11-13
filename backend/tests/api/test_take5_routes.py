@@ -10,7 +10,7 @@ from risk_assessment.domain.risk import RiskCell, RiskMatrix
 
 def test_the_template_sends_the_booklet_matrix() -> None:
     """The front end gets the whole matrix, so it never needs its own copy."""
-    client: TestClient = TestClient(create_app())
+    client = TestClient(create_app())
 
     response: Response = client.get("/api/take5/template")
 

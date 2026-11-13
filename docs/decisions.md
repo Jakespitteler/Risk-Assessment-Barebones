@@ -4,14 +4,17 @@ Newest first. One short entry per non-obvious decision.
 
 ## 2026-11-13: One type-checking configuration for the editor and checks (task 0002 review)
 
-- Decision: Put strict Pyright settings in the root `pyrightconfig.json`, including `backend/src` and
-  `backend/.venv`. VS Code defaults to that environment. Explicitly annotate assigned Python variables and
-  constants even when their types can be inferred.
+- Decision: Put strict Pyright settings under `[tool.pyright]` in the root `pyproject.toml`, including
+  `backend/src` and `backend/.venv`. VS Code defaults to that environment. Explicitly annotate assigned
+  Python variables and constants, except direct constructor calls whose class already makes the type clear.
 - Why: Opening the whole repository left Pylance unable to resolve the app import in `export_openapi.py`.
   A shared root configuration gives the editor and command-line checks the same paths and strict rules.
-  Strict checking alone permits inferred types, while Jake wants explicit annotations.
+  Strict checking alone permits inferred types, while Jake wants explicit annotations for computed results
+  and collections. His follow-up review clarified that `app = FastAPI(...)` needs no redundant annotation.
 - Alternatives considered: Editor-only import paths, which could diverge from the command-line checks.
-- Decided by: chatgpt for configuration placement, following Jake's import and annotation review requests.
+  The initial root JSON configuration was replaced with TOML at Jake's request. Keeping only the nested
+  back-end configuration would leave Pylance without configuration when the whole repository is opened.
+- Decided by: human for the annotation exception and TOML preference; chatgpt for root configuration placement.
 
 ## 2026-11-13: Tools and the first end-to-end path for the walking skeleton (task 0002)
 

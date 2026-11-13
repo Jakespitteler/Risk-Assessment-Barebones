@@ -50,9 +50,9 @@ def test_installed_vite_needs_no_install(tmp_path: Path, platform: str) -> None:
 
 def test_backend_wait_retries_until_the_api_responds() -> None:
     """A refused connection during startup is retried before Vite is started."""
-    server: MagicMock = MagicMock(spec=subprocess.Popen)
+    server = MagicMock(spec=subprocess.Popen)
     server.poll.return_value = None
-    response: MagicMock = MagicMock()
+    response = MagicMock()
     response.__enter__.return_value.status = 200
     with (
         patch.object(
@@ -68,7 +68,7 @@ def test_backend_wait_retries_until_the_api_responds() -> None:
 
 def test_backend_wait_fails_when_the_server_exits() -> None:
     """An API process that exits is reported immediately instead of waiting."""
-    server: MagicMock = MagicMock(spec=subprocess.Popen)
+    server = MagicMock(spec=subprocess.Popen)
     server.poll.return_value = 1
     with pytest.raises(RuntimeError, match="stopped before its API was ready"):
         dev.wait_for_backend(server)
@@ -76,7 +76,7 @@ def test_backend_wait_fails_when_the_server_exits() -> None:
 
 def test_backend_wait_has_a_deadline() -> None:
     """A backend that stays alive without responding cannot block forever."""
-    server: MagicMock = MagicMock(spec=subprocess.Popen)
+    server = MagicMock(spec=subprocess.Popen)
     server.poll.return_value = None
     with (
         patch.object(dev.time, "monotonic", side_effect=[0.0, 0.0, 31.0]),
@@ -89,9 +89,9 @@ def test_backend_wait_has_a_deadline() -> None:
 
 def test_servers_start_only_after_install_and_api_readiness() -> None:
     """Preparation finishes first, then the API is ready before Vite can start."""
-    events: MagicMock = MagicMock()
-    backend: MagicMock = MagicMock(spec=subprocess.Popen)
-    frontend: MagicMock = MagicMock(spec=subprocess.Popen)
+    events = MagicMock()
+    backend = MagicMock(spec=subprocess.Popen)
+    frontend = MagicMock(spec=subprocess.Popen)
     backend.poll.return_value = 0
     events.start.side_effect = [backend, frontend]
     with (
@@ -121,7 +121,7 @@ def test_servers_start_only_after_install_and_api_readiness() -> None:
 
 def test_failed_backend_readiness_stops_it_without_starting_vite() -> None:
     """An unsuccessful startup leaves no backend process behind."""
-    backend: MagicMock = MagicMock(spec=subprocess.Popen)
+    backend = MagicMock(spec=subprocess.Popen)
     with (
         patch.object(dev.subprocess, "run"),
         patch.object(dev, "install_frontend_if_needed"),

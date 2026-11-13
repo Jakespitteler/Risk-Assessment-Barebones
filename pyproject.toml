@@ -1,0 +1,7 @@
+[tool.pyright]
+include = ["backend", "scripts"]
+extraPaths = ["backend/src"]
+venvPath = "backend"
+venv = ".venv"
+typeCheckingMode = "strict"
+pythonVersion = "3.13"

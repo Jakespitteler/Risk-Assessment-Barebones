@@ -32,7 +32,7 @@ class Check(NamedTuple):
     folder: str
 
 
-# Ruff uses the back end's settings; pyright uses the repo's pyrightconfig.json.
+# Ruff uses the back end's settings; Pyright uses the root pyproject.toml.
 PYTHON_FOLDERS: list[str] = [".", "../scripts"]
 RUFF: list[str] = ["uv", "run", "ruff"]
 RUFF_SETTINGS: list[str] = ["--config", "pyproject.toml"]
@@ -47,7 +47,11 @@ CHECKS: list[Check] = [
         [*RUFF, "format", "--check", *RUFF_SETTINGS, *PYTHON_FOLDERS],
         "backend",
     ),
-    Check("Back end types", ["uv", "run", "pyright", *PYTHON_FOLDERS], "backend"),
+    Check(
+        "Back end types",
+        ["uv", "run", "pyright", "--project", "..", *PYTHON_FOLDERS],
+        "backend",
+    ),
     Check("Back end tests", ["uv", "run", "pytest"], "backend"),
     Check("Front end lint", [NPM, "run", "lint"], "frontend"),
     Check("Front end format", [NPM, "run", "format:check"], "frontend"),

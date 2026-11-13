@@ -2,6 +2,8 @@ dist/
 playwright-report/
 test-results/
 package-lock.json
+
 # Generated from the back end by `npm run generate:api`.
+
 src/api/openapi.json
 src/api/schema.d.ts

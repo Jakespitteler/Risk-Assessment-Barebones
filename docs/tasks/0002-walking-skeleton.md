@@ -1,7 +1,7 @@
 ---
 id: 0002
 title: Walking skeleton with CI
-status: in-progress
+status: review
 owner: chatgpt
 branch: chatgpt/0002-review-fixes
 ---
@@ -57,18 +57,19 @@ Completed corrections:
 
 - `scripts/dev.py` syncs the back end before launch, detects a missing Vite package or command shim even in
   an existing `node_modules`, and waits for the API before starting Vite. Startup failures clean up the back end.
-- The root `pyrightconfig.json` supplies strict checking, the source path and the back-end environment to both
+- The root `pyproject.toml` supplies strict checking, the source path and the back-end environment to both
   Pylance and the command-line checks. VS Code defaults to `backend/.venv`.
-- All named Python assignments in app code, scripts and tests have explicit annotations. `AGENTS.md` records
-  that inferred types alone do not meet this convention.
+- Python assignments in app code, scripts and tests have explicit annotations, except direct constructor
+  calls whose class is already clear. `AGENTS.md` records Jake's clarified convention.
 - `frontend/.npmrc` selects the HTTPS registry. README explains interpreter selection and the stale
   `VIRTUAL_ENV` warning that uv can emit before the launcher itself runs.
 
 Validation: `uv run scripts/check.py` passed: markdown, Ruff, strict Pyright, 14 Python tests (nine launcher
 regression cases), ESLint, Prettier, TypeScript, three front-end tests, unchanged generated API types and the
 browser test. The real launcher served the API before starting Vite; the browser test used those servers.
-Phone-width screenshots were inspected; no screen code changed. An AST audit found no unannotated named
-assignments. Windows Vite shims are covered by tests; native Windows execution still needs Jake's check.
+Phone-width screenshots were inspected; no screen code changed. The initial AST audit found no unannotated
+named assignments; the follow-up review allows direct constructors to use inference. Windows Vite shims are
+covered by tests; native Windows execution still needs Jake's check.
 
 Environment limitation: Playwright's browser download was denied by this cloud environment's network policy.
 The browser test passed using installed system Chromium 156 through a temporary browser-cache link outside
@@ -78,3 +79,16 @@ Follow-up review from Jake: cover test imports and VS Code tool discovery, repla
 configuration with TOML, associate ignore files correctly, and allow inferred types for constructor calls.
 Fetching the review branch on 2026-11-13 found no commits beyond `88ba9e8`; any additional local edits
 on Jake's computer were not visible on GitHub at that point.
+
+Follow-up completed: root Pyright JSON replaced by `[tool.pyright]` in the root `pyproject.toml`.
+`check.py` and the documented typecheck command explicitly select the repository as the project root,
+avoiding ambiguity between `backend/scripts` and the root launch scripts. Direct constructor assignments
+use inferred types; computed values and collections retain annotations. VS Code test discovery runs in
+`backend/`, Ruff uses its bundled executable with the project's rules, and ignore files have the correct
+language association. The README explains the HTTPS-only `.npmrc`, selecting the actual back-end interpreter,
+reloading VS Code, and disabling the redundant isort extension for this workspace.
+
+Follow-up validation: all checks passed again, including 14 Python tests, three front-end tests and the browser
+test using system Chromium. A direct check of `backend/tests/domain/test_risk.py` reported zero type errors;
+`pytest` and both domain imports also resolved at runtime in `backend/.venv`. Native Windows and VS Code
+extension startup remain local verification steps; a remaining extension crash needs its Output log.

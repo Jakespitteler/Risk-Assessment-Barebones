@@ -18,7 +18,7 @@ def test_example_1_rare_low_is_1_low_with_no_jha() -> None:
 
 def test_a_score_on_the_threshold_needs_a_jha() -> None:
     """The JHA threshold comes from the matrix, and a score equal to it needs a JHA."""
-    matrix: RiskMatrix = RiskMatrix(
+    matrix = RiskMatrix(
         likelihoods=("Likely",),
         consequences=("Bad",),
         cells=((RiskCell(score=7, band="Serious"),),),
