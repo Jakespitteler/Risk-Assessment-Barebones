@@ -45,6 +45,9 @@ Before the workflow can run, Jake must:
    extension) and save the token as the repo secret `CLAUDE_CODE_OAUTH_TOKEN`
    (Settings, Secrets and variables, Actions).
 
+The token from `claude setup-token` lasts one year, so it must be made again and the secret replaced each year.
+Skip `/install-github-app`: it opens its own workflow pull request, and this task writes the workflow instead.
+
 Reviews use his subscription's limits, not a separate bill. GitHub Actions minutes are free up to a monthly
 limit on GitHub Free.
 
