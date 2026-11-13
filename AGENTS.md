@@ -11,14 +11,17 @@ SQLite**. The full library list and the reasons are in `docs/architecture.md`.
 
 ## Commands
 
-Fill these in once the stack is chosen (task 0002). Every agent must use exactly these.
+Every agent must use exactly these. You need git, [uv](https://docs.astral.sh/uv/) and Node.js 22 or newer.
+Run each from the folder shown.
 
-- Install: `TBD`
-- Run: `TBD`
-- Test: `TBD`
-- Lint/format: `TBD`
-- Typecheck: `TBD`
-- All checks (what CI runs): `TBD`
+- Install: in `backend/`, `uv sync`. In `frontend/`, `npm ci` then `npx playwright install chromium`.
+- Run: in the repo root, `uv run scripts/dev.py`, then open <http://localhost:5173>. Ctrl+C stops it.
+- Test: in `backend/`, `uv run pytest`. In `frontend/`, `npm test` and `npm run test:e2e`.
+- Lint/format: in `backend/`, `uv run ruff check .` and `uv run ruff format .`. In `frontend/`, `npm run lint`
+  and `npm run format`. Markdown, in the repo root: `npx markdownlint-cli2@0.24.0 "**/*.md"`.
+- Typecheck: in `backend/`, `uv run pyright`. In `frontend/`, `npm run typecheck`.
+- API types: in `frontend/`, `npm run generate:api` after any change to the API. Commit both files it writes.
+- All checks (what CI runs): in the repo root, `uv run scripts/check.py`.
 
 ## Source of truth
 
@@ -57,7 +60,23 @@ Fill these in once the stack is chosen (task 0002). Every agent must use exactly
 
 ## Conventions
 
-Fill in once the stack is chosen. Cover: naming, file layout, error handling, logging, test style.
+- **Layout.** Follow the Structure in `docs/architecture.md`. Back-end tests mirror `src/risk_assessment/`.
+  A front-end test sits beside its component as `Name.test.tsx`; whole-app tests are in `frontend/e2e/`.
+- **Names.** A name says what the thing is, so it needs no comment: `jha_threshold`, not `t`. Python uses
+  `snake_case` and `PascalCase` classes; TypeScript uses `camelCase` and one `PascalCase` component per file.
+- **Python.** Type hints everywhere (pyright strict). A Google-style docstring on every module, class and
+  function, in plain words. Small single-purpose functions; plain data and pure functions in `domain/`.
+  Values are frozen pydantic models.
+- **TypeScript.** Strict mode. API types only come from the generated `src/api/schema.d.ts`; never write them
+  by hand. The front end holds no rules: it draws what the back end sends.
+- **Errors.** `domain/` raises `ValueError` with a message a person can read. Routes turn errors into HTTP
+  responses; the worker never sees a stack trace or an AI error.
+- **Logging.** Use `logging.getLogger(__name__)`, never `print`, in the back end. Never log the worker's name.
+- **Tests.** pytest for the back end; a test's name says what it proves, and a test of a spec worked example is
+  named `test_example_<number>_...`. Vitest and React Testing Library find things by role or label, as a
+  person would. Playwright runs at 360 px wide and saves screenshots to `frontend/test-results/screenshots/`.
+- **Markdown.** No markdownlint warnings (settings in `.markdownlint-cli2.jsonc`). Wrap prose at about 115
+  characters.
 
 ## Notes for agents
 

@@ -2,6 +2,31 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-13: Tools and the first end-to-end path for the walking skeleton (task 0002)
+
+- Decision:
+  - **httpx2** instead of httpx for FastAPI's test client.
+  - **TypeScript 5.9**, not 6.
+  - **markdownlint-cli2** 0.24.0, run through `npx` at that fixed version, with its settings in
+    `.markdownlint-cli2.jsonc` (lines up to 120 characters; agent prompts and the PR template need no title).
+  - The small packages the approved front-end libraries need in order to work: `@vitejs/plugin-react` and
+    `@tailwindcss/vite` (plug React and Tailwind into Vite), `jsdom` and `@testing-library/dom` (a pretend
+    browser for Vitest), `typescript-eslint`, `@eslint/js` and `eslint-plugin-react-hooks` (ESLint rules for
+    TypeScript and React), and the `@types/...` packages for React and Node.
+  - Two short Python scripts run by uv, `scripts/dev.py` (starts both halves) and `scripts/check.py` (runs every
+    check, and is what CI runs), rather than a tool such as `concurrently` or `make`.
+  - The skeleton's end-to-end path is rating a risk on the matrix the back end sends, not saving and viewing a
+    Take 5.
+- Why: Starlette, which FastAPI is built on, now deprecates httpx for its test client and asks for httpx2, the
+  pydantic team's continuation of it; with httpx, pyright strict can't see the test client's types.
+  openapi-typescript and typescript-eslint don't support TypeScript 6 yet. Jake asked for no markdownlint
+  warnings, and a check in CI keeps it that way. The scripts add nothing to install, work the same on Windows,
+  and keep the list of checks in one place. Saving a Take 5 needs the data model that tasks 0003 and 0004 build;
+  rating a risk still runs through every layer of the stack and is the first real piece of the app.
+- Alternatives considered: Keep httpx and silence the warning. Use `concurrently` for the run command. Create a
+  throwaway "assessment" table for the skeleton (it would be replaced by task 0004).
+- Decided by: claude; the human approves by merging task 0002's pull request
+
 ## 2026-11-13: Front-end libraries
 
 - Decision: React, TypeScript, Vite, Tailwind CSS, TanStack Query, React Router, openapi-typescript; Vitest,

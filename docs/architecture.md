@@ -31,7 +31,7 @@ Back end:
 | Packaging | uv | One tool for Python versions, dependencies and running commands |
 | Lint and format | ruff | Project rule |
 | Type checking | pyright in strict mode | The command-line version of Pylance's strict rules |
-| Tests | pytest, with httpx for FastAPI's test client | Standard |
+| Tests | pytest, with httpx2 for FastAPI's test client | Standard. httpx2 replaced httpx in task 0002; see `decisions.md` |
 
 Front end:
 
@@ -116,6 +116,9 @@ frontend/
         features/take5/    the Take 5's screens: the four parts of the form, the question, the result, the list
         app.tsx            the routes (the only place React Router is set up)
     e2e/                   Playwright tests and screenshots
+scripts/
+    dev.py                 starts both halves for development
+    check.py               runs every check, as CI does
 ```
 
 The four files directly under `domain/` know nothing about a Take 5. They are the shared building blocks, and

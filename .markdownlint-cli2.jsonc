@@ -8,5 +8,7 @@
     // Agent prompts and the pull request template are not documents, so they don't start with a title.
     "MD041": false
   },
-  "ignores": ["**/node_modules/**", "frontend/dist/**", "frontend/playwright-report/**", "frontend/test-results/**"]
+  // Only check the repo's own files, not installed libraries or tool caches.
+  "gitignore": true,
+  "ignores": ["**/node_modules/**", "**/.venv/**"]
 }
