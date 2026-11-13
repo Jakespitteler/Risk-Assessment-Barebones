@@ -25,4 +25,4 @@ Add the one question the app asks before the result, with everything except a re
 - The AI marking the answer or asking a follow-up.
 
 ## Notes / assumptions
-Don't start until the spec is approved (task 0001 is `done`). Depends on 0004; best after 0006. Needs spec decisions D10 and D11 answered first.
+Don't start until the spec is approved (task 0001 is `done`). Depends on 0004; best after 0006.

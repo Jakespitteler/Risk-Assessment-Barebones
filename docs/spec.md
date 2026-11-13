@@ -1,9 +1,8 @@
 # Product spec
 
-Status: **draft, waiting for Jake's approval** (task 0001). The human owns product decisions; agents propose,
-the human approves. Anything marked *proposed*, and every row under
-[Decisions waiting on Jake](#decisions-waiting-on-jake), is Claude's recommendation. Nothing here is final
-until that table is empty.
+Status: **version 1** (task 0001). The human owns product decisions; agents propose, the human approves. Every
+product decision in this version was made by Jake and is listed under [Decisions made](#decisions-made). Merging
+task 0001's pull request is his sign-off of the wording.
 
 ## Purpose
 
@@ -29,7 +28,7 @@ Where and when it is used (carried over from the original app; Jake to confirm):
 
 - On the worker's own phone, standing at the job, just before starting.
 - Often with gloves on, in bright sun, with a weak signal. So: big tap targets, high contrast, small pages.
-- It has to be quick enough that it is not resented. Target (*proposed*): a job with two hazards takes under
+- It has to be quick enough that it is not resented. Target (to be confirmed, see Open questions): a job with two hazards takes under
   three minutes.
 
 ## Core workflow
@@ -144,7 +143,7 @@ cell is a unique rank, so the app records it as 19. Its band, Extreme, is the sa
 - **R3 JHA threshold.** A rating of 11 or more needs a Job Hazard Analysis (JHA). Note that 10 is High but does
   not need one.
 - **R4 Which rating counts.** A hazard has a *before* rating (no controls) and an *after* rating (with the
-  worker's controls). The **after** rating is the one that counts for R3 and R5 (*proposed*, decision D6).
+  worker's controls). The **after** rating is the one that counts for R3 and R5 (decision D6).
 - **R5 The Take 5's rating.** The Take 5's rating is the highest *after* rating of its hazards. A Take 5 always
   has at least one hazard, so it always has a rating.
 - **R6 Controls can't make it worse, and no controls can't make it better.** A hazard's *after* score must not be
@@ -202,7 +201,7 @@ The safety rules stay in code. The AI only asks; it never decides whether anyone
 - **C4 A real answer.** The answer must be at least four words. (Every vague phrase in T2 is shorter than that,
   so "be careful" can't be an answer.)
 - **C5 Asking, not judging.** The AI does not mark the answer, and nothing about the question or the answer
-  changes the verdict (*proposed*, decision D11). Both are saved with the Take 5, along with whether the AI or
+  changes the verdict (decision D11). Both are saved with the Take 5, along with whether the AI or
   the fallback asked.
 - **C6 Unfinished until answered.** Until the question is answered the Take 5 is saved but *unfinished*: it has
   no verdict, and opening it shows the question. The question is asked once; an unfinished Take 5 keeps the
@@ -346,21 +345,25 @@ The first four screens of the core workflow, saved when the worker submits.
 - Working with no signal, and keeping a half-filled Take 5 if the page is closed.
 - Starting a Take 5 from an earlier one. Copying is the fastest way to stop thinking.
 
-## Decisions waiting on Jake
+## Decisions made
 
-| # | Decision | Proposed | Main alternative and its tradeoff |
+Jake made each of these on 2026-11-13. The reasons are in `decisions.md`. Changing one means changing this spec
+and its worked examples in the same PR.
+
+| # | Decision | Chosen | Not chosen |
 | --- | --- | --- | --- |
-| D6 | Which rating decides a JHA | The *after* rating, as the paper card's column order (hazard, controls, score) implies | The *before* rating: stricter and harder to talk down, but almost any job with a fatal hazard would then need a JHA |
-| D7 | The list of control kinds | The card's six "Make the changes" options, the first three counted as strong | The booklet's formal hierarchy (eliminate, substitute, redesign, separate, administrative, PPE): more precise, less familiar wording |
-| D8 | Who can see saved Take 5s | Everyone using the app, since there is no sign-in | Only on the phone that made them: more private, but a supervisor can never see them |
-| D9 | Which AI provider is set up first | Claude, as in the original app. The others plug into the same interface | ChatGPT or Gemini first: no difference to the design, only to which adapter is written first |
-| D10 | What happens when the AI can't be reached | The fixed fallback question (C3), so a Take 5 can always be finished | Wait for the AI: every Take 5 gets a tailored question, but no signal means no Take 5 |
-| D11 | Whether the AI judges the answer | No. It asks one question and the answer is saved (C5) | It marks the answer and can ask again: harder to bluff, but an AI then helps decide whether someone starts work, and it costs more and is harder to test |
-| D12 | The front-end libraries | React, TypeScript, Vite, Tailwind CSS, TanStack Query, React Router (see `architecture.md`) | Svelte or Vue: pleasant, but smaller communities and fewer people who know them |
-
-Decided so far (the reasons are in `decisions.md`): own words first, fixed pushback rules and an AI challenge
-question (D1, D3); each hazard rated before and after controls (D2); no sign-in (D4); a Python API with a
-separate JavaScript front end (D5).
+| D1 | What makes people think | Own words first, fixed pushback rules (T1 to T4), and an AI challenge question (C1 to C6) | The card's ticks only |
+| D2 | Rate each hazard once or twice | Twice, before and after controls | Once, as on paper |
+| D3 | AI in the first version | Yes, for the challenge question only | Rules only |
+| D4 | Sign-in | None; the worker types their name | Accounts from the start |
+| D5 | Stack | A Python API with a separate JavaScript front end (see `architecture.md`) | Server-rendered pages |
+| D6 | Which rating decides a JHA | The *after* rating, as the paper card's column order (hazard, controls, score) implies | The *before* rating: stricter, but almost any job with a fatal hazard would then need a JHA |
+| D7 | The list of control kinds | The card's six "Make the changes" options, the first three counted as strong | The booklet's formal hierarchy of controls |
+| D8 | Who can see saved Take 5s | Everyone using the app, since there is no sign-in | Only the phone that made them |
+| D9 | Which AI provider is set up first | Claude. The others plug into the same interface | ChatGPT or Gemini first |
+| D10 | What happens when the AI can't be reached | The fixed fallback question (C3), so a Take 5 can always be finished | Wait for the AI |
+| D11 | Whether the AI judges the answer | No. It asks one question and the answer is saved (C5) | The AI marks the answer and can ask again |
+| D12 | The front-end libraries | React, TypeScript, Vite, Tailwind CSS, TanStack Query, React Router (see `architecture.md`) | Svelte or Vue |
 
 ## Open questions
 

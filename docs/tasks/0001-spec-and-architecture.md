@@ -18,14 +18,12 @@ Turn the human's description of the app into docs/spec.md and docs/architecture.
 - [ ] Human has approved the spec.
 
 ## Notes / assumptions
-- Everything is a draft until Jake answers the decisions in the spec's "Decisions waiting on Jake" table.
-  Each is written up on Claude's recommended option so there is something concrete to react to. When a
-  decision is made: update the spec, remove its row, and remove the matching "proposed" markers in the spec,
-  `architecture.md`, `decisions.md` and the AGENTS.md stack line.
-- Decided by Jake on 2026-11-13: D1 with an AI challenge question added (which also settles D3), D2 and D4 as
-  recommended, and D5 as a Python API with a separate JavaScript front end. He asked for current, well-established
-  tools that can be swapped without much trouble; the library list in `architecture.md` is Claude's pick on that
-  brief (D12). Still open: D6 to D12.
+- Jake made all twelve product decisions in chat on 2026-11-13; they are listed in the spec under "Decisions
+  made". D1 with an AI challenge question added (which also settles D3), D5 as a Python API with a separate
+  JavaScript front end, and the rest as Claude recommended. He asked for current, well-established tools that
+  can be swapped without much trouble; the library list in `architecture.md` was picked on that brief.
+- The last acceptance criterion, "Human has approved the spec", is met when Jake merges this PR. Whoever merges
+  it should tick that box and set `status: done` in the same merge, or in the first commit of the next task.
 - The description this was built from: the project brief (make the Take 5 as good as possible, make people
   think about the real risk, a back end Jake fully understands) and the Take 5 feature of the original
   Risk-Assessment app. The card's questions, the likelihood and consequence tables and the matrix are copied

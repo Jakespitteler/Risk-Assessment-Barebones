@@ -1,9 +1,9 @@
 # Architecture
 
-Status: **draft, waiting for Jake's approval** (task 0001). Jake chose the shape (a Python API with a separate
-JavaScript front end, spec decision D5) and asked for well-established tools that can be swapped later without
-much trouble. The specific libraries below are Claude's pick on that brief; none is installed until Jake has
-seen the list (spec decision D12).
+Status: **version 1** (task 0001). Jake chose the shape (a Python API with a separate JavaScript front end, spec
+decision D5) and asked for well-established tools that can be swapped later without much trouble. The libraries
+below were picked on that brief and approved by him (spec decision D12). Adding any other dependency still needs
+his approval.
 
 Three aims shape everything here: Jake wants to be able to read and understand the whole back end, the risk
 scoring has to be provably right, and no single tool should be hard to replace.
