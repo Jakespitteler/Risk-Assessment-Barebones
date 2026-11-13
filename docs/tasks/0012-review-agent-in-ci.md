@@ -1,9 +1,9 @@
 ---
 id: 0012
 title: A review agent in CI that checks and fixes each pull request before Jake reviews it
-status: todo
-owner:
-branch:
+status: in-progress
+owner: chatgpt
+branch: chatgpt/0012-review-agent
 ---
 
 ## Goal
