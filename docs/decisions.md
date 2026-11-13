@@ -2,6 +2,16 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-13: The card's guidance belongs to the template (task 0004 review)
+
+- Decision: The likelihood, consequence and control guidance are fields of `Take5Template`, and
+  `GET /api/take5/template` sends the service's template, not a hard-coded constant.
+- Why: Each saved Take 5 keeps a copy of its template, so it should keep the guidance the worker was shown. A
+  company's own card (the long-term plan) brings its own wording with no new code.
+- Alternatives considered: Keep the guidance as separate constants beside the template (ChatGPT's first
+  version). It would not be in the saved copy, and a second template would need a second set of constants.
+- Decided by: human (Jake approved it on 2026-11-13).
+
 ## 2026-11-13: Phone workflow, one hazard at a time and expandable guidance (task 0004)
 
 - Decision: Design for the worker's own phone at the job, including sun and gloves. After listing hazards,
@@ -22,7 +32,8 @@ Newest first. One short entry per non-obvious decision.
   save nothing; the browser sends the completed draft only when the worker finishes the form.
 - Alternatives considered: SQLite in routes, overwriting a finished document, or a new ID on every retry.
   Each would break a documented boundary or risk losing the original verdict or creating duplicates.
-- Decided by: chatgpt for implementation within the approved task and its duplicate-submit acceptance criterion.
+- Decided by: human. ChatGPT built it before asking; Jake approved the client-made UUID and the 409 on
+  2026-11-13, after Claude's review of task 0004.
 
 ## 2026-11-13: Select the actual Python executable instead of a directory default (task 0003 review)
 

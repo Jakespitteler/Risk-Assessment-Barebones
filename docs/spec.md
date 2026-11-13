@@ -330,7 +330,11 @@ The first four screens of the core workflow, saved when the worker submits.
 - Acceptance: the phone remembers the worker's name for next time.
 - Acceptance: every screen is usable one-handed on a 360 px wide phone, with tap targets at least 48 px high.
 - Acceptance: after listing hazards, the worker assesses one hazard at a time, before controls, then controls,
-  then after controls when there are any. Back navigation preserves the unsaved answers.
+  then after controls when there are any. The Back button, the phone's back gesture and a reload all keep the
+  unsaved answers.
+- Acceptance: Continue asks the back end about that page and names its gaps there, before moving on. A gap found
+  at the review sends the worker to it, and back to the review once it is filled in.
+- Acceptance: removing a hazard or a control can be undone.
 - Acceptance: likelihood, consequence and control choices offer expandable guidance from the back end, using
   the approved card wording. Guidance never supplies a hazard or control answer for the worker.
 

@@ -83,9 +83,12 @@ backend/
             questions.py       Question, QuestionRole (stop or hazard), Answer
             wording.py         the vague phrases and word counting                     (used by T2, T4, C4)
             take5/             everything that is only about a Take 5
-                template.py        Take5Template: the questions and the matrix a Take 5 is
-                                   filled in on. BOOKLET_TEMPLATE is the only one for now
+                template.py        Take5Template: the questions, the matrix and the guidance a
+                                   Take 5 is filled in on. BOOKLET_TEMPLATE is the only one for now
                 take5.py           Take5, Hazard: the filled-in card                      (spec R4 to R6)
+                draft.py           Take5Draft (what the phone sends) and check_draft(): every
+                                   gap, named by its field's dotted path                  (spec R5, R6)
+                saved.py           SavedTake5: a Take 5 as it was saved, with its verdict
                 verdict.py         verdict(take5) -> Verdict with its reasons            (spec V1 to V3)
                 thinking.py        the pushback rules                                     (spec T2 to T4)
                 challenge.py       what the AI is told, the check on its question,
@@ -105,7 +108,8 @@ backend/
         api/               the web API
             app.py             builds the FastAPI app and plugs the pieces together
             take5_routes.py    one function per Take 5 endpoint
-            schemas.py         the shapes of requests and responses
+            schemas.py         the shapes of requests and responses, including the error replies
+            errors.py          turns errors into the declared error replies
         settings.py        settings read from the environment (database path, AI provider, AI key)
     tests/                 mirrors src/risk_assessment/
 frontend/
@@ -113,8 +117,10 @@ frontend/
     src/
         api/               the generated types and a small typed client (the only place TanStack Query is set up)
         components/        pieces any feature can use: rating picker, Yes / No / N/A buttons, risk badge,
-                           control editor
-        features/take5/    the Take 5's screens: the four parts of the form, the question, the result, the list
+                           control editor, button, card, field, guidance, notice, undo bar
+        features/take5/    the Take 5's screens: the four parts of the form, the question, the result, the list.
+                           stage.ts is which page shows (kept in the URL); useTake5Draft.ts keeps the draft
+        test-utils.tsx     the fake card, drafts and API replies the Vitest tests share
         app.tsx            the routes (the only place React Router is set up)
     e2e/                   Playwright tests and screenshots
 scripts/
@@ -137,6 +143,12 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 | `GET /api/take5s` | The list, newest first |
 | `GET /api/take5s/{id}` | One Take 5 |
 
+Every error reply is declared in the OpenAPI description, so the front end's generated types know it. A 422 is
+always `FormErrors` (`detail` and a list of field errors, each with its dotted `path`), whether the draft has a
+gap or the request couldn't be read. A 404 or a 409 is `ErrorMessage` (`detail`). The front end retries a
+request that got no answer, never one that did; `POST /api/take5s` is safe to retry because the phone makes its
+ID once and sends it every time.
+
 **The front end holds no rules and no card.** It gets the questions and the matrix from
 `GET /api/take5/template`, draws whatever it is sent, and shows a score by looking it up in that matrix. It finds
 out what is missing or needs another look by asking
@@ -156,7 +168,7 @@ the built front-end files itself, so there is still only one program to run.
 | `Hazard` | `description`, `before` (rating), `controls`, `after` (rating), `weak_controls_reason` | Belongs to one Take 5. With no controls `after` is `before` (spec R6). `weak_controls_reason` is the worker's answer to spec T3, when it was asked |
 | `Control` | `description`, `kind` (`ControlKind`) | Belongs to one hazard |
 | `RiskRating` | `likelihood`, `consequence`, and from the matrix: `score`, `band` | A value, not a stored row. Score and band are always worked out, never typed in |
-| `Take5Template` | `name`, `sections` (each a title and its questions, each question with a role), `matrix` | The card as data. The rules never name a question: a *stop* question answered No stops the job, whichever card it is on |
+| `Take5Template` | `name`, `sections` (each a title and its questions, each question with a role), `matrix`, `likelihood_guidance`, `consequence_guidance` (each a level and its meaning), `control_guidance` | The card as data. The rules never name a question: a *stop* question answered No stops the job, whichever card it is on |
 | `RiskMatrix` | the likelihood and consequence scales, the score and band of each cell, the score that needs a JHA | The matrix as data. `rate()` is given the matrix, so another company's matrix needs no new code |
 | `Challenge` | `question`, `asked_by` (`ai` or `fallback`), `model`, `instructions_version`, `answer` | Belongs to one Take 5. `answer` is empty until the worker gives one. `model` and `instructions_version` say which AI asked and with which version of its instructions; both are empty for the fallback |
 | `Verdict` | `can_start`, `reasons` | Worked out once by `domain/take5/verdict.py` when the Take 5 is finished, then saved inside it, so a later rule change never rewrites an old verdict |
