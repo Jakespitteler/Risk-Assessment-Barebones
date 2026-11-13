@@ -1,9 +1,9 @@
 ---
 id: 0001
 title: Write the spec and architecture
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/project-thread-ih4nvm
 ---
 
 ## Goal
