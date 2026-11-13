@@ -35,13 +35,14 @@ requests between Claude and ChatGPT by hand.
 
 ## Notes / assumptions
 
-Recommended next, before task 0005 (Jake agreed, 2026-11-13), so every later pull request is reviewed by it.
+Recommended next, before task 0005 (Claude, 2026-11-13), so every later pull request is reviewed by it.
 Task numbers are IDs, not the order of work.
 
 Before the workflow can run, Jake must:
 
 1. Install the Claude GitHub App on the repo: <https://github.com/apps/claude>.
-2. Run `claude setup-token` on his computer and save the token as the repo secret `CLAUDE_CODE_OAUTH_TOKEN`
+2. Run `claude setup-token` in a terminal (it needs the Claude Code command line, not only the VS Code
+   extension) and save the token as the repo secret `CLAUDE_CODE_OAUTH_TOKEN`
    (Settings, Secrets and variables, Actions).
 
 Reviews use his subscription's limits, not a separate bill. GitHub Actions minutes are free up to a monthly
