@@ -35,7 +35,7 @@ Run each from the folder shown.
 
 ## How work happens
 
-1. Pick a task in `docs/tasks/` with `status: todo`, or ask the human to create one.
+1. Pick the next `todo` task in the order in `docs/tasks/README.md`, or ask the human to create one.
 2. Claim it: set `status: in-progress` and `owner: <claude|chatgpt|human>` and commit that first.
 3. Work on a branch named `<owner>/<task-id>-<short-name>`. Never commit directly to `main`.
 4. Keep the change to the task's scope. Note unrelated problems in the task file instead of fixing them.
