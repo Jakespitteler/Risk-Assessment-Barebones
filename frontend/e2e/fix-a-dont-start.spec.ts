@@ -35,7 +35,7 @@ test("a Don't start yet is fixed in a new Take 5, and the first stays as it was"
   const firstSaved: unknown = await (
     await page.request.get(`/api${new URL(firstUrl).pathname}`)
   ).json();
-  await capture(page, "fix-dont-start");
+  await capture(page, "fix-first-result");
 
   // The copy opens on the review with every answer, and the warning points the way.
   await page
