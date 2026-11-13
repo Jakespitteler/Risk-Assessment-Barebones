@@ -37,6 +37,9 @@ The same pull request holds Claude's review of task 0012 (in that task's file), 
 name says what it proves, sets tasks 0011 and 0012 to `done` (both were merged), and drops 0012 from the order of
 work in `docs/tasks/README.md`.
 
+After that review Jake chose (2026-11-14) to pin the CI reviewer to the local reviewer's model, so
+`agent-review.yml` now passes `--model fable`, and accepted that a pull request can change its own review rules.
+
 The command line pins cspell 10.5.0 and `@cspell/dict-en-au` 1.1.31. The `en-AU` dictionary accepts some American
 forms (`organization`, and `color` through the software terms dictionary), so it does not catch every American
 spelling.
