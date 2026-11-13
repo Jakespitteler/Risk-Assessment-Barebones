@@ -13,6 +13,11 @@
             "source.organizeImports.ruff": "explicit"
         }
     },
+    // The app's text uses a typographic apostrophe and a multiplication sign (the close button) on purpose.
+    "editor.unicodeHighlight.allowedCharacters": {
+        "’": true,
+        "×": true
+    },
     "files.associations": {
         ".prettierignore": "ignore",
         ".npmrc": "ini"

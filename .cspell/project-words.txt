@@ -2,6 +2,7 @@ anthropics
 Barebones
 capsys
 charliermarsh
+conftest
 creationflags
 delenv
 describedby
@@ -26,6 +27,7 @@ pythonpath
 reinstalls
 Starlette
 subagents
+Talison
 taskkill
 testpaths
 tradeoffs

@@ -43,3 +43,8 @@ that a pull request's own code runs in its review.
 The command line pins cspell 10.5.0 and `@cspell/dict-en-au` 1.1.31. The `en-AU` dictionary accepts some American
 forms (`organization`, and `color` through the software terms dictionary), so it does not catch every American
 spelling.
+
+Jake's follow-ups the same day, also in this pull request: the `$schema` lines came out of the cspell settings
+(VS Code would not load the schema from an untrusted address), VS Code now allows the app's typographic
+apostrophe and multiplication sign, AGENTS.md has the one-parameter-per-line rule, and tasks 0015 to 0017 were
+added to the order of work.

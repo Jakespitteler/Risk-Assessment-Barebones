@@ -77,8 +77,10 @@ Run each from the folder shown.
   function, in plain words. Small single-purpose functions; plain data and pure functions in `domain/`.
   Values are frozen pydantic models. Explicitly annotate assigned variables and module constants, except
   direct constructor calls where the class already makes the type clear (for example, `app = FastAPI(...)`).
-  Keep annotations for collections and computed results. Pyright and Pylance share `[tool.pyright]` in the
-  root `pyproject.toml`; the back end's package and Ruff settings stay in `backend/pyproject.toml`.
+  Keep annotations for collections and computed results. A `def` that doesn't fit on one line puts each
+  parameter on its own line, with a trailing comma (task 0017 makes Ruff enforce it). Pyright and Pylance
+  share `[tool.pyright]` in the root `pyproject.toml`; the back end's package and Ruff settings stay in
+  `backend/pyproject.toml`.
 - **TypeScript.** Strict mode. API types only come from the generated `src/api/schema.d.ts`; never write them
   by hand. The front end holds no rules: it draws what the back end sends.
 - **Errors.** `domain/` raises `ValueError` with a message a person can read. Routes turn errors into HTTP
