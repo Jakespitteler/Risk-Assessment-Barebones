@@ -87,7 +87,7 @@ backend/
                                    filled in on. BOOKLET_TEMPLATE is the only one for now
                 take5.py           Take5, Hazard: the filled-in card                      (spec R4 to R6)
                 verdict.py         verdict(take5) -> Verdict with its reasons            (spec V1 to V3)
-                thinking.py        the push back rules                                    (spec T2 to T4)
+                thinking.py        the pushback rules                                     (spec T2 to T4)
                 challenge.py       what the AI is told, the check on its question,
                                    the fallback question, the check on the answer         (spec C1 to C4)
         services/          what the app does
@@ -222,6 +222,21 @@ None of this is built in version 1. It is here so that version 1 is built in a w
 | A company's risk standards given to the AI | `LanguageModel`; the job in `ai/challenge.py` | A `StandardsSource` Protocol: given a Take 5, return the passages that matter. See below |
 | An AI the company runs or rents privately | `LanguageModel` | One file in `ai/providers/` |
 | Feedback on the AI's questions, used to improve them | Each `Challenge` already records the model and the version of the instructions that asked | A rating on each question, a place to read the ratings, and a set of sample Take 5s that every new version of the instructions is tested against before it goes live. A person changes the instructions; the app does not rewrite them itself |
+
+**What the AI is given, and keeping it trustworthy.** Four ways an AI's context can go wrong, and what stops each.
+Version 1 covers the first three because the AI's job is small: one question, one call, nothing remembered
+between Take 5s.
+
+| Risk | What it means | What stops it |
+| --- | --- | --- |
+| Poisoning | Wrong or hostile text gets in and is relied on | C2 checks every reply before it is shown. The AI's text is never fed into another AI call and never decides the verdict. A worker could type instructions into the job ("ignore your rules"); the instructions in `ai/challenge.py` must treat the Take 5 as data, and C2 limits any reply to one short question |
+| Distraction | Too much in front of the model | Each call sends one Take 5 and nothing builds up, so nothing needs compacting |
+| Confusion | Irrelevant material mixed in | Only that Take 5's own fields are sent (C1) |
+| Clash | Sources that disagree | One source today. When company standards arrive, `StandardsSource` picks only the sections that matter. What happens when a standard and the card disagree is a product decision for then |
+
+If the app later has several AI jobs or a large body of standards, give the model a short index first and load
+the full text only when a job needs it (the "progressive disclosure" idea behind Agent Skills), rather than
+sending everything every time.
 
 **Where the reuse deliberately stops.** The shared pieces are small things that are the same in every risk
 document: a matrix, a control, a Yes / No question, a check on wording. There is no general "document" or "form
