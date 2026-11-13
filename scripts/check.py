@@ -6,6 +6,7 @@
 Usage, from the repo root: `uv run scripts/check.py`.
 """
 
+import os
 import shutil
 import subprocess
 import sys
@@ -15,6 +16,12 @@ from typing import NamedTuple
 REPO_ROOT = Path(__file__).resolve().parent.parent
 NPM = shutil.which("npm") or "npm"
 NPX = shutil.which("npx") or "npx"
+
+# `uv run` points VIRTUAL_ENV at this script's own throwaway environment. The back end
+# must use its own `.venv`, so the checks are run without it.
+CHECK_ENVIRONMENT = {
+    name: value for name, value in os.environ.items() if name != "VIRTUAL_ENV"
+}
 
 
 class Check(NamedTuple):
@@ -65,7 +72,10 @@ def run_checks() -> int:
     for check in CHECKS:
         print(f"\n=== {check.name} ===", flush=True)
         result = subprocess.run(
-            check.command, cwd=REPO_ROOT / check.folder, check=False
+            check.command,
+            cwd=REPO_ROOT / check.folder,
+            env=CHECK_ENVIRONMENT,
+            check=False,
         )
         if result.returncode != 0:
             print(f"\nFAILED: {check.name}")

@@ -28,7 +28,22 @@ BACKEND_COMMAND = [
     "8000",
 ]
 # On Windows npm is `npm.cmd`, which `shutil.which` finds and a bare "npm" would not.
-FRONTEND_COMMAND = [shutil.which("npm") or "npm", "run", "dev"]
+NPM = shutil.which("npm") or "npm"
+FRONTEND_COMMAND = [NPM, "run", "dev"]
+
+# `uv run` points VIRTUAL_ENV at this script's own throwaway environment. The back end
+# must use its own `.venv`, so the servers are started without it.
+SERVER_ENVIRONMENT = {
+    name: value for name, value in os.environ.items() if name != "VIRTUAL_ENV"
+}
+
+
+def install_frontend_if_needed() -> None:
+    """Install the front end's packages the first time, so one command is enough."""
+    if not (REPO_ROOT / "frontend" / "node_modules").exists():
+        subprocess.run(
+            [NPM, "ci"], cwd=REPO_ROOT / "frontend", env=SERVER_ENVIRONMENT, check=True
+        )
 
 
 def start(command: list[str], folder: str) -> subprocess.Popen[bytes]:
@@ -37,9 +52,12 @@ def start(command: list[str], folder: str) -> subprocess.Popen[bytes]:
         return subprocess.Popen(
             command,
             cwd=REPO_ROOT / folder,
+            env=SERVER_ENVIRONMENT,
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
         )
-    return subprocess.Popen(command, cwd=REPO_ROOT / folder, start_new_session=True)
+    return subprocess.Popen(
+        command, cwd=REPO_ROOT / folder, env=SERVER_ENVIRONMENT, start_new_session=True
+    )
 
 
 def stop(server: subprocess.Popen[bytes]) -> None:
@@ -59,6 +77,7 @@ def stop(server: subprocess.Popen[bytes]) -> None:
 
 def run_both() -> None:
     """Run both servers until either one stops or Ctrl+C is pressed, then stop both."""
+    install_frontend_if_needed()
     servers = [start(BACKEND_COMMAND, "backend"), start(FRONTEND_COMMAND, "frontend")]
     try:
         while all(server.poll() is None for server in servers):

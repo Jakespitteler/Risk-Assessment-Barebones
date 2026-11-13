@@ -15,7 +15,7 @@ You need git, [uv](https://docs.astral.sh/uv/) and Node.js 22 or newer.
 1. Install, once and after any dependency change:
    - in `backend/`: `uv sync`
    - in `frontend/`: `npm ci`, then `npx playwright install chromium`
-2. In the repo root: `uv run scripts/dev.py`
+2. In the repo root: `uv run scripts/dev.py`. The first time, it installs the front end's packages itself
 3. Open <http://localhost:5173>. The back end's own API pages are at <http://localhost:8000/docs>.
 
 Press Ctrl+C to stop. Both halves restart by themselves when their code changes.

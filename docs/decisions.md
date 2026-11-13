@@ -25,7 +25,7 @@ Newest first. One short entry per non-obvious decision.
   rating a risk still runs through every layer of the stack and is the first real piece of the app.
 - Alternatives considered: Keep httpx and silence the warning. Use `concurrently` for the run command. Create a
   throwaway "assessment" table for the skeleton (it would be replaced by task 0004).
-- Decided by: claude; the human approves by merging task 0002's pull request
+- Decided by: human (Jake said yes to each), on claude's proposal
 
 ## 2026-11-13: Front-end libraries
 
