@@ -6,14 +6,17 @@ Newest first. One short entry per non-obvious decision.
 
 - Decision: Spelling is Australian English, checked by cspell with its `en-AU` dictionary, which is what Jake's
   VS Code extension (Australian English - Code Spell Checker) uses. `cspell.json` in the root holds the shared
-  settings and both editors and the command line read it. Project words live in `.cspell/project-words.txt`,
+  settings, and VS Code and the command line both read it. Project words live in `.cspell/project-words.txt`,
   not in `.vscode/settings.json`, so any agent can see and extend them. `.cspell/cli.json` adds the `en-AU`
-  dictionary for the command line; the editor gets it from the extension. `.gitignore` and `LICENSE` are
-  skipped because they are standard templates.
+  dictionary for the command line; the editor gets it from the extension. The `.gitignore` files and `LICENSE` are
+  skipped: they are mostly template text and file patterns. `.vscode/extensions.json` recommends the extension,
+  because without it VS Code would flag nearly every word (the shared settings ask for a dictionary that only
+  the extension or `.cspell/cli.json` supplies).
 - Why: Jake asked for the whole repo to pass his spell checker, and ChatGPT can only follow what is in the repo.
 - Alternatives considered: importing the dictionary in `cspell.json` (the editor would show an import error,
   because the dictionary is not installed in the repo), and adding cspell as an npm dependency (needs approval;
   `npx` with pinned versions works the same way as markdownlint does now).
+- Decided by: human (Jake asked for it, 2026-11-13). Whether `check.py` and CI run it is waiting on Jake.
 
 ## 2026-11-13: Bound the automated review and skip its own pushes (task 0012)
 

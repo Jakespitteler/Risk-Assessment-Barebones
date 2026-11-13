@@ -73,10 +73,11 @@ comment and a fix push starting CI are only proven by a live run; task 0014's pu
 
 Left for Jake to decide:
 
-1. The reviewer reads `.claude/agents/reviewer.md`, `CLAUDE.md` and `.claude/settings.json` from the pull
-   request's own branch, so a pull request can change the rules it is reviewed by. The gate already loads its
-   policy from the base branch for this reason. A full fix checks out the base branch's agent files over the
-   pull request's before the review step. The risk is small while only Jake, Claude and ChatGPT push.
+1. A pull request can change the rules it is reviewed by. On a `pull_request` event the workflow file itself,
+   `.claude/agents/reviewer.md`, `CLAUDE.md`, `.claude/settings.json` and `scripts/check.py` all come from the
+   pull request's branch. Only the gate loads from the base branch. Closing this needs `pull_request_target`
+   (rejected in the decision above) or branch protection (not on GitHub Free for a private repo). It is an
+   accepted risk while only Jake, Claude and ChatGPT push, and Jake's own review is the backstop.
 2. `model: fable` in `reviewer.md` only applies to the local subagent. In CI the review runs on the action's
    default model, unless `--model` is added to `claude_args`, which uses more of the subscription's limits.
 3. The gate is JavaScript (`scripts/agent_review.cjs`) in a Python scripts folder. Nothing lints or type checks
