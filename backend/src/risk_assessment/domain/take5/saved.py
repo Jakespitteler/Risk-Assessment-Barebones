@@ -21,6 +21,8 @@ class SavedTake5(Take5):
         location: Where the job is.
         finished_at: When it was finished. Until task 0008 this is when it was saved.
         verdict: The verdict the worker was shown.
+        fixes: The ID of the saved Take 5 this one fixes, or None. It points back
+            only, so the first Take 5 is never changed when it is fixed.
     """
 
     id: UUID
@@ -30,3 +32,4 @@ class SavedTake5(Take5):
     location: str
     finished_at: datetime
     verdict: Verdict
+    fixes: UUID | None = None

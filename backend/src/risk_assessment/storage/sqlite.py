@@ -18,6 +18,12 @@ _INSERT: str = (
     "VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING"
 )
 _SELECT_DOCUMENT: str = "SELECT document FROM take5s WHERE id = ?"
+# A fix points back at the Take 5 it fixes from inside its own document, so the first
+# one is never written to again. The newest fix wins if there is more than one.
+_SELECT_NEWEST_FIX: str = (
+    "SELECT id FROM take5s WHERE json_extract(document, '$.fixes') = ? "
+    "ORDER BY created_at DESC LIMIT 1"
+)
 
 
 class SqliteTake5Repository:
@@ -76,6 +82,21 @@ class SqliteTake5Repository:
         """
         with closing(self._connect()) as connection:
             return _read(connection, take5_id)
+
+    def fixed_by(self, take5_id: UUID) -> UUID | None:
+        """Find the newest saved Take 5 that fixes this one.
+
+        Args:
+            take5_id: The ID of the Take 5 that may have been fixed.
+
+        Returns:
+            The newest fix's ID, or None if there is none.
+        """
+        with closing(self._connect()) as connection:
+            row: tuple[str] | None = connection.execute(
+                _SELECT_NEWEST_FIX, (str(take5_id),)
+            ).fetchone()
+        return UUID(row[0]) if row is not None else None
 
     def _connect(self) -> sqlite3.Connection:
         """Open a short-lived connection, making the file and table on first use.

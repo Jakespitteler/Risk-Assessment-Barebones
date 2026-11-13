@@ -54,12 +54,15 @@ class Take5Response(BaseModel):
     Attributes:
         take5: The saved Take 5, with its verdict and a copy of its template.
         rating: The Take 5's rating (spec R4 and R5).
+        fixed_by: The ID of the newest Take 5 that fixes this one, or None. It is
+            found when the Take 5 is opened, because the saved one never changes.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     take5: SavedTake5
     rating: RiskRating
+    fixed_by: UUID | None
 
 
 class ErrorMessage(BaseModel):

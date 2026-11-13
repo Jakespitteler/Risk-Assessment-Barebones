@@ -72,7 +72,7 @@ def create_router(service: Take5Service) -> APIRouter:
             saved: SavedTake5 = service.submit(request.draft, request.id)
         except SubmissionConflictError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
-        return Take5Response(take5=saved, rating=saved.rating)
+        return _response(saved, service)
 
     @router.get("/api/take5s/{take5_id}", responses=_UNREADABLE | _NOT_FOUND)
     def get(take5_id: UUID) -> Take5Response:
@@ -80,6 +80,21 @@ def create_router(service: Take5Service) -> APIRouter:
         saved: SavedTake5 | None = service.get(take5_id)
         if saved is None:
             raise HTTPException(status_code=404, detail=_NOT_FOUND_MESSAGE)
-        return Take5Response(take5=saved, rating=saved.rating)
+        return _response(saved, service)
 
     return router
+
+
+def _response(saved: SavedTake5, service: Take5Service) -> Take5Response:
+    """Build the reply for a saved Take 5, with its rating and the Take 5 that fixes it.
+
+    Args:
+        saved: The saved Take 5.
+        service: The service that finds its fix.
+
+    Returns:
+        The reply.
+    """
+    return Take5Response(
+        take5=saved, rating=saved.rating, fixed_by=service.fixed_by(saved.id)
+    )

@@ -2,10 +2,12 @@
 
 The phone sends only the worker's choices, never a score or a band. Every gap is
 reported in one pass, each with the dotted path of the field it belongs beside, such as
-`hazards.0.before.likelihood`.
+`hazards.0.before.likelihood`. Warnings are reported the same way: they don't stop
+the draft being submitted, but they say what will stop the job.
 """
 
 from typing import ClassVar
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -18,6 +20,7 @@ FILL_IN_MESSAGE: str = "Fill in this field."
 NO_HAZARD_MESSAGE: str = "List at least one hazard."
 NO_KIND_MESSAGE: str = "Pick a control kind."
 HIGHER_AFTER_MESSAGE: str = "Controls cannot make the after risk higher than before."
+NO_CONTROLS_WARNING: str = "No controls: you'll be told not to start."
 
 
 class RatingChoice(BaseModel):
@@ -74,6 +77,7 @@ class Take5Draft(BaseModel):
         job: What the job is.
         location: Where the job is.
         hazards: The hazards, in the order the worker listed them.
+        fixes: The ID of the saved Take 5 this one fixes, or None for a fresh one.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -82,6 +86,7 @@ class Take5Draft(BaseModel):
     job: str = ""
     location: str = ""
     hazards: tuple[HazardDraft, ...] = ()
+    fixes: UUID | None = None
 
 
 class FieldError(BaseModel):
@@ -98,11 +103,27 @@ class FieldError(BaseModel):
     message: str
 
 
+class FieldWarning(BaseModel):
+    """Something allowed that will stop the job, and the field it belongs beside.
+
+    Attributes:
+        path: The field's dotted path, such as `hazards.0.controls`.
+        message: What it will mean, in plain words.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    path: str
+    message: str
+
+
 class DraftCheck(BaseModel):
     """What checking a draft found.
 
     Attributes:
         errors: Every gap or mistake, in the order of the form.
+        warnings: Everything allowed that will stop the job, in the order of the form.
+            A warning never stops the draft being submitted.
         assessment: The rated Take 5, or None while there are errors.
         can_submit: True when there are no errors.
     """
@@ -110,6 +131,7 @@ class DraftCheck(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     errors: tuple[FieldError, ...]
+    warnings: tuple[FieldWarning, ...]
     assessment: Take5 | None
     can_submit: bool
 
@@ -122,7 +144,7 @@ def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
         template: The template the draft is filled in on.
 
     Returns:
-        The errors, and the rated Take 5 when there are none.
+        The errors and warnings, and the rated Take 5 when there are no errors.
     """
     errors: list[FieldError] = []
     for path, value in (
@@ -144,7 +166,26 @@ def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
         None if errors else Take5(template=template, hazards=tuple(hazards))
     )
     return DraftCheck(
-        errors=tuple(errors), assessment=assessment, can_submit=not errors
+        errors=tuple(errors),
+        warnings=_warnings(draft),
+        assessment=assessment,
+        can_submit=not errors,
+    )
+
+
+def _warnings(draft: Take5Draft) -> tuple[FieldWarning, ...]:
+    """Warn about each hazard with no controls, which will mean Don't start yet (V2).
+
+    Args:
+        draft: The worker's answers so far.
+
+    Returns:
+        One warning for each hazard with no controls, on its `controls` path.
+    """
+    return tuple(
+        FieldWarning(path=f"hazards.{index}.controls", message=NO_CONTROLS_WARNING)
+        for index, hazard in enumerate(draft.hazards)
+        if not hazard.controls
     )
 
 

@@ -4,7 +4,13 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from risk_assessment.domain.take5.draft import DraftCheck, Take5Draft, check_draft
+from risk_assessment.domain.take5.draft import (
+    DraftCheck,
+    FieldError,
+    Take5Draft,
+    check_draft,
+)
+from risk_assessment.domain.take5.fix import fixes_error
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.template import Take5Template
 from risk_assessment.domain.take5.verdict import verdict
@@ -76,14 +82,17 @@ class Take5Service:
             The saved Take 5, with its verdict.
 
         Raises:
-            InvalidDraftError: If anything is missing.
+            InvalidDraftError: If anything is missing, or `draft.fixes` isn't a saved
+                Don't start yet.
             SubmissionConflictError: If the ID was already used for other answers.
         """
         previous: SavedTake5 | None = self._repository.get(submission_id)
         template: Take5Template = (
             previous.template if previous is not None else self._template
         )
-        check: DraftCheck = check_draft(draft, template)
+        check: DraftCheck = self._with_fixes_error(
+            check_draft(draft, template), draft.fixes, submission_id
+        )
         if check.assessment is None:
             raise InvalidDraftError(check)
         now: datetime = datetime.now(UTC)
@@ -97,6 +106,7 @@ class Take5Service:
             job=draft.job.strip(),
             location=draft.location.strip(),
             verdict=verdict(check.assessment),
+            fixes=draft.fixes,
         )
         saved: SavedTake5 = (
             previous if previous is not None else self._repository.add(submitted)
@@ -117,6 +127,46 @@ class Take5Service:
             The saved Take 5, or None if there is none with this ID.
         """
         return self._repository.get(take5_id)
+
+    def fixed_by(self, take5_id: UUID) -> UUID | None:
+        """Find the newest saved Take 5 that fixes this one.
+
+        Args:
+            take5_id: The ID of the Take 5 that may have been fixed.
+
+        Returns:
+            The fix's ID, or None if it hasn't been fixed.
+        """
+        return self._repository.fixed_by(take5_id)
+
+    def _with_fixes_error(
+        self, check: DraftCheck, fixes: UUID | None, submission_id: UUID
+    ) -> DraftCheck:
+        """Add an error if the draft says it fixes a Take 5 it can't fix.
+
+        Args:
+            check: The draft's check so far.
+            fixes: The ID of the Take 5 the draft says it fixes, or None.
+            submission_id: The draft's own ID. A Take 5 can't fix itself.
+
+        Returns:
+            The check, with the error added and nothing to submit if there is one.
+        """
+        if fixes is None:
+            return check
+        fixed: SavedTake5 | None = (
+            None if fixes == submission_id else self._repository.get(fixes)
+        )
+        error: FieldError | None = fixes_error(fixed)
+        if error is None:
+            return check
+        return check.model_copy(
+            update={
+                "errors": (*check.errors, error),
+                "assessment": None,
+                "can_submit": False,
+            }
+        )
 
 
 def _answers(take5: SavedTake5) -> dict[str, Any]:

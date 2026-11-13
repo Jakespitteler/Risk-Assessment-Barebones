@@ -128,12 +128,16 @@ export interface components {
          *
          *     Attributes:
          *         errors: Every gap or mistake, in the order of the form.
+         *         warnings: Everything allowed that will stop the job, in the order of the form.
+         *             A warning never stops the draft being submitted.
          *         assessment: The rated Take 5, or None while there are errors.
          *         can_submit: True when there are no errors.
          */
         DraftCheck: {
             /** Errors */
             errors: components["schemas"]["FieldError"][];
+            /** Warnings */
+            warnings: components["schemas"]["FieldWarning"][];
             assessment: components["schemas"]["Take5"] | null;
             /** Can Submit */
             can_submit: boolean;
@@ -158,6 +162,20 @@ export interface components {
          *         message: What to do about it, in plain words.
          */
         FieldError: {
+            /** Path */
+            path: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * FieldWarning
+         * @description Something allowed that will stop the job, and the field it belongs beside.
+         *
+         *     Attributes:
+         *         path: The field's dotted path, such as `hazards.0.controls`.
+         *         message: What it will mean, in plain words.
+         */
+        FieldWarning: {
             /** Path */
             path: string;
             /** Message */
@@ -309,6 +327,8 @@ export interface components {
          *         location: Where the job is.
          *         finished_at: When it was finished. Until task 0008 this is when it was saved.
          *         verdict: The verdict the worker was shown.
+         *         fixes: The ID of the saved Take 5 this one fixes, or None. It points back
+         *             only, so the first Take 5 is never changed when it is fixed.
          */
         SavedTake5: {
             template: components["schemas"]["Take5Template"];
@@ -336,6 +356,8 @@ export interface components {
              */
             finished_at: string;
             verdict: components["schemas"]["Verdict"];
+            /** Fixes */
+            fixes?: string | null;
         };
         /**
          * SubmissionRequest
@@ -374,6 +396,7 @@ export interface components {
          *         job: What the job is.
          *         location: Where the job is.
          *         hazards: The hazards, in the order the worker listed them.
+         *         fixes: The ID of the saved Take 5 this one fixes, or None for a fresh one.
          */
         Take5Draft: {
             /**
@@ -396,6 +419,8 @@ export interface components {
              * @default []
              */
             hazards: components["schemas"]["HazardDraft"][];
+            /** Fixes */
+            fixes?: string | null;
         };
         /**
          * Take5Response
@@ -404,10 +429,14 @@ export interface components {
          *     Attributes:
          *         take5: The saved Take 5, with its verdict and a copy of its template.
          *         rating: The Take 5's rating (spec R4 and R5).
+         *         fixed_by: The ID of the newest Take 5 that fixes this one, or None. It is
+         *             found when the Take 5 is opened, because the saved one never changes.
          */
         Take5Response: {
             take5: components["schemas"]["SavedTake5"];
             rating: components["schemas"]["RiskRating"];
+            /** Fixed By */
+            fixed_by: string | null;
         };
         /**
          * Take5Template
