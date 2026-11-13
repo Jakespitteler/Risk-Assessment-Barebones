@@ -2,6 +2,28 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-13: Phone workflow, one hazard at a time and expandable guidance (task 0004)
+
+- Decision: Design for the worker's own phone at the job, including sun and gloves. After listing hazards,
+  assess one at a time with separate before, controls and after steps. Show guidance in expandable sections.
+- Why: Jake confirmed that usage context and chose focused hazard assessment and expandable guidance.
+  The card's descriptions help explain ratings without preselecting answers or supplying hazards.
+- Alternatives considered: Shared tablets or desktop-first use; every hazard on one long page; always-visible
+  explanations or labels alone. Front-end copies of card guidance would drift, so the API supplies it.
+- Decided by: human (Jake), selecting these options in task 0004's questions.
+
+## 2026-11-13: Save immutable submissions once through a repository port (task 0004)
+
+- Decision: Keep the reusable scoring `Take5` and extend it as `SavedTake5` for submission metadata and the saved
+  verdict. Store its JSON in the documented SQLite table through `Take5Repository`. A form uses one UUID for
+  submission and retries; the first stored document wins, and different input with the same ID is refused.
+- Why: This preserves task 0003's scoring interface, makes storage replaceable and handles a lost response
+  without duplicate assessments. Scores come from the server's template, never the request. Check requests
+  save nothing; the browser sends the completed draft only when the worker finishes the form.
+- Alternatives considered: SQLite in routes, overwriting a finished document, or a new ID on every retry.
+  Each would break a documented boundary or risk losing the original verdict or creating duplicates.
+- Decided by: chatgpt for implementation within the approved task and its duplicate-submit acceptance criterion.
+
 ## 2026-11-13: Select the actual Python executable instead of a directory default (task 0003 review)
 
 - Evidence: Jake's Windows Python Environments log resolves `backend/.venv/Scripts/python.exe`, but then logs

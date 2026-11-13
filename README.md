@@ -21,6 +21,15 @@ You need git, [uv](https://docs.astral.sh/uv/) and Node.js 22 or newer.
 
 Press Ctrl+C to stop. Both halves restart by themselves when their code changes.
 
+The home page now runs a complete Take 5: enter the job and hazards, assess each hazard, review and finish.
+The result is saved at `/take5s/<id>`; keep that URL to reopen it. Draft answers stay in memory while the form
+is open and are lost on reload or close. The phone remembers only the worker name. The original standalone
+matrix screen is at `/rate-risk`. Card questions and the AI challenge arrive in later tasks.
+
+Submitted Take 5s are stored in `backend/.data/take5.sqlite3`, which git ignores. Set
+`TAKE5_DATABASE_PATH` to use a different SQLite file. Back up that file to keep submitted assessments;
+removing the local database removes those records. Checking a draft does not save it.
+
 Open the repository root in VS Code. `[tool.pyright]` in the root `pyproject.toml` resolves `backend/src`
 for the app and tests in strict mode. The back end's own `pyproject.toml` still owns its dependencies and Ruff.
 From `backend/`, use `uv run pyright --project ..` so the checker uses the repository as its import root.
