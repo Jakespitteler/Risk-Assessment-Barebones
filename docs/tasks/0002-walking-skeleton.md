@@ -18,4 +18,4 @@ Build the thinnest end-to-end version of the app on the chosen stack, with CI en
 - [ ] README explains how to run and test.
 
 ## Notes / assumptions
-Depends on 0001.
+Depends on 0001. The stack chosen there has two halves, `backend/` and `frontend/` (see `docs/architecture.md`); the skeleton, the one-command run and CI need to cover both.

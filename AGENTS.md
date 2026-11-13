@@ -5,7 +5,8 @@ This file is the single source of truth for how to work here. Keep it under ~150
 
 ## What this is
 A risk assessment app. Full product definition lives in `docs/spec.md`.
-Stack: **TBD** (decided in task 0001; record it here and in `docs/architecture.md`).
+Stack: **a Python 3.13+ FastAPI back end (`backend/`) and a React + TypeScript front end (`frontend/`), with
+SQLite**. The full library list and the reasons are in `docs/architecture.md`.
 
 ## Commands
 Fill these in once the stack is chosen (task 0002). Every agent must use exactly these.
