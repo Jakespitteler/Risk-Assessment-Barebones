@@ -32,6 +32,9 @@ Fill these in once the stack is chosen (task 0002). Every agent must use exactly
 4. Keep the change to the task's scope. Note unrelated problems in the task file instead of fixing them.
 5. Done means: acceptance criteria met, tests added, all checks pass.
 6. Set `status: review`, open a PR using the template, and summarise what changed and how it was tested.
+   When the work is ready to merge, the PR's last commit sets `status: done` and ticks any box that waits on the
+   human's approval. The task file only reaches `main` when the human merges, and the merge is the approval, so
+   no follow-up PR is needed to mark a task done.
 7. The PR is reviewed by the *other* agent (or the human) before merge.
 
 ## Rules
