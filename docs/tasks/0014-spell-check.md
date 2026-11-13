@@ -21,10 +21,11 @@ that both agents share.
 - [x] Real misspellings are fixed. Deliberate non-words (shortened git flags in the guard and its tests, option
   letters in a pattern, a VS Code setting name) are ignored in their own file, not added to the dictionary.
 - [x] AGENTS.md gives the command and the rule, so ChatGPT keeps it passing too.
+- [x] `scripts/check.py`, and so CI, runs the spell check (Jake chose this on 2026-11-13).
 
 ## Out of scope
 
-- Running the spell check in `scripts/check.py` and CI. Proposed to Jake, waiting on his answer.
+- Checking the spelling of commit messages and pull request text.
 
 ## Notes / assumptions
 

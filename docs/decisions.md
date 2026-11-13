@@ -16,7 +16,8 @@ Newest first. One short entry per non-obvious decision.
 - Alternatives considered: importing the dictionary in `cspell.json` (the editor would show an import error,
   because the dictionary is not installed in the repo), and adding cspell as an npm dependency (needs approval;
   `npx` with pinned versions works the same way as markdownlint does now).
-- Decided by: human (Jake asked for it, 2026-11-13). Whether `check.py` and CI run it is waiting on Jake.
+- Decided by: human (Jake asked for it, 2026-11-13). He chose the same day to run it in `scripts/check.py`, so
+  CI fails on a spelling mistake.
 
 ## 2026-11-13: Bound the automated review and skip its own pushes (task 0012)
 

@@ -21,7 +21,7 @@ Run each from the folder shown.
   and `npm run format`. Markdown, in the repo root: `npx markdownlint-cli2@0.24.0 "**/*.md"`.
   `check.py` also lints `scripts/` with the back end's settings and type checks it with the root `pyproject.toml`.
 - Spelling (Australian English), in the repo root: `npx -y -p cspell@10.5.0 -p @cspell/dict-en-au@1.1.31 cspell
-  -c .cspell/cli.json "**"`. `check.py` and CI don't run it yet.
+  -c .cspell/cli.json "**"`.
 - Typecheck: in `backend/`, `uv run pyright --project ..`. In `frontend/`, `npm run typecheck`.
 - API types: in `frontend/`, `npm run generate:api` after any change to the API. Commit both files it writes.
 - All checks (what CI runs): in the repo root, `uv run scripts/check.py`.
