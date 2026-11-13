@@ -136,7 +136,7 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 
 | Endpoint | What it does |
 | --- | --- |
-| `GET /api/take5/template` | The template a new Take 5 is filled in on: its questions and its matrix, plus the control kinds |
+| `GET /api/take5/template` | The template a new Take 5 is filled in on: its questions, its matrix and its guidance, plus the control kinds |
 | `POST /api/take5s/check` | Checks a draft and returns what is missing and which thinking rules apply. Saves nothing |
 | `POST /api/take5s` | Checks and saves a Take 5, asks the AI (or the fallback) for its question, and returns both |
 | `POST /api/take5s/{id}/answer` | Saves the answer, works out the verdict, and returns the finished Take 5 |
@@ -152,9 +152,10 @@ ID once and sends it every time.
 **The front end holds no rules and no card.** It gets the questions and the matrix from
 `GET /api/take5/template`, draws whatever it is sent, and shows a score by looking it up in that matrix. It finds
 out what is missing or needs another look by asking
-`POST /api/take5s/check`. So there is exactly one copy of every rule, in Python, under test. The one behaviour
-that lives in the front end is spec T1 (hiding the hazard questions until a hazard is written), because it is
-about what is on the screen.
+`POST /api/take5s/check`. So there is exactly one copy of every rule, in Python, under test. Two behaviours live
+in the front end, because they are about what is on the screen: spec T1 (hiding the hazard questions until a
+hazard is written), and skipping the after-controls page of a hazard with no controls. The back end still
+decides that such a hazard's after rating is its before rating (R6).
 
 While developing, Vite serves the front end and passes `/api` calls on to FastAPI. When hosted, FastAPI serves
 the built front-end files itself, so there is still only one program to run.

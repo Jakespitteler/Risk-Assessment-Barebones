@@ -16,7 +16,16 @@ def _take5(
     after: tuple[str, str] = ("Unlikely", "Minor"),
     controls: tuple[Control, ...] = _BARRICADE,
 ) -> Take5:
-    """The spec's default for these examples: 8 then 5, with one barricade."""
+    """Make the spec's default Take 5 for these examples: 8 then 5, with a barricade.
+
+    Args:
+        before: The likelihood and consequence before controls.
+        after: The likelihood and consequence after controls. Ignored with no controls.
+        controls: The controls.
+
+    Returns:
+        The rated Take 5.
+    """
     return Take5(
         template=BOOKLET_TEMPLATE,
         hazards=(

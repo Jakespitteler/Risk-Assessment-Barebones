@@ -270,3 +270,19 @@ def test_reusing_an_id_for_other_answers_is_a_409_with_a_message(
     assert response.json() == {
         "detail": "This Take 5 was already saved with different answers."
     }
+
+
+def test_an_unreadable_draft_field_is_named_by_its_own_path(tmp_path: Path) -> None:
+    """A field FastAPI can't read gets the path the form uses, and a plain message."""
+    client = TestClient(create_app(SqliteTake5Repository(tmp_path / "take5.sqlite3")))
+    body: dict[str, Any] = SubmissionRequest(id=uuid4(), draft=_draft()).model_dump(
+        mode="json"
+    )
+    body["draft"]["worker_name"] = 7
+
+    response: Response = client.post("/api/take5s", json=body)
+
+    assert response.status_code == 422
+    assert response.json()["errors"] == [
+        {"path": "worker_name", "message": "This answer could not be read."}
+    ]

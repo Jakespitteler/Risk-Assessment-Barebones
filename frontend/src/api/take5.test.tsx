@@ -3,7 +3,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { afterEach, expect, it, vi } from "vitest";
 import { COMPLETE_DRAFT, SAVED, quickClient, stubApi } from "../test-utils";
-import { ApiError, useSavedTake5, useSubmitTake5 } from "./take5";
+import {
+  ApiError,
+  useCheckDraft,
+  useSavedTake5,
+  useSubmitTake5,
+} from "./take5";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -91,4 +96,16 @@ it("retries reading a saved Take 5 when there is no signal", async () => {
     expect(result.current.data).toEqual(SAVED);
   });
   expect(calls).toEqual([path, path]);
+});
+
+it("tries a Continue's check once, so no signal never keeps the worker waiting", async () => {
+  const calls = stubApi({ "POST /api/take5s/check": "offline" });
+  const { result } = renderHook(() => useCheckDraft(), {
+    wrapper: wrapper(quickClient()),
+  });
+
+  await expect(result.current(COMPLETE_DRAFT)).rejects.toThrow(
+    "Failed to fetch",
+  );
+  expect(calls).toEqual(["POST /api/take5s/check"]);
 });

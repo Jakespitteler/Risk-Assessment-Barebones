@@ -15,8 +15,13 @@ export type Take5Response = Schemas["Take5Response"];
 type FormErrors = Schemas["FormErrors"];
 
 // Long enough for one bar of signal, short enough that the worker isn't left waiting.
-const TIMEOUT_MS = 15_000;
-const NETWORK_RETRIES = 3;
+const TIMEOUT_MS = 10_000;
+// A Continue waits for one short try only: with no signal the worker carries on.
+const CONTINUE_TIMEOUT_MS = 5_000;
+const NETWORK_RETRIES = 2;
+// Always send the request, even when the phone says it is offline. TanStack's default
+// pauses it until the phone is back online, which leaves the screen waiting for good.
+const NETWORK_MODE = "always";
 
 /** The API answered with an error. Only a 422 carries field errors. */
 export class ApiError extends Error {
@@ -29,9 +34,13 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(url: string, body?: unknown): Promise<T> {
+async function request<T>(
+  url: string,
+  body?: unknown,
+  timeoutMs = TIMEOUT_MS,
+): Promise<T> {
   const response = await fetch(url, {
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
     ...(body === undefined
       ? {}
       : {
@@ -66,27 +75,44 @@ export function useTemplate() {
     queryFn: () => request<TemplateResponse>("/api/take5/template"),
     staleTime: Infinity,
     retry: retryOnNetworkError,
+    networkMode: NETWORK_MODE,
   });
 }
 
-function checkQuery(draft: Take5Draft) {
-  return {
-    queryKey: ["take5-check", draft],
+function checkKey(draft: Take5Draft) {
+  return ["take5-check", draft];
+}
+
+/**
+ * What the back end says is missing from a draft, and its ratings. Saves nothing.
+ * Only asks while `enabled`, so the review can share the answer with the Finish button.
+ */
+export function useDraftCheck(draft: Take5Draft, enabled = true) {
+  return useQuery({
+    queryKey: checkKey(draft),
     queryFn: () => request<DraftCheck>("/api/take5s/check", draft),
     staleTime: Infinity,
     retry: retryOnNetworkError,
-  };
+    networkMode: NETWORK_MODE,
+    enabled,
+  });
 }
 
-/** What the back end says is missing from a draft, and its ratings. Saves nothing. */
-export function useDraftCheck(draft: Take5Draft) {
-  return useQuery(checkQuery(draft));
-}
-
-/** Check a draft now, for a Continue button. The answer is kept for `useDraftCheck`. */
+/**
+ * Check a draft now, for a Continue button: one short try, with no retry. The answer is
+ * kept for `useDraftCheck`.
+ */
 export function useCheckDraft() {
   const queryClient = useQueryClient();
-  return (draft: Take5Draft) => queryClient.query(checkQuery(draft));
+  return (draft: Take5Draft) =>
+    queryClient.query({
+      queryKey: checkKey(draft),
+      queryFn: () =>
+        request<DraftCheck>("/api/take5s/check", draft, CONTINUE_TIMEOUT_MS),
+      staleTime: Infinity,
+      retry: false,
+      networkMode: NETWORK_MODE,
+    });
 }
 
 /**
@@ -99,6 +125,7 @@ export function useSubmitTake5() {
     mutationFn: ({ id, draft }: { id: string; draft: Take5Draft }) =>
       request<Take5Response>("/api/take5s", { id, draft }),
     retry: retryOnNetworkError,
+    networkMode: NETWORK_MODE,
     onSuccess: (saved) => {
       queryClient.setQueryData(["take5", saved.take5.id], saved);
     },
@@ -113,5 +140,6 @@ export function useSavedTake5(id: string) {
       request<Take5Response>(`/api/take5s/${encodeURIComponent(id)}`),
     staleTime: Infinity,
     retry: retryOnNetworkError,
+    networkMode: NETWORK_MODE,
   });
 }

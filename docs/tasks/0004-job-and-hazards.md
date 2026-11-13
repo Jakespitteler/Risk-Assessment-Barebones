@@ -65,9 +65,12 @@ Assumptions:
 - The draft and its submission ID are kept in the tab's `sessionStorage`, so a reload or a slip of the back
   gesture loses nothing. They are cleared when the Take 5 is saved, or when the tab is closed. Only the
   worker's name is kept after that, in `localStorage`, as before.
-- With no signal, Continue moves on without the check; the review checks everything again before Finish.
-- Reads and the submit retry three times when they get no answer or a 5xx, and every request times out after
-  15 seconds.
+- With no signal, Continue moves on after one 5-second try; the review checks everything again, and Finish
+  stays disabled until that check has come back.
+- Reads and the submit try up to three times when they get no answer or a 5xx, each within 10 seconds. They
+  are sent even when the phone says it is offline, so a screen never waits for good.
+- Undo lasts until the next edit or page, so it can never wipe newer answers. A 409 forgets the draft in that
+  tab, so the next Take 5 starts with a new ID.
 
 For the next tasks: task 0005 adds the card's questions to `Take5Template` and `Take5Draft`; `stageOfError()` in
 `frontend/src/features/take5/stage.ts` needs to place their error paths on the right page.

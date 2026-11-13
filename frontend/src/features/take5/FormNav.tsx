@@ -5,6 +5,7 @@ import type { Stage } from "./stage";
 export function FormNav({
   stage,
   busy,
+  canFinish,
   label,
   onBack,
   onContinue,
@@ -12,6 +13,7 @@ export function FormNav({
 }: {
   stage: Stage;
   busy: boolean;
+  canFinish: boolean;
   label: string | undefined;
   onBack: () => void;
   onContinue: () => void;
@@ -26,7 +28,7 @@ export function FormNav({
         </Button>
       )}
       <Button
-        disabled={busy}
+        disabled={busy || (last && !canFinish)}
         onClick={last ? onFinish : onContinue}
         className="col-start-2"
       >

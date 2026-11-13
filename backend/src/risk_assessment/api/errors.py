@@ -13,6 +13,9 @@ from risk_assessment.services.take5s import InvalidDraftError
 _logger: logging.Logger = logging.getLogger(__name__)
 
 _BAD_REQUEST_MESSAGE: str = "Some of what was sent could not be read."
+_BAD_FIELD_MESSAGE: str = "This answer could not be read."
+# Where FastAPI found a field, which is not part of the field's own path.
+_REQUEST_PARTS: tuple[str, ...] = ("body", "path", "query")
 
 
 def add_error_handlers(app: FastAPI) -> None:
@@ -44,7 +47,9 @@ def _invalid_draft(_request: Request, error: Exception) -> JSONResponse:
 def _unreadable_request(_request: Request, error: Exception) -> JSONResponse:
     """Reply 422 when FastAPI can't read a request, such as a malformed ID.
 
-    Only the field paths are logged, never the values, which may hold a worker's name.
+    Each path is written as the draft's own field paths are, such as `worker_name`, so
+    the phone can show it beside its field. Only the paths are logged, never the values,
+    which may hold a worker's name.
 
     Args:
         _request: The request that failed.
@@ -56,10 +61,28 @@ def _unreadable_request(_request: Request, error: Exception) -> JSONResponse:
     problems: list[FieldError] = []
     if isinstance(error, RequestValidationError):
         for problem in error.errors():
-            path: str = ".".join(str(part) for part in problem["loc"][1:])
-            problems.append(FieldError(path=path, message=str(problem["msg"])))
+            path: str = _field_path(tuple(problem["loc"]))
+            problems.append(FieldError(path=path, message=_BAD_FIELD_MESSAGE))
     _logger.info("Unreadable request: %s", [problem.path for problem in problems])
     return _form_errors(_BAD_REQUEST_MESSAGE, tuple(problems))
+
+
+def _field_path(location: tuple[object, ...]) -> str:
+    """Turn where FastAPI found a problem into a dotted field path.
+
+    Args:
+        location: FastAPI's location, such as `("body", "draft", "worker_name")`.
+
+    Returns:
+        The field's path, such as `worker_name`. A submission's draft fields lose their
+        `draft.` prefix, so they match the paths that checking a draft gives.
+    """
+    parts: list[str] = [str(part) for part in location]
+    if parts and parts[0] in _REQUEST_PARTS:
+        parts = parts[1:]
+    if parts and parts[0] == "draft":
+        parts = parts[1:]
+    return ".".join(parts)
 
 
 def _form_errors(detail: str, errors: tuple[FieldError, ...]) -> JSONResponse:

@@ -16,7 +16,14 @@ from risk_assessment.storage.sqlite import SqliteTake5Repository
 
 
 def _saved(job: str = "Change tyre on LV12") -> SavedTake5:
-    """A saved Take 5 with one controlled hazard and every field filled in."""
+    """Make a saved Take 5 with one controlled hazard and every field filled in.
+
+    Args:
+        job: The job.
+
+    Returns:
+        The saved Take 5, with a new ID.
+    """
     now: datetime = datetime(2026, 11, 13, 7, 30, tzinfo=UTC)
     return SavedTake5(
         template=BOOKLET_TEMPLATE,

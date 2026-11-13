@@ -15,7 +15,7 @@ import {
   pick,
 } from "./helpers";
 
-// Three retries, a second apart and doubling, plus the first try.
+// Two retries, a second apart and doubling, after the first try.
 const RETRIES_DONE = { timeout: 15_000 };
 
 test("a worker fills in, saves, reopens and starts a new Take 5", async ({

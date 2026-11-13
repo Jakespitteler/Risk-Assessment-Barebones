@@ -1,22 +1,21 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { FieldError, TemplateResponse } from "../../api/take5";
-import { ApiError, useCheckDraft, useSubmitTake5 } from "../../api/take5";
+import {
+  ApiError,
+  useCheckDraft,
+  useDraftCheck,
+  useSubmitTake5,
+} from "../../api/take5";
 import { Notice } from "../../components/Notice";
 import { UndoBar } from "../../components/UndoBar";
-import { focusFirstError } from "./focusFirstError";
 import { FormHeading } from "./FormHeading";
 import { FormNav } from "./FormNav";
 import { FormPage } from "./FormPage";
 import type { Problem } from "./SaveProblem";
 import { SaveProblem } from "./SaveProblem";
 import type { Stage } from "./stage";
-import {
-  nextStage,
-  previousStage,
-  sameStage,
-  shownStage,
-  stageOfError,
-} from "./stage";
+import * as stages from "./stage";
+import { usePageFocus } from "./usePageFocus";
 import { useTake5Draft } from "./useTake5Draft";
 
 export interface Take5FormProps {
@@ -32,70 +31,55 @@ export function Take5Form(props: Take5FormProps) {
   const { template, onStageChange, onSaved } = props;
   const take5 = useTake5Draft();
   const { draft } = take5;
+  const stage = stages.shownStage(props.stage, draft);
   const checkDraft = useCheckDraft();
+  const review = useDraftCheck(draft, stage.page === "review");
   const submit = useSubmitTake5();
-  const [errors, setErrors] = useState<FieldError[]>([]);
+  const { heading, container, focusErrorsOn } = usePageFocus(stage);
+  const [allErrors, setErrors] = useState<FieldError[]>([]);
   const [fixing, setFixing] = useState(false);
   const [checking, setChecking] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
-  const [focusErrorsOn, setFocusErrorsOn] = useState<{
-    stageKey: string;
-    attempt: number;
-  } | null>(null);
-  const heading = useRef<HTMLHeadingElement>(null);
-  const form = useRef<HTMLDivElement>(null);
-  const stage = shownStage(props.stage, draft);
-  const stageKey = JSON.stringify(stage);
+  const isHere = (error: FieldError) =>
+    stages.sameStage(stages.stageOfError(error.path), stage);
+  // Only this page's errors show, so Back never shows a notice with nothing marked.
+  const errors = allErrors.filter(isHere);
 
   useEffect(() => {
-    if (!sameStage(stage, props.stage)) onStageChange(stage, { replace: true });
+    if (!stages.sameStage(stage, props.stage))
+      onStageChange(stage, { replace: true });
   });
-  // A new page puts the focus on its heading, or on its first error when there is one.
-  useEffect(() => {
-    if (focusErrorsOn?.stageKey === stageKey) focusFirstError(form.current);
-    else heading.current?.focus();
-  }, [stageKey, focusErrorsOn]);
 
-  function focusErrors(on: Stage) {
-    setFocusErrorsOn((last) => ({
-      stageKey: JSON.stringify(on),
-      attempt: (last?.attempt ?? 0) + 1,
-    }));
-  }
-
-  /** Show the first page that has a gap, with that page's errors. */
+  /** Open the first page that has a gap, with that page's errors marked. */
   function showGaps(found: FieldError[]) {
     const first = found[0];
     if (!first) return;
-    const target = stageOfError(first.path);
-    setErrors(
-      found.filter((error) => sameStage(stageOfError(error.path), target)),
-    );
+    const target = stages.stageOfError(first.path);
+    setErrors(found);
     setFixing(true);
     onStageChange(target, { replace: true });
-    focusErrors(target);
+    focusErrorsOn(target);
   }
 
   async function next() {
     setProblem(null);
+    take5.dismissRemoval();
     setChecking(true);
     // With no signal the worker carries on; the review checks everything again.
     const check = await checkDraft(draft).catch(() => null);
     setChecking(false);
-    const here = (check?.errors ?? []).filter((error) =>
-      sameStage(stageOfError(error.path), stage),
-    );
-    if (here.length) {
-      setErrors(here);
-      focusErrors(stage);
+    if (check?.errors.some(isHere)) {
+      setErrors(check.errors);
+      focusErrorsOn(stage);
       return;
     }
     setErrors([]);
     if (fixing && check && !check.can_submit) showGaps(check.errors);
     else if (fixing && check) {
+      // Replace the page that was fixed, so Back from the review goes where it always does.
       setFixing(false);
-      onStageChange({ page: "review" });
-    } else onStageChange(nextStage(stage, draft));
+      onStageChange({ page: "review" }, { replace: true });
+    } else onStageChange(stages.nextStage(stage, draft));
   }
 
   function finish() {
@@ -108,14 +92,13 @@ export function Take5Form(props: Take5FormProps) {
           onSaved(saved.take5.id);
         },
         onError: (error) => {
-          if (error instanceof ApiError && error.status === 422)
+          const status = error instanceof ApiError ? error.status : 0;
+          if (status === 422 && error instanceof ApiError)
             showGaps(error.fieldErrors);
-          else
-            setProblem(
-              error instanceof ApiError && error.status === 409
-                ? "conflict"
-                : "unsent",
-            );
+          else if (status === 409) {
+            take5.discard();
+            setProblem("conflict");
+          } else setProblem("unsent");
         },
       },
     );
@@ -123,7 +106,7 @@ export function Take5Form(props: Take5FormProps) {
 
   const hazard = "hazard" in stage ? draft.hazards[stage.hazard] : undefined;
   return (
-    <div ref={form} className="flex flex-col gap-6">
+    <div ref={container} className="flex flex-col gap-6">
       <FormHeading
         stage={stage}
         hazardCount={draft.hazards.length}
@@ -156,11 +139,13 @@ export function Take5Form(props: Take5FormProps) {
       <FormNav
         stage={stage}
         busy={checking || submit.isPending}
+        // Finish waits until the review has shown the back end's answer.
+        canFinish={review.data?.can_submit === true}
         label={
           submit.isPending ? "Saving…" : checking ? "Checking…" : undefined
         }
         onBack={() => {
-          props.onBack(previousStage(stage, draft));
+          props.onBack(stages.previousStage(stage, draft));
         }}
         onContinue={() => void next()}
         onFinish={finish}

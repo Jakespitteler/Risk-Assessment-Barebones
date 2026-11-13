@@ -1,3 +1,4 @@
+import { onlineManager } from "@tanstack/react-query";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -13,6 +14,8 @@ import type { Stage } from "./stage";
 import { Take5Form } from "./Take5Form";
 
 const onSaved = vi.fn<(id: string) => void>();
+// Each page the form moved to, and whether it replaced the page before it.
+let moves: { page: string; replace: boolean }[] = [];
 
 // Stands in for the router: the stage is kept in state instead of the URL.
 function FormAt({ start }: { start: Stage }) {
@@ -21,7 +24,10 @@ function FormAt({ start }: { start: Stage }) {
     <Take5Form
       template={SMALL_TEMPLATE}
       stage={stage}
-      onStageChange={setStage}
+      onStageChange={(to, options) => {
+        moves.push({ page: to.page, replace: options?.replace ?? false });
+        setStage(to);
+      }}
       onBack={setStage}
       onSaved={onSaved}
     />
@@ -31,17 +37,34 @@ function FormAt({ start }: { start: Stage }) {
 function storeDraft() {
   sessionStorage.setItem(
     "take5-draft",
-    JSON.stringify({ draft: COMPLETE_DRAFT, submissionId: SAVED.take5.id }),
+    JSON.stringify({
+      version: 1,
+      draft: COMPLETE_DRAFT,
+      submissionId: SAVED.take5.id,
+    }),
   );
+}
+
+/** Press Finish once the review's check has come back and enabled it. */
+async function clickFinish() {
+  const button = await screen.findByRole<HTMLButtonElement>("button", {
+    name: "Finish Take 5",
+  });
+  await waitFor(() => {
+    expect(button.disabled).toBe(false);
+  });
+  fireEvent.click(button);
 }
 
 beforeEach(() => {
   sessionStorage.clear();
   localStorage.clear();
   onSaved.mockReset();
+  moves = [];
 });
 afterEach(() => {
   vi.unstubAllGlobals();
+  onlineManager.setOnline(true);
 });
 
 it("starts with nothing filled in but the remembered name, and the heading focused", () => {
@@ -115,7 +138,7 @@ it("saves, forgets the draft, remembers the name and opens the result", async ()
     "POST /api/take5s": { status: 200, body: SAVED },
   });
   renderWithApi(<FormAt start={{ page: "review" }} />);
-  fireEvent.click(await screen.findByRole("button", { name: "Finish Take 5" }));
+  await clickFinish();
   await waitFor(() => {
     expect(onSaved).toHaveBeenCalledWith(SAVED.take5.id);
   });
@@ -141,7 +164,7 @@ it("sends the worker to the gap the back end found on Finish", async () => {
     },
   });
   renderWithApi(<FormAt start={{ page: "review" }} />);
-  fireEvent.click(await screen.findByRole("button", { name: "Finish Take 5" }));
+  await clickFinish();
   expect(
     await screen.findByRole("heading", { name: "What will stop it?" }),
   ).toBeTruthy();
@@ -158,8 +181,121 @@ it("offers the saved Take 5 when its ID was used for other answers", async () =>
     },
   });
   renderWithApi(<FormAt start={{ page: "review" }} />);
-  fireEvent.click(await screen.findByRole("button", { name: "Finish Take 5" }));
+  await clickFinish();
   expect(
     await screen.findByRole("link", { name: "Open the saved Take 5" }),
   ).toBeTruthy();
+});
+
+it("moves on with no signal, even when the phone says it is offline", async () => {
+  storeDraft();
+  stubApi({ "POST /api/take5s/check": "offline" });
+  onlineManager.setOnline(false);
+  renderWithApi(<FormAt start={{ page: "job" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+  expect(
+    await screen.findByRole("heading", { name: "What could hurt someone?" }),
+  ).toBeTruthy();
+});
+
+it("keeps Finish disabled when the review couldn't be checked", async () => {
+  storeDraft();
+  stubApi({ "POST /api/take5s/check": "offline" });
+  renderWithApi(<FormAt start={{ page: "review" }} />);
+  expect(await screen.findByRole("button", { name: "Try again" })).toBeTruthy();
+  expect(
+    screen.getByRole<HTMLButtonElement>("button", { name: "Finish Take 5" })
+      .disabled,
+  ).toBe(true);
+});
+
+it("ends the undo at the next edit, so Undo can't wipe newer answers", () => {
+  storeDraft();
+  stubApi({});
+  renderWithApi(<FormAt start={{ page: "hazards" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Add another hazard" }));
+  fireEvent.click(screen.getByRole("button", { name: "Remove hazard 1" }));
+  fireEvent.change(screen.getByLabelText("Hazard 1"), {
+    target: { value: "Dust" },
+  });
+  expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
+});
+
+it("forgets the draft after a 409, so the next Take 5 in the tab starts afresh", async () => {
+  storeDraft();
+  stubApi({
+    "POST /api/take5s/check": { status: 200, body: PASSING_CHECK },
+    "POST /api/take5s": {
+      status: 409,
+      body: { detail: "This Take 5 was already saved with different answers." },
+    },
+  });
+  renderWithApi(<FormAt start={{ page: "review" }} />);
+  await clickFinish();
+  await screen.findByRole("link", { name: "Open the saved Take 5" });
+  expect(sessionStorage.getItem("take5-draft")).toBeNull();
+});
+
+it("returns to the review once a gap is fixed, in place of the fixed page", async () => {
+  storeDraft();
+  const gap = {
+    errors: [{ path: "job", message: "Fill in this field." }],
+    assessment: null,
+    can_submit: false,
+  };
+  stubApi({
+    "POST /api/take5s/check": [
+      { status: 200, body: gap },
+      { status: 200, body: PASSING_CHECK },
+    ],
+  });
+  renderWithApi(<FormAt start={{ page: "review" }} />);
+  expect(
+    await screen.findByRole("heading", { name: "The job in front of you" }),
+  ).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("What is the job?"), {
+    target: { value: "Change tyre again" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+  expect(
+    await screen.findByRole("heading", { name: "One last look" }),
+  ).toBeTruthy();
+  expect(moves).toEqual([
+    { page: "job", replace: true },
+    { page: "review", replace: true },
+  ]);
+});
+
+it("focuses the heading on returning to a page that once had errors", async () => {
+  stubApi({
+    "POST /api/take5s/check": [
+      {
+        status: 200,
+        body: {
+          errors: [{ path: "job", message: "Fill in this field." }],
+          assessment: null,
+          can_submit: false,
+        },
+      },
+      { status: 200, body: PASSING_CHECK },
+    ],
+  });
+  renderWithApi(<FormAt start={{ page: "job" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+  const job = screen.getByLabelText("What is the job?");
+  await waitFor(() => {
+    expect(document.activeElement).toBe(job);
+  });
+  fireEvent.change(job, { target: { value: "Change tyre" } });
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+  await screen.findByRole("heading", { name: "What could hurt someone?" });
+  fireEvent.click(screen.getByRole("button", { name: "Back" }));
+  await waitFor(() => {
+    expect(document.activeElement).toBe(
+      screen.getByRole("heading", { level: 1 }),
+    );
+  });
+  expect(
+    screen.queryByText("Fill in the highlighted answers to carry on."),
+  ).toBeNull();
 });

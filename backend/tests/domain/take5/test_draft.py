@@ -16,6 +16,7 @@ from risk_assessment.domain.take5.draft import (
     Take5Draft,
     check_draft,
 )
+from risk_assessment.domain.take5.take5 import Hazard
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
 
 
@@ -26,7 +27,16 @@ def _hazard(
         ControlDraft(description="Barricade the area", kind=ControlKind.BARRICADE),
     ),
 ) -> HazardDraft:
-    """A complete hazard, rated 8 then 5 with one control unless told otherwise."""
+    """Make a complete hazard, rated 8 then 5 with one control unless told otherwise.
+
+    Args:
+        before: The likelihood and consequence before controls.
+        after: The likelihood and consequence after controls.
+        controls: The controls.
+
+    Returns:
+        The hazard as the phone would send it.
+    """
     return HazardDraft(
         description="Moving wheel",
         before=RatingChoice(likelihood=before[0], consequence=before[1]),
@@ -36,7 +46,14 @@ def _hazard(
 
 
 def _draft(*hazards: HazardDraft) -> Take5Draft:
-    """A complete draft with the hazards given, or one complete hazard."""
+    """Make a complete draft.
+
+    Args:
+        *hazards: Its hazards. With none, it has one complete hazard.
+
+    Returns:
+        The draft as the phone would send it.
+    """
     return Take5Draft(
         worker_name="Sam Example",
         job="Change tyre on LV12",
@@ -167,7 +184,7 @@ def test_example_17_with_no_controls_after_is_the_before_rating() -> None:
     check: DraftCheck = check_draft(_draft(hazard), BOOKLET_TEMPLATE)
 
     assert check.assessment is not None
-    rated = check.assessment.hazards[0]
+    rated: Hazard = check.assessment.hazards[0]
     assert rated.after == rated.before
     assert (check.assessment.rating.score, check.assessment.rating.band) == (
         8,
