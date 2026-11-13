@@ -23,6 +23,7 @@
         "httpx",
         "killpg",
         "NONINFRINGEMENT",
+        "parametrize",
         "pydantic",
         "pydocstyle",
         "pyproject",
@@ -32,6 +33,7 @@
         "taskkill",
         "testpaths",
         "uvicorn",
-        "venv"
+        "venv",
+        "vite"
     ]
 }
