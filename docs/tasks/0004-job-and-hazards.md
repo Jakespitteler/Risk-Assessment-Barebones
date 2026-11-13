@@ -64,7 +64,7 @@ Assumptions:
 
 - The draft and its submission ID are kept in the tab's `sessionStorage`, so a reload or a slip of the back
   gesture loses nothing. They are cleared when the Take 5 is saved, or when the tab is closed. Only the
-  worker's name is kept after that, in `localStorage`, as before.
+  worker's name is kept after that, in `localStorage`, as before. Jake approved this on 2026-11-13.
 - With no signal, Continue moves on after one 5-second try; the review checks everything again, and Finish
   stays disabled until that check has come back.
 - Reads and the submit try up to three times when they get no answer or a 5xx, each within 10 seconds. They
