@@ -1,7 +1,7 @@
 ---
 id: 0010
 title: Fix a Don't start yet - warn at the review, and copy the answers into a new Take 5 (spec F3)
-status: review
+status: done
 owner: claude
 branch: claude/project-thread-jd8go0
 ---
