@@ -126,6 +126,8 @@ frontend/
 scripts/
     dev.py                 starts both halves for development
     check.py               runs every check, as CI does
+    claude_hooks/          Claude Code's hooks (set in .claude/settings.json): a guard that blocks
+                           secrets and risky git commands, and a formatter that runs after each edit
 ```
 
 The four files directly under `domain/` know nothing about a Take 5. They are the shared building blocks, and

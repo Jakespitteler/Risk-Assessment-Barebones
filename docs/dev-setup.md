@@ -11,6 +11,22 @@ pytest from `backend/` and use Ruff to format and sort imports.
    VS Code keeps this choice on your computer; it is not in the repo.
 3. Run **Developer: Reload Window**, then **Test: Refresh Tests**.
 
+## Claude Code's hooks
+
+`.claude/settings.json` runs two hooks from `scripts/claude_hooks/`. Before each file tool and Bash or
+PowerShell command, a guard blocks anything that names a secret or saved Take 5s, and risky git commands. After
+each edit a formatter tidies the file.
+
+- Start Claude Code in the repository root. It reads `.claude/settings.json` from the folder it starts in.
+- The hooks need `uv` on your `PATH` and Claude Code 2.1.295 or later. The formatter also needs the install
+  step above (`uv sync` in `backend/`, `npm ci` in `frontend/`).
+- The pre-approved commands start once you trust the folder in Claude Code. Run `/hooks` to see the hooks.
+- If the guard breaks, times out or can't start, it blocks the call rather than letting it through, and says
+  why.
+- A commit message or PR body that names a secret, such as `.env`, is blocked too. Write the text to a file and
+  pass the file: `git commit -F message.txt`, `gh pr create --body-file body.md`.
+- Put personal changes in `.claude/settings.local.json`, which git ignores.
+
 ## How type checking is set up
 
 Pylance and the command-line checks share one strict Pyright configuration, `[tool.pyright]` in the root

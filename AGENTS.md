@@ -35,7 +35,7 @@ Run each from the folder shown.
 
 ## How work happens
 
-1. Pick a task in `docs/tasks/` with `status: todo`, or ask the human to create one.
+1. Pick the next `todo` task in the order in `docs/tasks/README.md`, or ask the human to create one.
 2. Claim it: set `status: in-progress` and `owner: <claude|chatgpt|human>` and commit that first.
 3. Work on a branch named `<owner>/<task-id>-<short-name>`. Never commit directly to `main`.
 4. Keep the change to the task's scope. Note unrelated problems in the task file instead of fixing them.
@@ -44,7 +44,8 @@ Run each from the folder shown.
    When the work is ready to merge, the PR's last commit sets `status: done` and ticks any box that waits on the
    human's approval. The task file only reaches `main` when the human merges, and the merge is the approval, so
    no follow-up PR is needed to mark a task done.
-7. The PR is reviewed by the *other* agent (or the human) before merge.
+7. An agent that did not write the change reviews the PR before the human does. That is the review agent in CI
+   once task 0012 is done, and the other agent until then. The human always does the final review and merges.
 
 ## Rules
 
@@ -59,6 +60,9 @@ Run each from the folder shown.
   tradeoffs and how they will be verified. Diagnose the cause before adding bypass settings or workarounds.
 - Don't edit another agent's in-progress task or branch.
 - No secrets, credentials, or real personal data in the repo. Use obviously fake sample data.
+- Never read or change `.env` files, keys, `secrets/` or `backend/.data/` (saved Take 5s). Never skip checks
+  (`--no-verify`), force push, push to `main`, or merge a PR. On a computer, Claude Code's settings and hooks
+  (`.claude/settings.json`) back this up, but they only match words, so the rule stands without them.
 - Prefer small PRs (one task, ideally under ~400 changed lines).
 
 ## Conventions

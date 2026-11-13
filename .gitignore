@@ -221,3 +221,12 @@ __marimo__/
 
 # Local assessments; never commit worker data.
 backend/.data/
+
+# Personal Claude Code settings for this repo.
+.claude/settings.local.json
+
+# Secrets: never commit them.
+.env.*
+*.pem
+*.key
+secrets/

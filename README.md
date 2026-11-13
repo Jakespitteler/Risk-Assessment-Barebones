@@ -6,7 +6,7 @@ same repo.
 - How agents work here: [AGENTS.md](AGENTS.md)
 - What the app does: [docs/spec.md](docs/spec.md)
 - How it's built: [docs/architecture.md](docs/architecture.md)
-- Current work: [docs/tasks/](docs/tasks/)
+- Current work: [docs/tasks/](docs/tasks/), done in the order in [docs/tasks/README.md](docs/tasks/README.md)
 
 ## Run it
 
