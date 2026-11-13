@@ -71,3 +71,24 @@ BOOKLET_MATRIX = RiskMatrix(
 )
 
 BOOKLET_TEMPLATE = Take5Template(name="Take 5 booklet", matrix=BOOKLET_MATRIX)
+
+# Guidance uses the approved card wording, not front-end rules or suggested hazards.
+BOOKLET_LIKELIHOOD_GUIDANCE: tuple[tuple[str, str], ...] = (
+    ("Almost Certain", "Expected to happen — once a week."),
+    ("Likely", "May easily happen — once a month."),
+    ("Possible", "May happen — once every year."),
+    ("Unlikely", "May happen sometime — once every 10 years."),
+    ("Rare", "May happen in extreme circumstances — once every 100 years."),
+)
+BOOKLET_CONSEQUENCE_GUIDANCE: tuple[tuple[str, str], ...] = (
+    ("Low", "First aid treatment."),
+    ("Minor", "Medical treatment."),
+    ("Moderate", "Classified injury: lost time or restricted work."),
+    ("Major", "Fatality or severe permanent disability."),
+    ("Critical", "Multiple fatalities, or health effects to more than 50 people."),
+)
+BOOKLET_CONTROL_GUIDANCE: str = (
+    "Remove, isolate and barricade are strong controls: a strong control still works "
+    "on a bad day. Systems, behaviour and PPE are weak controls: they rely on every "
+    "person getting it right every time."
+)

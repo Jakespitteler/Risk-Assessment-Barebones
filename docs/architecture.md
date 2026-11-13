@@ -152,6 +152,7 @@ the built front-end files itself, so there is still only one program to run.
 | Entity | Key fields | Notes |
 | --- | --- | --- |
 | `Take5` | `id`, `created_at`, `worker_name`, `job`, `location`, `think_through` (question to answer), `hazard_questions` (question to answer), `hazards`, `challenge`, `finished_at`, `verdict`, `template` | One filled-in card. `template` is a copy of the template it was filled in on, so it always shows the questions and matrix the worker was given. `finished_at` and `verdict` are empty until the challenge question is answered (spec C6). Never changed once finished |
+| `SavedTake5` (task 0004) | Extends the scoring `Take5` with `id`, `created_at`, `worker_name`, `job`, `location`, `finished_at`, `verdict` | The implemented submitted document. Until task 0008 it is finished immediately. The base `Take5` retains its reusable scoring fields; later tasks add the remaining card fields |
 | `Hazard` | `description`, `before` (rating), `controls`, `after` (rating), `weak_controls_reason` | Belongs to one Take 5. With no controls `after` is `before` (spec R6). `weak_controls_reason` is the worker's answer to spec T3, when it was asked |
 | `Control` | `description`, `kind` (`ControlKind`) | Belongs to one hazard |
 | `RiskRating` | `likelihood`, `consequence`, and from the matrix: `score`, `band` | A value, not a stored row. Score and band are always worked out, never typed in |

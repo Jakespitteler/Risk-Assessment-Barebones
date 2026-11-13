@@ -21,6 +21,13 @@ You need git, [uv](https://docs.astral.sh/uv/) and Node.js 22 or newer.
 
 Press Ctrl+C to stop. Both halves restart by themselves when their code changes.
 
+The home page runs a Take 5: the job, the hazards, a rating before and after controls for each, a review, then
+the saved result at `/take5s/<id>`. The phone remembers only the worker's name. The first screen from task 0002
+is at `/rate-risk`. The card's questions and the AI's challenge question come in later tasks.
+
+Saved Take 5s are kept in `backend/.data/take5.sqlite3`, which git ignores. Set `TAKE5_DATABASE_PATH` to use
+another file.
+
 Using VS Code? See [docs/dev-setup.md](docs/dev-setup.md) for the editor set-up and fixes for common problems.
 
 ## Test it

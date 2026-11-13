@@ -13,11 +13,69 @@ export interface paths {
         };
         /**
          * Get Template
-         * @description Return the card a new Take 5 is filled in on.
-         *
-         *     The front end draws what it is sent, so it never keeps its own copy of the card.
+         * @description Return the matrix and every control kind for a new form.
          */
         get: operations["get_template_api_take5_template_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/take5s/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check
+         * @description Return field errors and ratings without saving the form.
+         */
+        post: operations["check_api_take5s_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/take5s": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit
+         * @description Save once and return the verdict; incomplete fields remain form errors.
+         */
+        post: operations["submit_api_take5s_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/take5s/{take5_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get
+         * @description Open the original saved document and verdict.
+         */
+        get: operations["get_api_take5s__take5_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -30,6 +88,102 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * Control
+         * @description What the worker will do about a hazard, and what kind of control it is.
+         */
+        Control: {
+            /** Description */
+            description: string;
+            kind: components["schemas"]["ControlKind"];
+        };
+        /**
+         * ControlDraft
+         * @description A control while its description or kind may still be missing.
+         */
+        ControlDraft: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            kind?: components["schemas"]["ControlKind"] | null;
+        };
+        /**
+         * ControlKind
+         * @description The card's six controls, ordered from strongest to weakest.
+         * @enum {string}
+         */
+        ControlKind: "Remove the hazard" | "Isolate the hazard" | "Barricade the hazard" | "Put systems in place (permits, safe work procedures)" | "Ensure correct behaviour" | "Wear PPE";
+        /**
+         * DraftCheck
+         * @description The form errors, and the scoring model only when every field is valid.
+         */
+        DraftCheck: {
+            /** Errors */
+            errors: components["schemas"]["FieldError"][];
+            assessment: components["schemas"]["Take5"] | null;
+            /** Can Submit */
+            can_submit: boolean;
+        };
+        /**
+         * FieldError
+         * @description A message and the field it belongs beside, using a dotted field path.
+         */
+        FieldError: {
+            /** Path */
+            path: string;
+            /** Message */
+            message: string;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * Hazard
+         * @description One hazard rated before and after controls, using ratings from `rate()`.
+         *
+         *     Without controls, reuse the before rating as the after rating; no second rating
+         *     is needed. Description, ratings and controls are immutable once constructed.
+         */
+        Hazard: {
+            /** Description */
+            description: string;
+            before: components["schemas"]["RiskRating"];
+            /** Controls */
+            controls: components["schemas"]["Control"][];
+            after: components["schemas"]["RiskRating"];
+        };
+        /**
+         * HazardDraft
+         * @description A hazard while the worker is filling in its ratings and controls.
+         */
+        HazardDraft: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            before?: components["schemas"]["RatingChoice"];
+            /**
+             * Controls
+             * @default []
+             */
+            controls: components["schemas"]["ControlDraft"][];
+            after?: components["schemas"]["RatingChoice"];
+        };
+        /**
+         * RatingChoice
+         * @description The two choices a worker makes, with neither selected by default.
+         */
+        RatingChoice: {
+            /** Likelihood */
+            likelihood?: string | null;
+            /** Consequence */
+            consequence?: string | null;
+        };
         /**
          * RiskCell
          * @description One square of a risk matrix: the score it gives and the band that score is in.
@@ -64,14 +218,165 @@ export interface components {
             jha_threshold: number;
         };
         /**
-         * TemplateResponse
-         * @description What `GET /api/take5/template` returns.
+         * RiskRating
+         * @description A likelihood and consequence, with the score and band the matrix gives them.
          *
-         *     For now this is only the risk matrix. Task 0004 adds the kinds of control and task
-         *     0005 the card's questions.
+         *     The score and band are always looked up, never typed in, so only `rate()` should
+         *     make one.
+         */
+        RiskRating: {
+            /** Likelihood */
+            likelihood: string;
+            /** Consequence */
+            consequence: string;
+            /** Score */
+            score: number;
+            /** Band */
+            band: string;
+        };
+        /**
+         * SavedTake5
+         * @description Add submission details to the scoring model without changing its rules.
+         */
+        SavedTake5: {
+            template: components["schemas"]["Take5Template"];
+            /** Hazards */
+            hazards: components["schemas"]["Hazard"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Worker Name */
+            worker_name: string;
+            /** Job */
+            job: string;
+            /** Location */
+            location: string;
+            /**
+             * Finished At
+             * Format: date-time
+             */
+            finished_at: string;
+            verdict: components["schemas"]["Verdict"];
+        };
+        /**
+         * SubmissionRequest
+         * @description A stable submission ID makes retries return the first saved result.
+         */
+        SubmissionRequest: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            draft: components["schemas"]["Take5Draft"];
+        };
+        /**
+         * Take5
+         * @description The hazards and template needed to rate a Take 5.
+         *
+         *     Later tasks add the job, the worker and the rest of the completed card. Ratings
+         *     must match this template, so a caller cannot supply a different score or band.
+         */
+        Take5: {
+            template: components["schemas"]["Take5Template"];
+            /** Hazards */
+            hazards: components["schemas"]["Hazard"][];
+        };
+        /**
+         * Take5Draft
+         * @description Unsaved worker input; scores and bands are never accepted from the phone.
+         */
+        Take5Draft: {
+            /**
+             * Worker Name
+             * @default
+             */
+            worker_name: string;
+            /**
+             * Job
+             * @default
+             */
+            job: string;
+            /**
+             * Location
+             * @default
+             */
+            location: string;
+            /**
+             * Hazards
+             * @default []
+             */
+            hazards: components["schemas"]["HazardDraft"][];
+        };
+        /**
+         * Take5Response
+         * @description The saved document, with its overall score and band derived by the domain.
+         */
+        Take5Response: {
+            take5: components["schemas"]["SavedTake5"];
+            rating: components["schemas"]["RiskRating"];
+        };
+        /**
+         * Take5Template
+         * @description The card a Take 5 is rated on, kept with the worker's assessment.
+         */
+        Take5Template: {
+            /** Name */
+            name: string;
+            matrix: components["schemas"]["RiskMatrix"];
+        };
+        /**
+         * TemplateResponse
+         * @description The card and control choices; the phone keeps no copy of these rules.
          */
         TemplateResponse: {
+            /** Name */
+            name: string;
             matrix: components["schemas"]["RiskMatrix"];
+            /** Control Kinds */
+            control_kinds: components["schemas"]["ControlKind"][];
+            /** Likelihood Guidance */
+            likelihood_guidance: [
+                string,
+                string
+            ][];
+            /** Consequence Guidance */
+            consequence_guidance: [
+                string,
+                string
+            ][];
+            /** Control Guidance */
+            control_guidance: string;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
+        };
+        /**
+         * Verdict
+         * @description Whether work can start, with every applicable reason in order.
+         */
+        Verdict: {
+            /** Can Start */
+            can_start: boolean;
+            /** Reasons */
+            reasons: string[];
         };
     };
     responses: never;
@@ -98,6 +403,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TemplateResponse"];
+                };
+            };
+        };
+    };
+    check_api_take5s_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Take5Draft"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftCheck"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_api_take5s_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmissionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Take5Response"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_take5s__take5_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                take5_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Take5Response"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
