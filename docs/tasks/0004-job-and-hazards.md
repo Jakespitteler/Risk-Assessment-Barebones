@@ -19,6 +19,7 @@ The first end-to-end Take 5: the worker enters their name, the job and where it 
 - [ ] The Take 5 is saved with its verdict through `Take5Repository`.
 - [ ] The result screen shows the verdict, every reason, and each hazard with its controls and its before and after ratings.
 - [ ] The phone remembers the worker's name for next time.
+- [ ] The submit button can't be pressed twice while a Take 5 is being sent, so one Take 5 is never saved twice.
 - [ ] Every screen is usable one-handed at 360 px wide, with tap targets at least 48 px high.
 - [ ] API tests cover each endpoint; a Playwright test fills in the form and checks the result for a Good to go and a Don't start yet case.
 - [ ] Phone-width (360 px) screenshots of every new or changed screen are attached to the PR.

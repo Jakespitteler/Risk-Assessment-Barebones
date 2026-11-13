@@ -24,10 +24,10 @@ design choice: **if the app is boring and can be used without thinking, people w
 There is one role for now. There is no sign-in: the worker types their name and the
 phone remembers it.
 
-Where and when it is used (carried over from the original app; Jake to confirm):
+Where and when it is used (carried over from the original app; see Open questions):
 
 - On the worker's own phone, standing at the job, just before starting.
-- Often with gloves on, in bright sun, with a weak signal. So: big tap targets, high contrast, small pages.
+- Often with gloves on, in bright sun, with a weak signal. So: big tap targets, high contrast, and screens that load fast.
 - It has to be quick enough that it is not resented. Target (to be confirmed, see Open questions): a job with two hazards takes under
   three minutes.
 
@@ -192,8 +192,9 @@ The safety rules stay in code. The AI only asks; it never decides whether anyone
 - **C1 One question, about this Take 5.** After the worker submits, the app asks one question about the weakest
   part of what they wrote. The AI is given the job, where it is, the answers, and the hazards with their
   ratings and controls. It is never given the worker's name.
-- **C2 Checked before it is shown.** The AI's question is used only if it is between 1 and 300 characters once
-  spaces at the ends are removed. Anything else is thrown away and C3 applies.
+- **C2 Checked before it is shown.** Spaces and line breaks at the ends of the AI's text are removed first. What
+  is left is used only if it is 300 characters or fewer and ends with a question mark. Anything else, such as an
+  apology or a refusal, is thrown away and C3 applies.
 - **C3 Fallback.** If the AI fails, takes longer than 10 seconds, is not set up, or C2 throws its question away,
   the app asks a fixed question about the hazard with the highest *before* rating (the first listed, if there is
   a tie): "What is the one thing that has to go right so that '<hazard>' doesn't hurt anyone, and how will you
@@ -205,7 +206,8 @@ The safety rules stay in code. The AI only asks; it never decides whether anyone
   the fallback asked.
 - **C6 Unfinished until answered.** Until the question is answered the Take 5 is saved but *unfinished*: it has
   no verdict, and opening it shows the question. The question is asked once; an unfinished Take 5 keeps the
-  question it was given.
+  question it was given. It is answered once: a second answer is refused. If a saved Take 5 has no question
+  (the app stopped between saving it and asking), opening it gives it the fallback question.
 
 ### Worked examples
 
@@ -280,17 +282,21 @@ row says otherwise, the Take 5 is example 18 with the hazard described as "Fall 
 |---|---|---|---|
 | 40 | The AI returns "What stops the tray moving while you're on it?" | That question is asked; recorded as asked by the AI | C1, C2 |
 | 41 | The AI fails, takes longer than 10 seconds, or is not set up | The fallback is asked: "What is the one thing that has to go right so that 'Fall from the tray' doesn't hurt anyone, and how will you check it before you start?"; recorded as the fallback | C3 |
-| 42 | The AI returns only spaces | The fallback is asked | C2: nothing left once the ends are trimmed |
-| 43 | The AI returns a question of exactly 300 characters | That question is asked | C2: on the limit |
-| 44 | The AI returns a question of 301 characters | The fallback is asked | C2: one over the limit |
-| 45 | The AI fails. Hazards: "Dust" Possible / Minor (8) and "Fall from the tray" Possible / Major (18), both before | The fallback names "Fall from the tray" | C3: the highest *before* rating |
-| 46 | The AI fails. Hazards: "Dust" then "Noise", both Possible / Moderate (13) before | The fallback names "Dust" | C3: a tie goes to the first listed |
-| 47 | Worker "Sam Example" submits | The text given to the AI does not contain "Sam Example" | C1 |
-| 48 | The answer is "Yes" | Not accepted | C4: one word |
-| 49 | The answer is "Chocked both sides" | Not accepted | C4: three words, one short |
-| 50 | The answer is "Wheels chocked both sides" | Accepted; the Take 5 is finished with the verdict Good to go | C4: exactly four words. C5: the verdict is example 18's |
-| 51 | Example 19 (permits is No), answered as in example 50 | Finished with the verdict Don't start yet | C5: a good answer does not change the verdict |
-| 52 | The Take 5 is submitted and the question is not answered | Unfinished: no verdict, and opening it shows the same question | C6 |
+| 42 | The AI returns only spaces and line breaks | The fallback is asked | C2: nothing left once the ends are trimmed |
+| 43 | The AI returns a question of exactly 300 characters ending in "?" | That question is asked | C2: on the limit |
+| 44 | The AI returns a question of 301 characters ending in "?" | The fallback is asked | C2: one over the limit |
+| 45 | The AI returns example 40's question with two spaces before it and a line break after | Example 40's question is asked, without the extra spaces | C2: the trimmed text is what is checked and shown |
+| 46 | The AI returns "I can't help with that request." | The fallback is asked | C2: it does not end with a question mark |
+| 47 | The AI fails. Hazards: "Dust" Possible / Minor (8), then the same (8); and "Fall from the tray" Possible / Major (18), then Unlikely / Minor (5) | The fallback names "Fall from the tray" | C3: the highest *before* rating, even though its *after* rating is the lower one |
+| 48 | The AI fails. Hazards: "Dust" then "Noise", both Possible / Moderate (13) before | The fallback names "Dust" | C3: a tie goes to the first listed |
+| 49 | Worker "Sam Example" submits | The text given to the AI does not contain "Sam Example" | C1 |
+| 50 | The answer is "Yes" | Not accepted | C4: one word |
+| 51 | The answer is "Chocked both sides" | Not accepted | C4: three words, one short |
+| 52 | The answer is "Wheels chocked both sides" | Accepted; the Take 5 is finished with the verdict Good to go | C4: exactly four words. C5: the verdict is example 18's |
+| 53 | Example 19 (permits is No), answered as in example 52 | Finished with the verdict Don't start yet | C5: a good answer does not change the verdict |
+| 54 | The Take 5 is submitted and the question is not answered | Unfinished: no verdict, and opening it shows the same question | C6 |
+| 55 | Example 52, then a second answer is sent | Refused; the first answer and the verdict are kept | C6: a finished Take 5 is never changed |
+| 56 | A saved Take 5 has no question (the app stopped between saving it and asking) | Opening it gives it the fallback question | C6 |
 
 ## Features
 
@@ -312,26 +318,26 @@ The first four screens of the core workflow, saved when the worker submits.
 
 ### F3: The verdict
 - Acceptance: worked examples 18 to 27 pass as tests.
-- Acceptance: the result page shows the verdict, every reason, each hazard with its controls and its before and
+- Acceptance: the result screen shows the verdict, every reason, each hazard with its controls and its before and
   after ratings, and the challenge question with the worker's answer.
-- Acceptance: the page never shows a score without its band.
+- Acceptance: no screen ever shows a score without its band.
 
 ### F4: Thinking rules
 - Acceptance: worked examples 28 to 39 pass as tests.
 - Acceptance: the hazard questions can't be seen or answered until one hazard has been written (T1).
-- Acceptance: the answer to a weak-controls question is saved and shown on the result page.
+- Acceptance: the answer to a weak-controls question is saved and shown on the result screen.
 
 ### F5: Saved Take 5s
 - Acceptance: a list of saved Take 5s, newest first, shows the date, worker, job and verdict of each, or "Not
   finished" for one whose question is unanswered.
-- Acceptance: opening one shows the same result page the worker saw, with the verdict saved at the time.
+- Acceptance: opening one shows the same result screen the worker saw, with the verdict saved at the time.
 - Acceptance: a finished Take 5 can't be changed.
 
 ### F6: The challenge question
-- Acceptance: worked examples 40 to 52 pass as tests, with a stand-in for the AI.
+- Acceptance: worked examples 40 to 56 pass as tests, with a stand-in for the AI.
 - Acceptance: the worker never sees an error from the AI, only a question.
-- Acceptance: the AI provider is chosen in settings. Swapping Claude, ChatGPT or Gemini needs no change outside
-  that provider's own adapter file.
+- Acceptance: the AI provider is chosen in settings. Adding ChatGPT or Gemini means one new adapter file, its
+  library, and one line where it is plugged in; no rule, screen or other file changes.
 - Acceptance: the AI's key is read from the server's settings; it is never in the repo or sent to the phone.
 
 ## Out of scope (for now)
@@ -342,7 +348,7 @@ The first four screens of the core workflow, saved when the worker submits.
 - Writing or signing a JHA. The app only says one is needed.
 - Journey plans, hazard report cards, scanning a paper card, photos, PDFs.
 - Admin tools, and a different card per company.
-- Working with no signal, and keeping a half-filled Take 5 if the page is closed.
+- Working with no signal, and keeping a half-filled Take 5 if the app is closed.
 - Starting a Take 5 from an earlier one. Copying is the fastest way to stop thinking.
 
 ## Decisions made
@@ -368,6 +374,7 @@ and its worked examples in the same PR.
 ## Open questions
 
 - How and where will this be hosted, and for how many people? It only runs on a developer's computer for now.
+- Is the picture under "Users and roles" right: own phone, at the job, gloves, sun, weak signal?
 - Is the three minute target right for a typical job?
 - T3 could be gamed by picking "Barricade the hazard" for a control that isn't one. Fixed rules can't catch
   that. The challenge question is the place it is most likely to be picked up.

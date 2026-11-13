@@ -25,6 +25,17 @@ Newest first. One short entry per non-obvious decision.
   on the phone that made them for D8.
 - Decided by: human, on claude's recommendation
 
+## 2026-11-13: Back-end libraries
+- Decision: FastAPI, pydantic and pydantic-settings, uvicorn, SQLite through the built-in `sqlite3`, and the
+  `anthropic` library for the first AI adapter. For development: uv, ruff, pyright in strict mode, pytest and
+  httpx (FastAPI's test client needs it).
+- Why: FastAPI is the standard typed Python API framework and the original app already uses it; the others are
+  what it is normally run and tested with. ruff, strict type checking and Python 3.13 are project rules.
+- Alternatives considered: Django (more built in, but heavier and less direct to read). Flask (older, with no
+  built-in data checking or API description).
+- Decided by: human for FastAPI, SQLite and Claude, which he was shown by name. The rest were proposed by claude
+  and are approved by the human merging task 0001's pull request.
+
 ## 2026-11-13: A Python API with a separate JavaScript front end
 - Decision: Two programs that talk only through a web API. The back end owns every rule; the front end holds
   none and gets the matrix, the questions and all checks from the API.

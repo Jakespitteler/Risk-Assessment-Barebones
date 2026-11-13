@@ -22,4 +22,4 @@ Let a worker look back at saved Take 5s: a list, newest first, and the result sc
 - Search, filters, export and deleting.
 
 ## Notes / assumptions
-Don't start until the spec is approved (task 0001 is `done`). Depends on 0004; can be done before or after 0005, 0006 and 0008. "Not finished" can't happen until task 0008. Everyone can see the list (spec decision D8).
+Don't start until the spec is approved (task 0001 is `done`). Depends on 0004; can be done before or after 0005, 0006 and 0008, and the result screen must cope with whichever of them have landed. "Not finished" can't happen until task 0008. Everyone can see the list (spec decision D8).

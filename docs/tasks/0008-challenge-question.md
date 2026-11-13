@@ -11,8 +11,8 @@ Add the one question the app asks before the result, with everything except a re
 
 ## Acceptance criteria
 - [ ] `services/ports.py` has the `ChallengeAsker` Protocol; `domain/challenge.py` has the text the AI is given, the check on its question, the fallback question and the check on the answer (spec C1 to C4).
-- [ ] Spec worked examples 40 to 52 have tests, using a stand-in `ChallengeAsker`.
-- [ ] `POST /api/take5s` saves the Take 5 first, then returns it with its question; `POST /api/take5s/{id}/answer` saves the answer, works out the verdict and finishes it.
+- [ ] Spec worked examples 40 to 56 have tests, using a stand-in `ChallengeAsker`.
+- [ ] `POST /api/take5s` saves the Take 5 first, then returns it with its question; `POST /api/take5s/{id}/answer` saves the answer, works out the verdict and finishes it, and refuses a second answer.
 - [ ] The service falls back to the fixed question when the asker raises, returns something C2 rejects, or takes longer than 10 seconds; the worker never sees an error.
 - [ ] The front end has the question screen between the form and the result. Opening an unfinished Take 5 shows its question.
 - [ ] The result screen shows the question and the worker's answer.
@@ -25,4 +25,4 @@ Add the one question the app asks before the result, with everything except a re
 - The AI marking the answer or asking a follow-up.
 
 ## Notes / assumptions
-Don't start until the spec is approved (task 0001 is `done`). Depends on 0004; best after 0006.
+Don't start until the spec is approved (task 0001 is `done`). Depends on 0005 (example 53 needs the think-through questions and V1); best after 0006.

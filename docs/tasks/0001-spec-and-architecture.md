@@ -37,4 +37,4 @@ Turn the human's description of the app into docs/spec.md and docs/architecture.
   that did this work could only push to the branch it was given.
 - This PR also adds the scaffold itself (AGENTS.md, CLAUDE.md, the docs templates, tasks 0001 and 0002, the PR
   template, the subagents). It existed only on Jake's computer and had not been pushed.
-- Task 0002 says its stack commands are still to be filled in; nothing in it was changed here.
+- One line was added to task 0002's notes to say the stack has two halves. Nothing else in it was changed.

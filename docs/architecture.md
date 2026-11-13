@@ -2,8 +2,9 @@
 
 Status: **version 1** (task 0001). Jake chose the shape (a Python API with a separate JavaScript front end, spec
 decision D5) and asked for well-established tools that can be swapped later without much trouble. The libraries
-below were picked on that brief and approved by him (spec decision D12). Adding any other dependency still needs
-his approval.
+below were picked on that brief. He approved the front-end list (spec decision D12) and FastAPI, SQLite and
+Claude by name; the full back-end list is in `decisions.md`. Adding any other dependency still needs his
+approval.
 
 Three aims shape everything here: Jake wants to be able to read and understand the whole back end, the risk
 scoring has to be provably right, and no single tool should be hard to replace.
@@ -59,7 +60,7 @@ Left out on purpose:
 | Piece | What replacing it touches |
 | --- | --- |
 | The whole front end (React for something else) | Only `frontend/`. The back end does not know a front end exists |
-| The AI provider | One adapter file and one setting |
+| The AI provider | One adapter file, its library, one line in `api/app.py` and one setting |
 | The database | One file, `storage/sqlite.py` |
 | FastAPI | `api/` only. The rules in `domain/` and the use cases in `services/` do not import it |
 | TanStack Query, React Router, Tailwind | Each is kept to its own corner of `frontend/` (see Structure) |
@@ -138,8 +139,8 @@ the built front-end files itself, so there is still only one program to run.
 | `Challenge` | `question`, `asked_by` (`ai` or `fallback`), `answer` | Belongs to one Take 5. `answer` is empty until the worker gives one |
 | `Verdict` | `can_start`, `reasons` | Worked out once by `domain/verdict.py` when the Take 5 is finished, then saved inside it, so a later rule change never rewrites an old verdict |
 
-Storage is one table. The whole Take 5 is saved as one JSON document, with the few columns the list needs
-beside it:
+Storage is one table. The whole Take 5 is saved as one JSON document, with a few columns beside it for finding
+and sorting:
 
 ```
 take5s(id TEXT PRIMARY KEY, created_at TEXT, worker_name TEXT, job TEXT, document TEXT)
@@ -177,7 +178,7 @@ api/app.py is the one exception: it also imports storage, ai and settings, to pl
 
 Anything outside the app sits behind a Protocol, so it can be replaced without touching its callers. There are
 two: the database (`Take5Repository`) and the AI (`ChallengeAsker`). Adding ChatGPT or Gemini means adding
-`ai/openai.py` or `ai/gemini.py` and choosing it in settings; nothing else changes.
+`ai/openai.py` or `ai/gemini.py`, its library, and one line in `api/app.py` to plug it in; no rule changes.
 
 The worker's name is never passed to an adapter (spec C1). The AI's key lives in the server's environment and
 is never in the repo or sent to the phone.
