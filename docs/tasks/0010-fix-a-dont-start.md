@@ -26,6 +26,10 @@ one stays saved as it was.
   that holds the saved answers (name, job, location, each hazard's description, ratings and controls) and a new
   submission ID. The saved Take 5 is not changed.
 - [ ] A "Good to go" result has no such button.
+- [ ] The new Take 5 records which one it fixes: `SavedTake5` gains `fixes`, the first one's ID, or nothing.
+  The phone sends it with the submission, and the back end refuses (422) an ID that isn't a saved Take 5.
+  The new result screen links to the Take 5 it fixes. The first one's result screen links to its fix, found
+  when it is opened, so the first one is still never changed.
 - [ ] Back-end tests cover the warning (examples 17 and 22) and that a draft with a warning can still be
   submitted. Vitest covers the warning on the review and the copy. A Playwright test goes from a Don't start yet,
   through "Fix this in a new Take 5" and adding the control, to Good to go, and checks the first Take 5 is
@@ -44,7 +48,5 @@ one stays saved as it was.
 
 Depends on task 0004's follow-up PR #12. Independent of 0005 to 0009, so it can be done before or after them.
 
-Question for Jake before starting: should the new Take 5 record which one it fixes (a `fixes` field holding the
-first one's ID, shown on both result screens)? That is a data model change, so it needs Jake's yes. It would
-let a supervisor see that a job was first planned without a control. Without it, the two are only linked by the
-same name, job and time.
+Jake approved (2026-11-13) the `fixes` field, a data model change, so a supervisor can see that a job was
+first planned without a control. Add `fixes` to the data model table in `docs/architecture.md` when it is built.

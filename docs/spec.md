@@ -346,7 +346,8 @@ The first four screens of the core workflow, saved when the worker submits.
 - Acceptance: no screen ever shows a score without its band.
 - Acceptance: before Finish, the review warns about each hazard with no controls (it will mean Don't start yet),
   with a way to add one. The warning never blocks Finish.
-- Acceptance: a Don't start yet result offers to copy its answers into a new Take 5. The saved one never changes.
+- Acceptance: a Don't start yet result offers to copy its answers into a new Take 5. The saved one never changes,
+  and the two link to each other.
 
 ### F4: Thinking rules
 

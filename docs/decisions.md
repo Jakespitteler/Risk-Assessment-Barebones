@@ -41,6 +41,17 @@ Newest first. One short entry per non-obvious decision.
 - Alternatives considered: Only the warning (a fix after saving would still mean typing it all again). Only the
   copy (the worker would only find out after saving). Editing a saved Take 5 (a finished Take 5 never changes,
   so its record can be trusted).
+- Decided by: human (Jake, 2026-11-13). He also approved a `fixes` field on `SavedTake5` (a data model change):
+  the new Take 5 holds the first one's ID, so the two are linked without changing the first.
+
+## 2026-11-13: Keep the unfinished Take 5 in the browser tab (task 0004 review)
+
+- Decision: The draft and its submission ID are kept in the tab's `sessionStorage` until the Take 5 is saved, a
+  409 says its ID is used, or the tab is closed. Only the worker's name is kept after that.
+- Why: On a phone a reload or a slip of the back gesture would otherwise lose everything typed, and the same ID
+  must survive a reload so a retry can't save the Take 5 twice.
+- Alternatives considered: Keep it in memory only (lost on reload). `localStorage` (kept after the tab closes,
+  so the worker's job details would stay on a shared phone).
 - Decided by: human (Jake, 2026-11-13).
 
 ## 2026-11-13: The card's guidance belongs to the template (task 0004 review)
