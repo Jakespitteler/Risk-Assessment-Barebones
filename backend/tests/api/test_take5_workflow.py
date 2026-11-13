@@ -1,6 +1,7 @@
 """Integration tests for checking, submitting, retrying and reopening a Take 5."""
 
 from pathlib import Path
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -124,7 +125,7 @@ def test_each_incomplete_hazard_field_blocks_submission(
         json=SubmissionRequest(id=submission_id, draft=draft).model_dump(mode="json"),
     )
     assert response.status_code == 422
-    assert response.json()["detail"]["errors"][0]["path"].startswith("hazards.0.")
+    assert response.json()["errors"][0]["path"].startswith("hazards.0.")
     assert repository.get(submission_id) is None
 
 
@@ -168,4 +169,104 @@ def test_higher_after_risk_and_unknown_scale_choices_are_field_errors(
         )
         assert not response.json()["can_submit"]
         assert response.json()["errors"][0]["path"].startswith("hazards.0.after")
-    assert client.get(f"/api/take5s/{uuid4()}").status_code == 404
+
+
+@pytest.mark.parametrize("field", ["worker_name", "job", "location"])
+def test_a_blank_name_job_or_location_cannot_be_submitted(
+    tmp_path: Path, field: str
+) -> None:
+    """Each blank field comes back as a 422 naming that field, and nothing is saved."""
+    repository = SqliteTake5Repository(tmp_path / "take5.sqlite3")
+    client = TestClient(create_app(repository))
+    request = SubmissionRequest(
+        id=uuid4(), draft=_draft().model_copy(update={field: " "})
+    )
+
+    response: Response = client.post(
+        "/api/take5s", json=request.model_dump(mode="json")
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": "Fill in the highlighted fields before you submit.",
+        "errors": [{"path": field, "message": "Fill in this field."}],
+    }
+    assert repository.get(request.id) is None
+
+
+def test_example_14_a_take5_with_no_hazards_cannot_be_submitted(
+    tmp_path: Path,
+) -> None:
+    """Every Take 5 has at least one hazard (R5)."""
+    client = TestClient(create_app(SqliteTake5Repository(tmp_path / "take5.sqlite3")))
+    request = SubmissionRequest(
+        id=uuid4(), draft=_draft().model_copy(update={"hazards": ()})
+    )
+
+    response: Response = client.post(
+        "/api/take5s", json=request.model_dump(mode="json")
+    )
+
+    assert response.status_code == 422
+    assert response.json()["errors"] == [
+        {"path": "hazards", "message": "List at least one hazard."}
+    ]
+
+
+def test_an_unknown_id_is_a_404_with_a_message(tmp_path: Path) -> None:
+    """A link to a Take 5 that doesn't exist gets a message a person can read."""
+    client = TestClient(create_app(SqliteTake5Repository(tmp_path / "take5.sqlite3")))
+
+    response: Response = client.get(f"/api/take5s/{uuid4()}")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "This Take 5 could not be found."}
+
+
+def test_an_id_that_is_not_a_uuid_is_a_422_in_the_form_errors_shape(
+    tmp_path: Path,
+) -> None:
+    """A malformed ID gets the same 422 shape as a gap in the form."""
+    client = TestClient(create_app(SqliteTake5Repository(tmp_path / "take5.sqlite3")))
+
+    response: Response = client.get("/api/take5s/not-a-uuid")
+
+    assert response.status_code == 422
+    body: dict[str, Any] = response.json()
+    assert body["detail"] == "Some of what was sent could not be read."
+    assert [error["path"] for error in body["errors"]] == ["take5_id"]
+
+
+def test_a_submission_without_an_id_is_a_422_in_the_form_errors_shape(
+    tmp_path: Path,
+) -> None:
+    """A body FastAPI can't read gets the declared 422 shape, not FastAPI's own."""
+    client = TestClient(create_app(SqliteTake5Repository(tmp_path / "take5.sqlite3")))
+
+    response: Response = client.post(
+        "/api/take5s", json={"draft": _draft().model_dump(mode="json")}
+    )
+
+    assert response.status_code == 422
+    assert [error["path"] for error in response.json()["errors"]] == ["id"]
+
+
+def test_reusing_an_id_for_other_answers_is_a_409_with_a_message(
+    tmp_path: Path,
+) -> None:
+    """The first Take 5 saved with an ID is kept, and the second is told why."""
+    client = TestClient(create_app(SqliteTake5Repository(tmp_path / "take5.sqlite3")))
+    request = SubmissionRequest(id=uuid4(), draft=_draft())
+    client.post("/api/take5s", json=request.model_dump(mode="json"))
+    changed = SubmissionRequest(
+        id=request.id, draft=_draft().model_copy(update={"location": "Example pit"})
+    )
+
+    response: Response = client.post(
+        "/api/take5s", json=changed.model_dump(mode="json")
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": "This Take 5 was already saved with different answers."
+    }

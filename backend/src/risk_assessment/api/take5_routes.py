@@ -1,10 +1,13 @@
-"""The Take 5 endpoints: translate HTTP, then call a service with no rules here."""
+"""The Take 5 endpoints. Each one turns HTTP into a service call and holds no rules."""
 
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
 
 from risk_assessment.api.schemas import (
+    ErrorMessage,
+    FormErrors,
     SubmissionRequest,
     Take5Response,
     TemplateResponse,
@@ -12,61 +15,71 @@ from risk_assessment.api.schemas import (
 from risk_assessment.domain.controls import ControlKind
 from risk_assessment.domain.take5.draft import DraftCheck, Take5Draft
 from risk_assessment.domain.take5.saved import SavedTake5
-from risk_assessment.domain.take5.template import (
-    BOOKLET_CONSEQUENCE_GUIDANCE,
-    BOOKLET_CONTROL_GUIDANCE,
-    BOOKLET_LIKELIHOOD_GUIDANCE,
-    BOOKLET_TEMPLATE,
-)
-from risk_assessment.services.take5s import (
-    InvalidDraftError,
-    SubmissionConflictError,
-    Take5Service,
-)
+from risk_assessment.domain.take5.template import Take5Template
+from risk_assessment.services.take5s import SubmissionConflictError, Take5Service
+
+_NOT_FOUND_MESSAGE: str = "This Take 5 could not be found."
+
+# Every error reply a route can send, so the front end's generated types know them.
+_UNREADABLE: dict[int | str, dict[str, Any]] = {
+    422: {"model": FormErrors, "description": "Something is missing or wrong"},
+}
+_NOT_FOUND: dict[int | str, dict[str, Any]] = {
+    404: {"model": ErrorMessage, "description": "No Take 5 has this ID"},
+}
+_CONFLICT: dict[int | str, dict[str, Any]] = {
+    409: {"model": ErrorMessage, "description": "This ID was used for other answers"},
+}
 
 
 def create_router(service: Take5Service) -> APIRouter:
-    """Bind each endpoint to the service supplied by the composition root."""
+    """Bind each endpoint to the service that the composition root built.
+
+    Args:
+        service: The Take 5 service the endpoints call.
+
+    Returns:
+        The router with every Take 5 endpoint.
+    """
     router = APIRouter(tags=["take5"])
 
     @router.get("/api/take5/template")
     def get_template() -> TemplateResponse:
-        """Return the matrix and every control kind for a new form."""
+        """Return the template a new Take 5 is filled in on, and the control kinds."""
+        template: Take5Template = service.template
         return TemplateResponse(
-            name=BOOKLET_TEMPLATE.name,
-            matrix=BOOKLET_TEMPLATE.matrix,
+            name=template.name,
+            matrix=template.matrix,
             control_kinds=tuple(ControlKind),
-            likelihood_guidance=BOOKLET_LIKELIHOOD_GUIDANCE,
-            consequence_guidance=BOOKLET_CONSEQUENCE_GUIDANCE,
-            control_guidance=BOOKLET_CONTROL_GUIDANCE,
+            likelihood_guidance=template.likelihood_guidance,
+            consequence_guidance=template.consequence_guidance,
+            control_guidance=template.control_guidance,
         )
 
-    @router.post("/api/take5s/check")
+    @router.post("/api/take5s/check", responses=_UNREADABLE)
     def check(draft: Take5Draft) -> DraftCheck:
-        """Return field errors and ratings without saving the form."""
+        """Return what is missing and the ratings, without saving anything."""
         return service.check(draft)
 
-    @router.post("/api/take5s")
+    @router.post("/api/take5s", responses=_UNREADABLE | _CONFLICT)
     def submit(request: SubmissionRequest) -> Take5Response:
-        """Save once and return the verdict; incomplete fields remain form errors."""
+        """Check and save a Take 5 once, and return it with its verdict.
+
+        A draft with gaps raises `InvalidDraftError`, which `api/errors.py` turns into
+        a 422.
+        """
         try:
             saved: SavedTake5 = service.submit(request.draft, request.id)
-        except InvalidDraftError as error:
-            raise HTTPException(
-                status_code=422, detail=error.check.model_dump(mode="json")
-            ) from error
         except SubmissionConflictError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
         return Take5Response(take5=saved, rating=saved.rating)
 
-    @router.get("/api/take5s/{take5_id}")
+    @router.get("/api/take5s/{take5_id}", responses=_UNREADABLE | _NOT_FOUND)
     def get(take5_id: UUID) -> Take5Response:
-        """Open the original saved document and verdict."""
+        """Return a saved Take 5 with the verdict the worker was given."""
         saved: SavedTake5 | None = service.get(take5_id)
         if saved is None:
-            raise HTTPException(
-                status_code=404, detail="This Take 5 could not be found."
-            )
+            raise HTTPException(status_code=404, detail=_NOT_FOUND_MESSAGE)
         return Take5Response(take5=saved, rating=saved.rating)
 
     return router

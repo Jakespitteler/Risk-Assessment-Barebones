@@ -1,6 +1,7 @@
-"""Check, submit and retrieve Take 5s through a replaceable repository."""
+"""Check, submit and get Take 5s, through storage that can be swapped."""
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from risk_assessment.domain.take5.draft import DraftCheck, Take5Draft, check_draft
@@ -9,36 +10,79 @@ from risk_assessment.domain.take5.template import Take5Template
 from risk_assessment.domain.take5.verdict import verdict
 from risk_assessment.services.ports import Take5Repository
 
+# The fields that differ between two saves of the same answers.
+_SAVE_DETAILS: set[str] = {"id", "created_at", "finished_at", "verdict"}
+
 
 class InvalidDraftError(ValueError):
-    """Carry field errors back to a caller without exposing internal details."""
+    """A draft that can't be submitted yet, with what is missing.
+
+    Attributes:
+        check: The failed check, with each field's error.
+    """
 
     def __init__(self, check: DraftCheck) -> None:
-        """Keep the failed check so the API can return each field's message."""
-        super().__init__("Complete the highlighted fields before submitting.")
+        """Keep the failed check so the API can send each field's error.
+
+        Args:
+            check: The failed check.
+        """
+        super().__init__("Fill in the highlighted fields before you submit.")
         self.check: DraftCheck = check
 
 
 class SubmissionConflictError(ValueError):
-    """The same submission ID was used for different worker input."""
+    """The submission ID was already used to save different answers."""
 
 
 class Take5Service:
-    """Apply the rules once, then keep the exact result the worker was given."""
+    """Apply the rules once, then keep the exact result the worker was shown."""
 
     def __init__(self, repository: Take5Repository, template: Take5Template) -> None:
-        """Receive storage and the current template from the composition root."""
+        """Take the storage and the current template from the composition root.
+
+        Args:
+            repository: Where Take 5s are kept.
+            template: The template new Take 5s are filled in on.
+        """
         self._repository: Take5Repository = repository
         self._template: Take5Template = template
 
+    @property
+    def template(self) -> Take5Template:
+        """The template a new Take 5 is filled in on."""
+        return self._template
+
     def check(self, draft: Take5Draft) -> DraftCheck:
-        """Check unsaved input against the current template."""
+        """Check a draft against the current template, without saving it.
+
+        Args:
+            draft: The worker's answers so far.
+
+        Returns:
+            What is missing, and the rated Take 5 when nothing is.
+        """
         return check_draft(draft, self._template)
 
     def submit(self, draft: Take5Draft, submission_id: UUID) -> SavedTake5:
-        """Validate and save once; safely return the first result on a retry."""
+        """Check and save a Take 5 once. A retry gets back what was first saved.
+
+        Args:
+            draft: The worker's answers.
+            submission_id: The ID the phone made for this Take 5. It is the same on
+                every retry.
+
+        Returns:
+            The saved Take 5, with its verdict.
+
+        Raises:
+            InvalidDraftError: If anything is missing.
+            SubmissionConflictError: If the ID was already used for other answers.
+        """
         previous: SavedTake5 | None = self._repository.get(submission_id)
-        template: Take5Template = previous.template if previous else self._template
+        template: Take5Template = (
+            previous.template if previous is not None else self._template
+        )
         check: DraftCheck = check_draft(draft, template)
         if check.assessment is None:
             raise InvalidDraftError(check)
@@ -54,25 +98,34 @@ class Take5Service:
             location=draft.location.strip(),
             verdict=verdict(check.assessment),
         )
-        saved: SavedTake5 = previous or self._repository.add(submitted)
-        if (
-            saved.worker_name,
-            saved.job,
-            saved.location,
-            saved.hazards,
-            saved.template,
-        ) != (
-            submitted.worker_name,
-            submitted.job,
-            submitted.location,
-            submitted.hazards,
-            submitted.template,
-        ):
+        saved: SavedTake5 = (
+            previous if previous is not None else self._repository.add(submitted)
+        )
+        if _answers(saved) != _answers(submitted):
             raise SubmissionConflictError(
-                "This submission ID already belongs to another Take 5."
+                "This Take 5 was already saved with different answers."
             )
         return saved
 
     def get(self, take5_id: UUID) -> SavedTake5 | None:
-        """Read the saved verdict without applying today's rules again."""
+        """Get a saved Take 5 as it was saved, without applying today's rules.
+
+        Args:
+            take5_id: The Take 5's ID.
+
+        Returns:
+            The saved Take 5, or None if there is none with this ID.
+        """
         return self._repository.get(take5_id)
+
+
+def _answers(take5: SavedTake5) -> dict[str, Any]:
+    """Return what the worker gave and what it was filled in on, without save details.
+
+    Args:
+        take5: A saved Take 5.
+
+    Returns:
+        Its fields, without the ID, the times and the verdict.
+    """
+    return take5.model_dump(exclude=_SAVE_DETAILS)

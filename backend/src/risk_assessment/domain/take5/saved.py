@@ -8,7 +8,20 @@ from risk_assessment.domain.take5.verdict import Verdict
 
 
 class SavedTake5(Take5):
-    """Add submission details to the scoring model without changing its rules."""
+    """A Take 5 as it was saved: what the worker gave, and the verdict they were shown.
+
+    It is never changed once saved, so it always shows the template and verdict the
+    worker was given, even after the rules change.
+
+    Attributes:
+        id: The ID the phone made when the worker started submitting.
+        created_at: When it was saved.
+        worker_name: Who did the Take 5.
+        job: What the job is.
+        location: Where the job is.
+        finished_at: When it was finished. Until task 0008 this is when it was saved.
+        verdict: The verdict the worker was shown.
+    """
 
     id: UUID
     created_at: datetime

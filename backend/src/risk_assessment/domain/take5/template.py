@@ -1,6 +1,7 @@
 """The Take 5 booklet's card.
 
-For now a template holds its name and risk matrix. Task 0005 adds its questions.
+A template holds the card's name, its risk matrix and the guidance printed beside the
+scales. Task 0005 adds its questions.
 """
 
 from typing import ClassVar
@@ -10,13 +11,39 @@ from pydantic import BaseModel, ConfigDict
 from risk_assessment.domain.risk import RiskCell, RiskMatrix
 
 
+class LevelGuidance(BaseModel):
+    """What one level of a scale means, in the card's own words.
+
+    Attributes:
+        level: The level, such as "Rare".
+        meaning: What it means, such as "Could happen, but only in rare cases".
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    level: str
+    meaning: str
+
+
 class Take5Template(BaseModel):
-    """The card a Take 5 is rated on, kept with the worker's assessment."""
+    """The card a Take 5 is filled in on. Each saved Take 5 keeps a copy of it.
+
+    Attributes:
+        name: The card's name, such as "Take 5 booklet".
+        matrix: The risk matrix the hazards are rated on.
+        likelihood_guidance: What each likelihood means, shown beside the rating.
+        consequence_guidance: What each consequence means, shown beside the rating.
+        control_guidance: What makes a control strong or weak, shown beside the
+            controls.
+    """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     name: str
     matrix: RiskMatrix
+    likelihood_guidance: tuple[LevelGuidance, ...] = ()
+    consequence_guidance: tuple[LevelGuidance, ...] = ()
+    control_guidance: str = ""
 
 
 _BOOKLET_LIKELIHOODS: tuple[str, ...] = (
@@ -70,25 +97,42 @@ BOOKLET_MATRIX = RiskMatrix(
     jha_threshold=11,
 )
 
-BOOKLET_TEMPLATE = Take5Template(name="Take 5 booklet", matrix=BOOKLET_MATRIX)
-
-# Guidance uses the approved card wording, not front-end rules or suggested hazards.
-BOOKLET_LIKELIHOOD_GUIDANCE: tuple[tuple[str, str], ...] = (
-    ("Almost Certain", "Expected to happen — once a week."),
-    ("Likely", "May easily happen — once a month."),
-    ("Possible", "May happen — once every year."),
-    ("Unlikely", "May happen sometime — once every 10 years."),
-    ("Rare", "May happen in extreme circumstances — once every 100 years."),
+# The card's own wording for each level. It explains the scales without suggesting
+# answers.
+_BOOKLET_LIKELIHOOD_GUIDANCE: tuple[LevelGuidance, ...] = (
+    LevelGuidance(level="Almost Certain", meaning="Expected to happen: once a week."),
+    LevelGuidance(level="Likely", meaning="May easily happen: once a month."),
+    LevelGuidance(level="Possible", meaning="May happen: once every year."),
+    LevelGuidance(
+        level="Unlikely", meaning="May happen sometime: once every 10 years."
+    ),
+    LevelGuidance(
+        level="Rare",
+        meaning="May happen in extreme circumstances: once every 100 years.",
+    ),
 )
-BOOKLET_CONSEQUENCE_GUIDANCE: tuple[tuple[str, str], ...] = (
-    ("Low", "First aid treatment."),
-    ("Minor", "Medical treatment."),
-    ("Moderate", "Classified injury: lost time or restricted work."),
-    ("Major", "Fatality or severe permanent disability."),
-    ("Critical", "Multiple fatalities, or health effects to more than 50 people."),
+_BOOKLET_CONSEQUENCE_GUIDANCE: tuple[LevelGuidance, ...] = (
+    LevelGuidance(level="Low", meaning="First aid treatment."),
+    LevelGuidance(level="Minor", meaning="Medical treatment."),
+    LevelGuidance(
+        level="Moderate", meaning="Classified injury: lost time or restricted work."
+    ),
+    LevelGuidance(level="Major", meaning="Fatality or severe permanent disability."),
+    LevelGuidance(
+        level="Critical",
+        meaning="Multiple fatalities, or health effects to more than 50 people.",
+    ),
 )
-BOOKLET_CONTROL_GUIDANCE: str = (
+_BOOKLET_CONTROL_GUIDANCE: str = (
     "Remove, isolate and barricade are strong controls: a strong control still works "
     "on a bad day. Systems, behaviour and PPE are weak controls: they rely on every "
     "person getting it right every time."
+)
+
+BOOKLET_TEMPLATE = Take5Template(
+    name="Take 5 booklet",
+    matrix=BOOKLET_MATRIX,
+    likelihood_guidance=_BOOKLET_LIKELIHOOD_GUIDANCE,
+    consequence_guidance=_BOOKLET_CONSEQUENCE_GUIDANCE,
+    control_guidance=_BOOKLET_CONTROL_GUIDANCE,
 )

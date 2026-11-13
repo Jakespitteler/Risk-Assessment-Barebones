@@ -8,7 +8,12 @@ from risk_assessment.domain.take5.take5 import Take5
 
 
 class Verdict(BaseModel):
-    """Whether work can start, with every applicable reason in order."""
+    """Whether the job can start, and why not.
+
+    Attributes:
+        can_start: True for Good to go, False for Don't start yet.
+        reasons: Every reason that applies, in the order of the rules (V2, then V3).
+    """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
     can_start: bool
@@ -16,7 +21,14 @@ class Verdict(BaseModel):
 
 
 def verdict(take5: Take5) -> Verdict:
-    """Apply V2, then V3, using the template's threshold and after ratings."""
+    """Work out the verdict for a Take 5 (spec V2 and V3; V1 comes with task 0005).
+
+    Args:
+        take5: The rated Take 5.
+
+    Returns:
+        The verdict, with every reason that applies.
+    """
     reasons: list[str] = [
         f"Say how you will control: {hazard.description}"
         for hazard in take5.hazards
