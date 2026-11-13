@@ -1,7 +1,7 @@
 ---
 id: 0003
 title: Rate a risk (spec F1)
-status: review
+status: in-progress
 owner: chatgpt
 branch: chatgpt/0003-rate-a-risk
 ---
@@ -70,3 +70,10 @@ Workaround added: `.vscode/settings.json` explicitly sets `python.useEnvironment
 The published Python extension setting and its pytest discovery source confirm that this selects the
 execution-factory path using the selected interpreter instead of the Environments launcher. README explains
 reloading and refreshing tests. All checks still pass here; Windows editor discovery needs Jake's confirmation.
+
+Root-cause investigation requested by Jake: the Windows Environments log now shows an attempted spawn of
+`backend/.venv` itself followed by ENOENT, although the locator also resolves `Scripts/python.exe`.
+The extension's interpreter-selection source wraps a configured directory using that original directory
+as its run executable. Correct the launch target without disabling Environments or introducing a shared
+Windows-only default; preserve the user's selection of the actual project interpreter. Record evidence,
+the reversible correction and Windows verification still required.
