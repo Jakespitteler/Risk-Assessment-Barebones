@@ -1,9 +1,9 @@
 ---
 id: 0002
 title: Walking skeleton with CI
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/project-thread-k14nwr
 ---
 
 ## Goal
