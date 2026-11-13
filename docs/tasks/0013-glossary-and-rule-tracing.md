@@ -30,4 +30,6 @@ spec has no test that names it. This is the light version of the "shared semanti
 
 ## Notes / assumptions
 
-Independent of tasks 0010 and 0012.
+Independent of tasks 0010 and 0012. Recommended after tasks 0005 to 0008 (Claude, 2026-11-13): the test fails
+for any spec rule with no test, and most rules not yet built (V1, T2 to T4, C1 to C4) arrive in those tasks.
+Done earlier, it needs a list of rules not built yet that changes with every task.
