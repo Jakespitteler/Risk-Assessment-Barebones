@@ -1,9 +1,9 @@
 ---
 id: 0004
 title: Fill in a Take 5, part 1 - the job, hazards, ratings and controls (spec F2, F3)
-status: todo
-owner:
-branch:
+status: in-progress
+owner: chatgpt
+branch: chatgpt/0004-take5-api
 ---
 
 ## Goal
@@ -48,3 +48,8 @@ screen with the verdict. The card's questions come in task 0005 and the challeng
 Don't start until the spec is approved (task 0001 is `done`). Depends on 0003. Until task 0008 adds the challenge
 question, a Take 5 is finished as soon as it is submitted. This is the largest slice; if it passes about 400
 changed lines, do the API in one PR and the screens in the next.
+
+Claimed by ChatGPT. Plan: implement and test verdicts, draft validation, a repository port, SQLite storage
+and the four endpoints first, then the worker screens in a second branch/PR based on this branch, as the
+size note above directs. No new dependencies. UI choices are pending Jake's answers: usage context,
+one-hazard-at-a-time versus scrolling, and guidance visibility. Do not assume those answers.
