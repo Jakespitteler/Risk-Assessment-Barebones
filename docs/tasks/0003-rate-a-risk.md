@@ -1,7 +1,7 @@
 ---
 id: 0003
 title: Rate a risk (spec F1)
-status: in-progress
+status: review
 owner: chatgpt
 branch: chatgpt/0003-rate-a-risk
 ---
@@ -77,3 +77,14 @@ The extension's interpreter-selection source wraps a configured directory using 
 as its run executable. Correct the launch target without disabling Environments or introducing a shared
 Windows-only default; preserve the user's selection of the actual project interpreter. Record evidence,
 the reversible correction and Windows verification still required.
+
+The opt-out above is superseded: removed both the directory-valued interpreter default and the Environments
+disable setting. VS Code must use its locally saved selection of `backend/.venv/Scripts/python.exe` on Windows
+or `backend/.venv/bin/python` on Linux/macOS. The extension remains available. README explains why the two
+settings were removed; the decision log records the source and the evidenced failure.
+
+Diagnostics reproduced here: Node child-process spawn of the `.venv` directory fails with EACCES on Linux;
+spawn of the actual environment's Python executable exits 0 and collects all 53 tests. Jake's Windows log
+shows the same directory-target mistake with ENOENT. All checks pass after the correction. Windows confirmation
+still requires a discovery refresh showing the actual executable in `Running in background`, then collected
+tests. The invalid Conda path in Jake's user settings is separate from this venv launch failure.

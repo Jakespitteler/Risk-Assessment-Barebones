@@ -55,6 +55,8 @@ Run each from the folder shown.
 - If you change behaviour described in the spec, update `docs/spec.md` in the same PR.
 - Ask the human about product decisions rather than guessing. Write down any assumption you had to make in the task
   file.
+- Explain consequential choices before implementing them: evidence, intended effect, relevant alternatives,
+  tradeoffs and how they will be verified. Diagnose the cause before adding bypass settings or workarounds.
 - Don't edit another agent's in-progress task or branch.
 - No secrets, credentials, or real personal data in the repo. Use obviously fake sample data.
 - Prefer small PRs (one task, ideally under ~400 changed lines).
