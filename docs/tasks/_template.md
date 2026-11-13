@@ -7,13 +7,17 @@ branch:
 ---
 
 ## Goal
-<What and why, in two or three sentences.>
+
+\<What and why, in two or three sentences.>
 
 ## Acceptance criteria
+
 - [ ] ...
 
 ## Out of scope
+
 - ...
 
 ## Notes / assumptions
-<Anything the next agent needs to know. Unrelated problems found go here too.>
+
+\<Anything the next agent needs to know. Unrelated problems found go here too.>

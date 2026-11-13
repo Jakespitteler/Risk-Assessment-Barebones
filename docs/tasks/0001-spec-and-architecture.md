@@ -7,10 +7,15 @@ branch: claude/project-thread-ih4nvm
 ---
 
 ## Goal
-Turn the human's description of the app into docs/spec.md and docs/architecture.md, and choose the stack. This is the highest-leverage task in the project: use the strongest model available and ask the human questions rather than guessing.
+
+Turn the human's description of the app into docs/spec.md and docs/architecture.md, and choose the stack. This is
+the highest-leverage task in the project: use the strongest model available and ask the human questions rather than
+guessing.
 
 ## Acceptance criteria
-- [x] docs/spec.md has purpose, users/roles, core workflow, risk model, at least 5 worked scoring examples including boundaries, features with acceptance criteria, and out-of-scope.
+
+- [x] docs/spec.md has purpose, users/roles, core workflow, risk model, at least 5 worked scoring examples
+  including boundaries, features with acceptance criteria, and out-of-scope.
 - [x] docs/architecture.md has the stack, structure, data model, boundaries and testing strategy.
 - [x] Stack choice recorded in docs/decisions.md with rationale.
 - [x] AGENTS.md "Stack" line updated.
@@ -18,6 +23,7 @@ Turn the human's description of the app into docs/spec.md and docs/architecture.
 - [x] Human has approved the spec.
 
 ## Notes / assumptions
+
 - Jake made all twelve product decisions in chat on 2026-11-13; they are listed in the spec under "Decisions
   made". D1 with an AI challenge question added (which also settles D3), D5 as a Python API with a separate
   JavaScript front end, and the rest as Claude recommended. He asked for current, well-established tools that

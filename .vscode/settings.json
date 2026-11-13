@@ -1,0 +1,38 @@
+{
+    "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv",
+    "python.testing.pytestEnabled": true,
+    "python.testing.cwd": "${workspaceFolder}/backend",
+    "python.testing.pytestArgs": ["tests"],
+    "ruff.importStrategy": "useBundled",
+    "ruff.path": [],
+    "ruff.configuration": "${workspaceFolder}/backend/pyproject.toml",
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.codeActionsOnSave": {
+            "source.organizeImports.ruff": "explicit"
+        }
+    },
+    "files.associations": {
+        ".prettierignore": "ignore",
+        ".npmrc": "ini"
+    },
+    "cSpell.words": [
+        "Barebones",
+        "creationflags",
+        "docstrings",
+        "fastapi",
+        "httpx",
+        "killpg",
+        "NONINFRINGEMENT",
+        "pydantic",
+        "pydocstyle",
+        "pyproject",
+        "pytest",
+        "Starlette",
+        "sublicense",
+        "taskkill",
+        "testpaths",
+        "uvicorn",
+        "venv"
+    ]
+}

@@ -31,7 +31,7 @@ Back end:
 | Packaging | uv | One tool for Python versions, dependencies and running commands |
 | Lint and format | ruff | Project rule |
 | Type checking | pyright in strict mode | The command-line version of Pylance's strict rules |
-| Tests | pytest, with httpx for FastAPI's test client | Standard |
+| Tests | pytest, with httpx2 for FastAPI's test client | Standard. httpx2 replaced httpx in task 0002; see `decisions.md` |
 
 Front end:
 
@@ -72,12 +72,13 @@ publishes it, the front end's types are generated from it, and either half can b
 
 ## Structure
 
-```
+```text
 backend/
     pyproject.toml
     src/risk_assessment/
         domain/            the rules, as plain data and pure functions
-            risk.py            RiskMatrix (a matrix as data), RiskRating, rate()      (spec R1 to R3)
+            risk.py            RiskMatrix (a matrix as data), RiskCell, RiskRating,
+                               rate()                                                 (spec R1 to R3)
             controls.py        ControlKind, Control, which kinds are strong
             questions.py       Question, QuestionRole (stop or hazard), Answer
             wording.py         the vague phrases and word counting                     (used by T2, T4, C4)
@@ -86,7 +87,7 @@ backend/
                                    filled in on. BOOKLET_TEMPLATE is the only one for now
                 take5.py           Take5, Hazard: the filled-in card                      (spec R4 to R6)
                 verdict.py         verdict(take5) -> Verdict with its reasons            (spec V1 to V3)
-                thinking.py        the pushback rules                                     (spec T2 to T4)
+                thinking.py        the push back rules                                    (spec T2 to T4)
                 challenge.py       what the AI is told, the check on its question,
                                    the fallback question, the check on the answer         (spec C1 to C4)
         services/          what the app does
@@ -116,6 +117,9 @@ frontend/
         features/take5/    the Take 5's screens: the four parts of the form, the question, the result, the list
         app.tsx            the routes (the only place React Router is set up)
     e2e/                   Playwright tests and screenshots
+scripts/
+    dev.py                 starts both halves for development
+    check.py               runs every check, as CI does
 ```
 
 The four files directly under `domain/` know nothing about a Take 5. They are the shared building blocks, and
@@ -134,7 +138,8 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 | `GET /api/take5s/{id}` | One Take 5 |
 
 **The front end holds no rules and no card.** It gets the questions and the matrix from
-`GET /api/take5/template`, draws whatever it is sent, and shows a score by looking it up in that matrix. It finds out what is missing or needs another look by asking
+`GET /api/take5/template`, draws whatever it is sent, and shows a score by looking it up in that matrix. It finds
+out what is missing or needs another look by asking
 `POST /api/take5s/check`. So there is exactly one copy of every rule, in Python, under test. The one behaviour
 that lives in the front end is spec T1 (hiding the hazard questions until a hazard is written), because it is
 about what is on the screen.
@@ -158,7 +163,7 @@ the built front-end files itself, so there is still only one program to run.
 Storage is one table. The whole Take 5 is saved as one JSON document, with a few columns beside it for finding
 and sorting:
 
-```
+```text
 take5s(id TEXT PRIMARY KEY, created_at TEXT, worker_name TEXT, job TEXT, document TEXT)
 ```
 
@@ -170,7 +175,7 @@ time to split it, and it is a recorded decision to revisit.
 
 What each back-end package may import:
 
-```
+```text
 domain        ->  nothing in the app
 domain/take5  ->  the shared files in domain (never the other way round)
 services      ->  domain

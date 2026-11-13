@@ -1,0 +1,25 @@
+[project]
+name = "risk-assessment"
+version = "0.1.0"
+description = "The Take 5 app's back end: every rule and all the data."
+requires-python = ">=3.13"
+dependencies = ["fastapi>=0.162", "pydantic>=2.14", "uvicorn>=0.54"]
+
+[dependency-groups]
+dev = ["httpx2>=2.16", "pyright>=1.1.414", "pytest>=9.2", "ruff>=0.17"]
+
+[build-system]
+requires = ["uv_build>=0.11,<0.14"]
+build-backend = "uv_build"
+
+[tool.ruff.lint]
+# E/W/F: errors, I: import order, N: naming, UP: modern Python, B: likely bugs,
+# SIM: simpler code, ANN: type hints everywhere, D: docstrings.
+select = ["E", "W", "F", "I", "N", "UP", "B", "SIM", "ANN", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".."]

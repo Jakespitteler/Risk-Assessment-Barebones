@@ -1,0 +1,108 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Take 5",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/take5/template": {
+      "get": {
+        "tags": [
+          "take5"
+        ],
+        "summary": "Get Template",
+        "description": "Return the card a new Take 5 is filled in on.\n\nThe front end draws what it is sent, so it never keeps its own copy of the card.",
+        "operationId": "get_template_api_take5_template_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RiskCell": {
+        "properties": {
+          "score": {
+            "type": "integer",
+            "title": "Score"
+          },
+          "band": {
+            "type": "string",
+            "title": "Band"
+          }
+        },
+        "type": "object",
+        "required": [
+          "score",
+          "band"
+        ],
+        "title": "RiskCell",
+        "description": "One square of a risk matrix: the score it gives and the band that score is in."
+      },
+      "RiskMatrix": {
+        "properties": {
+          "likelihoods": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Likelihoods"
+          },
+          "consequences": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Consequences"
+          },
+          "cells": {
+            "items": {
+              "items": {
+                "$ref": "#/components/schemas/RiskCell"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Cells"
+          },
+          "jha_threshold": {
+            "type": "integer",
+            "title": "Jha Threshold"
+          }
+        },
+        "type": "object",
+        "required": [
+          "likelihoods",
+          "consequences",
+          "cells",
+          "jha_threshold"
+        ],
+        "title": "RiskMatrix",
+        "description": "A risk matrix as data.\n\nAttributes:\n    likelihoods: The likelihood scale, most likely first, as printed down the side\n        of the card.\n    consequences: The consequence scale, least severe first, as printed across the\n        top.\n    cells: One row per likelihood and, in each row, one cell per consequence, in\n        the order of the scales.\n    jha_threshold: The lowest score that needs a Job Hazard Analysis (spec R3)."
+      },
+      "TemplateResponse": {
+        "properties": {
+          "matrix": {
+            "$ref": "#/components/schemas/RiskMatrix"
+          }
+        },
+        "type": "object",
+        "required": [
+          "matrix"
+        ],
+        "title": "TemplateResponse",
+        "description": "What `GET /api/take5/template` returns.\n\nFor now this is only the risk matrix. Task 0004 adds the kinds of control and task\n0005 the card's questions."
+      }
+    }
+  }
+}

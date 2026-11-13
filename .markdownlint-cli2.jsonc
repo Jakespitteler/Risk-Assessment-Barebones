@@ -1,0 +1,14 @@
+// markdownlint settings for every markdown file in the repo.
+// The VS Code markdownlint extension and `npx markdownlint-cli2` both read this file.
+{
+  "config": {
+    "default": true,
+    // The docs are wrapped at about 115 characters. Tables and code blocks can't be wrapped.
+    "MD013": { "line_length": 120, "tables": false, "code_blocks": false },
+    // Agent prompts and the pull request template are not documents, so they don't start with a title.
+    "MD041": false
+  },
+  // Only check the repo's own files, not installed libraries or tool caches.
+  "gitignore": true,
+  "ignores": ["**/node_modules/**", "**/.venv/**"]
+}
