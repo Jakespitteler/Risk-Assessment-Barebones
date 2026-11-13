@@ -1,7 +1,7 @@
 ---
 id: 0003
 title: Rate a risk (spec F1)
-status: in-progress
+status: review
 owner: chatgpt
 branch: chatgpt/0003-rate-a-risk
 ---
@@ -65,3 +65,8 @@ Review follow-up: Jake's VS Code Python 2026.10 log shows the Python Environment
 exiting immediately with null code/signal and no pytest traceback. Direct discovery and all 53 tests pass
 here. Apply the supported workspace opt-out from that launcher, preserve the backend interpreter/settings,
 and document the required reload and local verification.
+
+Workaround added: `.vscode/settings.json` explicitly sets `python.useEnvironmentsExtension` to false.
+The published Python extension setting and its pytest discovery source confirm that this selects the
+execution-factory path using the selected interpreter instead of the Environments launcher. README explains
+reloading and refreshing tests. All checks still pass here; Windows editor discovery needs Jake's confirmation.

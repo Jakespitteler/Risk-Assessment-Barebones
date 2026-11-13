@@ -34,6 +34,12 @@ If Pylance reports missing app imports or `pytest`:
    selected another interpreter; it cannot override a selection VS Code has saved.
 3. Run **Developer: Reload Window**. The test explorer is configured to run pytest from `backend/`.
 
+The workspace opts out of the separate Python Environments extension integration with
+`python.useEnvironmentsExtension: false`. This makes pytest discovery use the Python extension's selected
+interpreter directly. It is a workaround for discovery stopping immediately with `Code: null, Signal: null`
+after logging `Using environment extension for pytest discovery`. After pulling this setting, reload the
+window and run **Test: Refresh Tests**. Interpreter selection and installed dependencies are still required.
+
 The Ruff extension uses its bundled executable and the back end's Ruff configuration, so it can format
 and sort imports without discovering a binary in a different Python environment. If it still reports a
 binary error, update or reinstall the **Ruff** extension and reload the window. Its Output log is needed
