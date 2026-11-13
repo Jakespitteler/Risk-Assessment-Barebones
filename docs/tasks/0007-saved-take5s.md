@@ -7,18 +7,19 @@ branch:
 ---
 
 ## Goal
-Let a worker look back at saved Take 5s: a list, newest first, and the result page of each.
+Let a worker look back at saved Take 5s: a list, newest first, and the result screen of each.
 
 ## Acceptance criteria
-- [ ] A list page shows the date, worker, job and verdict of each saved Take 5, newest first.
-- [ ] Opening one shows the same result page the worker saw when they submitted it, with the verdict that was saved then.
-- [ ] There is no route or form that changes a saved Take 5.
-- [ ] Service and storage tests cover listing; an end-to-end test covers the list and opening one.
-- [ ] Phone-width (360 px) screenshots of every new or changed page are attached to the PR.
+- [ ] `GET /api/take5s` returns the list, newest first.
+- [ ] A list screen shows the date, worker, job and verdict of each saved Take 5, or "Not finished".
+- [ ] Opening one shows the same result screen the worker saw, with the verdict that was saved then.
+- [ ] There is no endpoint that changes a finished Take 5.
+- [ ] Service, storage and API tests cover listing; a Playwright test covers the list and opening one.
+- [ ] Phone-width (360 px) screenshots of every new or changed screen are attached to the PR.
 - [ ] All checks pass.
 
 ## Out of scope
 - Search, filters, export and deleting.
 
 ## Notes / assumptions
-Don't start until the spec is approved (task 0001 is `done`). Depends on 0004; can be done before or after 0005 and 0006. Who can see the list is spec decision D8.
+Don't start until the spec is approved (task 0001 is `done`). Depends on 0004; can be done before or after 0005, 0006 and 0008. "Not finished" can't happen until task 0008. Who can see the list is spec decision D8.

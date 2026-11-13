@@ -5,8 +5,8 @@ This file is the single source of truth for how to work here. Keep it under ~150
 
 ## What this is
 A risk assessment app. Full product definition lives in `docs/spec.md`.
-Stack: **Python 3.13+, FastAPI, server-rendered Jinja2 pages, SQLite** (proposed in task 0001 and waiting for
-the human's approval; details in `docs/architecture.md`).
+Stack: **a Python 3.13+ FastAPI back end (`backend/`) and a React + TypeScript front end (`frontend/`), with
+SQLite** (the shape is decided; the library list in `docs/architecture.md` is waiting for the human's approval).
 
 ## Commands
 Fill these in once the stack is chosen (task 0002). Every agent must use exactly these.

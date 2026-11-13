@@ -1,15 +1,17 @@
 # Product spec
 
 Status: **draft, waiting for Jake's approval** (task 0001). The human owns product decisions; agents propose,
-the human approves. Anything marked *proposed* is Claude's recommendation and is listed again under
-[Decisions waiting on Jake](#decisions-waiting-on-jake). Nothing here is final until that table is empty.
+the human approves. Anything marked *proposed*, and every row under
+[Decisions waiting on Jake](#decisions-waiting-on-jake), is Claude's recommendation. Nothing here is final
+until that table is empty.
 
 ## Purpose
 
 A Take 5 is the short personal risk assessment a mine-site worker does before starting a task. On paper it is a
 card of tick boxes, and tick boxes get ticked without thinking. This app is a Take 5 for a phone that cannot be
 finished on autopilot: the worker has to say, in their own words, what could hurt someone on this job today and
-what will stop it, and the app pushes back when the answer is thin.
+what will stop it, the app pushes back when the answer is thin, and before the result it asks one question
+about the weakest part of what they wrote.
 
 This repo is a rebuild of the one core feature of the larger Risk-Assessment app. The rule of thumb for every
 design choice: **if the app is boring and can be used without thinking, people will use it without thinking.**
@@ -20,7 +22,7 @@ design choice: **if the app is boring and can be used without thinking, people w
 | --- | --- | --- |
 | Worker | Anyone on a mine-site crew about to start a task | Fill in a Take 5, see its verdict, look back at saved Take 5s |
 
-There is one role for now (*proposed*, decision D4). There is no sign-in: the worker types their name and the
+There is one role for now. There is no sign-in: the worker types their name and the
 phone remembers it.
 
 Where and when it is used (carried over from the original app; Jake to confirm):
@@ -32,8 +34,8 @@ Where and when it is used (carried over from the original app; Jake to confirm):
 
 ## Core workflow
 
-The five screens follow the five steps of the Take 5 booklet. They are five parts of one form: nothing is sent
-or saved until the worker submits at the end.
+The first four screens follow the Take 5 booklet's steps and are four parts of one form: nothing is sent or
+saved until the worker submits it. Then the app asks its one question, and then shows the result.
 
 1. **The job.** The worker types their name, what the job is and where it is, in their own words. All three
    are needed.
@@ -49,10 +51,14 @@ or saved until the worker submits at the end.
    3. rates how likely and how bad it is **after** those controls. With no controls there is nothing to rate
       again.
    The app shows the score and band from the risk matrix as soon as both parts of a rating are picked.
-5. **Result.** The Take 5 is saved with its verdict and the worker sees it: *Don't start yet* or *Good to go*,
-   with the reasons in plain words.
+5. **One question before you start.** The worker submits and the Take 5 is saved. The app then asks one
+   question about the weakest part of what they wrote, for example "You're relying on a harness. What is it
+   anchored to, and who checked the anchor?" An AI writes the question; when it can't, the app asks a fixed one
+   instead. The worker answers in their own words. See [The challenge question](#the-challenge-question).
+6. **Result.** The Take 5 is now finished. It is saved with its verdict and the worker sees it: *Don't start
+   yet* or *Good to go*, with the reasons in plain words.
 
-Saved Take 5s can be opened again from a list. A saved Take 5 is never edited; if the job changes the worker
+Saved Take 5s can be opened again from a list. A finished Take 5 is never changed; if the job changes the worker
 does a new one.
 
 ### The card's questions
@@ -148,8 +154,8 @@ cell is a unique rank, so the app records it as 19. Its band, Extreme, is the sa
 ### Verdict rules
 
 The verdict is *Don't start yet* if any of the reasons below apply, and *Good to go* if none do. Every reason
-that applies is shown, in this order. The verdict is worked out once, when the Take 5 is submitted, and saved
-with it, so a saved Take 5 always shows the verdict the worker was given.
+that applies is shown, in this order. The verdict is worked out once, when the Take 5 is finished (the challenge
+question is answered), and saved with it, so a saved Take 5 always shows the verdict the worker was given.
 
 - **V1** A think-through question is answered No. ("You answered No to: ... Sort this out first.")
 - **V2** A hazard has no controls. ("Say how you will control: ...")
@@ -162,8 +168,8 @@ is a form error, not a verdict.
 
 ### Thinking rules
 
-These are the rules that stop the app being used on autopilot (*proposed*, decision D1). They are fixed rules
-in code, with no AI.
+These are the fixed rules that stop the app being used on autopilot. They are in code, with no AI, so they work
+the same every time and can be tested exactly.
 
 - **T1 Own words first.** The hazard questions stay hidden until the worker has written at least one hazard.
 - **T2 Say what you'll do.** A control that is only a vague phrase is not accepted. The form says "Say what
@@ -176,6 +182,31 @@ in code, with no AI.
   change the verdict. A hazard with no controls is not asked; V2 already covers it.
 - **T4 A real job description.** The job must be at least four words. "Change tyre" is not enough; "Change the
   front left tyre on LV12" is.
+
+### The challenge question
+
+The fixed rules above can be satisfied by someone who knows what the app wants to hear. The challenge question
+is the part they can't see coming, because it is written for this job.
+
+The safety rules stay in code. The AI only asks; it never decides whether anyone can start work.
+
+- **C1 One question, about this Take 5.** After the worker submits, the app asks one question about the weakest
+  part of what they wrote. The AI is given the job, where it is, the answers, and the hazards with their
+  ratings and controls. It is never given the worker's name.
+- **C2 Checked before it is shown.** The AI's question is used only if it is between 1 and 300 characters once
+  spaces at the ends are removed. Anything else is thrown away and C3 applies.
+- **C3 Fallback.** If the AI fails, takes longer than 10 seconds, is not set up, or C2 throws its question away,
+  the app asks a fixed question about the hazard with the highest *before* rating (the first listed, if there is
+  a tie): "What is the one thing that has to go right so that '<hazard>' doesn't hurt anyone, and how will you
+  check it before you start?" A Take 5 can therefore always be finished, with or without signal to the AI.
+- **C4 A real answer.** The answer must be at least four words. (Every vague phrase in T2 is shorter than that,
+  so "be careful" can't be an answer.)
+- **C5 Asking, not judging.** The AI does not mark the answer, and nothing about the question or the answer
+  changes the verdict (*proposed*, decision D11). Both are saved with the Take 5, along with whether the AI or
+  the fallback asked.
+- **C6 Unfinished until answered.** Until the question is answered the Take 5 is saved but *unfinished*: it has
+  no verdict, and opening it shows the question. The question is asked once; an unfinished Take 5 keeps the
+  question it was given.
 
 ### Worked examples
 
@@ -226,7 +257,7 @@ the hazard".
 | 26 | "Do you have the correct PPE?" is No, and the hazard has no controls | Don't start yet, with the V1 reason then the V2 reason | Every reason is shown, in order |
 | 27 | "Do you have the correct PPE?" is No, and the hazard is Likely / Minor (12) before and after | Don't start yet, with the V1 reason then the V3 reason | Every reason is shown, in order |
 
-Thinking rules (T2, T3, T4). T1 is about what the page shows, so it is tested through the page (see F4).
+Thinking rules (T2, T3, T4). T1 is about what the screen shows, so it is tested through the screen (see F4).
 
 | # | Input | Expected | Why |
 |---|---|---|---|
@@ -243,6 +274,25 @@ Thinking rules (T2, T3, T4). T1 is about what the page shows, so it is tested th
 | 38 | Job "Change the tyre" | Not accepted | T4: three words, one short |
 | 39 | Job "Change tyre on LV12" | Accepted | T4: exactly four words |
 
+The challenge question (C1 to C6). Tests use a stand-in for the AI that returns whatever the row says. Unless the
+row says otherwise, the Take 5 is example 18 with the hazard described as "Fall from the tray".
+
+| # | Situation | Expected | Why |
+|---|---|---|---|
+| 40 | The AI returns "What stops the tray moving while you're on it?" | That question is asked; recorded as asked by the AI | C1, C2 |
+| 41 | The AI fails, takes longer than 10 seconds, or is not set up | The fallback is asked: "What is the one thing that has to go right so that 'Fall from the tray' doesn't hurt anyone, and how will you check it before you start?"; recorded as the fallback | C3 |
+| 42 | The AI returns only spaces | The fallback is asked | C2: nothing left once the ends are trimmed |
+| 43 | The AI returns a question of exactly 300 characters | That question is asked | C2: on the limit |
+| 44 | The AI returns a question of 301 characters | The fallback is asked | C2: one over the limit |
+| 45 | The AI fails. Hazards: "Dust" Possible / Minor (8) and "Fall from the tray" Possible / Major (18), both before | The fallback names "Fall from the tray" | C3: the highest *before* rating |
+| 46 | The AI fails. Hazards: "Dust" then "Noise", both Possible / Moderate (13) before | The fallback names "Dust" | C3: a tie goes to the first listed |
+| 47 | Worker "Sam Example" submits | The text given to the AI does not contain "Sam Example" | C1 |
+| 48 | The answer is "Yes" | Not accepted | C4: one word |
+| 49 | The answer is "Chocked both sides" | Not accepted | C4: three words, one short |
+| 50 | The answer is "Wheels chocked both sides" | Accepted; the Take 5 is finished with the verdict Good to go | C4: exactly four words. C5: the verdict is example 18's |
+| 51 | Example 19 (permits is No), answered as in example 50 | Finished with the verdict Don't start yet | C5: a good answer does not change the verdict |
+| 52 | The Take 5 is submitted and the question is not answered | Unfinished: no verdict, and opening it shows the same question | C6 |
+
 ## Features
 
 ### F1: Rate a risk
@@ -251,19 +301,20 @@ The matrix, the bands and the JHA threshold, as one pure module with no web or d
 - Acceptance: every one of the 25 cells is checked against the matrix table above.
 
 ### F2: Fill in a Take 5
-The five screens of the core workflow, saved when the worker submits.
+The first four screens of the core workflow, saved when the worker submits.
 - Acceptance: a Take 5 can't be submitted with anything missing (the list is under Verdict rules); each gap is
   named beside its field.
 - Acceptance: no answer is selected when a screen opens.
+- Acceptance: the front end holds no copy of the matrix or the rules; it gets them from the back end.
 - Acceptance: the score and band show as soon as a likelihood and a consequence are both picked.
-- Acceptance: the Take 5 is saved before the result page is shown.
+- Acceptance: the Take 5 is saved before the challenge question is asked, so a slow or failed AI never loses it.
 - Acceptance: the phone remembers the worker's name for next time.
 - Acceptance: every screen is usable one-handed on a 360 px wide phone, with tap targets at least 48 px high.
 
 ### F3: The verdict
 - Acceptance: worked examples 18 to 27 pass as tests.
-- Acceptance: the result page shows the verdict, every reason, and each hazard with its controls and its before
-  and after ratings.
+- Acceptance: the result page shows the verdict, every reason, each hazard with its controls and its before and
+  after ratings, and the challenge question with the worker's answer.
 - Acceptance: the page never shows a score without its band.
 
 ### F4: Thinking rules
@@ -272,14 +323,22 @@ The five screens of the core workflow, saved when the worker submits.
 - Acceptance: the answer to a weak-controls question is saved and shown on the result page.
 
 ### F5: Saved Take 5s
-- Acceptance: a list of saved Take 5s, newest first, shows the date, worker, job and verdict of each.
+- Acceptance: a list of saved Take 5s, newest first, shows the date, worker, job and verdict of each, or "Not
+  finished" for one whose question is unanswered.
 - Acceptance: opening one shows the same result page the worker saw, with the verdict saved at the time.
-- Acceptance: a saved Take 5 can't be changed.
+- Acceptance: a finished Take 5 can't be changed.
+
+### F6: The challenge question
+- Acceptance: worked examples 40 to 52 pass as tests, with a stand-in for the AI.
+- Acceptance: the worker never sees an error from the AI, only a question.
+- Acceptance: the AI provider is chosen in settings. Swapping Claude, ChatGPT or Gemini needs no change outside
+  that provider's own adapter file.
+- Acceptance: the AI's key is read from the server's settings; it is never in the repo or sent to the phone.
 
 ## Out of scope (for now)
 
-- An AI check of the Take 5 (*proposed*, decision D3). When it comes it will be its own task and sit behind an
-  interface that any provider (Claude, ChatGPT, Gemini) can fill.
+- Any other use of AI: marking the worker's answer, follow-up questions, suggesting hazards or controls, or an
+  AI verdict. Suggesting hazards in particular would undo "own words first".
 - Sign-in, supervisors, crews and approvals.
 - Writing or signing a JHA. The app only says one is needed.
 - Journey plans, hazard report cards, scanning a paper card, photos, PDFs.
@@ -291,19 +350,25 @@ The five screens of the core workflow, saved when the worker submits.
 
 | # | Decision | Proposed | Main alternative and its tradeoff |
 | --- | --- | --- | --- |
-| D1 | What makes people think | Own words first, plus fixed pushback rules (T1 to T4) | Keep the card's ticks only: faster, but it is the habit the app exists to beat |
-| D2 | Rate each hazard once or twice | Twice, before and after controls | Once, as on paper: two fewer taps per hazard, but nothing shows whether the controls do anything |
-| D3 | AI in the first version | No, rules only | Yes: stronger challenge, but needs signal, costs money per Take 5 and is harder to test |
-| D4 | Sign-in | None; the worker types their name | Accounts: needed for supervisors later, but a lot of work that isn't the Take 5 itself |
-| D5 | Stack | Python, FastAPI, server-rendered pages, SQLite (see `architecture.md`) | Python API with a JavaScript front end: slicker, but two codebases |
 | D6 | Which rating decides a JHA | The *after* rating, as the paper card's column order (hazard, controls, score) implies | The *before* rating: stricter and harder to talk down, but almost any job with a fatal hazard would then need a JHA |
 | D7 | The list of control kinds | The card's six "Make the changes" options, the first three counted as strong | The booklet's formal hierarchy (eliminate, substitute, redesign, separate, administrative, PPE): more precise, less familiar wording |
 | D8 | Who can see saved Take 5s | Everyone using the app, since there is no sign-in | Only on the phone that made them: more private, but a supervisor can never see them |
+| D9 | Which AI provider is set up first | Claude, as in the original app. The others plug into the same interface | ChatGPT or Gemini first: no difference to the design, only to which adapter is written first |
+| D10 | What happens when the AI can't be reached | The fixed fallback question (C3), so a Take 5 can always be finished | Wait for the AI: every Take 5 gets a tailored question, but no signal means no Take 5 |
+| D11 | Whether the AI judges the answer | No. It asks one question and the answer is saved (C5) | It marks the answer and can ask again: harder to bluff, but an AI then helps decide whether someone starts work, and it costs more and is harder to test |
+| D12 | The front-end libraries | React, TypeScript, Vite, Tailwind CSS, TanStack Query, React Router (see `architecture.md`) | Svelte or Vue: pleasant, but smaller communities and fewer people who know them |
+
+Decided so far (the reasons are in `decisions.md`): own words first, fixed pushback rules and an AI challenge
+question (D1, D3); each hazard rated before and after controls (D2); no sign-in (D4); a Python API with a
+separate JavaScript front end (D5).
 
 ## Open questions
 
 - How and where will this be hosted, and for how many people? It only runs on a developer's computer for now.
 - Is the three minute target right for a typical job?
 - T3 could be gamed by picking "Barricade the hazard" for a control that isn't one. Fixed rules can't catch
-  that; an AI check could. Is that acceptable for the first version?
+  that. The challenge question is the place it is most likely to be picked up.
+- What does the AI cost per Take 5, and is there a monthly limit? Worth measuring in the provider task (0009).
+- A job description can contain someone's name even though the worker's own name is never sent. Is that
+  acceptable, or should the worker be told what is sent?
 - Should the vague phrases in T2 be a longer list, and who maintains it?

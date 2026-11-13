@@ -18,10 +18,14 @@ Turn the human's description of the app into docs/spec.md and docs/architecture.
 - [ ] Human has approved the spec.
 
 ## Notes / assumptions
-- Everything is a draft until Jake answers the eight decisions in the spec's "Decisions waiting on Jake" table.
-  Each was written up on Claude's recommended option so there is something concrete to react to. When a
+- Everything is a draft until Jake answers the decisions in the spec's "Decisions waiting on Jake" table.
+  Each is written up on Claude's recommended option so there is something concrete to react to. When a
   decision is made: update the spec, remove its row, and remove the matching "proposed" markers in the spec,
   `architecture.md`, `decisions.md` and the AGENTS.md stack line.
+- Decided by Jake on 2026-11-13: D1 with an AI challenge question added (which also settles D3), D2 and D4 as
+  recommended, and D5 as a Python API with a separate JavaScript front end. He asked for current, well-established
+  tools that can be swapped without much trouble; the library list in `architecture.md` is Claude's pick on that
+  brief (D12). Still open: D6 to D12.
 - The description this was built from: the project brief (make the Take 5 as good as possible, make people
   think about the real risk, a back end Jake fully understands) and the Take 5 feature of the original
   Risk-Assessment app. The card's questions, the likelihood and consequence tables and the matrix are copied
@@ -29,8 +33,8 @@ Turn the human's description of the app into docs/spec.md and docs/architecture.
 - The scoring examples 1 to 10 and every matrix cell in the spec were checked by script against the original
   app's matrix.
 - New compared with the original app, so look hardest at these: rating each hazard before and after controls
-  (R4, R6), the worker picking a kind for each control, the thinking rules T1 to T4, and "every Take 5 has at
-  least one hazard".
+  (R4, R6), the worker picking a kind for each control, the thinking rules T1 to T4, "every Take 5 has at least
+  one hazard", and the challenge question with its fallback (C1 to C6).
 - The branch is not named `claude/0001-spec-and-architecture` as AGENTS.md asks, because the Claude session
   that did this work could only push to the branch it was given.
 - This PR also adds the scaffold itself (AGENTS.md, CLAUDE.md, the docs templates, tasks 0001 and 0002, the PR
