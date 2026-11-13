@@ -19,6 +19,8 @@ Run each from the folder shown.
 - Test: in `backend/`, `uv run pytest`. In `frontend/`, `npm test` and `npm run test:e2e`.
 - Lint/format: in `backend/`, `uv run ruff check .` and `uv run ruff format .`. In `frontend/`, `npm run lint`
   and `npm run format`. Markdown, in the repo root: `npx markdownlint-cli2@0.24.0 "**/*.md"`.
+- Spelling (Australian English), in the repo root:
+  `npx -y -p cspell@10.5.0 -p @cspell/dict-en-au@1.1.31 cspell -c .cspell/cli.json --gitignore --dot "**"`.
   `check.py` also lints `scripts/` with the back end's settings and type checks it with the root `pyproject.toml`.
 - Typecheck: in `backend/`, `uv run pyright --project ..`. In `frontend/`, `npm run typecheck`.
 - API types: in `frontend/`, `npm run generate:api` after any change to the API. Commit both files it writes.
@@ -85,6 +87,9 @@ Run each from the folder shown.
 - **Tests.** pytest for the back end; a test's name says what it proves, and a test of a spec worked example is
   named `test_example_<number>_...`. Vitest and React Testing Library find things by role or label, as a
   person would. Playwright runs at 360 px wide and saves screenshots to `frontend/test-results/screenshots/`.
+- **Spelling.** Australian English (`colour`, `organise`), the same as Jake's VS Code spell checker. The spell
+  check must find nothing. Add a real project or technical word to `.cspell/project-words.txt`, in sorted order;
+  for a deliberate non-word in one file, write `cspell:ignore <word>` in a comment there.
 - **Markdown.** No markdownlint warnings (settings in `.markdownlint-cli2.jsonc`). Wrap prose at about 115
   characters.
 

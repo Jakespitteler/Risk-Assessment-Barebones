@@ -2,6 +2,19 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-13: Spell check in Australian English, shared through the repo
+
+- Decision: Spelling is Australian English, checked by cspell with its `en-AU` dictionary, which is what Jake's
+  VS Code extension (Australian English - Code Spell Checker) uses. `cspell.json` in the root holds the shared
+  settings and both editors and the command line read it. Project words live in `.cspell/project-words.txt`,
+  not in `.vscode/settings.json`, so any agent can see and extend them. `.cspell/cli.json` adds the `en-AU`
+  dictionary for the command line; the editor gets it from the extension. `.gitignore` and `LICENSE` are
+  skipped because they are standard templates.
+- Why: Jake asked for the whole repo to pass his spell checker, and ChatGPT can only follow what is in the repo.
+- Alternatives considered: importing the dictionary in `cspell.json` (the editor would show an import error,
+  because the dictionary is not installed in the repo), and adding cspell as an npm dependency (needs approval;
+  `npx` with pinned versions works the same way as markdownlint does now).
+
 ## 2026-11-13: Bound the automated review and skip its own pushes (task 0012)
 
 - Decision: Use the approved Claude App and subscription OAuth authentication. Share the review policy in
@@ -85,7 +98,7 @@ Newest first. One short entry per non-obvious decision.
 - Decision: Design for the worker's own phone at the job, including sun and gloves. After listing hazards,
   assess one at a time with separate before, controls and after steps. Show guidance in expandable sections.
 - Why: Jake confirmed that usage context and chose focused hazard assessment and expandable guidance.
-  The card's descriptions help explain ratings without preselecting answers or supplying hazards.
+  The card's descriptions help explain ratings without pre-selecting answers or supplying hazards.
 - Alternatives considered: Shared tablets or desktop-first use; every hazard on one long page; always-visible
   explanations or labels alone. Front-end copies of card guidance would drift, so the API supplies it.
 - Decided by: human (Jake), selecting these options in task 0004's questions.

@@ -1,7 +1,7 @@
 ---
 id: 0012
 title: A review agent in CI that checks and fixes each pull request before Jake reviews it
-status: review
+status: done
 owner: chatgpt
 branch: chatgpt/0012-review-agent
 ---
@@ -64,3 +64,20 @@ actionlint passes; independent reviewer findings addressed (bootstrap, bot actor
 failure reports). The bootstrap run deliberately skips until its policy exists on the base branch. Live OAuth,
 comment updates and a fix push triggering CI must be verified on the next PR after human merge. Abrupt timeout
 or cancellation can prevent a report. Do not treat a skipped/failed run as a completed review.
+
+## Review by Claude (2026-11-13)
+
+Every acceptance criterion is met, and the gate's test covers each kind of event. Fixed in the spell check pull
+request (task 0014): the test's name now says what it proves, and this file says `done`. Sign-in, the marked
+comment and a fix push starting CI are only proven by a live run; task 0014's pull request is the first.
+
+Left for Jake to decide:
+
+1. The reviewer reads `.claude/agents/reviewer.md`, `CLAUDE.md` and `.claude/settings.json` from the pull
+   request's own branch, so a pull request can change the rules it is reviewed by. The gate already loads its
+   policy from the base branch for this reason. A full fix checks out the base branch's agent files over the
+   pull request's before the review step. The risk is small while only Jake, Claude and ChatGPT push.
+2. `model: fable` in `reviewer.md` only applies to the local subagent. In CI the review runs on the action's
+   default model, unless `--model` is added to `claude_args`, which uses more of the subscription's limits.
+3. The gate is JavaScript (`scripts/agent_review.cjs`) in a Python scripts folder. Nothing lints or type checks
+   it, and the back end's tests now need Node. It works; rewrite it in Python only if it changes again.
