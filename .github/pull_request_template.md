@@ -2,6 +2,11 @@
 
 `docs/tasks/<id>-<name>.md`
 
+## In plain words
+
+<What this does and why, in a few sentences the human could repeat to someone else. Name the files to read
+first, and anything the author or reviewer could not check.>
+
 ## What changed
 
 -

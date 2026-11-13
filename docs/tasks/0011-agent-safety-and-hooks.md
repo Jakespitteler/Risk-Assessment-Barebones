@@ -1,7 +1,7 @@
 ---
 id: 0011
 title: Agent safety settings and hooks for Claude Code
-status: in-progress
+status: review
 owner: claude
 branch: claude/project-thread-7tuvvd
 ---
@@ -15,21 +15,23 @@ pull request stays small.
 
 ## Acceptance criteria
 
-- [ ] `.claude/settings.json` denies Claude's file tools reading or editing secrets and worker data: `.env` and
-  `.env.*` files, private keys (`*.pem`, `*.key`), any `secrets/` folder, `backend/.data/` (saved Take 5s), and
-  `~/.ssh`. It denies force pushes and `--no-verify`. It pre-approves the commands in AGENTS.md, so agents ask
-  less often for safe things.
-- [ ] A `PreToolUse` hook blocks, with a reason the agent can read, a shell command that names a secret file or
+- [x] `.claude/settings.json` denies Claude's file tools reading or editing secrets and worker data: `.env` and
+  `.env.*` files (not `.env.example` or `.env.sample`), private keys (`*.pem`, `*.key`), any `secrets/` folder,
+  `backend/.data/` (saved Take 5s), and `~/.ssh`. It pre-approves the commands in AGENTS.md, so agents ask less
+  often for safe things. The git rules are in the guard only, so they are written down once.
+- [x] A `PreToolUse` hook blocks, with a reason the agent can read, a shell command that names a secret file or
   `backend/.data/`, a commit or push while on `main`, a push to `main`, a force push and `--no-verify`. Deny rules
   only see the file tools and simple commands such as `cat .env`; the hook also catches `python -c` and pipes.
-- [ ] A `PostToolUse` hook formats each file an agent edits: Ruff for Python, Prettier for the front end. It
-  never blocks; the checks still decide.
-- [ ] The hooks are Python scripts run with `uv`, so they work the same on Windows and Linux, and live in
+- [x] A `PostToolUse` hook formats each file an agent edits: Ruff for Python, Prettier for the front end, and
+  markdownlint's safe fixes for Markdown. It never blocks; the checks still decide.
+- [x] The hooks are Python scripts run with `uv`, so they work the same on Windows and Linux, and live in
   `scripts/claude_hooks/` so `check.py` lints and type checks them.
-- [ ] pytest covers every block and every allow in the guard, and the formatter's choice of tool per file.
-- [ ] AGENTS.md, CLAUDE.md and `docs/dev-setup.md` say what the settings and hooks do, and that they protect
+- [x] pytest covers every block and every allow in the guard, and the formatter's choice of tool per file.
+- [x] AGENTS.md, CLAUDE.md and `docs/dev-setup.md` say what the settings and hooks do, and that they protect
   Claude Code on a computer only (see Notes). `docs/decisions.md` records the choice.
-- [ ] All checks pass.
+- [x] AGENTS.md step 7 says an agent that did not write a PR reviews it before Jake, and the PR template asks
+  for a plain-words summary, the files to read first, and anything that could not be checked.
+- [x] All checks pass.
 
 ## Out of scope
 
@@ -64,7 +66,15 @@ this task, and cloud threads' own branch limit). Recommended: soft guards now, P
   test that every rule has a test gives most of the benefit (task 0013).
 - *Unverified code, comprehension debt, intent debt, cognitive surrender:* see the PR for this task.
 
-**Proposed follow-up tasks, waiting on Jake's answers:**
+**Jake's answers (2026-11-13):** the plan and the split into tasks 0011 to 0013 are approved. The review agent
+signs in with his Claude subscription (an OAuth token, `CLAUDE_CODE_OAUTH_TOKEN`), not an API key. It replaces
+the other agent's review in AGENTS.md step 7. `main` stays on soft guards for now, not GitHub Pro.
+
+**If a hook can't run.** The guard fails closed when `uv` can't start it (uv exits with code 2, which blocks
+every call and shows uv's error), so a broken set-up is noticed at once. A bug inside the guard exits with code
+1, which Claude Code treats as a warning and lets the call through.
+
+**Follow-up tasks, approved by Jake (task files `0012` and `0013`):**
 
 - 0012, review agent in CI: on each pull request, an agent that did not write the code follows
   `.claude/agents/reviewer.md`, runs the checks, pushes fixes it is sure of as new commits (never a force push,

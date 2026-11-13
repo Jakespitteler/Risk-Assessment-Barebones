@@ -2,6 +2,27 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-13: Claude Code's safety settings and hooks, and who reviews a PR (task 0011)
+
+- Decision: `.claude/settings.json` denies Claude's file tools any `.env`, key, `secrets/` or `backend/.data/`
+  file. A guard hook blocks shell commands that name them, pushes to `main`, commits on `main`, force pushes and
+  `--no-verify`. A second hook formats each edited file. Both are Python scripts in `scripts/claude_hooks/`, run
+  with `uv`. An agent that did not write a PR reviews it before Jake: the review agent in CI (task 0012), which
+  signs in with Jake's Claude subscription (an OAuth token) and replaces the other agent's review. `main` stays
+  unprotected on GitHub; the guards above are soft.
+- Why: Jake asked for current Claude Code safety practice and for code never to be checked by the agent that
+  wrote it. Deny rules miss commands such as `python -c "open('.env')"`, so the guard reads each command.
+  Python hooks run the same on Windows and Linux, and `check.py` lints and tests them. GitHub Free does not
+  enforce branch protection on a private repo.
+- Alternatives considered: Claude Code's sandbox (stronger, but not on native Windows). Shell-script hooks
+  (simpler, but not on Windows without Git Bash, and untested). GitHub Pro to protect `main` (about US$4 a
+  month), or a public repo. An API key for the review agent (billed per review). Keeping the other agent's
+  review as well (Jake would pass every PR between Claude and ChatGPT by hand).
+- Limits: claude.ai cloud threads do not apply a repo's permission rules or hooks, so these protect Claude
+  Code on a computer only. CI's checks apply to every agent.
+- Decided by: human (Jake, 2026-11-13: the plan, the OAuth token, replacing the other agent's review, and soft
+  guards for `main`).
+
 ## 2026-11-13: A Don't start yet can be fixed in a new Take 5 (task 0010)
 
 - Decision: The review warns about a hazard with no controls before Finish, with a way to add one. A Don't start
