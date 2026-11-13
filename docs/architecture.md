@@ -126,6 +126,7 @@ frontend/
 scripts/
     dev.py                 starts both halves for development
     check.py               runs every check, as CI does
+    agent_review.cjs       decides which PR events may start the CI reviewer
     claude_hooks/          Claude Code's hooks (set in .claude/settings.json): a guard that blocks
                            secrets and risky git commands, and a formatter that runs after each edit
 ```

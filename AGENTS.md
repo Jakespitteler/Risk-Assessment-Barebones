@@ -45,7 +45,7 @@ Run each from the folder shown.
    human's approval. The task file only reaches `main` when the human merges, and the merge is the approval, so
    no follow-up PR is needed to mark a task done.
 7. An agent that did not write the change reviews the PR before the human does. That is the review agent in CI
-   once task 0012 is done, and the other agent until then. The human always does the final review and merges.
+   configured by task 0012. The human always does the final review and merges.
 
 ## Rules
 
