@@ -72,7 +72,7 @@ publishes it, the front end's types are generated from it, and either half can b
 
 ## Structure
 
-```
+```text
 backend/
     pyproject.toml
     src/risk_assessment/
@@ -134,7 +134,8 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 | `GET /api/take5s/{id}` | One Take 5 |
 
 **The front end holds no rules and no card.** It gets the questions and the matrix from
-`GET /api/take5/template`, draws whatever it is sent, and shows a score by looking it up in that matrix. It finds out what is missing or needs another look by asking
+`GET /api/take5/template`, draws whatever it is sent, and shows a score by looking it up in that matrix. It finds
+out what is missing or needs another look by asking
 `POST /api/take5s/check`. So there is exactly one copy of every rule, in Python, under test. The one behaviour
 that lives in the front end is spec T1 (hiding the hazard questions until a hazard is written), because it is
 about what is on the screen.
@@ -158,7 +159,7 @@ the built front-end files itself, so there is still only one program to run.
 Storage is one table. The whole Take 5 is saved as one JSON document, with a few columns beside it for finding
 and sorting:
 
-```
+```text
 take5s(id TEXT PRIMARY KEY, created_at TEXT, worker_name TEXT, job TEXT, document TEXT)
 ```
 
@@ -170,7 +171,7 @@ time to split it, and it is a recorded decision to revisit.
 
 What each back-end package may import:
 
-```
+```text
 domain        ->  nothing in the app
 domain/take5  ->  the shared files in domain (never the other way round)
 services      ->  domain

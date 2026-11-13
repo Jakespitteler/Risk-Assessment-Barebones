@@ -5,4 +5,5 @@ model: haiku
 effort: low
 tools: Read, Grep, Glob
 ---
-Search the codebase for what the caller asks. Return file paths, line numbers, and a few sentences of findings. Do not edit anything. Keep the answer under 300 words.
+Search the codebase for what the caller asks. Return file paths, line numbers, and a few sentences of findings. Do
+not edit anything. Keep the answer under 300 words.

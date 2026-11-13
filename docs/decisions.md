@@ -3,6 +3,7 @@
 Newest first. One short entry per non-obvious decision.
 
 ## 2026-11-13: Front-end libraries
+
 - Decision: React, TypeScript, Vite, Tailwind CSS, TanStack Query, React Router, openapi-typescript; Vitest,
   React Testing Library and Playwright for tests; ESLint and Prettier; npm.
 - Why: Jake asked for the best of what is current without anything obscure or likely to be replaced in a few
@@ -15,6 +16,7 @@ Newest first. One short entry per non-obvious decision.
 - Decided by: human, on claude's proposal (spec decision D12)
 
 ## 2026-11-13: Shared building blocks, the card as data, and one port for any AI
+
 - Decision: The matrix, controls, Yes / No questions and wording checks live in shared files that know nothing
   about a Take 5; `domain/take5/` is built from them. The card (its questions and its matrix) is a
   `Take5Template`, which is data, and the rules work from question roles and the template's matrix. Every AI
@@ -33,6 +35,7 @@ Newest first. One short entry per non-obvious decision.
   request
 
 ## 2026-11-13: The rating after controls decides a JHA; control kinds from the card; saved Take 5s open to all
+
 - Decision: A JHA is needed when a hazard's rating *after* controls is 11 or more (D6). The worker labels each
   control with one of the card's six "Make the changes" options, and remove, isolate and barricade count as
   strong (D7). Everyone using the app can see every saved Take 5 (D8).
@@ -44,6 +47,7 @@ Newest first. One short entry per non-obvious decision.
 - Decided by: human, on claude's recommendation
 
 ## 2026-11-13: Back-end libraries
+
 - Decision: FastAPI, pydantic and pydantic-settings, uvicorn, SQLite through the built-in `sqlite3`, and the
   `anthropic` library for the first AI adapter. For development: uv, ruff, pyright in strict mode, pytest and
   httpx (FastAPI's test client needs it).
@@ -55,6 +59,7 @@ Newest first. One short entry per non-obvious decision.
   and are approved by the human merging task 0001's pull request.
 
 ## 2026-11-13: A Python API with a separate JavaScript front end
+
 - Decision: Two programs that talk only through a web API. The back end owns every rule; the front end holds
   none and gets the matrix, the questions and all checks from the API.
 - Why: Jake chose the slicker front end over server-rendered pages. Keeping every rule in the back end means
@@ -63,6 +68,7 @@ Newest first. One short entry per non-obvious decision.
 - Decided by: human
 
 ## 2026-11-13: An AI challenge question in the first version
+
 - Decision: Before the result, the app asks one question about the weakest part of the Take 5. An AI writes it,
   behind a `ChallengeAsker` interface that any provider can fill. The safety rules stay in code; the AI never
   decides the verdict.
@@ -74,6 +80,7 @@ Newest first. One short entry per non-obvious decision.
   answer (D11).
 
 ## 2026-11-13: Own words first, hazards rated twice, no sign-in
+
 - Decision: The worker writes hazards before seeing the card's hazard questions, and fixed rules push back on
   thin answers. Each hazard is rated before and after its controls. There is no sign-in; the worker types their
   name.
@@ -83,6 +90,7 @@ Newest first. One short entry per non-obvious decision.
 - Decided by: human
 
 ## 2026-11-13: Store each Take 5 as one JSON document
+
 - Decision: One SQLite table, `take5s`, holding the whole Take 5 as JSON beside the columns the list needs,
   reached through Python's built-in `sqlite3` behind a `Take5Repository` interface.
 - Why: A Take 5 is always read and written whole. Separate hazard and control tables would add joins and code
@@ -93,6 +101,7 @@ Newest first. One short entry per non-obvious decision.
 - Decided by: proposed by claude; the human approves it by merging task 0001's pull request
 
 ## 2026-11-13: Unlikely / Critical scores 19, not the printed 18
+
 - Decision: The matrix cell for Unlikely / Critical is recorded as 19.
 - Why: The printed card shows 18 there, which repeats Possible / Major and leaves 19 unused. Every other cell is
   a unique rank from 1 to 25. The band (Extreme) is the same either way.

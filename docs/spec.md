@@ -27,8 +27,10 @@ phone remembers it.
 Where and when it is used (carried over from the original app; see Open questions):
 
 - On the worker's own phone, standing at the job, just before starting.
-- Often with gloves on, in bright sun, with a weak signal. So: big tap targets, high contrast, and screens that load fast.
-- It has to be quick enough that it is not resented. Target (to be confirmed, see Open questions): a job with two hazards takes under
+- Often with gloves on, in bright sun, with a weak signal. So: big tap targets, high contrast, and screens that
+  load fast.
+- It has to be quick enough that it is not resented. Target (to be confirmed, see Open questions): a job with two
+  hazards takes under
   three minutes.
 
 ## Core workflow
@@ -203,7 +205,7 @@ The safety rules stay in code. The AI only asks; it never decides whether anyone
   apology or a refusal, is thrown away and C3 applies.
 - **C3 Fallback.** If the AI fails, takes longer than 10 seconds, is not set up, or C2 throws its question away,
   the app asks a fixed question about the hazard with the highest *before* rating (the first listed, if there is
-  a tie): "What is the one thing that has to go right so that '<hazard>' doesn't hurt anyone, and how will you
+  a tie): "What is the one thing that has to go right so that '\<hazard\>' doesn't hurt anyone, and how will you
   check it before you start?" A Take 5 can therefore always be finished, with or without signal to the AI.
 - **C4 A real answer.** The answer must be at least four words. (Every vague phrase in T2 is shorter than that,
   so "be careful" can't be an answer.)
@@ -222,7 +224,7 @@ Each example becomes an automated test, named by its number. Add one for every r
 Rating a hazard (R1, R2, R3):
 
 | # | Likelihood | Consequence | Expected | Why |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | 1 | Rare | Low | 1 Low, no JHA | Lowest cell of the matrix |
 | 2 | Almost Certain | Critical | 25 Extreme, JHA | Highest cell |
 | 3 | Unlikely | Minor | 5 Low, no JHA | Top of the Low band |
@@ -238,7 +240,7 @@ Rating a Take 5 (R4, R5, R6). Ratings are written likelihood / consequence. Each
 "Barricade the hazard", unless the row says otherwise.
 
 | # | Hazards (before, then after) | Expected | Why |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 11 | A: Possible / Minor (8), then Unlikely / Minor (5). B: Possible / Moderate (13), then Unlikely / Moderate (9) | Take 5 rating 9 Moderate, no JHA | R5: the highest *after* rating |
 | 12 | A: Possible / Minor (8), then Unlikely / Minor (5). B: Likely / Minor (12), then Likely / Minor (12) | Take 5 rating 12 High, JHA | R5: one hazard at 11 or more is enough |
 | 13 | A: Possible / Major (18), then Rare / Major (10) | Take 5 rating 10 High, no JHA | R4: the *after* rating counts, even though *before* was Extreme |
@@ -252,7 +254,7 @@ is No, and there is one hazard rated Possible / Minor (8) then Unlikely / Minor 
 the hazard".
 
 | # | What is different | Expected verdict | Why |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 18 | Nothing | Good to go | No reason applies |
 | 19 | "Do you have the necessary permits?" is No | Don't start yet | V1 |
 | 20 | "Do you have the necessary permits?" is N/A | Good to go | N/A never stops a job |
@@ -267,7 +269,7 @@ the hazard".
 Thinking rules (T2, T3, T4). T1 is about what the screen shows, so it is tested through the screen (see F4).
 
 | # | Input | Expected | Why |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 28 | Control "Be careful." | Not accepted | T2, ignoring capitals and punctuation |
 | 29 | Control "Be careful of the pinch point when lowering the tray" | Accepted | T2 only catches a control that is nothing but the phrase |
 | 30 | Before Possible / Major (18); controls "Wear PPE" and "Ensure correct behaviour" | Weak-controls question asked | T3: 11 or more and all weak |
@@ -285,7 +287,7 @@ The challenge question (C1 to C6). Tests use a stand-in for the AI that returns 
 row says otherwise, the Take 5 is example 18 with the hazard described as "Fall from the tray".
 
 | # | Situation | Expected | Why |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 40 | The AI returns "What stops the tray moving while you're on it?" | That question is asked; recorded as asked by the AI | C1, C2 |
 | 41 | The AI fails, takes longer than 10 seconds, or is not set up | The fallback is asked: "What is the one thing that has to go right so that 'Fall from the tray' doesn't hurt anyone, and how will you check it before you start?"; recorded as the fallback | C3 |
 | 42 | The AI returns only spaces and line breaks | The fallback is asked | C2: nothing left once the ends are trimmed |
@@ -307,14 +309,18 @@ row says otherwise, the Take 5 is example 18 with the hazard described as "Fall 
 ## Features
 
 ### F1: Rate a risk
+
 The matrix, the bands and the JHA threshold, as one pure module with no web or database code.
+
 - Acceptance: worked examples 1 to 17 pass as tests.
 - Acceptance: every one of the 25 cells is checked against the matrix table above.
 - Acceptance: the matrix is data handed to the rating function. A test rates a hazard on a second, made-up
   matrix to prove that nothing about the booklet's matrix is built into the code.
 
 ### F2: Fill in a Take 5
+
 The first four screens of the core workflow, saved when the worker submits.
+
 - Acceptance: a Take 5 can't be submitted with anything missing (the list is under Verdict rules); each gap is
   named beside its field.
 - Acceptance: no answer is selected when a screen opens.
@@ -325,23 +331,27 @@ The first four screens of the core workflow, saved when the worker submits.
 - Acceptance: every screen is usable one-handed on a 360 px wide phone, with tap targets at least 48 px high.
 
 ### F3: The verdict
+
 - Acceptance: worked examples 18 to 27 pass as tests.
 - Acceptance: the result screen shows the verdict, every reason, each hazard with its controls and its before and
   after ratings, and the challenge question with the worker's answer.
 - Acceptance: no screen ever shows a score without its band.
 
 ### F4: Thinking rules
+
 - Acceptance: worked examples 28 to 39 pass as tests.
 - Acceptance: the hazard questions can't be seen or answered until one hazard has been written (T1).
 - Acceptance: the answer to a weak-controls question is saved and shown on the result screen.
 
 ### F5: Saved Take 5s
+
 - Acceptance: a list of saved Take 5s, newest first, shows the date, worker, job and verdict of each, or "Not
   finished" for one whose question is unanswered.
 - Acceptance: opening one shows the same result screen the worker saw, with the verdict saved at the time.
 - Acceptance: a finished Take 5 can't be changed.
 
 ### F6: The challenge question
+
 - Acceptance: worked examples 40 to 56 pass as tests, with a stand-in for the AI.
 - Acceptance: the worker never sees an error from the AI, only a question.
 - Acceptance: the AI provider is chosen in settings. Adding ChatGPT or Gemini means one new adapter file, its
