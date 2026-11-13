@@ -35,6 +35,9 @@ requests between Claude and ChatGPT by hand.
 
 ## Notes / assumptions
 
+Recommended next, before task 0005 (Jake agreed, 2026-11-13), so every later pull request is reviewed by it.
+Task numbers are IDs, not the order of work.
+
 Before the workflow can run, Jake must:
 
 1. Install the Claude GitHub App on the repo: <https://github.com/apps/claude>.
