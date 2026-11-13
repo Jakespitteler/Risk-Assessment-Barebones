@@ -30,9 +30,18 @@ If Pylance reports missing app imports or `pytest`:
 
 1. Run `uv sync --locked` in `backend/` to install the app and development tools.
 2. Run **Python: Select Interpreter** in VS Code and select `backend/.venv/Scripts/python.exe` on Windows
-   (`backend/.venv/bin/python` on Linux/macOS). The workspace default only applies if you have not already
-   selected another interpreter; it cannot override a selection VS Code has saved.
+   (`backend/.venv/bin/python` on Linux/macOS). Select the executable, not the `.venv` directory.
+   VS Code keeps this machine-specific choice locally; it does not need to be committed to the repo.
 3. Run **Developer: Reload Window**. The test explorer is configured to run pytest from `backend/`.
+
+The workspace leaves Python Environments integration enabled when installed and enabled by your editor.
+It deliberately has no directory-valued `python.defaultInterpreterPath`: the Environments launcher was
+observed trying to execute `backend/.venv` itself instead of the Python executable it had discovered,
+causing `spawn ... ENOENT` before pytest could start. Selecting the executable directly fixes the launch
+target and works across operating systems without a shared Windows-only path or disabling the integration.
+After pulling this correction, select that executable, reload the window and run **Test: Refresh Tests**.
+If discovery still fails, check **Output → Python Environments** for `Running in background`: its quoted
+launch target must end in `Scripts/python.exe` on Windows or `bin/python` on Linux/macOS.
 
 The Ruff extension uses its bundled executable and the back end's Ruff configuration, so it can format
 and sort imports without discovering a binary in a different Python environment. If it still reports a
