@@ -1,9 +1,9 @@
 ---
 id: 0003
 title: Rate a risk (spec F1)
-status: todo
-owner:
-branch:
+status: in-progress
+owner: chatgpt
+branch: chatgpt/0003-rate-a-risk
 ---
 
 ## Goal
@@ -34,3 +34,11 @@ database code.
 
 Don't start until the spec is approved (task 0001 is `done`). Depends on 0002. Task 0002 already adds the matrix
 with worked example 1; extend it rather than starting again.
+
+Implementation plan: extend the existing matrix scoring, add the six control kinds and frozen scoring models,
+and test worked examples 1 to 17, all booklet cells and a second matrix. Only the template name/matrix and the
+hazards/template fields needed for R1 to R6 are added now; later tasks add questions, worker/job details,
+storage and verdicts. No new dependencies or changes to the existing API are needed.
+
+Unrelated documentation issue: task 0002 is already merged into main, but its task file still says review.
+This task leaves that file unchanged.
