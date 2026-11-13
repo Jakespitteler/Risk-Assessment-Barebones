@@ -1,0 +1,96 @@
+name: Agent review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  eligible:
+    runs-on: ubuntu-latest
+    outputs:
+      review: ${{ steps.gate.outputs.result }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - id: gate
+        uses: actions/github-script@v8
+        with:
+          script: |
+            if (!require('fs').existsSync('./scripts/agent_review.cjs')) {
+              core.notice('Bootstrap: review policy is not on the base branch yet. Independent review is required.');
+              return false;
+            }
+            const shouldReview = require('./scripts/agent_review.cjs');
+            return shouldReview(context);
+
+  review:
+    needs: eligible
+    if: needs.eligible.outputs.review == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # A skipped bot push must not cancel the reviewer that just made that push.
+    concurrency:
+      group: agent-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v9.0.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: uv sync --locked
+        working-directory: backend
+      - run: npm ci && npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Review and fix
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "claude[bot]"
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+            Read and follow .claude/agents/reviewer.md in full.
+            This is CI: review and fix mode. Review the PR against its actual base branch.
+            Run uv run scripts/check.py. Publish the report as one top-level PR comment
+            using gh api to create or update the marked report described in the reviewer instructions.
+            Do not post inline comments or submit an approval.
+          claude_args: >-
+            --max-turns 40
+            --allowedTools "Read,Grep,Glob,Edit,Write,Bash"
+      - name: Report a failed review
+        if: failure()
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const issue_number = context.payload.pull_request.number;
+            const marker = '<!-- agent-review -->';
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              ...context.repo, issue_number
+            });
+            const report = comments.find(c => c.user?.type === 'Bot' && c.body?.startsWith(marker));
+            const url = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = `${marker}\nReview did not complete for ${context.payload.pull_request.head.sha}. ` +
+              `Do not treat this run as approval. [Inspect the failed run](${url}) and rerun after fixing the cause.` +
+              (report ? `\n\nPrevious report (may describe an older commit):\n${report.body.slice(marker.length)}` : '');
+            if (report) {
+              await github.rest.issues.updateComment({...context.repo, comment_id: report.id, body});
+            } else {
+              await github.rest.issues.createComment({...context.repo, issue_number, body});
+            }

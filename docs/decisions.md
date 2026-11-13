@@ -2,6 +2,22 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-13: Bound the automated review and skip its own pushes (task 0012)
+
+- Decision: Use the approved Claude App and subscription OAuth authentication. Share the review policy in
+  `.claude/agents/reviewer.md`; local reviews report, CI reviews may fix within the approved scope. Use 40 turns,
+  a 30-minute timeout and concurrency per PR. Skip drafts, forks, default-branch heads and synchronize events
+  sent by `claude[bot]`. Load the trigger policy from the base revision.
+- Why: App-authenticated fix pushes start normal CI. Checking the event sender prevents review loops without
+  excluding all Claude-authored PRs. Job-level concurrency prevents a skipped fix push cancelling its own review.
+- Alternatives considered: `GITHUB_TOKEN` (fix pushes would not start CI), skipping Claude-authored PRs (would
+  miss independent review), and a privileged `pull_request_target` workflow (unneeded for this private repo).
+- Approval: Jake approved the App, OAuth, fix commits and replacement review in task 0011, requested task 0012,
+  and confirmed the App and secret are ready. Limits and event filtering implement that approved scope.
+- Limits: The first workflow needs to be on the default branch for App validation. Abrupt cancellation or
+  timeout may prevent a final comment. GitHub permissions do not enforce every instruction; human review and
+  the existing soft guards still apply. Live App authentication and fix-triggered CI need a subsequent PR.
+
 ## 2026-11-13: Claude Code's safety settings and hooks, and who reviews a PR (task 0011)
 
 - Decision: `.claude/settings.json` denies Claude's file tools any `.env`, key, `secrets/` or `backend/.data/`

@@ -1,7 +1,7 @@
 ---
 id: 0012
 title: A review agent in CI that checks and fixes each pull request before Jake reviews it
-status: in-progress
+status: review
 owner: chatgpt
 branch: chatgpt/0012-review-agent
 ---
@@ -15,18 +15,18 @@ requests between Claude and ChatGPT by hand.
 
 ## Acceptance criteria
 
-- [ ] `.github/workflows/agent-review.yml` runs `anthropics/claude-code-action@v1` on each pull request that is
+- [x] `.github/workflows/agent-review.yml` runs `anthropics/claude-code-action@v1` on each pull request that is
   opened, updated or marked ready, and skips drafts and its own pushes, so it can't loop.
-- [ ] It signs in with Jake's Claude subscription: `claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}`.
-- [ ] Its instructions come from `.claude/agents/reviewer.md`, the same ones the local reviewer uses, so the
+- [x] It signs in with Jake's Claude subscription: `claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}`.
+- [x] Its instructions come from `.claude/agents/reviewer.md`, the same ones the local reviewer uses, so the
   review rules are written once.
-- [ ] It runs `uv run scripts/check.py`. It may push fixes it is sure of as new commits on the pull request's
+- [x] It runs `uv run scripts/check.py`. It may push fixes it is sure of as new commits on the pull request's
   branch. It never force pushes, never pushes to `main`, never merges or approves, and never changes the spec,
   a decision, or anything AGENTS.md says needs the human.
-- [ ] It leaves one comment: what it found, what it fixed (with the commits), what it left for Jake, and anything
+- [x] It leaves one comment: what it found, what it fixed (with the commits), what it left for Jake, and anything
   it could not check.
-- [ ] It is limited by `--max-turns`, a job timeout, and a concurrency group per pull request.
-- [ ] AGENTS.md step 7 drops "and the other agent until then". `docs/decisions.md` records any choice made here.
+- [x] It is limited by `--max-turns`, a job timeout, and a concurrency group per pull request.
+- [x] AGENTS.md step 7 drops "and the other agent until then". `docs/decisions.md` records any choice made here.
 
 ## Out of scope
 
@@ -53,3 +53,14 @@ limit on GitHub Free.
 
 The review agent's pushes must start CI again. GitHub doesn't run workflows for pushes made with the default
 `GITHUB_TOKEN`, so the action signs in as the Claude GitHub App (its default).
+
+Implementation: `agent-review.yml` uses a tested event gate, Claude App authentication, the shared reviewer
+policy, 40 turns and a 30-minute job limit. Fix commits trigger normal CI; reviewer synchronize events are
+skipped. Failure steps update the same marked report. Jake confirmed the App and secret are ready.
+No app API, data model or package dependencies changed. No UI changed, so screenshots are not applicable.
+
+Validation: `uv run scripts/check.py` passes (279 Python, 72 Vitest, 14 Playwright tests);
+actionlint passes; independent reviewer findings addressed (bootstrap, bot actors,
+failure reports). The bootstrap run deliberately skips until its policy exists on the base branch. Live OAuth,
+comment updates and a fix push triggering CI must be verified on the next PR after human merge. Abrupt timeout
+or cancellation can prevent a report. Do not treat a skipped/failed run as a completed review.
