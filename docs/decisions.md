@@ -19,13 +19,16 @@ Newest first. One short entry per non-obvious decision.
 - Decided by: human (Jake asked for it, 2026-11-13). He chose the same day to run it in `scripts/check.py`, so
   CI fails on a spelling mistake.
 
-## 2026-11-14: The CI reviewer is pinned to Opus 5.5, and its rules can come from the PR
+## 2026-11-14: The CI reviewer runs Opus 5.5 with at most 15 turns
 
-- Decision: `agent-review.yml` passes `--model claude-opus-5-5`. Without it the review runs on the action's
-  default model, because `model:` in `.claude/agents/reviewer.md` only applies to the local subagent. A pull
-  request can still change the agent files it is reviewed with; that risk is accepted.
-- Why: Jake chose Opus 5.5 for the review agent. Closing the second gap needs `pull_request_target` or
-  branch protection, which GitHub Free does not offer on a private repo, and only Jake, Claude and ChatGPT push.
+- Decision: `agent-review.yml` passes `--model claude-opus-5-5` and `--max-turns 15` (was 40). Without
+  `--model` the review runs on the action's default model, because `model:` in `.claude/agents/reviewer.md`
+  only applies to the local subagent. That a pull request's own code, such as `scripts/check.py`, runs in its
+  review is an accepted risk; the action already restores the agent files from `main`.
+- Why: Jake chose Opus 5.5, and asked for a lower turn cap to protect his usage. The first live review (no
+  fixes, on the default model) took 7 turns, so 5 would stop it before it posts its comment. 15 leaves room to
+  fix one thing and run the checks again. The cap is only a ceiling; a review uses what it needs.
+- Alternatives considered: 5 turns (too few, as above) and keeping 40 (more room than a review needs).
 - Decided by: human (Jake, 2026-11-14), after Claude's review of task 0012.
 
 ## 2026-11-13: Bound the automated review and skip its own pushes (task 0012)

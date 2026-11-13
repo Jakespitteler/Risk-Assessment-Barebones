@@ -78,15 +78,15 @@ reviewed. So check the commit in the comment, and review a workflow change yours
 
 Jake's answers (2026-11-14) are under each point:
 
-1. A pull request can change the rules it is reviewed by. `.claude/agents/reviewer.md`, `CLAUDE.md`,
-   `.claude/settings.json` and `scripts/check.py` all come from the pull request's branch. Only the gate loads
-   from the base branch, and a changed workflow file is not run at all (above). Closing this needs `pull_request_target`
-   (rejected in the decision above) or branch protection (not on GitHub Free for a private repo). It is an
-   accepted risk while only Jake, Claude and ChatGPT push, and Jake's own review is the backstop.
-   Jake accepted the risk.
+1. A pull request could change the rules it is reviewed by. The live run showed the action guards most of this
+   itself: it restores `.claude/` (with `reviewer.md` and the settings), `CLAUDE.md` and other agent files from
+   `main` before the review, and it refuses a changed workflow file (above). What still comes from the pull
+   request is the code under review, including `scripts/check.py`. Jake accepted that risk while only Jake,
+   Claude and ChatGPT push; his own review is the backstop.
 2. `model: fable` in `reviewer.md` only applies to the local subagent. In CI the review runs on the action's
    default model, unless `--model` is added to `claude_args`, which uses more of the subscription's limits.
-   Jake chose to pin it to Opus 5.5: `agent-review.yml` now passes `--model claude-opus-5-5`.
+   Jake chose to pin it to Opus 5.5: `agent-review.yml` now passes `--model claude-opus-5-5`. He also asked
+   for fewer turns: the cap is now 15 (see the decisions log).
 3. The gate is JavaScript (`scripts/agent_review.cjs`) in a Python scripts folder. Nothing lints or type checks
    it, and the back end's tests now need Node. It works; rewrite it in Python only if it changes again.
    Left as it is.

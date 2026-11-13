@@ -37,8 +37,8 @@ The same pull request holds Claude's review of task 0012 (in that task's file), 
 name says what it proves, sets tasks 0011 and 0012 to `done` (both were merged), and drops 0012 from the order of
 work in `docs/tasks/README.md`.
 
-After that review Jake chose (2026-11-14) to pin the CI reviewer to Opus 5.5, so `agent-review.yml` now passes
-`--model claude-opus-5-5`, and accepted that a pull request can change its own review rules.
+After that review Jake chose (2026-11-14) to pin the CI reviewer to Opus 5.5 with at most 15 turns, and accepted
+that a pull request's own code runs in its review.
 
 The command line pins cspell 10.5.0 and `@cspell/dict-en-au` 1.1.31. The `en-AU` dictionary accepts some American
 forms (`organization`, and `color` through the software terms dictionary), so it does not catch every American

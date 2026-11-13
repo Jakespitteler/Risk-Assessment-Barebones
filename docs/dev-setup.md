@@ -56,7 +56,7 @@ Jake confirmed both setup steps are complete on 2026-11-13.
 
 The Agent review workflow reviews opened, updated, reopened and ready PRs. Drafts, forks and pushes from
 `claude[bot]` are skipped. A Claude-authored PR is still reviewed when opened or marked ready. Each review has
-40 turns and 30 minutes; a newer eligible run cancels the older run for that PR. Skipped bot pushes do not
+15 turns and 30 minutes; a newer eligible run cancels the older run for that PR. Skipped bot pushes do not
 cancel the reviewer publishing its report. Only trusted collaborators should push branches in this repo.
 
 The reviewer follows `.claude/agents/reviewer.md`, runs all checks and may push certain fixes as new commits.
