@@ -1,7 +1,7 @@
 ---
 id: 0003
 title: Rate a risk (spec F1)
-status: review
+status: in-progress
 owner: chatgpt
 branch: chatgpt/0003-rate-a-risk
 ---
@@ -60,3 +60,8 @@ because the environment blocks the Playwright download. No UI, API, dependency o
 
 Unrelated documentation issue: task 0002 is already merged into main, but its task file still says review.
 This task leaves that file unchanged.
+
+Review follow-up: Jake's VS Code Python 2026.10 log shows the Python Environments discovery launcher
+exiting immediately with null code/signal and no pytest traceback. Direct discovery and all 53 tests pass
+here. Apply the supported workspace opt-out from that launcher, preserve the backend interpreter/settings,
+and document the required reload and local verification.
