@@ -18,10 +18,13 @@ PowerShell command, a guard blocks anything that names a secret or saved Take 5s
 each edit a formatter tidies the file.
 
 - Start Claude Code in the repository root. It reads `.claude/settings.json` from the folder it starts in.
-- The hooks need `uv` on your `PATH` and a current Claude Code. The formatter also needs the install step above
-  (`uv sync` in `backend/`, `npm ci` in `frontend/`).
+- The hooks need `uv` on your `PATH` and Claude Code 2.1.295 or later. The formatter also needs the install
+  step above (`uv sync` in `backend/`, `npm ci` in `frontend/`).
 - The pre-approved commands start once you trust the folder in Claude Code. Run `/hooks` to see the hooks.
-- If the guard itself breaks, it blocks every call and says why, rather than letting calls through.
+- If the guard breaks, times out or can't start, it blocks the call rather than letting it through, and says
+  why.
+- A commit message or PR body that names a secret, such as `.env`, is blocked too. Write the text to a file and
+  pass the file: `git commit -F message.txt`, `gh pr create --body-file body.md`.
 - Put personal changes in `.claude/settings.local.json`, which git ignores.
 
 ## How type checking is set up

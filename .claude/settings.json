@@ -71,7 +71,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash|PowerShell|Read|Edit|Write|Grep|Glob|NotebookEdit",
+        "matcher": "Bash|PowerShell|Read|Edit|Write|Grep|Glob|NotebookEdit|mcp__github__merge_pull_request",
         "hooks": [
           {
             "type": "command",
@@ -81,7 +81,8 @@
               "--quiet",
               "${CLAUDE_PROJECT_DIR}/scripts/claude_hooks/guard_tool_use.py"
             ],
-            "timeout": 30
+            "timeout": 60,
+            "onFailure": "block"
           }
         ]
       }

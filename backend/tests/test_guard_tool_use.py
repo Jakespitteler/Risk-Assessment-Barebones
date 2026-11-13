@@ -2,6 +2,8 @@
 
 import io
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -13,6 +15,7 @@ from scripts.claude_hooks.guard_tool_use import (
 )
 
 TASK_BRANCH: str = "claude/0011-agent-safety"
+HEREDOC_COMMIT: str = 'git commit -m "$(cat <<\'EOF\'\nFix the "quoted" case\nEOF\n)"'
 
 
 @pytest.mark.parametrize(
@@ -26,12 +29,13 @@ TASK_BRANCH: str = "claude/0011-agent-safety"
         "python -c \"print(open('.env').read())\"",
         "node -e \"require('fs').readFileSync('.env.production')\"",
         "grep KEY .envrc",
-        "cp deploy.pem /tmp",
+        "cat ~/.netrc ~/.git-credentials",
+        "cp deploy.pem cert.p12 cert.pfx /tmp",
         "cat ~/.ssh/id_ed25519",
+        "cat id_rsa",
         "ls ~/.ssh",
-        "cd secrets",
         "cat ~/.aws/credentials",
-        "cat ~/.netrc",
+        "ls secrets/",
         "sqlite3 backend/.data/take5.sqlite3 .dump",
         "cd backend && sqlite3 .data/take5.sqlite3 .dump",
         "ls backend//.data",
@@ -39,6 +43,11 @@ TASK_BRANCH: str = "claude/0011-agent-safety"
         "echo hi | tee .env",
         "echo hi>.env",
         "git add -f .env",
+        "git commit -F .env",
+        'git commit -m "$(cat .env)"',
+        "gh pr create --title x --body-file .env",
+        "gh pr comment 13 --body-file backend/.data/take5.sqlite3",
+        f"{HEREDOC_COMMIT}; cat .env",
     ],
 )
 def test_a_command_that_names_a_secret_is_blocked(command: str) -> None:
@@ -49,6 +58,14 @@ def test_a_command_that_names_a_secret_is_blocked(command: str) -> None:
     assert "secrets or worker data" in reason
 
 
+def test_a_message_that_names_a_secret_is_blocked_with_a_way_round() -> None:
+    """Message text is not trusted either; the reason says to pass a file instead."""
+    reason: str | None = reason_to_block_command("git commit -m 'Deny .env'", "")
+
+    assert reason is not None
+    assert "write it to a file" in reason
+
+
 @pytest.mark.parametrize(
     "command",
     [
@@ -57,20 +74,21 @@ def test_a_command_that_names_a_secret_is_blocked(command: str) -> None:
         "grep -rn os.environ backend/src",
         "grep -rn process.env frontend/src",
         "grep -rn event.key frontend/src",
-        "jq .data.items reply.json",
+        "grep -rn secrets docs/",
+        "uv run pytest -k secrets",
+        "python -c 'import secrets'",
+        "jq .data reply.json",
+        "git status --short | grep -v .data",
         "python -m pytest tests/test_settings.py",
         "cat docs/keyboard.md",
-        'echo "no secrets here"',
-        'git commit -m "Deny reading .env files"',
-        "git commit --message='Never read .env'",
-        "git commit -am 'Ignore .env and backend/.data'",
-        'git commit -m "Guard: block .env; block keys"',
-        "git commit -m \"$(cat <<'EOF'\nBlock .env\n\ngit push --force\nEOF\n)\"",
-        'gh pr create --title "Guard .env" --body "Denies .env and backend/.data"',
+        "git commit -F commit-message.txt",
+        "gh pr create --title 'Agent safety' --body-file pr-body.md",
+        HEREDOC_COMMIT,
+        'gh pr create --title T --body "Jake said \\"go\\". | a | b |"',
     ],
 )
-def test_a_command_that_only_mentions_a_secret_may_run(command: str) -> None:
-    """Names that only contain `env` or `key`, and commit or PR text, are allowed."""
+def test_a_command_that_only_looks_like_a_secret_may_run(command: str) -> None:
+    """Names that only contain `env`, `key`, `secrets` or `.data` are allowed."""
     assert reason_to_block_command(command, TASK_BRANCH) is None
 
 
@@ -79,14 +97,22 @@ def test_a_command_that_only_mentions_a_secret_may_run(command: str) -> None:
     [
         "git push origin main",
         "git push origin HEAD:main",
+        "git push origin HEAD:heads/main",
         "git push origin claude/0011:refs/heads/main",
         "git push origin :main",
         "git push --all",
+        "git push --branches",
         "git -C ../repo push origin main",
         "FOO=1 git push origin main",
         "sudo git push origin main",
+        "env -i git push origin main",
+        "xargs git push origin main",
         "(git push origin main)",
+        "{ git push origin main; }",
+        "if true; then git push origin main; fi",
+        "echo `git push origin main`",
         "echo hi & git push origin main",
+        f"{HEREDOC_COMMIT}\ngit push origin main",
         '& "C:\\Program Files\\Git\\bin\\git.exe" push origin main',
         "git push --force origin claude/0011",
         "git push -f",
@@ -98,10 +124,12 @@ def test_a_command_that_only_mentions_a_secret_may_run(command: str) -> None:
         "git commit --no-verify -m 'Skip the checks'",
         "git commit --no-verif -m 'Skip the checks'",
         "git commit -n -m 'Skip the checks'",
-        "HUSKY=0 git commit -nm 'Skip the checks'",
+        "HUSKY=0 git commit -anm 'Skip the checks'",
         "git checkout main && git commit -m x",
         "git switch main; git merge claude/0011",
         "gh pr merge 13 --squash",
+        "gh -R owner/repo pr merge 13",
+        "gh api -X PUT repos/owner/repo/pulls/13/merge",
     ],
 )
 def test_a_risky_git_command_is_blocked(command: str) -> None:
@@ -111,7 +139,17 @@ def test_a_risky_git_command_is_blocked(command: str) -> None:
 
 @pytest.mark.parametrize(
     "command",
-    ["git commit -m 'Tidy'", "git push", "git merge claude/0011", "git revert HEAD"],
+    [
+        "git commit -m 'Tidy'",
+        "git push",
+        "git merge claude/0011",
+        "git revert HEAD",
+        "git cherry-pick abc123",
+        "git am fix.patch",
+        "git rebase claude/0011",
+        "git checkout . && git commit -m x",
+        "git checkout docs/spec.md && git commit -am x",
+    ],
 )
 def test_changing_main_while_it_is_checked_out_is_blocked(command: str) -> None:
     """With main checked out, even a plain commit, merge or push is blocked."""
@@ -127,16 +165,21 @@ def test_changing_main_while_it_is_checked_out_is_blocked(command: str) -> None:
         "git push -u origin claude/0011-agent-safety",
         "git push --follow-tags origin claude/0011-agent-safety",
         "git commit -m 'Add the guard hook'",
+        "git commit -m x -uno",
+        "git commit --message='Block -n on commit'",
+        'git commit -m "Explain \\"force\\"; git push origin main is blocked"',
         "git log --oneline main",
         "git diff main...HEAD",
         "git fetch origin main",
         "git rebase origin/main",
         "git checkout -b claude/0012 main && git commit -m x",
+        "git checkout main docs/spec.md && git commit -m x",
         "git checkout main -- docs/spec.md && git commit -m x",
+        "gh pr create --title 'Merge the guard' --body-file pr-body.md",
     ],
 )
 def test_normal_work_on_a_task_branch_may_run(command: str) -> None:
-    """Committing, pushing the task branch and reading main are all allowed."""
+    """Committing, pushing the task branch, reading main and opening a PR may run."""
     assert reason_to_block_command(command, TASK_BRANCH) is None
 
 
@@ -152,12 +195,13 @@ def test_normal_work_on_a_task_branch_may_run(command: str) -> None:
         ("Glob", {"pattern": "**/.env*"}),
         ("Bash", {"command": "cat .env"}),
         ("PowerShell", {"command": "Get-Content .env"}),
+        ("mcp__github__merge_pull_request", {"pullNumber": "13"}),
     ],
 )
-def test_a_tool_call_that_names_a_secret_is_blocked(
+def test_a_risky_tool_call_is_blocked(
     tool_name: str, tool_input: dict[str, str]
 ) -> None:
-    """File tools are checked by path, and Bash and PowerShell by their words."""
+    """File tools are checked by path, shells by their text, and merging by name."""
     assert reason_to_block_tool_call(tool_name, tool_input, TASK_BRANCH) is not None
 
 
@@ -175,10 +219,22 @@ def test_an_ordinary_tool_call_may_go_ahead(
     assert reason_to_block_tool_call(tool_name, tool_input, TASK_BRANCH) is None
 
 
-def run_guard(monkeypatch: pytest.MonkeyPatch, hook_input: dict[str, object]) -> int:
-    """Run the hook's `main` with a tool call on standard input, as Claude Code does."""
+def run_guard(
+    monkeypatch: pytest.MonkeyPatch, hook_input: dict[str, object], encoding: str
+) -> int:
+    """Run the hook's `main` with a tool call on standard input, as Claude Code does.
+
+    Args:
+        monkeypatch: Replaces standard input for the test.
+        hook_input: The tool call, sent as UTF-8 as Claude Code sends it.
+        encoding: The code page Python would use to read standard input as text.
+
+    Returns:
+        The hook's exit code.
+    """
     stdin_bytes: bytes = json.dumps(hook_input, ensure_ascii=False).encode()
-    monkeypatch.setattr("sys.stdin", io.TextIOWrapper(io.BytesIO(stdin_bytes)))
+    stdin = io.TextIOWrapper(io.BytesIO(stdin_bytes), encoding=encoding)
+    monkeypatch.setattr("sys.stdin", stdin)
     return guard_tool_use.main()
 
 
@@ -191,21 +247,37 @@ def test_main_blocks_with_exit_code_2_and_says_why(
         "tool_input": {"file_path": "/repo/.env"},
     }
 
-    assert run_guard(monkeypatch, hook_input) == 2
+    assert run_guard(monkeypatch, hook_input, "utf-8") == 2
     assert ".env may hold secrets" in capsys.readouterr().err
 
 
-def test_main_allows_a_safe_call_with_text_that_is_not_ascii(
+def test_main_reads_utf_8_even_on_a_windows_code_page(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """Claude Code sends UTF-8, which is read right whatever the code page."""
+    """A curly quote in UTF-8 can't be read as cp1252 text, so the hook reads bytes."""
     hook_input: dict[str, object] = {
         "tool_name": "Bash",
-        "tool_input": {"command": "git commit -m 'Don’t start yet – fixed'"},
+        "tool_input": {"command": "git commit -m '”Don’t start yet” fixed'"},
         "cwd": str(tmp_path),
     }
 
-    assert run_guard(monkeypatch, hook_input) == 0
+    assert run_guard(monkeypatch, hook_input, "cp1252") == 0
+
+
+def test_a_broken_guard_blocks_the_call() -> None:
+    """Input the guard can't read fails closed, with exit code 2 and the error."""
+    guard_script: Path = Path(guard_tool_use.__file__)
+
+    result: subprocess.CompletedProcess[str] = subprocess.run(
+        [sys.executable, str(guard_script)],
+        input="not json",
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 2
+    assert "so the call is blocked" in result.stderr
 
 
 def test_the_branch_is_unknown_outside_a_repository_or_folder(tmp_path: Path) -> None:

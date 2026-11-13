@@ -9,15 +9,17 @@ code 2 blocks the call, and what is printed to standard error is the reason Clau
 sees. Exit code 0 leaves the decision to the normal permission rules.
 
 The deny rules in `.claude/settings.json` only cover Claude's file tools and simple
-commands such as `cat .env`. This hook reads every word of a shell command too, so
-`python -c "print(open('.env').read())"` is caught as well. It is a soft guard: it
-matches words, so a command that reads a file without naming it (`grep -r KEY .`) or
-a script that opens one gets past it. `docs/decisions.md` lists the limits.
+commands such as `cat .env`. This hook reads the whole text of every shell command,
+so `python -c "print(open('.env').read())"` is caught too. A commit message or pull
+request body that names a secret is blocked as well: write the text to a file with
+the Write tool and pass the file (`git commit -F`, `gh pr create --body-file`).
+
+It is a soft guard. It matches words, so a command that reads a file without naming
+it, or a script that opens one, gets past it. `docs/decisions.md` lists the limits.
 """
 
 import json
 import re
-import shlex
 import subprocess
 import sys
 from collections.abc import Callable, Mapping
@@ -27,42 +29,50 @@ from typing import Any
 PROTECTED_BRANCH: str = "main"
 SHELL_TOOLS: frozenset[str] = frozenset({"Bash", "PowerShell"})
 PATH_FIELDS: tuple[str, ...] = ("file_path", "path", "notebook_path", "glob")
+MERGE_TOOLS: frozenset[str] = frozenset({"mcp__github__merge_pull_request"})
+MERGE_REASON: str = "Only the human merges a pull request (AGENTS.md)."
 
 # A name that holds secrets or worker data. The look-behind and look-aheads only match
-# whole names, so `.venv`, `os.environ` and `process.env.PORT` don't match. Key files
-# ending in `.key` are left to the deny rules, because `event.key` is ordinary code.
+# whole names, so `.venv`, `os.environ`, `process.env.PORT` and `jq .data` don't
+# match. Folders only match beside a `/` or `\`. Key files ending in `.key` are left
+# to the deny rules, because `event.key` is ordinary code.
 SECRET_PATH_PATTERN: re.Pattern[str] = re.compile(
     r"""
     (?<![\w.-])
     (
-        \.env(?:\.[\w.-]+)?(?![\w-])           # .env, .env.local
+        \.env(?:\.[\w.-]+)?(?![\w-])             # .env, .env.local
       | \.envrc(?![\w-])
       | \.netrc(?![\w-])
       | \.git-credentials(?![\w-])
-      | [\w.-]+\.(?:pem|p12|pfx)(?![\w-])     # private keys and certificates
+      | [\w.-]+\.(?:pem|p12|pfx)(?![\w-])       # private keys and certificates
       | id_(?:rsa|dsa|ecdsa|ed25519)(?![\w-])
-      | (?:secrets|\.ssh|\.aws)(?=[/\\'"]|$)  # folders of secrets
-      | \.data(?=[/\\'"]|$)                   # backend/.data: real workers' answers
+      | secrets[/\\]
+      | (?<=[/\\])\.(?:ssh|aws|data)(?![\w.-])  # ~/.ssh, backend/.data
+      | \.(?:ssh|aws|data)[/\\]                 # .data/take5.sqlite3
     )
     """,
     re.VERBOSE | re.IGNORECASE,
 )
 
-SHELL_OPERATORS: str = "();<>|&\n"
+# A quoted string, in single or double quotes, with `\"` allowed inside double quotes.
+QUOTED_TEXT_PATTERN: re.Pattern[str] = re.compile(r"'[^']*'|\"(?:\\.|[^\"\\])*\"")
+SHELL_SEPARATOR_PATTERN: re.Pattern[str] = re.compile(r"&&|\|\||[;|&(){}`\n]")
 COMMAND_WRAPPERS: frozenset[str] = frozenset(
-    {"env", "command", "time", "sudo", "nohup", "exec"}
+    {"env", "command", "time", "sudo", "nohup", "exec", "xargs", "then", "do", "else"}
 )
 ENVIRONMENT_ASSIGNMENT_PATTERN: re.Pattern[str] = re.compile(r"[A-Za-z_]\w*=")
 GIT_OPTIONS_WITH_A_VALUE: frozenset[str] = frozenset(
     {"-C", "-c", "--git-dir", "--work-tree"}
 )
-# Commands that only write a message. Their text may mention `.env` freely.
-MESSAGE_SUBCOMMANDS: frozenset[tuple[str, ...]] = frozenset(
-    {("git", "commit"), ("git", "tag"), ("gh", "pr"), ("gh", "issue")}
+MAIN_NAMES: frozenset[str] = frozenset(
+    {PROTECTED_BRANCH, f"heads/{PROTECTED_BRANCH}", f"refs/heads/{PROTECTED_BRANCH}"}
 )
 SUBCOMMANDS_THAT_CHANGE_A_BRANCH: frozenset[str] = frozenset(
     {"commit", "merge", "cherry-pick", "revert", "am", "rebase", "push"}
 )
+# `-n` is `--no-verify` on a commit. These are the commit options that take no value
+# and may share its dash, as in `-anm`.
+COMMIT_NO_VERIFY_PATTERN: re.Pattern[str] = re.compile(r"-[aqsv]*n[aqsvm]*")
 
 type Words = list[str]
 """One simple command, split into words, such as `["git", "push", "origin"]`."""
@@ -71,59 +81,59 @@ type GitRule = Callable[[Words, str], str | None]
 """A check on a git subcommand's words and the branch it runs on: why it is blocked."""
 
 
-def split_into_simple_commands(command: str) -> list[Words]:
-    """Split a command line into simple commands, keeping quoted text in one word.
+def flatten_quoted_text(command: str) -> str:
+    """Turn each quoted string into one word, so its contents can't look like commands.
 
-    Quotes and backslashes are kept as written, because PowerShell and Windows paths
-    use backslashes as folder separators.
+    `git commit -m "fix; git push origin main"` becomes
+    `git commit -m fix__git_push_origin_main`. Backslashes are kept, because
+    PowerShell and Windows paths use them as folder separators.
+
+    Args:
+        command: The full command line.
+
+    Returns:
+        The command line with spaces and operators inside quotes replaced by `_`.
+    """
+    return QUOTED_TEXT_PATTERN.sub(
+        lambda quoted: re.sub(r"[\s;|&(){}`<>]", "_", quoted.group(0)[1:-1]) or "_",
+        command,
+    )
+
+
+def split_into_simple_commands(command: str) -> list[Words]:
+    """Split a command line into simple commands, each as a list of words.
 
     Args:
         command: The full command line. It may chain commands with `&&`, `||`, `;`,
-            `|`, `&` or new lines, and group them with brackets.
+            `|`, `&` or new lines, and group them with brackets or braces.
 
     Returns:
         The words of each simple command, without the operators between them.
     """
-    lexer = shlex.shlex(command, posix=False, punctuation_chars=SHELL_OPERATORS)
-    lexer.whitespace = " \t\r"
-    lexer.whitespace_split = True
-    try:
-        all_words: Words = list(lexer)
-    except ValueError:  # an unclosed quote: fall back to plain spaces
-        all_words = command.split()
-    simple_commands: list[Words] = [[]]
-    for word in all_words:
-        if set(word) <= set(SHELL_OPERATORS):
-            simple_commands.append([])
-        else:
-            simple_commands[-1].append(word)
-    return [words for words in simple_commands if words]
-
-
-def unquoted(word: str) -> str:
-    """Remove the quotes around a word, as a shell would."""
-    return word.strip("'\"")
+    parts: list[str] = SHELL_SEPARATOR_PATTERN.split(flatten_quoted_text(command))
+    return [words for part in parts if (words := part.split())]
 
 
 def program_and_arguments(words: Words) -> Words:
-    """Drop `NAME=value` settings and wrappers such as `env` or `sudo` before a program.
+    """Drop `NAME=value` settings and wrappers such as `env -i` or `sudo`.
 
     Args:
         words: One simple command's words, such as `["HUSKY=0", "git", "commit"]`.
 
     Returns:
-        The program's name, without folder or `.exe`, then its unquoted arguments.
+        The program's name in lower case, without folder or `.exe`, then its arguments.
     """
     position: int = 0
     while position < len(words) and (
         ENVIRONMENT_ASSIGNMENT_PATTERN.match(words[position])
         or words[position] in COMMAND_WRAPPERS
+        or (position > 0 and words[position].startswith("-"))
     ):
         position += 1
     if position == len(words):
         return []
-    program: str = Path(unquoted(words[position]).replace("\\", "/")).stem.lower()
-    return [program, *(unquoted(word) for word in words[position + 1 :])]
+    program: str = Path(words[position].replace("\\", "/")).stem.lower()
+    return [program, *words[position + 1 :]]
 
 
 def git_subcommand(arguments: Words) -> Words:
@@ -145,7 +155,7 @@ def secret_named_in(text: str) -> str | None:
     """Find the first secret or worker-data name in some text.
 
     Args:
-        text: A file path or one word of a shell command.
+        text: A file path, or the whole text of a shell command.
 
     Returns:
         The name that matched, or None when the text names no secret.
@@ -156,20 +166,10 @@ def secret_named_in(text: str) -> str | None:
 
 def secret_reason(secret: str) -> str:
     """Say why a call that names a secret is blocked."""
-    return f"{secret} may hold secrets or worker data. Agents never read or change it."
-
-
-def is_short_option_with(letter: str, word: str) -> bool:
-    """Tell whether a word is a group of short options that includes a letter.
-
-    Args:
-        letter: The option's letter, such as `f` for `-f`.
-        word: One argument, such as `-fu`.
-
-    Returns:
-        True for `-f`, `-fu` or `-uf` when the letter is `f`.
-    """
-    return re.fullmatch(rf"-[a-zA-Z]*{letter}[a-zA-Z]*", word) is not None
+    return (
+        f"{secret} may hold secrets or worker data. Agents never read or change it. "
+        "If this is only a commit message or PR text, write it to a file and pass that."
+    )
 
 
 def block_no_verify(git_words: Words, branch: str) -> str | None:
@@ -179,7 +179,7 @@ def block_no_verify(git_words: Words, branch: str) -> str | None:
         for word in git_words
     )
     commits_with_n: bool = git_words[0] == "commit" and any(
-        is_short_option_with("n", word) for word in git_words
+        COMMIT_NO_VERIFY_PATTERN.fullmatch(word) for word in git_words
     )
     if names_no_verify or commits_with_n:
         return "--no-verify skips the repo's checks. Fix what the check reports."
@@ -189,7 +189,8 @@ def block_no_verify(git_words: Words, branch: str) -> str | None:
 def block_force_push(git_words: Words, branch: str) -> str | None:
     """Block a push that could overwrite or delete commits already on GitHub."""
     forces: bool = any(
-        word.startswith(("--forc", "--mirror", "+")) or is_short_option_with("f", word)
+        word.startswith(("--forc", "--mirror", "+"))
+        or re.fullmatch(r"-[a-zA-Z]*f[a-zA-Z]*", word) is not None
         for word in git_words[1:]
     )
     if git_words[0] == "push" and forces:
@@ -199,9 +200,9 @@ def block_force_push(git_words: Words, branch: str) -> str | None:
 
 def block_push_to_main(git_words: Words, branch: str) -> str | None:
     """Block a push to `main`: `git push origin main`, `HEAD:main` or `--all`."""
-    main_names: tuple[str, ...] = (PROTECTED_BRANCH, f"refs/heads/{PROTECTED_BRANCH}")
     targets_main: bool = any(
-        word == "--all" or word.split(":")[-1] in main_names for word in git_words[1:]
+        word in ("--all", "--branches") or word.split(":")[-1] in MAIN_NAMES
+        for word in git_words[1:]
     )
     if git_words[0] == "push" and targets_main:
         return f"Never push to {PROTECTED_BRANCH}. Push the task branch (AGENTS.md)."
@@ -223,6 +224,11 @@ GIT_RULES: tuple[GitRule, ...] = (
 )
 
 
+def looks_like_a_file(name: str) -> bool:
+    """Tell a file argument (`.`, `docs/spec.md`) from a branch name (`claude/0011`)."""
+    return name == "." or "." in Path(name).name
+
+
 def branch_after(git_words: Words, branch: str) -> str:
     """Work out which branch is checked out after a `git checkout` or `git switch`.
 
@@ -231,12 +237,20 @@ def branch_after(git_words: Words, branch: str) -> str:
         branch: The branch checked out before it.
 
     Returns:
-        The branch it switches to, or the same branch for any other command.
+        The branch it switches to, or the same branch when it only restores files.
     """
     if git_words[0] not in ("checkout", "switch") or "--" in git_words:
         return branch
     names: Words = [word for word in git_words[1:] if not word.startswith("-")]
-    return names[0] if names else branch
+    if not names or (git_words[0] == "checkout" and looks_like_a_file(names[-1])):
+        return branch
+    return names[0]
+
+
+def merges_a_pull_request(gh_words: Words) -> bool:
+    """Tell whether a `gh` command merges: `gh pr merge 13` or `gh api .../merge`."""
+    after_pr: Words = gh_words[gh_words.index("pr") :] if "pr" in gh_words else []
+    return "merge" in after_pr or any(word.endswith("/merge") for word in gh_words)
 
 
 def reason_to_block_command(command: str, current_branch: str) -> str | None:
@@ -249,15 +263,13 @@ def reason_to_block_command(command: str, current_branch: str) -> str | None:
     Returns:
         Why the command is blocked, or None when it may run.
     """
+    if secret := secret_named_in(command):
+        return secret_reason(secret)
     branch: str = current_branch
     for words in split_into_simple_commands(command):
         program_words: Words = program_and_arguments(words)
-        if tuple(program_words[:2]) not in MESSAGE_SUBCOMMANDS:
-            for word in words:
-                if secret := secret_named_in(word):
-                    return secret_reason(secret)
-        if program_words[:3] == ["gh", "pr", "merge"]:
-            return "Only the human merges a pull request (AGENTS.md)."
+        if program_words[:1] == ["gh"] and merges_a_pull_request(program_words):
+            return MERGE_REASON
         if program_words[:1] != ["git"]:
             continue
         git_words: Words = git_subcommand(program_words[1:])
@@ -283,6 +295,8 @@ def reason_to_block_tool_call(
     Returns:
         Why the call is blocked, or None when it may go ahead.
     """
+    if tool_name in MERGE_TOOLS:
+        return MERGE_REASON
     path_fields: tuple[str, ...] = (
         (*PATH_FIELDS, "pattern") if tool_name == "Glob" else PATH_FIELDS
     )
@@ -312,9 +326,10 @@ def current_branch_in(folder: str) -> str:
             capture_output=True,
             encoding="utf-8",
             errors="replace",
+            timeout=10,
             check=False,
         )
-    except OSError:
+    except (OSError, subprocess.TimeoutExpired):
         return ""
     return result.stdout.strip()
 
@@ -338,9 +353,7 @@ def main() -> int:
     )
     if reason is None:
         return 0
-    print(
-        f"Blocked by scripts/claude_hooks/guard_tool_use.py: {reason}", file=sys.stderr
-    )
+    print(f"Blocked by {Path(__file__).name}: {reason}", file=sys.stderr)
     return 2
 
 
@@ -349,7 +362,7 @@ if __name__ == "__main__":
         sys.exit(main())
     except Exception as error:  # a broken guard must not wave calls through
         print(
-            f"guard_tool_use.py failed, so the call is blocked: {error!r}",
+            f"The guard failed, so the call is blocked: {error!r}",
             file=sys.stderr,
         )
         sys.exit(2)

@@ -30,3 +30,24 @@ def test_the_guard_sees_both_shells() -> None:
     guard_matcher: str = SETTINGS["hooks"]["PreToolUse"][0]["matcher"]
 
     assert {"Bash", "PowerShell"} <= set(guard_matcher.split("|"))
+
+
+def test_the_guard_blocks_when_it_cannot_run() -> None:
+    """A guard that times out or can't start must not let the call through."""
+    guard_hook: dict[str, Any] = SETTINGS["hooks"]["PreToolUse"][0]["hooks"][0]
+
+    assert guard_hook["onFailure"] == "block"
+
+
+def test_every_secret_is_denied_to_both_reading_and_editing() -> None:
+    """Each Read deny rule has an Edit twin, and the main secrets are covered."""
+    deny_rules: list[str] = SETTINGS["permissions"]["deny"]
+    read_paths: set[str] = {
+        rule[5:-1] for rule in deny_rules if rule.startswith("Read(")
+    }
+    edit_paths: set[str] = {
+        rule[5:-1] for rule in deny_rules if rule.startswith("Edit(")
+    }
+
+    assert read_paths == edit_paths
+    assert {"//**/.env", "//**/.env.*", "//**/.data/**"} <= read_paths

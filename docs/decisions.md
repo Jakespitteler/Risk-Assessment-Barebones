@@ -6,7 +6,7 @@ Newest first. One short entry per non-obvious decision.
 
 - Decision: `.claude/settings.json` denies Claude's file tools any `.env`, key, `secrets/` or `backend/.data/`
   file. A guard hook blocks Bash and PowerShell commands that name them, pushes to `main`, commits on `main`,
-  force pushes, `--no-verify` and `gh pr merge`. A second hook formats each edited file. Both are Python
+  force pushes, `--no-verify` and merging a PR. A second hook formats each edited file. Both are Python
   scripts in `scripts/claude_hooks/`, run with `uv`. An agent that did not write a PR reviews it before Jake:
   the review agent in CI (task 0012), which signs in with Jake's Claude subscription (an OAuth token) and
   replaces the other agent's review. `main` stays unprotected on GitHub; the guards above are soft.
@@ -21,10 +21,11 @@ Newest first. One short entry per non-obvious decision.
   review as well (Jake would pass every PR between Claude and ChatGPT by hand).
 - Limits: claude.ai cloud threads do not apply a repo's permission rules or hooks, so these protect Claude
   Code on a computer only; CI's checks apply to every agent. The guard matches words, so it misses a command
-  that reads a file without naming it (`grep -r KEY .`, `cp -r backend /tmp`), a script that opens one, a
-  command inside `bash -c '...'`, and a commit after `cd` into another repository. It doesn't hide environment
-  variables. Searching the docs for the word `.env` must use the Grep tool, because a shell command naming it
-  is blocked.
+  that reads a file without naming it (`grep -r KEY .`, `cp -r backend /tmp`), a folder named with no `/`
+  (`cd secrets`, `ls .data`), a script that opens a file, a command inside `bash -c '...'`, and a commit after
+  `cd` into another repository. It doesn't hide environment variables. It blocks any shell command whose text
+  names a secret, including a commit message or a search for the word `.env`; a message goes in a file
+  instead (`git commit -F`), and a search uses the Grep tool where Claude Code has one.
 - Decided by: human (Jake, 2026-11-13: the plan, the OAuth token, replacing the other agent's review, and soft
   guards for `main`).
 

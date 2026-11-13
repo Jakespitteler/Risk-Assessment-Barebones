@@ -22,8 +22,9 @@ pull request stays small.
   the guard only, so they are written down once.
 - [x] A `PreToolUse` hook blocks, with a reason the agent can read, a Bash or PowerShell command that names a
   secret file or `backend/.data/`, a commit, merge or push while on `main`, a push to `main`, a force push,
-  `--no-verify` and `gh pr merge`. Deny rules only see the file tools and simple commands such as `cat .env`;
-  the hook also catches `python -c`, pipes and chains. Commit and PR text may mention these names.
+  `--no-verify` and merging a PR. Deny rules only see the file tools and simple commands such as `cat .env`;
+  the hook reads the whole command text, so it also catches `python -c`, pipes and chains. Commit and PR text
+  that names a secret goes in a file (`git commit -F`), so no message can carry a secret out.
 - [x] A `PostToolUse` hook formats each file an agent edits: Ruff for Python, Prettier for the front end, and
   markdownlint's safe fixes for Markdown. It never blocks; the checks still decide.
 - [x] The hooks are Python scripts run with `uv`, so they work the same on Windows and Linux, and live in
@@ -73,16 +74,17 @@ this task, and cloud threads' own branch limit). Recommended: soft guards now, P
 signs in with his Claude subscription (an OAuth token, `CLAUDE_CODE_OAUTH_TOKEN`), not an API key. It replaces
 the other agent's review in AGENTS.md step 7. `main` stays on soft guards for now, not GitHub Pro.
 
-**If a hook can't run.** Any error inside the guard, or a missing guard script, exits with code 2, so every
-call is blocked and the error is shown: a broken guard is noticed at once rather than waving calls through. If
-`uv` itself is missing, Claude Code can't start the hook and lets calls through, so `uv` is a requirement
-(AGENTS.md already needs it). The hooks use exec form (`"command": "uv"` with `args`), so no shell or Git Bash
-is involved.
+**If a hook can't run.** An error inside the guard exits with code 2, and the guard's `"onFailure": "block"`
+(Claude Code 2.1.295 or later) blocks the call when the hook times out, can't start, or fails any other way.
+So a broken guard is noticed at once rather than waving calls through. The hooks use exec form
+(`"command": "uv"` with `args`), so no shell or Git Bash is involved.
 
 **Independent review (2026-11-13).** A separate reviewer agent found that on Windows commands go through the
 PowerShell tool, which the guard first missed; that commit messages naming `.env` were blocked; that Windows
-reads hook input in the wrong code page; and a list of bypasses. All were fixed and tested, except those that
-only a sandbox could stop, which are listed under Limits in `docs/decisions.md`.
+reads hook input in the wrong code page; and a list of bypasses. A second pass found that letting commit and
+PR text through also let `git commit -F .env` and `gh pr create --body-file .env` through. The guard now reads
+the whole command text with no exceptions. All findings were fixed and tested, except those that only a
+sandbox could stop, which are listed under Limits in `docs/decisions.md`.
 
 **Follow-up tasks, approved by Jake (task files `0012` and `0013`):**
 
