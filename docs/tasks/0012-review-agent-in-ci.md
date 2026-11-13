@@ -72,11 +72,15 @@ request (task 0014): the test's name now says what it proves, and this file says
 was the first live run: sign-in, the checks and the marked comment worked. A fix push starting CI is not proven
 yet, because that review had nothing to fix.
 
+When a pull request changes `agent-review.yml`, the Claude App refuses to run it, because the workflow must match
+the default branch. The job still shows a green tick and the old comment stays, naming the older commit it
+reviewed. So check the commit in the comment, and review a workflow change yourself.
+
 Jake's answers (2026-11-14) are under each point:
 
-1. A pull request can change the rules it is reviewed by. On a `pull_request` event the workflow file itself,
-   `.claude/agents/reviewer.md`, `CLAUDE.md`, `.claude/settings.json` and `scripts/check.py` all come from the
-   pull request's branch. Only the gate loads from the base branch. Closing this needs `pull_request_target`
+1. A pull request can change the rules it is reviewed by. `.claude/agents/reviewer.md`, `CLAUDE.md`,
+   `.claude/settings.json` and `scripts/check.py` all come from the pull request's branch. Only the gate loads
+   from the base branch, and a changed workflow file is not run at all (above). Closing this needs `pull_request_target`
    (rejected in the decision above) or branch protection (not on GitHub Free for a private repo). It is an
    accepted risk while only Jake, Claude and ChatGPT push, and Jake's own review is the backstop.
    Jake accepted the risk.
