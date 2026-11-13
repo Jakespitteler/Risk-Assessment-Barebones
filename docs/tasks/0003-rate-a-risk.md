@@ -1,7 +1,7 @@
 ---
 id: 0003
 title: Rate a risk (spec F1)
-status: in-progress
+status: review
 owner: chatgpt
 branch: chatgpt/0003-rate-a-risk
 ---
@@ -14,16 +14,16 @@ database code.
 
 ## Acceptance criteria
 
-- [ ] `backend/src/risk_assessment/domain/` has `risk.py` (`RiskMatrix` as data, `RiskRating`, `rate()`),
+- [x] `backend/src/risk_assessment/domain/` has `risk.py` (`RiskMatrix` as data, `RiskRating`, `rate()`),
   `controls.py` (`ControlKind`, `Control`), and in `take5/` the booklet's template with its matrix and the `Hazard`
   and `Take5` models needed for spec rules R1 to R6.
-- [ ] Spec worked examples 1 to 17 each have a test, named by example number.
-- [ ] A test checks all 25 matrix cells against the table in `docs/spec.md`.
-- [ ] A test rates a hazard on a second, made-up matrix, to prove nothing about the booklet's matrix is built into
+- [x] Spec worked examples 1 to 17 each have a test, named by example number.
+- [x] A test checks all 25 matrix cells against the table in `docs/spec.md`.
+- [x] A test rates a hazard on a second, made-up matrix, to prove nothing about the booklet's matrix is built into
   the code.
-- [ ] `risk.py` and `controls.py` import nothing from `domain/take5/`.
-- [ ] The domain package imports only the standard library and pydantic.
-- [ ] All checks pass.
+- [x] `risk.py` and `controls.py` import nothing from `domain/take5/`.
+- [x] The domain package imports only the standard library and pydantic.
+- [x] All checks pass.
 
 ## Out of scope
 
@@ -39,6 +39,24 @@ Implementation plan: extend the existing matrix scoring, add the six control kin
 and test worked examples 1 to 17, all booklet cells and a second matrix. Only the template name/matrix and the
 hazards/template fields needed for R1 to R6 are added now; later tasks add questions, worker/job details,
 storage and verdicts. No new dependencies or changes to the existing API are needed.
+
+Implementation notes for the next task:
+
+- `ControlKind` uses the card's exact labels; remove, isolate and barricade report `is_strong` as true.
+- `Take5Template` currently has `name` and `matrix`. The booklet template wraps the existing `BOOKLET_MATRIX`.
+- `Hazard` has `description`, `before`, `controls` and `after`. Obtain ratings from `rate()`; if there are no
+  controls, pass the before rating as after without asking the worker to rate it again. Validation refuses
+  any changed rating without controls, or an increased score with controls.
+- `Take5` has the scoring fields `template` and non-empty `hazards`. Its validator checks every before and
+  after score/band against its template. `rating` is the highest after rating and `needs_jha` uses that
+  template's threshold. Later tasks extend these models with their own fields.
+- Tests name examples 1 to 17, independently check all 25 booklet cells, and rate a hazard on a second
+  two-by-two matrix with different scales, bands and JHA threshold. Import tests enforce the domain boundary.
+
+Validation: `uv run scripts/check.py` passed (53 Python tests, Ruff lint/format, strict Pyright, markdown,
+ESLint, Prettier, TypeScript, three front-end tests, unchanged generated API types and one browser test).
+The browser test used installed system Chromium 156 via the existing temporary cache link outside the repo,
+because the environment blocks the Playwright download. No UI, API, dependency or storage files changed.
 
 Unrelated documentation issue: task 0002 is already merged into main, but its task file still says review.
 This task leaves that file unchanged.

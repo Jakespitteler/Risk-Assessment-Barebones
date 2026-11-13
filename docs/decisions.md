@@ -2,6 +2,18 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-13: Scoring models contain only the fields needed for R1 to R6 (task 0003)
+
+- Decision: Add frozen `Control`, `Take5Template`, `Hazard` and `Take5` models with the scoring fields already
+  specified in the architecture. A hazard keeps explicit before and after ratings; without controls the
+  caller reuses its before rating, and validation refuses a changed after rating. A Take 5 checks both ratings
+  against its template and derives its rating and JHA decision from the highest after score.
+- Why: These are enough to implement and test R1 to R6. Rechecking the matrix prevents an incorrect supplied
+  score or band from overriding the template. Job details, questions, verdicts and storage belong to later tasks.
+- Alternatives considered: Build every field of the eventual Take 5 now; accept supplied scores without
+  checking them against the template.
+- Decided by: chatgpt for implementation, within Jake's approved task 0003 and spec rules R1 to R6.
+
 ## 2026-11-13: One type-checking configuration for the editor and checks (task 0002 review)
 
 - Decision: Put strict Pyright settings under `[tool.pyright]` in the root `pyproject.toml`, including

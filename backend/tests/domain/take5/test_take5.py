@@ -1,0 +1,184 @@
+"""Worked examples 11 to 17: the rating of a Take 5 and the effects of controls."""
+
+import pytest
+from pydantic import BaseModel
+
+from risk_assessment.domain.controls import Control, ControlKind
+from risk_assessment.domain.risk import RiskCell, RiskMatrix, RiskRating, rate
+from risk_assessment.domain.take5.take5 import Hazard, Take5
+from risk_assessment.domain.take5.template import (
+    BOOKLET_MATRIX,
+    BOOKLET_TEMPLATE,
+    Take5Template,
+)
+
+_BARRICADE = Control(description="Barricade the hazard", kind=ControlKind.BARRICADE)
+
+
+def _hazard(before: tuple[str, str], after: tuple[str, str]) -> Hazard:
+    """Build a booklet hazard with the single control used in examples 11 to 16."""
+    return Hazard(
+        description="Example hazard",
+        before=rate(BOOKLET_MATRIX, *before),
+        controls=(_BARRICADE,),
+        after=rate(BOOKLET_MATRIX, *after),
+    )
+
+
+def test_example_11_the_highest_after_rating_counts() -> None:
+    """After scores 5 and 9 give the whole Take 5 a rating of 9 Moderate."""
+    take5 = Take5(
+        template=BOOKLET_TEMPLATE,
+        hazards=(
+            _hazard(("Possible", "Minor"), ("Unlikely", "Minor")),
+            _hazard(("Possible", "Moderate"), ("Unlikely", "Moderate")),
+        ),
+    )
+    assert take5.rating == rate(BOOKLET_MATRIX, "Unlikely", "Moderate")
+    assert not take5.needs_jha
+
+
+def test_example_12_one_high_after_rating_needs_a_jha() -> None:
+    """One hazard remaining at 12 High is enough to need a JHA."""
+    take5 = Take5(
+        template=BOOKLET_TEMPLATE,
+        hazards=(
+            _hazard(("Possible", "Minor"), ("Unlikely", "Minor")),
+            _hazard(("Likely", "Minor"), ("Likely", "Minor")),
+        ),
+    )
+    assert take5.rating == rate(BOOKLET_MATRIX, "Likely", "Minor")
+    assert take5.needs_jha
+
+
+def test_example_13_after_not_before_decides_the_jha() -> None:
+    """Reducing 18 Extreme to 10 High puts the Take 5 below the JHA threshold."""
+    take5 = Take5(
+        template=BOOKLET_TEMPLATE,
+        hazards=(_hazard(("Possible", "Major"), ("Rare", "Major")),),
+    )
+    assert take5.rating == rate(BOOKLET_MATRIX, "Rare", "Major")
+    assert not take5.needs_jha
+
+
+def test_example_14_no_hazards_is_refused() -> None:
+    """A Take 5 must contain at least one hazard, so it always has a rating."""
+    with pytest.raises(ValueError, match="at least 1 item"):
+        Take5(template=BOOKLET_TEMPLATE, hazards=())
+
+
+def test_example_15_controls_cannot_raise_the_score() -> None:
+    """An increase from 5 Low to 8 Moderate is refused."""
+    with pytest.raises(ValueError, match="cannot make the after risk higher"):
+        _hazard(("Unlikely", "Minor"), ("Possible", "Minor"))
+
+
+def test_example_16_controls_can_leave_the_score_unchanged() -> None:
+    """An unchanged score of 8 Moderate is valid and needs no JHA."""
+    take5 = Take5(
+        template=BOOKLET_TEMPLATE,
+        hazards=(_hazard(("Possible", "Minor"), ("Possible", "Minor")),),
+    )
+    assert take5.rating == rate(BOOKLET_MATRIX, "Possible", "Minor")
+    assert not take5.needs_jha
+
+
+def test_example_17_no_controls_reuses_the_before_rating() -> None:
+    """Without controls there is no second rating; 8 Moderate remains 8 Moderate."""
+    before: RiskRating = rate(BOOKLET_MATRIX, "Possible", "Minor")
+    hazard = Hazard(
+        description="Example hazard", before=before, controls=(), after=before
+    )
+    take5 = Take5(template=BOOKLET_TEMPLATE, hazards=(hazard,))
+    assert hazard.after is before
+    assert take5.rating == before
+    assert not take5.needs_jha
+
+
+def test_no_controls_cannot_change_the_rating() -> None:
+    """A lower second rating cannot disguise risk when no control was supplied."""
+    with pytest.raises(ValueError, match="Without controls"):
+        Hazard(
+            description="Example hazard",
+            controls=(),
+            before=rate(BOOKLET_MATRIX, "Possible", "Minor"),
+            after=rate(BOOKLET_MATRIX, "Unlikely", "Minor"),
+        )
+
+
+def test_the_highest_before_hazard_need_not_have_the_highest_after() -> None:
+    """Choose the highest residual score, not the hazard that started worst."""
+    take5 = Take5(
+        template=BOOKLET_TEMPLATE,
+        hazards=(
+            _hazard(("Possible", "Major"), ("Unlikely", "Minor")),
+            _hazard(("Possible", "Moderate"), ("Unlikely", "Moderate")),
+        ),
+    )
+    assert take5.rating == rate(BOOKLET_MATRIX, "Unlikely", "Moderate")
+
+
+def test_scoring_models_are_frozen() -> None:
+    """A validated assessment and its nested values cannot be assigned new fields."""
+    hazard: Hazard = _hazard(("Possible", "Minor"), ("Unlikely", "Minor"))
+    take5 = Take5(template=BOOKLET_TEMPLATE, hazards=(hazard,))
+    values: tuple[tuple[BaseModel, str], ...] = (
+        (take5, "hazards"),
+        (hazard, "after"),
+        (_BARRICADE, "kind"),
+        (BOOKLET_TEMPLATE, "matrix"),
+    )
+    for value, field_name in values:
+        with pytest.raises(ValueError, match="frozen"):
+            setattr(value, field_name, getattr(value, field_name))
+
+
+def test_a_second_matrix_supplies_its_own_scales_bands_and_jha_threshold() -> None:
+    """A two-by-two company's card is rated without any booklet-specific rules."""
+    matrix = RiskMatrix(
+        likelihoods=("Frequent", "Infrequent"),
+        consequences=("Scratch", "Injury"),
+        cells=(
+            (RiskCell(score=4, band="Review"), RiskCell(score=8, band="Stop")),
+            (RiskCell(score=2, band="Routine"), RiskCell(score=6, band="Review")),
+        ),
+        jha_threshold=6,
+    )
+    before: RiskRating = rate(matrix, "Frequent", "Injury")
+    after: RiskRating = rate(matrix, "Infrequent", "Injury")
+    take5 = Take5(
+        template=Take5Template(name="Example company", matrix=matrix),
+        hazards=(
+            Hazard(
+                description="Example hazard",
+                before=before,
+                controls=(_BARRICADE,),
+                after=after,
+            ),
+        ),
+    )
+    assert take5.rating == RiskRating(
+        likelihood="Infrequent", consequence="Injury", score=6, band="Review"
+    )
+    assert take5.needs_jha
+    assert not matrix.needs_jha(rate(matrix, "Frequent", "Scratch").score)
+
+
+@pytest.mark.parametrize(("score", "band"), [(1, "Moderate"), (8, "Low")])
+def test_a_supplied_rating_must_match_its_template(score: int, band: str) -> None:
+    """Neither a forged score nor a forged band can override the template's lookup."""
+    forged = RiskRating(
+        likelihood="Possible", consequence="Minor", score=score, band=band
+    )
+    with pytest.raises(ValueError, match="must match the template's matrix"):
+        Take5(
+            template=BOOKLET_TEMPLATE,
+            hazards=(
+                Hazard(
+                    description="Example hazard",
+                    before=forged,
+                    controls=(),
+                    after=forged,
+                ),
+            ),
+        )

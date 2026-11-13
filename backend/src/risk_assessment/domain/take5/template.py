@@ -1,10 +1,23 @@
 """The Take 5 booklet's card.
 
-For now this is only the booklet's risk matrix. Task 0003 adds the `Take5Template` that
-holds it, and task 0005 adds the card's questions.
+For now a template holds its name and risk matrix. Task 0005 adds its questions.
 """
 
+from typing import ClassVar
+
+from pydantic import BaseModel, ConfigDict
+
 from risk_assessment.domain.risk import RiskCell, RiskMatrix
+
+
+class Take5Template(BaseModel):
+    """The card a Take 5 is rated on, kept with the worker's assessment."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    name: str
+    matrix: RiskMatrix
+
 
 _BOOKLET_LIKELIHOODS: tuple[str, ...] = (
     "Almost Certain",
@@ -56,3 +69,5 @@ BOOKLET_MATRIX = RiskMatrix(
     ),
     jha_threshold=11,
 )
+
+BOOKLET_TEMPLATE = Take5Template(name="Take 5 booklet", matrix=BOOKLET_MATRIX)
