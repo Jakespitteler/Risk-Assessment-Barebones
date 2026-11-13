@@ -19,12 +19,12 @@ Newest first. One short entry per non-obvious decision.
 - Decided by: human (Jake asked for it, 2026-11-13). He chose the same day to run it in `scripts/check.py`, so
   CI fails on a spelling mistake.
 
-## 2026-11-14: The CI reviewer uses the local reviewer's model, and its rules can come from the PR
+## 2026-11-14: The CI reviewer is pinned to Opus 5.5, and its rules can come from the PR
 
-- Decision: `agent-review.yml` passes `--model fable`, the model `.claude/agents/reviewer.md` names, because a
-  subagent's `model:` setting does not apply when the action reads that file as instructions. A pull request
-  can still change the workflow and agent files it is reviewed with; that risk is accepted.
-- Why: the CI review should be as strong as the local one. Closing the second gap needs `pull_request_target` or
+- Decision: `agent-review.yml` passes `--model claude-opus-5-5`. Without it the review runs on the action's
+  default model, because `model:` in `.claude/agents/reviewer.md` only applies to the local subagent. A pull
+  request can still change the agent files it is reviewed with; that risk is accepted.
+- Why: Jake chose Opus 5.5 for the review agent. Closing the second gap needs `pull_request_target` or
   branch protection, which GitHub Free does not offer on a private repo, and only Jake, Claude and ChatGPT push.
 - Decided by: human (Jake, 2026-11-14), after Claude's review of task 0012.
 

@@ -86,7 +86,7 @@ Jake's answers (2026-11-14) are under each point:
    Jake accepted the risk.
 2. `model: fable` in `reviewer.md` only applies to the local subagent. In CI the review runs on the action's
    default model, unless `--model` is added to `claude_args`, which uses more of the subscription's limits.
-   Jake chose to pin it: `agent-review.yml` now passes `--model fable`, the same model as the local reviewer.
+   Jake chose to pin it to Opus 5.5: `agent-review.yml` now passes `--model claude-opus-5-5`.
 3. The gate is JavaScript (`scripts/agent_review.cjs`) in a Python scripts folder. Nothing lints or type checks
    it, and the back end's tests now need Node. It works; rewrite it in Python only if it changes again.
    Left as it is.
