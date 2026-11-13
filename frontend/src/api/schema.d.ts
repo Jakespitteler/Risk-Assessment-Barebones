@@ -67,8 +67,8 @@ export interface components {
          * TemplateResponse
          * @description What `GET /api/take5/template` returns.
          *
-         *     For now this is only the risk matrix. Task 0004 adds the card's questions and the
-         *     kinds of control.
+         *     For now this is only the risk matrix. Task 0004 adds the kinds of control and task
+         *     0005 the card's questions.
          */
         TemplateResponse: {
             matrix: components["schemas"]["RiskMatrix"];

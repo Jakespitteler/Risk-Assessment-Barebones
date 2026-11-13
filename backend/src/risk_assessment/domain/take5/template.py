@@ -1,7 +1,7 @@
 """The Take 5 booklet's card.
 
-For now this is only the booklet's risk matrix. Its questions, and the `Take5Template`
-that holds them with the matrix, come in tasks 0003 and 0005.
+For now this is only the booklet's risk matrix. Task 0003 adds the `Take5Template` that
+holds it, and task 0005 adds the card's questions.
 """
 
 from risk_assessment.domain.risk import RiskCell, RiskMatrix

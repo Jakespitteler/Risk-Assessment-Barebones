@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { RiskMatrix } from "../api/take5";
 import { RiskBadge } from "./RiskBadge";
 
@@ -58,6 +59,8 @@ interface ScalePickerProps {
 }
 
 function ScalePicker({ question, levels, picked, onPick }: ScalePickerProps) {
+  // Its own name, so two pickers on one screen (before and after controls) never share a group.
+  const groupName = useId();
   return (
     <fieldset className="flex flex-col gap-2">
       <legend className="mb-2 text-xl font-semibold text-slate-900">
@@ -70,7 +73,7 @@ function ScalePicker({ question, levels, picked, onPick }: ScalePickerProps) {
         >
           <input
             type="radio"
-            name={question}
+            name={groupName}
             value={level}
             checked={picked === level}
             onChange={() => {

@@ -101,7 +101,7 @@
           "matrix"
         ],
         "title": "TemplateResponse",
-        "description": "What `GET /api/take5/template` returns.\n\nFor now this is only the risk matrix. Task 0004 adds the card's questions and the\nkinds of control."
+        "description": "What `GET /api/take5/template` returns.\n\nFor now this is only the risk matrix. Task 0004 adds the kinds of control and task\n0005 the card's questions."
       }
     }
   }

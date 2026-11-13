@@ -19,6 +19,7 @@ Run each from the folder shown.
 - Test: in `backend/`, `uv run pytest`. In `frontend/`, `npm test` and `npm run test:e2e`.
 - Lint/format: in `backend/`, `uv run ruff check .` and `uv run ruff format .`. In `frontend/`, `npm run lint`
   and `npm run format`. Markdown, in the repo root: `npx markdownlint-cli2@0.24.0 "**/*.md"`.
+  `check.py` also lints and type checks `scripts/` with the back end's settings.
 - Typecheck: in `backend/`, `uv run pyright`. In `frontend/`, `npm run typecheck`.
 - API types: in `frontend/`, `npm run generate:api` after any change to the API. Commit both files it writes.
 - All checks (what CI runs): in the repo root, `uv run scripts/check.py`.
@@ -63,7 +64,7 @@ Run each from the folder shown.
 - **Layout.** Follow the Structure in `docs/architecture.md`. Back-end tests mirror `src/risk_assessment/`.
   A front-end test sits beside its component as `Name.test.tsx`; whole-app tests are in `frontend/e2e/`.
 - **Names.** A name says what the thing is, so it needs no comment: `jha_threshold`, not `t`. Python uses
-  `snake_case` and `PascalCase` classes; TypeScript uses `camelCase` and one `PascalCase` component per file.
+  `snake_case` and `PascalCase` classes; TypeScript uses `camelCase`, and each file exports one `PascalCase` component.
 - **Python.** Type hints everywhere (pyright strict). A Google-style docstring on every module, class and
   function, in plain words. Small single-purpose functions; plain data and pure functions in `domain/`.
   Values are frozen pydantic models.

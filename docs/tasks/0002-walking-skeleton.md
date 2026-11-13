@@ -30,7 +30,7 @@ What was built, and the assumptions made (each is in `docs/decisions.md`):
 - The end-to-end path is "rate a risk": the screen gets the booklet's matrix from `GET /api/take5/template` and
   shows the score and band as soon as a likelihood and a consequence are picked. Nothing is saved yet; storage
   comes with the first saved Take 5 in task 0004.
-- `GET /api/take5/template` only returns the matrix for now. Task 0004 adds the questions and control kinds.
+- `GET /api/take5/template` only returns the matrix for now. Task 0004 adds the control kinds and task 0005 the questions.
 - `domain/risk.py` has `RiskMatrix`, `RiskCell`, `RiskRating` and `rate()`. The booklet's matrix is
   `BOOKLET_MATRIX` in `domain/take5/template.py`. Each cell carries its band, so the front end only looks
   things up. Task 0003 adds worked examples 2 to 17, the 25-cell check and the made-up matrix test.

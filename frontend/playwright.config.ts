@@ -19,7 +19,7 @@ export default defineConfig({
       reuseExistingServer: !isCi,
     },
     {
-      command: "npm run dev -- --port 5173 --strictPort",
+      command: "npm run dev",
       url: "http://localhost:5173",
       reuseExistingServer: !isCi,
     },

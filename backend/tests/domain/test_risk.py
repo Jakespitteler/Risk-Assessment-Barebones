@@ -16,6 +16,18 @@ def test_example_1_rare_low_is_1_low_with_no_jha() -> None:
     assert not BOOKLET_MATRIX.needs_jha(rating.score)
 
 
+def test_a_score_on_the_threshold_needs_a_jha() -> None:
+    """The JHA threshold comes from the matrix, and a score equal to it needs a JHA."""
+    matrix = RiskMatrix(
+        likelihoods=("Likely",),
+        consequences=("Bad",),
+        cells=((RiskCell(score=7, band="Serious"),),),
+        jha_threshold=7,
+    )
+
+    assert matrix.needs_jha(rate(matrix, "Likely", "Bad").score)
+
+
 def test_a_level_that_is_not_on_the_matrix_is_refused() -> None:
     """A likelihood the matrix doesn't have is an error, not a guess."""
     with pytest.raises(ValueError, match="'Sometimes' is not a likelihood"):

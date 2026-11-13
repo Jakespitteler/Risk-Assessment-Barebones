@@ -77,7 +77,8 @@ backend/
     pyproject.toml
     src/risk_assessment/
         domain/            the rules, as plain data and pure functions
-            risk.py            RiskMatrix (a matrix as data), RiskRating, rate()      (spec R1 to R3)
+            risk.py            RiskMatrix (a matrix as data), RiskCell, RiskRating,
+                               rate()                                                 (spec R1 to R3)
             controls.py        ControlKind, Control, which kinds are strong
             questions.py       Question, QuestionRole (stop or hazard), Answer
             wording.py         the vague phrases and word counting                     (used by T2, T4, C4)
