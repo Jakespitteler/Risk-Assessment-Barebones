@@ -346,8 +346,11 @@ def test_a_fix_and_the_take5_it_fixes_link_to_each_other(tmp_path: Path) -> None
 
     assert fix_saved.json()["take5"]["fixes"] == str(first.id)
     assert fix_saved.json()["fixed_by"] is None
+    assert fix_saved.json()["offers_fix"] is False
     assert first_saved["fixed_by"] is None
+    assert first_saved["offers_fix"] is True
     assert reopened["fixed_by"] == str(fix.id)
+    assert reopened["offers_fix"] is False
     assert reopened["take5"] == first_saved["take5"]
 
 

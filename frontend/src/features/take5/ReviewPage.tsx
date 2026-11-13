@@ -7,18 +7,11 @@ import { Notice } from "../../components/Notice";
 import { Warning } from "../../components/Warning";
 import { HazardSummary } from "./HazardSummary";
 
-/** The button on a warning: what the worker can do about it. */
-function warningAction(warning: FieldWarning): string {
-  return warning.path.endsWith(".controls")
-    ? "Add a control"
-    : "Change this answer";
-}
-
 /**
  * Step 4: the worker's answers, rated by the back end. If anything is missing, the
  * worker is sent to the page where it is. Each warning the back end sends is shown on
- * its hazard, with a button to the page where it can be dealt with. A warning never
- * stops the worker finishing.
+ * its hazard. The only kind for now is a hazard with no controls, so its button opens
+ * that hazard's controls. A warning never stops the worker finishing.
  */
 export function ReviewPage({
   draft,
@@ -87,7 +80,7 @@ export function ReviewPage({
                     onOpenWarning(warning);
                   }}
                 >
-                  {warningAction(warning)}
+                  Add a control
                 </Button>
               </Warning>
             ))}

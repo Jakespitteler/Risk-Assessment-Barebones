@@ -22,7 +22,7 @@ _SELECT_DOCUMENT: str = "SELECT document FROM take5s WHERE id = ?"
 # one is never written to again. The newest fix wins if there is more than one.
 _SELECT_NEWEST_FIX: str = (
     "SELECT id FROM take5s WHERE json_extract(document, '$.fixes') = ? "
-    "ORDER BY created_at DESC LIMIT 1"
+    "ORDER BY created_at DESC, rowid DESC LIMIT 1"
 )
 
 

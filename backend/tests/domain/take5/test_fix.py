@@ -3,6 +3,8 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
+import pytest
+
 from risk_assessment.domain.controls import Control, ControlKind
 from risk_assessment.domain.risk import rate
 from risk_assessment.domain.take5.draft import FieldError
@@ -10,6 +12,7 @@ from risk_assessment.domain.take5.fix import (
     NOT_SAVED_MESSAGE,
     NOTHING_TO_FIX_MESSAGE,
     fixes_error,
+    offers_a_fix,
 )
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.take5 import Hazard
@@ -70,3 +73,20 @@ def test_a_good_to_go_cannot_be_fixed() -> None:
     assert fixes_error(_saved(good_to_go)) == FieldError(
         path="fixes", message=NOTHING_TO_FIX_MESSAGE
     )
+
+
+_STOPPED = Verdict(can_start=False, reasons=("Say how you will control: Wheel",))
+_GOOD_TO_GO = Verdict(can_start=True, reasons=())
+
+
+@pytest.mark.parametrize(
+    ("verdict", "has_a_fix", "offered"),
+    [(_STOPPED, False, True), (_STOPPED, True, False), (_GOOD_TO_GO, False, False)],
+)
+def test_a_fix_is_offered_only_for_a_dont_start_yet_with_no_fix_yet(
+    verdict: Verdict, has_a_fix: bool, offered: bool
+) -> None:
+    """Once fixed, the result links to its fix instead of offering another."""
+    fixed_by = uuid4() if has_a_fix else None
+
+    assert offers_a_fix(_saved(verdict), fixed_by) is offered

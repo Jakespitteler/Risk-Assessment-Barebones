@@ -2,7 +2,13 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { afterEach, expect, it, vi } from "vitest";
-import { COMPLETE_DRAFT, SAVED, quickClient, stubApi } from "../test-utils";
+import {
+  COMPLETE_DRAFT,
+  SAVED,
+  STOPPED,
+  quickClient,
+  stubApi,
+} from "../test-utils";
 import {
   ApiError,
   useCheckDraft,
@@ -33,6 +39,40 @@ it("puts the saved Take 5 straight into the result screen's cache", async () => 
 
   expect(client.getQueryData(["take5", SAVED.take5.id])).toEqual(SAVED);
   expect(calls).toEqual(["POST /api/take5s"]);
+});
+
+it("reads the fixed Take 5 again once its fix is saved, so it shows the link", async () => {
+  const fix = {
+    ...SAVED,
+    take5: { ...SAVED.take5, fixes: STOPPED.take5.id },
+  };
+  const fixed = { ...STOPPED, fixed_by: fix.take5.id };
+  const path = `GET /api/take5s/${STOPPED.take5.id}`;
+  const calls = stubApi({
+    "POST /api/take5s": { status: 200, body: fix },
+    [path]: { status: 200, body: fixed },
+  });
+  const client = quickClient();
+  // The first result was on screen before the fix, so it is kept without a fix.
+  client.setQueryData(["take5", STOPPED.take5.id], STOPPED);
+  const submit = renderHook(() => useSubmitTake5(), {
+    wrapper: wrapper(client),
+  });
+
+  await act(() =>
+    submit.result.current.mutateAsync({
+      id: fix.take5.id,
+      draft: { ...COMPLETE_DRAFT, fixes: STOPPED.take5.id },
+    }),
+  );
+  const first = renderHook(() => useSavedTake5(STOPPED.take5.id), {
+    wrapper: wrapper(client),
+  });
+
+  await waitFor(() => {
+    expect(first.result.current.data).toEqual(fixed);
+  });
+  expect(calls).toEqual(["POST /api/take5s", path]);
 });
 
 it("retries a save that got no answer, with the same ID", async () => {

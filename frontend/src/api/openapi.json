@@ -33,7 +33,7 @@
           "take5"
         ],
         "summary": "Check",
-        "description": "Return what is missing and the ratings, without saving anything.",
+        "description": "Return what is missing, the warnings and the ratings, saving nothing.",
         "operationId": "check_api_take5s_check_post",
         "requestBody": {
           "content": {
@@ -712,16 +712,21 @@
               }
             ],
             "title": "Fixed By"
+          },
+          "offers_fix": {
+            "type": "boolean",
+            "title": "Offers Fix"
           }
         },
         "type": "object",
         "required": [
           "take5",
           "rating",
-          "fixed_by"
+          "fixed_by",
+          "offers_fix"
         ],
         "title": "Take5Response",
-        "description": "A saved Take 5, with the overall rating the back end worked out for it.\n\nAttributes:\n    take5: The saved Take 5, with its verdict and a copy of its template.\n    rating: The Take 5's rating (spec R4 and R5).\n    fixed_by: The ID of the newest Take 5 that fixes this one, or None. It is\n        found when the Take 5 is opened, because the saved one never changes."
+        "description": "A saved Take 5, with the overall rating the back end worked out for it.\n\nAttributes:\n    take5: The saved Take 5, with its verdict and a copy of its template.\n    rating: The Take 5's rating (spec R4 and R5).\n    fixed_by: The ID of the newest Take 5 that fixes this one, or None. It is\n        found when the Take 5 is opened, because the saved one never changes.\n    offers_fix: True when the result should offer to fix this Take 5 in a new\n        one: it said Don't start yet and has no fix yet."
       },
       "Take5Template": {
         "properties": {

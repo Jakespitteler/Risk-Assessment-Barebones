@@ -66,7 +66,8 @@ class Take5Service:
             draft: The worker's answers so far.
 
         Returns:
-            What is missing, and the rated Take 5 when nothing is.
+            What is missing, the warnings, and the rated Take 5 when nothing is
+            missing.
         """
         return check_draft(draft, self._template)
 

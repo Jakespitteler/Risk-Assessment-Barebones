@@ -87,7 +87,7 @@ it("doesn't offer a fix for a Good to go", () => {
 
 it("links a fixed Take 5 to its fix instead of offering another", () => {
   const fixId = SAVED.take5.id;
-  showResult({ ...STOPPED, fixed_by: fixId });
+  showResult({ ...STOPPED, fixed_by: fixId, offers_fix: false });
   expect(
     screen
       .getByRole("link", { name: "Open the Take 5 that fixes it" })
@@ -96,6 +96,17 @@ it("links a fixed Take 5 to its fix instead of offering another", () => {
   expect(
     screen.queryByRole("button", { name: "Fix this in a new Take 5" }),
   ).toBeNull();
+});
+
+it("offers to fix a fix that is itself a Don't start yet, and links back", () => {
+  const firstId = SAVED.take5.id;
+  showResult({ ...STOPPED, take5: { ...STOPPED.take5, fixes: firstId } });
+  expect(
+    screen.getByRole("link", { name: "Open the Take 5 it fixes" }),
+  ).toBeTruthy();
+  expect(
+    screen.getByRole("button", { name: "Fix this in a new Take 5" }),
+  ).toBeTruthy();
 });
 
 it("links a fix back to the Take 5 it fixes", () => {

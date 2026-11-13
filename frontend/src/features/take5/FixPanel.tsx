@@ -8,21 +8,22 @@ const PRIMARY_LINK = `${LINK} bg-slate-900 text-white`;
 const SECONDARY_LINK = `${LINK} border-2 border-slate-900 bg-white text-slate-900`;
 
 /**
- * How a saved Take 5 links to its fix. A Don't start yet can be copied into a new
- * Take 5 to fix it, until it has a fix; then it links to the newest fix instead. A fix
- * links back to the Take 5 it fixes. The saved Take 5 itself never changes.
+ * How a saved Take 5 links to its fix, as the back end says. It may offer to copy the
+ * answers into a new Take 5 to fix it, link to the newest fix, and link back to the
+ * Take 5 it fixes. The saved Take 5 itself never changes.
  */
 export function FixPanel({
   take5,
   fixedBy,
+  offersFix,
   onFix,
 }: {
   take5: SavedTake5;
   fixedBy: string | null;
+  offersFix: boolean;
   onFix: () => void;
 }) {
-  const canFix = !take5.verdict.can_start && !fixedBy;
-  if (!take5.fixes && !fixedBy && !canFix) return null;
+  if (!take5.fixes && !fixedBy && !offersFix) return null;
   return (
     <Card>
       {take5.fixes && (
@@ -41,7 +42,7 @@ export function FixPanel({
           </a>
         </>
       )}
-      {canFix && (
+      {offersFix && (
         <>
           <p>
             Your answers are copied into a new Take 5, so you only change what

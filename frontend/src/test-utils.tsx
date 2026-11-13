@@ -93,6 +93,7 @@ export const SAVED: Take5Response = {
     band: "Minimal",
   },
   fixed_by: null,
+  offers_fix: false,
 };
 
 // A saved Don't start yet: its one hazard has no controls, so it is rated once.
@@ -110,6 +111,7 @@ export const STOPPED: Take5Response = {
   },
   rating: { ...RATED_HAZARD.before },
   fixed_by: null,
+  offers_fix: true,
 };
 
 type Reply = { status: number; body: unknown } | "offline";

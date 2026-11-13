@@ -68,7 +68,9 @@ What there is:
   SQLite searches the documents with `json_extract`, so the table is unchanged. `Take5Response` gains
   `fixed_by`.
 - Screens: the review shows each warning on its hazard (`components/Warning.tsx`). The result screen's
-  `FixPanel` offers the fix or links the two. `keepFixDraft()` in `useTake5Draft.ts` writes the copy into the
+  `FixPanel` offers the fix or links the two, as the reply's `fixed_by` and `offers_fix` say (the "only until it
+  has a fix" rule is `offers_a_fix()` in `fix.py`). Saving a fix refreshes the first one's cached result, so
+  going back to it shows the link. `keepFixDraft()` in `useTake5Draft.ts` writes the copy into the
   tab's draft with a new submission ID; the form then opens it as any other draft.
 
 Assumptions and limits:

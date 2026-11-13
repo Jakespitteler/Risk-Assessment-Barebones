@@ -145,7 +145,7 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 | `POST /api/take5s` | Checks and saves a Take 5, asks the AI (or the fallback) for its question, and returns both |
 | `POST /api/take5s/{id}/answer` | Saves the answer, works out the verdict, and returns the finished Take 5 |
 | `GET /api/take5s` | The list, newest first |
-| `GET /api/take5s/{id}` | One Take 5, with `fixed_by`: the newest Take 5 that fixes it, if any |
+| `GET /api/take5s/{id}` | One Take 5, with `fixed_by` (the newest Take 5 that fixes it, if any) and `offers_fix` (whether its result offers a fix) |
 
 Every error reply is declared in the OpenAPI description, so the front end's generated types know it. A 422 is
 always `FormErrors` (`detail` and a list of field errors, each with its dotted `path`), whether the draft has a

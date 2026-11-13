@@ -100,7 +100,7 @@ export function Take5Form(props: Take5FormProps) {
     setErrors([]);
     if (fixing && check && !check.can_submit) nextGap(check.errors);
     else if (fixing && check) {
-      // Replace the page that was fixed, so Back from the review goes where it always does.
+      // Replace the page that was fixed, so Back from the review steps back one page.
       setFixing(false);
       onStageChange({ page: "review" }, { replace: true });
     } else onStageChange(stages.nextStage(stage, draft));

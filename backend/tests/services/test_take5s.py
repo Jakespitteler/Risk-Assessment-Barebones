@@ -188,9 +188,16 @@ def test_a_take5_cannot_fix_itself() -> None:
     """A retry of a Take 5 that names its own ID is refused, not linked to itself."""
     service: Take5Service = _service()
     submission_id: UUID = uuid4()
+    first: SavedTake5 = service.submit(_uncontrolled_draft(), submission_id)
     draft: Take5Draft = _uncontrolled_draft().model_copy(
         update={"fixes": submission_id}
     )
 
-    with pytest.raises(InvalidDraftError):
+    with pytest.raises(InvalidDraftError) as refusal:
         service.submit(draft, submission_id)
+
+    assert refusal.value.check.errors == (
+        FieldError(path="fixes", message=NOT_SAVED_MESSAGE),
+    )
+    assert service.get(submission_id) == first
+    assert service.fixed_by(submission_id) is None

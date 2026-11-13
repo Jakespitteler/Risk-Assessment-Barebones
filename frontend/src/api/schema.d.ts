@@ -35,7 +35,7 @@ export interface paths {
         put?: never;
         /**
          * Check
-         * @description Return what is missing and the ratings, without saving anything.
+         * @description Return what is missing, the warnings and the ratings, saving nothing.
          */
         post: operations["check_api_take5s_check_post"];
         delete?: never;
@@ -431,12 +431,16 @@ export interface components {
          *         rating: The Take 5's rating (spec R4 and R5).
          *         fixed_by: The ID of the newest Take 5 that fixes this one, or None. It is
          *             found when the Take 5 is opened, because the saved one never changes.
+         *         offers_fix: True when the result should offer to fix this Take 5 in a new
+         *             one: it said Don't start yet and has no fix yet.
          */
         Take5Response: {
             take5: components["schemas"]["SavedTake5"];
             rating: components["schemas"]["RiskRating"];
             /** Fixed By */
             fixed_by: string | null;
+            /** Offers Fix */
+            offers_fix: boolean;
         };
         /**
          * Take5Template

@@ -59,7 +59,7 @@ export function Take5ResultScreen({
       </Screen>
     );
   }
-  const { take5, rating, fixed_by } = result.data;
+  const { take5, rating, fixed_by, offers_fix } = result.data;
   const details = [
     { term: "Worker", value: take5.worker_name },
     { term: "Job", value: take5.job },
@@ -72,6 +72,7 @@ export function Take5ResultScreen({
         <FixPanel
           take5={take5}
           fixedBy={fixed_by}
+          offersFix={offers_fix}
           onFix={() => {
             onFix(take5);
           }}
