@@ -53,3 +53,21 @@ Claimed by ChatGPT. Plan: implement and test verdicts, draft validation, a repos
 and the four endpoints first, then the worker screens in a second branch/PR based on this branch, as the
 size note above directs. No new dependencies. UI choices are pending Jake's answers: usage context,
 one-hazard-at-a-time versus scrolling, and guidance visibility. Do not assume those answers.
+
+Jake answered: own phone at the job; one hazard at a time; labels with expandable guidance. These choices
+are recorded in the spec and decision log. The browser keeps its in-progress answers until final submission.
+
+Backend implementation: `SavedTake5` extends the existing scoring model with submission details and a saved
+verdict. Drafts accept scale choices only, never scores/bands. `/check` returns dotted field paths/messages
+and a valid scoring model without writing storage. `/api/take5s` accepts `{id, draft}`; keep the UUID stable
+across retries. Submitting different input with the same ID returns 409. The first stored document wins
+atomically, including concurrent requests. Retrieval returns the stored verdict and template snapshot.
+The response envelope contains `take5` and its overall `rating`. The template endpoint also supplies card
+guidance and control kinds. SQLite defaults to ignored `backend/.data/take5.sqlite3`; `TAKE5_DATABASE_PATH`
+overrides it. No new dependencies. The UI is implemented in the next PR on top of this backend branch.
+
+Backend validation passed: `uv run scripts/check.py`, including 74 Python tests, strict Pyright, Ruff,
+markdown, front-end lint/format/types, three front-end tests, generated API consistency and the original
+browser test. API tests cover empty/partial drafts, increased after risk, missing controls, retrieval,
+immutable documents and safe retries; a service test also races duplicate submissions. UI acceptance
+criteria remain in progress in the stacked screens PR.

@@ -11,7 +11,7 @@
           "take5"
         ],
         "summary": "Get Template",
-        "description": "Return the card a new Take 5 is filled in on.\n\nThe front end draws what it is sent, so it never keeps its own copy of the card.",
+        "description": "Return the matrix and every control kind for a new form.",
         "operationId": "get_template_api_take5_template_get",
         "responses": {
           "200": {
@@ -26,10 +26,341 @@
           }
         }
       }
+    },
+    "/api/take5s/check": {
+      "post": {
+        "tags": [
+          "take5"
+        ],
+        "summary": "Check",
+        "description": "Return field errors and ratings without saving the form.",
+        "operationId": "check_api_take5s_check_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Take5Draft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftCheck"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/take5s": {
+      "post": {
+        "tags": [
+          "take5"
+        ],
+        "summary": "Submit",
+        "description": "Save once and return the verdict; incomplete fields remain form errors.",
+        "operationId": "submit_api_take5s_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Take5Response"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/take5s/{take5_id}": {
+      "get": {
+        "tags": [
+          "take5"
+        ],
+        "summary": "Get",
+        "description": "Open the original saved document and verdict.",
+        "operationId": "get_api_take5s__take5_id__get",
+        "parameters": [
+          {
+            "name": "take5_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Take5 Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Take5Response"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "Control": {
+        "properties": {
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ControlKind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "description",
+          "kind"
+        ],
+        "title": "Control",
+        "description": "What the worker will do about a hazard, and what kind of control it is."
+      },
+      "ControlDraft": {
+        "properties": {
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ControlKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ControlDraft",
+        "description": "A control while its description or kind may still be missing."
+      },
+      "ControlKind": {
+        "type": "string",
+        "enum": [
+          "Remove the hazard",
+          "Isolate the hazard",
+          "Barricade the hazard",
+          "Put systems in place (permits, safe work procedures)",
+          "Ensure correct behaviour",
+          "Wear PPE"
+        ],
+        "title": "ControlKind",
+        "description": "The card's six controls, ordered from strongest to weakest."
+      },
+      "DraftCheck": {
+        "properties": {
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/FieldError"
+            },
+            "type": "array",
+            "title": "Errors"
+          },
+          "assessment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Take5"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "can_submit": {
+            "type": "boolean",
+            "title": "Can Submit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "errors",
+          "assessment",
+          "can_submit"
+        ],
+        "title": "DraftCheck",
+        "description": "The form errors, and the scoring model only when every field is valid."
+      },
+      "FieldError": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "message"
+        ],
+        "title": "FieldError",
+        "description": "A message and the field it belongs beside, using a dotted field path."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Hazard": {
+        "properties": {
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "before": {
+            "$ref": "#/components/schemas/RiskRating"
+          },
+          "controls": {
+            "items": {
+              "$ref": "#/components/schemas/Control"
+            },
+            "type": "array",
+            "title": "Controls"
+          },
+          "after": {
+            "$ref": "#/components/schemas/RiskRating"
+          }
+        },
+        "type": "object",
+        "required": [
+          "description",
+          "before",
+          "controls",
+          "after"
+        ],
+        "title": "Hazard",
+        "description": "One hazard rated before and after controls, using ratings from `rate()`.\n\nWithout controls, reuse the before rating as the after rating; no second rating\nis needed. Description, ratings and controls are immutable once constructed."
+      },
+      "HazardDraft": {
+        "properties": {
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "before": {
+            "$ref": "#/components/schemas/RatingChoice"
+          },
+          "controls": {
+            "items": {
+              "$ref": "#/components/schemas/ControlDraft"
+            },
+            "type": "array",
+            "title": "Controls",
+            "default": []
+          },
+          "after": {
+            "$ref": "#/components/schemas/RatingChoice"
+          }
+        },
+        "type": "object",
+        "title": "HazardDraft",
+        "description": "A hazard while the worker is filling in its ratings and controls."
+      },
+      "RatingChoice": {
+        "properties": {
+          "likelihood": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Likelihood"
+          },
+          "consequence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consequence"
+          }
+        },
+        "type": "object",
+        "title": "RatingChoice",
+        "description": "The two choices a worker makes, with neither selected by default."
+      },
       "RiskCell": {
         "properties": {
           "score": {
@@ -90,18 +421,328 @@
         "title": "RiskMatrix",
         "description": "A risk matrix as data.\n\nAttributes:\n    likelihoods: The likelihood scale, most likely first, as printed down the side\n        of the card.\n    consequences: The consequence scale, least severe first, as printed across the\n        top.\n    cells: One row per likelihood and, in each row, one cell per consequence, in\n        the order of the scales.\n    jha_threshold: The lowest score that needs a Job Hazard Analysis (spec R3)."
       },
-      "TemplateResponse": {
+      "RiskRating": {
         "properties": {
+          "likelihood": {
+            "type": "string",
+            "title": "Likelihood"
+          },
+          "consequence": {
+            "type": "string",
+            "title": "Consequence"
+          },
+          "score": {
+            "type": "integer",
+            "title": "Score"
+          },
+          "band": {
+            "type": "string",
+            "title": "Band"
+          }
+        },
+        "type": "object",
+        "required": [
+          "likelihood",
+          "consequence",
+          "score",
+          "band"
+        ],
+        "title": "RiskRating",
+        "description": "A likelihood and consequence, with the score and band the matrix gives them.\n\nThe score and band are always looked up, never typed in, so only `rate()` should\nmake one."
+      },
+      "SavedTake5": {
+        "properties": {
+          "template": {
+            "$ref": "#/components/schemas/Take5Template"
+          },
+          "hazards": {
+            "items": {
+              "$ref": "#/components/schemas/Hazard"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Hazards"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "worker_name": {
+            "type": "string",
+            "title": "Worker Name"
+          },
+          "job": {
+            "type": "string",
+            "title": "Job"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "finished_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Finished At"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/Verdict"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template",
+          "hazards",
+          "id",
+          "created_at",
+          "worker_name",
+          "job",
+          "location",
+          "finished_at",
+          "verdict"
+        ],
+        "title": "SavedTake5",
+        "description": "Add submission details to the scoring model without changing its rules."
+      },
+      "SubmissionRequest": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "draft": {
+            "$ref": "#/components/schemas/Take5Draft"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "draft"
+        ],
+        "title": "SubmissionRequest",
+        "description": "A stable submission ID makes retries return the first saved result."
+      },
+      "Take5": {
+        "properties": {
+          "template": {
+            "$ref": "#/components/schemas/Take5Template"
+          },
+          "hazards": {
+            "items": {
+              "$ref": "#/components/schemas/Hazard"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Hazards"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template",
+          "hazards"
+        ],
+        "title": "Take5",
+        "description": "The hazards and template needed to rate a Take 5.\n\nLater tasks add the job, the worker and the rest of the completed card. Ratings\nmust match this template, so a caller cannot supply a different score or band."
+      },
+      "Take5Draft": {
+        "properties": {
+          "worker_name": {
+            "type": "string",
+            "title": "Worker Name",
+            "default": ""
+          },
+          "job": {
+            "type": "string",
+            "title": "Job",
+            "default": ""
+          },
+          "location": {
+            "type": "string",
+            "title": "Location",
+            "default": ""
+          },
+          "hazards": {
+            "items": {
+              "$ref": "#/components/schemas/HazardDraft"
+            },
+            "type": "array",
+            "title": "Hazards",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "Take5Draft",
+        "description": "Unsaved worker input; scores and bands are never accepted from the phone."
+      },
+      "Take5Response": {
+        "properties": {
+          "take5": {
+            "$ref": "#/components/schemas/SavedTake5"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/RiskRating"
+          }
+        },
+        "type": "object",
+        "required": [
+          "take5",
+          "rating"
+        ],
+        "title": "Take5Response",
+        "description": "The saved document, with its overall score and band derived by the domain."
+      },
+      "Take5Template": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
           "matrix": {
             "$ref": "#/components/schemas/RiskMatrix"
           }
         },
         "type": "object",
         "required": [
+          "name",
           "matrix"
         ],
+        "title": "Take5Template",
+        "description": "The card a Take 5 is rated on, kept with the worker's assessment."
+      },
+      "TemplateResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "matrix": {
+            "$ref": "#/components/schemas/RiskMatrix"
+          },
+          "control_kinds": {
+            "items": {
+              "$ref": "#/components/schemas/ControlKind"
+            },
+            "type": "array",
+            "title": "Control Kinds"
+          },
+          "likelihood_guidance": {
+            "items": {
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array",
+              "maxItems": 2,
+              "minItems": 2
+            },
+            "type": "array",
+            "title": "Likelihood Guidance"
+          },
+          "consequence_guidance": {
+            "items": {
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array",
+              "maxItems": 2,
+              "minItems": 2
+            },
+            "type": "array",
+            "title": "Consequence Guidance"
+          },
+          "control_guidance": {
+            "type": "string",
+            "title": "Control Guidance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "matrix",
+          "control_kinds",
+          "likelihood_guidance",
+          "consequence_guidance",
+          "control_guidance"
+        ],
         "title": "TemplateResponse",
-        "description": "What `GET /api/take5/template` returns.\n\nFor now this is only the risk matrix. Task 0004 adds the kinds of control and task\n0005 the card's questions."
+        "description": "The card and control choices; the phone keeps no copy of these rules."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "Verdict": {
+        "properties": {
+          "can_start": {
+            "type": "boolean",
+            "title": "Can Start"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons"
+          }
+        },
+        "type": "object",
+        "required": [
+          "can_start",
+          "reasons"
+        ],
+        "title": "Verdict",
+        "description": "Whether work can start, with every applicable reason in order."
       }
     }
   }

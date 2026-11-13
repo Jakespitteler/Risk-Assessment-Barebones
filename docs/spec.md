@@ -24,7 +24,7 @@ design choice: **if the app is boring and can be used without thinking, people w
 There is one role for now. There is no sign-in: the worker types their name and the
 phone remembers it.
 
-Where and when it is used (carried over from the original app; see Open questions):
+Where and when it is used (confirmed by Jake for task 0004):
 
 - On the worker's own phone, standing at the job, just before starting.
 - Often with gloves on, in bright sun, with a weak signal. So: big tap targets, high contrast, and screens that
@@ -329,6 +329,10 @@ The first four screens of the core workflow, saved when the worker submits.
 - Acceptance: the Take 5 is saved before the challenge question is asked, so a slow or failed AI never loses it.
 - Acceptance: the phone remembers the worker's name for next time.
 - Acceptance: every screen is usable one-handed on a 360 px wide phone, with tap targets at least 48 px high.
+- Acceptance: after listing hazards, the worker assesses one hazard at a time, before controls, then controls,
+  then after controls when there are any. Back navigation preserves the unsaved answers.
+- Acceptance: likelihood, consequence and control choices offer expandable guidance from the back end, using
+  the approved card wording. Guidance never supplies a hazard or control answer for the worker.
 
 ### F3: The verdict
 
@@ -407,7 +411,6 @@ and its worked examples in the same PR.
 ## Open questions
 
 - How and where will this be hosted, and for how many people? It only runs on a developer's computer for now.
-- Is the picture under "Users and roles" right: own phone, at the job, gloves, sun, weak signal?
 - Is the three minute target right for a typical job?
 - T3 could be gamed by picking "Barricade the hazard" for a control that isn't one. Fixed rules can't catch
   that. The challenge question is the place it is most likely to be picked up.
