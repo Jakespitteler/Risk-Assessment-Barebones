@@ -13,7 +13,7 @@ export interface paths {
         };
         /**
          * Get Template
-         * @description Return the matrix and every control kind for a new form.
+         * @description Return the template a new Take 5 is filled in on, and the control kinds.
          */
         get: operations["get_template_api_take5_template_get"];
         put?: never;
@@ -35,7 +35,7 @@ export interface paths {
         put?: never;
         /**
          * Check
-         * @description Return field errors and ratings without saving the form.
+         * @description Return what is missing and the ratings, without saving anything.
          */
         post: operations["check_api_take5s_check_post"];
         delete?: never;
@@ -55,7 +55,10 @@ export interface paths {
         put?: never;
         /**
          * Submit
-         * @description Save once and return the verdict; incomplete fields remain form errors.
+         * @description Check and save a Take 5 once, and return it with its verdict.
+         *
+         *     A draft with gaps raises `InvalidDraftError`, which `api/errors.py` turns into
+         *     a 422.
          */
         post: operations["submit_api_take5s_post"];
         delete?: never;
@@ -73,7 +76,7 @@ export interface paths {
         };
         /**
          * Get
-         * @description Open the original saved document and verdict.
+         * @description Return a saved Take 5 with the verdict the worker was given.
          */
         get: operations["get_api_take5s__take5_id__get"];
         put?: never;
@@ -99,7 +102,11 @@ export interface components {
         };
         /**
          * ControlDraft
-         * @description A control while its description or kind may still be missing.
+         * @description A control whose wording or kind may still be missing.
+         *
+         *     Attributes:
+         *         description: What the worker will do, in their own words.
+         *         kind: The kind of control, or None until one is picked.
          */
         ControlDraft: {
             /**
@@ -117,7 +124,12 @@ export interface components {
         ControlKind: "Remove the hazard" | "Isolate the hazard" | "Barricade the hazard" | "Put systems in place (permits, safe work procedures)" | "Ensure correct behaviour" | "Wear PPE";
         /**
          * DraftCheck
-         * @description The form errors, and the scoring model only when every field is valid.
+         * @description What checking a draft found.
+         *
+         *     Attributes:
+         *         errors: Every gap or mistake, in the order of the form.
+         *         assessment: The rated Take 5, or None while there are errors.
+         *         can_submit: True when there are no errors.
          */
         DraftCheck: {
             /** Errors */
@@ -127,8 +139,23 @@ export interface components {
             can_submit: boolean;
         };
         /**
+         * ErrorMessage
+         * @description The reply for a 404 or a 409: one message a person can read.
+         *
+         *     Attributes:
+         *         detail: What went wrong, in plain words.
+         */
+        ErrorMessage: {
+            /** Detail */
+            detail: string;
+        };
+        /**
          * FieldError
-         * @description A message and the field it belongs beside, using a dotted field path.
+         * @description One gap or mistake, and the field it belongs beside.
+         *
+         *     Attributes:
+         *         path: The field's dotted path, such as `hazards.0.controls.1.kind`.
+         *         message: What to do about it, in plain words.
          */
         FieldError: {
             /** Path */
@@ -136,10 +163,19 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** HTTPValidationError */
-        HTTPValidationError: {
+        /**
+         * FormErrors
+         * @description The reply for every 422: what is missing or wrong, field by field.
+         *
+         *     Attributes:
+         *         detail: A summary for the top of the screen.
+         *         errors: Each problem, with the dotted path of the field it belongs beside.
+         */
+        FormErrors: {
             /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
+            detail: string;
+            /** Errors */
+            errors: components["schemas"]["FieldError"][];
         };
         /**
          * Hazard
@@ -158,7 +194,13 @@ export interface components {
         };
         /**
          * HazardDraft
-         * @description A hazard while the worker is filling in its ratings and controls.
+         * @description A hazard while the worker is still rating it and writing its controls.
+         *
+         *     Attributes:
+         *         description: The hazard in the worker's own words.
+         *         before: The rating before controls.
+         *         controls: The controls, possibly none.
+         *         after: The rating after controls. Ignored when there are no controls (R6).
          */
         HazardDraft: {
             /**
@@ -175,8 +217,26 @@ export interface components {
             after?: components["schemas"]["RatingChoice"];
         };
         /**
+         * LevelGuidance
+         * @description What one level of a scale means, in the card's own words.
+         *
+         *     Attributes:
+         *         level: The level, such as "Rare".
+         *         meaning: What it means, such as "Could happen, but only in rare cases".
+         */
+        LevelGuidance: {
+            /** Level */
+            level: string;
+            /** Meaning */
+            meaning: string;
+        };
+        /**
          * RatingChoice
-         * @description The two choices a worker makes, with neither selected by default.
+         * @description A likelihood and a consequence as the worker picked them; neither is preset.
+         *
+         *     Attributes:
+         *         likelihood: The picked likelihood, or None until one is picked.
+         *         consequence: The picked consequence, or None until one is picked.
          */
         RatingChoice: {
             /** Likelihood */
@@ -236,7 +296,19 @@ export interface components {
         };
         /**
          * SavedTake5
-         * @description Add submission details to the scoring model without changing its rules.
+         * @description A Take 5 as it was saved: what the worker gave, and the verdict they were shown.
+         *
+         *     It is never changed once saved, so it always shows the template and verdict the
+         *     worker was given, even after the rules change.
+         *
+         *     Attributes:
+         *         id: The ID the phone made when the worker started submitting.
+         *         created_at: When it was saved.
+         *         worker_name: Who did the Take 5.
+         *         job: What the job is.
+         *         location: Where the job is.
+         *         finished_at: When it was finished. Until task 0008 this is when it was saved.
+         *         verdict: The verdict the worker was shown.
          */
         SavedTake5: {
             template: components["schemas"]["Take5Template"];
@@ -267,7 +339,11 @@ export interface components {
         };
         /**
          * SubmissionRequest
-         * @description A stable submission ID makes retries return the first saved result.
+         * @description A Take 5 to save, with an ID the phone made so a retry can't save it twice.
+         *
+         *     Attributes:
+         *         id: Made once by the phone and sent again, unchanged, on every retry.
+         *         draft: The worker's answers.
          */
         SubmissionRequest: {
             /**
@@ -291,7 +367,13 @@ export interface components {
         };
         /**
          * Take5Draft
-         * @description Unsaved worker input; scores and bands are never accepted from the phone.
+         * @description A Take 5 that hasn't been saved, as the phone sends it.
+         *
+         *     Attributes:
+         *         worker_name: Who is doing the Take 5.
+         *         job: What the job is.
+         *         location: Where the job is.
+         *         hazards: The hazards, in the order the worker listed them.
          */
         Take5Draft: {
             /**
@@ -317,7 +399,11 @@ export interface components {
         };
         /**
          * Take5Response
-         * @description The saved document, with its overall score and band derived by the domain.
+         * @description A saved Take 5, with the overall rating the back end worked out for it.
+         *
+         *     Attributes:
+         *         take5: The saved Take 5, with its verdict and a copy of its template.
+         *         rating: The Take 5's rating (spec R4 and R5).
          */
         Take5Response: {
             take5: components["schemas"]["SavedTake5"];
@@ -325,16 +411,47 @@ export interface components {
         };
         /**
          * Take5Template
-         * @description The card a Take 5 is rated on, kept with the worker's assessment.
+         * @description The card a Take 5 is filled in on. Each saved Take 5 keeps a copy of it.
+         *
+         *     Attributes:
+         *         name: The card's name, such as "Take 5 booklet".
+         *         matrix: The risk matrix the hazards are rated on.
+         *         likelihood_guidance: What each likelihood means, shown beside the rating.
+         *         consequence_guidance: What each consequence means, shown beside the rating.
+         *         control_guidance: What makes a control strong or weak, shown beside the
+         *             controls.
          */
         Take5Template: {
             /** Name */
             name: string;
             matrix: components["schemas"]["RiskMatrix"];
+            /**
+             * Likelihood Guidance
+             * @default []
+             */
+            likelihood_guidance: components["schemas"]["LevelGuidance"][];
+            /**
+             * Consequence Guidance
+             * @default []
+             */
+            consequence_guidance: components["schemas"]["LevelGuidance"][];
+            /**
+             * Control Guidance
+             * @default
+             */
+            control_guidance: string;
         };
         /**
          * TemplateResponse
-         * @description The card and control choices; the phone keeps no copy of these rules.
+         * @description The card a new Take 5 is filled in on, so the phone keeps no copy of it.
+         *
+         *     Attributes:
+         *         name: The template's name.
+         *         matrix: The risk matrix the hazards are rated on.
+         *         control_kinds: Every kind of control, strongest first.
+         *         likelihood_guidance: What each likelihood means, in the card's words.
+         *         consequence_guidance: What each consequence means, in the card's words.
+         *         control_guidance: The card's advice on choosing controls.
          */
         TemplateResponse: {
             /** Name */
@@ -343,34 +460,19 @@ export interface components {
             /** Control Kinds */
             control_kinds: components["schemas"]["ControlKind"][];
             /** Likelihood Guidance */
-            likelihood_guidance: [
-                string,
-                string
-            ][];
+            likelihood_guidance: components["schemas"]["LevelGuidance"][];
             /** Consequence Guidance */
-            consequence_guidance: [
-                string,
-                string
-            ][];
+            consequence_guidance: components["schemas"]["LevelGuidance"][];
             /** Control Guidance */
             control_guidance: string;
         };
-        /** ValidationError */
-        ValidationError: {
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
-            /** Input */
-            input?: unknown;
-            /** Context */
-            ctx?: Record<string, never>;
-        };
         /**
          * Verdict
-         * @description Whether work can start, with every applicable reason in order.
+         * @description Whether the job can start, and why not.
+         *
+         *     Attributes:
+         *         can_start: True for Good to go, False for Don't start yet.
+         *         reasons: Every reason that applies, in the order of the rules (V2, then V3).
          */
         Verdict: {
             /** Can Start */
@@ -429,13 +531,13 @@ export interface operations {
                     "application/json": components["schemas"]["DraftCheck"];
                 };
             };
-            /** @description Validation Error */
+            /** @description Something is missing or wrong */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["FormErrors"];
                 };
             };
         };
@@ -462,13 +564,22 @@ export interface operations {
                     "application/json": components["schemas"]["Take5Response"];
                 };
             };
-            /** @description Validation Error */
+            /** @description This ID was used for other answers */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorMessage"];
+                };
+            };
+            /** @description Something is missing or wrong */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["FormErrors"];
                 };
             };
         };
@@ -493,13 +604,22 @@ export interface operations {
                     "application/json": components["schemas"]["Take5Response"];
                 };
             };
-            /** @description Validation Error */
+            /** @description No Take 5 has this ID */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorMessage"];
+                };
+            };
+            /** @description Something is missing or wrong */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["FormErrors"];
                 };
             };
         };
