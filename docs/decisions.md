@@ -4,21 +4,14 @@ Newest first. One short entry per non-obvious decision.
 
 ## 2026-11-13: Select the actual Python executable instead of a directory default (task 0003 review)
 
-- Evidence: Jake's Windows Python Environments log resolves `backend/.venv/Scripts/python.exe`, but then logs
-  `Running in background` with `backend/.venv` as the executable and `spawn ... ENOENT`. The extension's
-  interpreter-selection source retains the original configured path in its run entry after resolving it.
-  Its process-error callback supplies null code/signal; the Python test adapter omits the underlying error.
-  Source reviewed: `microsoft/vscode-python-environments` at `a32fb10`,
-  `src/features/interpreterSelection.ts:704` and `src/features/execution/runInBackground.ts:65`.
-- Decision: Remove the shared directory-valued `python.defaultInterpreterPath` and the earlier
-  `python.useEnvironmentsExtension: false` bypass. Keep Environments integration and use VS Code's locally
-  saved selection of the actual backend Python executable. README gives Windows and Linux/macOS paths.
-- Why: This corrects the evidenced launch target without disabling environment integration or hardcoding a
-  Windows-only executable in the shared workspace. Reload and refresh discovery using the real executable
-  are required to confirm the correction on Jake's Windows machine.
-- Alternatives considered: A shared Windows executable default would break the default on Linux/macOS.
-  Disabling Environments hid the failing launch path without diagnosing it and was rejected by Jake.
-- Decided by: human for resolving the cause and explaining choices; chatgpt for the portable configuration.
+- Decision: The shared VS Code settings name no interpreter. Each person selects `backend/.venv`'s `python`
+  executable in VS Code, which keeps that choice locally. Python Environments integration stays on.
+- Why: A shared setting that named the `.venv` folder made the Python Environments extension try to run the
+  folder itself, so test discovery failed on Jake's Windows machine. Naming the executable instead would only
+  work on one operating system.
+- Alternatives considered: A shared Windows-only path (breaks Linux and macOS). Turning the Environments
+  integration off (hides the cause; rejected by Jake).
+- Decided by: human for fixing the cause rather than working around it; chatgpt for the portable setting
 
 ## 2026-11-13: Scoring models contain only the fields needed for R1 to R6 (task 0003)
 

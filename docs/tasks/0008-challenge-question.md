@@ -37,3 +37,7 @@ asks the fallback question every time; task 0009 plugs in a real AI.
 
 Don't start until the spec is approved (task 0001 is `done`). Depends on 0005 (example 53 needs the think-through
 questions and V1); best after 0006.
+
+The instructions in `ai/challenge.py` must treat the worker's text as data, not as instructions (see
+"What the AI is given" in `docs/architecture.md`). Add a worked example with a job description that tries to
+change the AI's instructions.

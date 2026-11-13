@@ -27,6 +27,7 @@
         "pydantic",
         "pydocstyle",
         "pyproject",
+        "pushback",
         "pytest",
         "Starlette",
         "sublicense",

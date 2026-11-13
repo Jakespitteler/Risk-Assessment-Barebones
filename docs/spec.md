@@ -391,7 +391,7 @@ and its worked examples in the same PR.
 
 | # | Decision | Chosen | Not chosen |
 | --- | --- | --- | --- |
-| D1 | What makes people think | Own words first, fixed push back rules (T1 to T4), and an AI challenge question (C1 to C6) | The card's ticks only |
+| D1 | What makes people think | Own words first, fixed pushback rules (T1 to T4), and an AI challenge question (C1 to C6) | The card's ticks only |
 | D2 | Rate each hazard once or twice | Twice, before and after controls | Once, as on paper |
 | D3 | AI in the first version | Yes, for the challenge question only | Rules only |
 | D4 | Sign-in | None; the worker types their name | Accounts from the start |
