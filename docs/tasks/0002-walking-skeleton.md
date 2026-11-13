@@ -1,9 +1,9 @@
 ---
 id: 0002
 title: Walking skeleton with CI
-status: review
-owner: claude
-branch: claude/project-thread-k14nwr
+status: in-progress
+owner: chatgpt
+branch: chatgpt/0002-review-fixes
 ---
 
 ## Goal
@@ -42,3 +42,13 @@ Unrelated problems found:
 
 - `npm audit` reports a moderate advisory in `minimatch`, used only by the ESLint tooling. It does not reach the
   app. The fix needs a newer typescript-eslint; revisit when one is released.
+
+## Review corrections (ChatGPT)
+
+Jake requested corrections on top of Claude's completed branch `claude/project-thread-k14nwr`.
+This branch will target that branch, so Jake can merge the corrections into his existing review.
+
+- Fix first-run dependency preparation and wait for the API before exposing the front end.
+- Resolve Pylance imports when opening the repository root in VS Code.
+- Add explicit Python variable annotations throughout the application, scripts and tests.
+- Keep the existing product behaviour, dependencies and risk scoring rules.
