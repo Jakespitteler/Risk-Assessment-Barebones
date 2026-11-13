@@ -10,7 +10,7 @@ branch:
 Add the one question the app asks before the result, with everything except a real AI: the interface an AI plugs into, the check on its question, the fixed fallback, the answer, and the unfinished state. After this task the app asks the fallback question every time; task 0009 plugs in a real AI.
 
 ## Acceptance criteria
-- [ ] `services/ports.py` has the `ChallengeAsker` Protocol; `domain/challenge.py` has the text the AI is given, the check on its question, the fallback question and the check on the answer (spec C1 to C4).
+- [ ] `services/ports.py` has the `ChallengeAsker` Protocol; `domain/take5/challenge.py` has the text the AI is given, the check on its question, the fallback question and the check on the answer (spec C1 to C4).
 - [ ] Spec worked examples 40 to 56 have tests, using a stand-in `ChallengeAsker`.
 - [ ] `POST /api/take5s` saves the Take 5 first, then returns it with its question; `POST /api/take5s/{id}/answer` saves the answer, works out the verdict and finishes it, and refuses a second answer.
 - [ ] The service falls back to the fixed question when the asker raises, returns something C2 rejects, or takes longer than 10 seconds; the worker never sees an error.

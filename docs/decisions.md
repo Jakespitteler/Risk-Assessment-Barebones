@@ -14,6 +14,24 @@ Newest first. One short entry per non-obvious decision.
   Jake as less slick).
 - Decided by: human, on claude's proposal (spec decision D12)
 
+## 2026-11-13: Shared building blocks, the card as data, and one port for any AI
+- Decision: The matrix, controls, Yes / No questions and wording checks live in shared files that know nothing
+  about a Take 5; `domain/take5/` is built from them. The card (its questions and its matrix) is a
+  `Take5Template`, which is data, and the rules work from question roles and the template's matrix. Every AI
+  provider is a `LanguageModel` (instructions and text in, text out), and each AI task is a job written once on
+  top of it. Each AI question records the model and the version of the instructions that asked it.
+- Why: Jake expects other companies' Take 5s (built from a photo, Word file or PDF of the blank card), possibly
+  JHAs, hazard report cards and journey plans, company risk standards given to the AI, a privately hosted AI,
+  and feedback used to improve the AI's questions. He asked for the Take 5's building blocks to be generic
+  where they can be. These three seams are cheap now and expensive to add later.
+- Alternatives considered: A general "document" or form engine that a Take 5 is configured out of (rejected:
+  harder to read and test, for features that may never be built; shared code is pulled out when a second kind
+  of document really exists). Building the questions and matrix into the code (simplest today, a rewrite for
+  the second company). A separate vector database for company standards (not decided; `architecture.md` says
+  how to decide, starting with the plainest method).
+- Decided by: human for the aim; claude for where the seams go, approved by the human merging task 0001's pull
+  request
+
 ## 2026-11-13: The rating after controls decides a JHA; control kinds from the card; saved Take 5s open to all
 - Decision: A JHA is needed when a hazard's rating *after* controls is 11 or more (D6). The worker labels each
   control with one of the card's six "Make the changes" options, and remove, isolate and barricade count as

@@ -22,6 +22,12 @@ Turn the human's description of the app into docs/spec.md and docs/architecture.
   made". D1 with an AI challenge question added (which also settles D3), D5 as a Python API with a separate
   JavaScript front end, and the rest as Claude recommended. He asked for current, well-established tools that
   can be swapped without much trouble; the library list in `architecture.md` was picked on that brief.
+- Later on 2026-11-13 Jake said what he expects after version 1: each company's own Take 5 built from a photo,
+  Word file or PDF of its blank card; possibly JHAs, hazard report cards and journey plans; company risk
+  standards given to the AI; a privately hosted AI; and feedback used to improve the AI's questions. None of it
+  is in version 1. The spec lists it under "Planned for later", and `architecture.md` was reshaped so version 1
+  does not block it (shared building blocks, the card as data, one port for any AI). Tasks 0003 to 0009 were
+  updated to the new file layout.
 - The last acceptance criterion, "Human has approved the spec", is met when Jake merges this PR. Whoever merges
   it should tick that box and set `status: done` in the same merge, or in the first commit of the next task.
 - The description this was built from: the project brief (make the Take 5 as good as possible, make people

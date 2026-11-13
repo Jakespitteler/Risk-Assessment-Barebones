@@ -13,7 +13,8 @@ Add the card's two sets of questions: the seven think-through questions, where a
 - [ ] Part 2 of the core workflow (think through the task) exists, and the hazard questions are in part 3.
 - [ ] No answer is selected to begin with, there is no way to answer them all at once, and the Take 5 can't be submitted with one unanswered.
 - [ ] A Yes to a hazard question shows "Make sure it's on your list" with a button to add a hazard.
-- [ ] Verdict rule V1 is in `domain/verdict.py`; spec worked examples 19 to 21, 26 and 27 have tests.
+- [ ] `domain/questions.py` has `Question`, `QuestionRole` and `Answer`, and the booklet's template has its fourteen questions. Verdict rule V1 is in `domain/take5/verdict.py` and works from the question's role, not its text; spec worked examples 19 to 21, 26 and 27 have tests.
+- [ ] The screens draw whatever questions the template holds; a test with a made-up template of two questions proves it.
 - [ ] The result screen shows each question with its answer.
 - [ ] A Playwright test covers a No (Don't start yet) and an N/A (Good to go).
 - [ ] Phone-width (360 px) screenshots of every new or changed screen are attached to the PR.

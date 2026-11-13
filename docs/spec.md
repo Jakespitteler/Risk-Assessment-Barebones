@@ -62,6 +62,12 @@ does a new one.
 
 ### The card's questions
 
+The questions below, together with the risk matrix and its JHA threshold, are the **template** a Take 5 is
+filled in on. Version 1 has one template, the Take 5 booklet's. The rules in this spec never name a question:
+they work from what kind of question it is (a *stop* question or a *hazard* question) and from the template's
+matrix. Another company's card is then a different template, not different rules. Every saved Take 5 keeps a
+copy of the template it was filled in on.
+
 Think through the task (a **stop** question: No means don't start until it is sorted):
 
 1. Do you understand the task scope?
@@ -203,7 +209,7 @@ The safety rules stay in code. The AI only asks; it never decides whether anyone
   so "be careful" can't be an answer.)
 - **C5 Asking, not judging.** The AI does not mark the answer, and nothing about the question or the answer
   changes the verdict (decision D11). Both are saved with the Take 5, along with whether the AI or
-  the fallback asked.
+  the fallback asked, and for an AI question which model asked and which version of its instructions it had.
 - **C6 Unfinished until answered.** Until the question is answered the Take 5 is saved but *unfinished*: it has
   no verdict, and opening it shows the question. The question is asked once; an unfinished Take 5 keeps the
   question it was given. It is answered once: a second answer is refused. If a saved Take 5 has no question
@@ -304,6 +310,8 @@ row says otherwise, the Take 5 is example 18 with the hazard described as "Fall 
 The matrix, the bands and the JHA threshold, as one pure module with no web or database code.
 - Acceptance: worked examples 1 to 17 pass as tests.
 - Acceptance: every one of the 25 cells is checked against the matrix table above.
+- Acceptance: the matrix is data handed to the rating function. A test rates a hazard on a second, made-up
+  matrix to prove that nothing about the booklet's matrix is built into the code.
 
 ### F2: Fill in a Take 5
 The first four screens of the core workflow, saved when the worker submits.
@@ -345,11 +353,26 @@ The first four screens of the core workflow, saved when the worker submits.
 - Any other use of AI: marking the worker's answer, follow-up questions, suggesting hazards or controls, or an
   AI verdict. Suggesting hazards in particular would undo "own words first".
 - Sign-in, supervisors, crews and approvals.
-- Writing or signing a JHA. The app only says one is needed.
-- Journey plans, hazard report cards, scanning a paper card, photos, PDFs.
-- Admin tools, and a different card per company.
+- Scanning a filled-in paper card, photos of the job, PDFs of a Take 5, and admin tools.
 - Working with no signal, and keeping a half-filled Take 5 if the app is closed.
 - Starting a Take 5 from an earlier one. Copying is the fastest way to stop thinking.
+
+### Planned for later
+
+Not in version 1, but Jake expects them, so version 1 is built not to block them. How is in `architecture.md`
+under "Ready for later".
+
+- **Each company's own Take 5.** Companies use different cards and different matrices. Later the app should
+  read a photo, Word file or PDF of a company's blank card and build the matching template, which a person then
+  checks and edits before anyone fills it in.
+- **JHAs, hazard report cards and journey plans.** They may or may not be added. The Take 5's building blocks
+  (the matrix, controls, Yes / No questions, the wording checks, the challenge question) are kept separate from
+  the Take 5 itself so that they can be reused. Until then the app only says when a JHA is needed.
+- **The company's risk standards given to the AI**, so its question can draw on them.
+- **An AI the company keeps private**, so that company information stays in house.
+- **Feedback on the AI's questions.** Workers rate a question as useful or not, and those ratings are used to
+  improve the AI's instructions. Each new version of the instructions is tested against sample Take 5s before
+  it goes live, and each question records which version asked it, so versions can be compared.
 
 ## Decisions made
 

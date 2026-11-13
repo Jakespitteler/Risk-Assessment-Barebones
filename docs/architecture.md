@@ -6,8 +6,10 @@ below were picked on that brief. He approved the front-end list (spec decision D
 Claude by name; the full back-end list is in `decisions.md`. Adding any other dependency still needs his
 approval.
 
-Three aims shape everything here: Jake wants to be able to read and understand the whole back end, the risk
-scoring has to be provably right, and no single tool should be hard to replace.
+Four aims shape everything here: Jake wants to be able to read and understand the whole back end, the risk
+scoring has to be provably right, no single tool should be hard to replace, and the Take 5's building blocks
+should be reusable by what may come later (other companies' Take 5s, JHAs, hazard report cards, journey plans).
+[Ready for later](#ready-for-later) says how far that last aim is taken, and where it deliberately stops.
 
 ## Stack
 
@@ -60,7 +62,7 @@ Left out on purpose:
 | Piece | What replacing it touches |
 | --- | --- |
 | The whole front end (React for something else) | Only `frontend/`. The back end does not know a front end exists |
-| The AI provider | One adapter file, its library, one line in `api/app.py` and one setting |
+| The AI provider | One file in `ai/providers/`, its library, one line in `api/app.py` and one setting |
 | The database | One file, `storage/sqlite.py` |
 | FastAPI | `api/` only. The rules in `domain/` and the use cases in `services/` do not import it |
 | TanStack Query, React Router, Tailwind | Each is kept to its own corner of `frontend/` (see Structure) |
@@ -73,54 +75,66 @@ publishes it, the front end's types are generated from it, and either half can b
 ```
 backend/
     pyproject.toml
-    src/take5/
-        domain/        the rules, as plain data and pure functions
-            scales.py      Likelihood, Consequence, RiskBand, ControlKind (enums)
-            matrix.py      the 5x5 matrix, rate(), the JHA threshold            (spec R1 to R3)
-            card.py        the card's questions, as data
-            take5.py       Take5, Hazard, Control: the filled-in card            (spec R4 to R6)
-            verdict.py     verdict(take5) -> Verdict with its reasons            (spec V1 to V3)
-            thinking.py    the pushback rules                                     (spec T2 to T4)
-            challenge.py   what the AI is told, the check on its question,
-                           the fallback question, the check on the answer         (spec C1 to C4)
-        services/      what the app does
-            take5s.py      Take5Service: check a draft, submit, answer, get, list
-            ports.py       Take5Repository and ChallengeAsker (Protocols): what the
-                           service needs from storage and from an AI
-        storage/       where things are kept
-            sqlite.py      SqliteTake5Repository
-        ai/            one adapter per AI provider
-            prompt.py      the instructions every provider is given
-            claude.py      ClaudeChallengeAsker
-        api/           the web API
-            app.py         builds the FastAPI app and plugs the pieces together
-            routes.py      one function per endpoint
-            schemas.py     the shapes of requests and responses
-        settings.py    settings read from the environment (database path, AI provider, AI key)
-    tests/             mirrors src/take5/
+    src/risk_assessment/
+        domain/            the rules, as plain data and pure functions
+            risk.py            RiskMatrix (a matrix as data), RiskRating, rate()      (spec R1 to R3)
+            controls.py        ControlKind, Control, which kinds are strong
+            questions.py       Question, QuestionRole (stop or hazard), Answer
+            wording.py         the vague phrases and word counting                     (used by T2, T4, C4)
+            take5/             everything that is only about a Take 5
+                template.py        Take5Template: the questions and the matrix a Take 5 is
+                                   filled in on. BOOKLET_TEMPLATE is the only one for now
+                take5.py           Take5, Hazard: the filled-in card                      (spec R4 to R6)
+                verdict.py         verdict(take5) -> Verdict with its reasons            (spec V1 to V3)
+                thinking.py        the pushback rules                                     (spec T2 to T4)
+                challenge.py       what the AI is told, the check on its question,
+                                   the fallback question, the check on the answer         (spec C1 to C4)
+        services/          what the app does
+            take5s.py          Take5Service: check a draft, submit, answer, get, list
+            ports.py           Take5Repository and ChallengeAsker (Protocols): what the
+                               service needs from storage and from an AI
+        storage/           where things are kept
+            sqlite.py          SqliteTake5Repository
+        ai/                everything that talks to an AI
+            model.py           LanguageModel (a Protocol): instructions and text in, text out
+            challenge.py       the challenge question's instructions, and a ChallengeAsker
+                               that works with any LanguageModel
+            providers/
+                claude.py          ClaudeModel, the first LanguageModel
+        api/               the web API
+            app.py             builds the FastAPI app and plugs the pieces together
+            take5_routes.py    one function per Take 5 endpoint
+            schemas.py         the shapes of requests and responses
+        settings.py        settings read from the environment (database path, AI provider, AI key)
+    tests/                 mirrors src/risk_assessment/
 frontend/
     package.json
     src/
-        api/           the generated types and a small typed client (the only place TanStack Query is set up)
-        screens/       one file per screen: the four parts of the form, the question, the result, the list
-        components/    shared pieces: rating picker, Yes / No / N/A buttons, risk badge
-        app.tsx        the routes (the only place React Router is set up)
-    e2e/               Playwright tests and screenshots
+        api/               the generated types and a small typed client (the only place TanStack Query is set up)
+        components/        pieces any feature can use: rating picker, Yes / No / N/A buttons, risk badge,
+                           control editor
+        features/take5/    the Take 5's screens: the four parts of the form, the question, the result, the list
+        app.tsx            the routes (the only place React Router is set up)
+    e2e/                   Playwright tests and screenshots
 ```
+
+The four files directly under `domain/` know nothing about a Take 5. They are the shared building blocks, and
+`domain/take5/` is built from them. The same split is in the front end: `components/` is shared and
+`features/take5/` is not.
 
 ## The API
 
 | Endpoint | What it does |
 | --- | --- |
-| `GET /api/card` | The card's questions, the control kinds, the likelihood and consequence tables and the matrix |
+| `GET /api/take5/template` | The template a new Take 5 is filled in on: its questions and its matrix, plus the control kinds |
 | `POST /api/take5s/check` | Checks a draft and returns what is missing and which thinking rules apply. Saves nothing |
 | `POST /api/take5s` | Checks and saves a Take 5, asks the AI (or the fallback) for its question, and returns both |
 | `POST /api/take5s/{id}/answer` | Saves the answer, works out the verdict, and returns the finished Take 5 |
 | `GET /api/take5s` | The list, newest first |
 | `GET /api/take5s/{id}` | One Take 5 |
 
-**The front end holds no rules.** It gets the matrix and questions from `GET /api/card` and shows a score by
-looking it up in what it was sent. It finds out what is missing or needs another look by asking
+**The front end holds no rules and no card.** It gets the questions and the matrix from
+`GET /api/take5/template`, draws whatever it is sent, and shows a score by looking it up in that matrix. It finds out what is missing or needs another look by asking
 `POST /api/take5s/check`. So there is exactly one copy of every rule, in Python, under test. The one behaviour
 that lives in the front end is spec T1 (hiding the hazard questions until a hazard is written), because it is
 about what is on the screen.
@@ -132,12 +146,14 @@ the built front-end files itself, so there is still only one program to run.
 
 | Entity | Key fields | Notes |
 | --- | --- | --- |
-| `Take5` | `id`, `created_at`, `worker_name`, `job`, `location`, `think_through` (question to answer), `hazard_questions` (question to answer), `hazards`, `challenge`, `finished_at`, `verdict` | One filled-in card. `finished_at` and `verdict` are empty until the challenge question is answered (spec C6). Never changed once finished |
+| `Take5` | `id`, `created_at`, `worker_name`, `job`, `location`, `think_through` (question to answer), `hazard_questions` (question to answer), `hazards`, `challenge`, `finished_at`, `verdict`, `template` | One filled-in card. `template` is a copy of the template it was filled in on, so it always shows the questions and matrix the worker was given. `finished_at` and `verdict` are empty until the challenge question is answered (spec C6). Never changed once finished |
 | `Hazard` | `description`, `before` (rating), `controls`, `after` (rating), `weak_controls_reason` | Belongs to one Take 5. With no controls `after` is `before` (spec R6). `weak_controls_reason` is the worker's answer to spec T3, when it was asked |
 | `Control` | `description`, `kind` (`ControlKind`) | Belongs to one hazard |
 | `RiskRating` | `likelihood`, `consequence`, and from the matrix: `score`, `band` | A value, not a stored row. Score and band are always worked out, never typed in |
-| `Challenge` | `question`, `asked_by` (`ai` or `fallback`), `answer` | Belongs to one Take 5. `answer` is empty until the worker gives one |
-| `Verdict` | `can_start`, `reasons` | Worked out once by `domain/verdict.py` when the Take 5 is finished, then saved inside it, so a later rule change never rewrites an old verdict |
+| `Take5Template` | `name`, `sections` (each a title and its questions, each question with a role), `matrix` | The card as data. The rules never name a question: a *stop* question answered No stops the job, whichever card it is on |
+| `RiskMatrix` | the likelihood and consequence scales, the score and band of each cell, the score that needs a JHA | The matrix as data. `rate()` is given the matrix, so another company's matrix needs no new code |
+| `Challenge` | `question`, `asked_by` (`ai` or `fallback`), `model`, `instructions_version`, `answer` | Belongs to one Take 5. `answer` is empty until the worker gives one. `model` and `instructions_version` say which AI asked and with which version of its instructions; both are empty for the fallback |
+| `Verdict` | `can_start`, `reasons` | Worked out once by `domain/take5/verdict.py` when the Take 5 is finished, then saved inside it, so a later rule change never rewrites an old verdict |
 
 Storage is one table. The whole Take 5 is saved as one JSON document, with a few columns beside it for finding
 and sorting:
@@ -155,11 +171,13 @@ time to split it, and it is a recorded decision to revisit.
 What each back-end package may import:
 
 ```
-domain    ->  nothing in the app
-services  ->  domain
-storage   ->  services.ports, domain
-ai        ->  services.ports
-api       ->  services, domain
+domain        ->  nothing in the app
+domain/take5  ->  the shared files in domain (never the other way round)
+services      ->  domain
+storage       ->  services.ports, domain
+ai            ->  services.ports
+ai/providers  ->  ai/model.py only
+api           ->  services, domain
 api/app.py is the one exception: it also imports storage, ai and settings, to plug them in
 ```
 
@@ -169,25 +187,63 @@ api/app.py is the one exception: it also imports storage, ai and settings, to pl
 - **`services`** owns the use cases. It depends on the `Take5Repository` and `ChallengeAsker` Protocols, not on
   SQLite or on any AI provider.
 - **`storage`** owns the SQL. It stores and fetches; it makes no decisions.
-- **`ai`** owns talking to a provider. An adapter is given text and returns text. It does not know what a Take 5
-  is, and it decides nothing: `domain/challenge.py` checks what comes back, and `services` falls back to the
-  fixed question on any failure or after 10 seconds.
+- **`ai`** owns talking to an AI, in two layers. A *provider* (`ai/providers/claude.py`) is a `LanguageModel`: it
+  is given instructions and text and returns text, and knows nothing about this app. A *job* (`ai/challenge.py`)
+  holds the instructions for one task and works with any provider. Neither decides anything:
+  `domain/take5/challenge.py` checks what comes back, and `services` falls back to the fixed question on any
+  failure or after 10 seconds.
 - **`api`** owns HTTP. It holds no rules: a route calls a service and returns what comes back.
 - **`api/app.py`** is the only place that knows which real pieces are plugged in (the composition root). Tests
   plug in an in-memory repository and a stand-in AI instead.
 
 Anything outside the app sits behind a Protocol, so it can be replaced without touching its callers. There are
-two: the database (`Take5Repository`) and the AI (`ChallengeAsker`). Adding ChatGPT or Gemini means adding
-`ai/openai.py` or `ai/gemini.py`, its library, and one line in `api/app.py` to plug it in; no rule changes.
+two: the database (`Take5Repository`) and the AI (`ChallengeAsker`, filled by any `LanguageModel`). Adding
+ChatGPT, Gemini, or a model a company runs itself means adding one file in `ai/providers/`, its library, and one
+line in `api/app.py` to plug it in; no rule and no job changes.
 
 The worker's name is never passed to an adapter (spec C1). The AI's key lives in the server's environment and
 is never in the repo or sent to the phone.
+
+## Ready for later
+
+None of this is built in version 1. It is here so that version 1 is built in a way that does not block it.
+
+| Later feature | What it reuses | What it would add |
+| --- | --- | --- |
+| A company's own Take 5 | `Take5Template` and `RiskMatrix` are data, and every rule works from question roles and the template's matrix | A stored template per company, a screen to edit one, and a way to pick the worker's company |
+| A template made from a photo, Word file or PDF of a blank card | `LanguageModel`, with images and files added to what it accepts | One new job, `ai/template_reader.py`, that turns the document into a draft `Take5Template`. A person always checks and edits the draft before anyone fills it in |
+| JHAs, hazard report cards, journey plans | `domain/risk.py`, `controls.py`, `questions.py`, `wording.py`; `ChallengeAsker`; the front end's `components/` | Its own `domain/<kind>/`, service, repository, routes and `features/<kind>/` |
+| A company's risk standards given to the AI | `LanguageModel`; the job in `ai/challenge.py` | A `StandardsSource` Protocol: given a Take 5, return the passages that matter. See below |
+| An AI the company runs or rents privately | `LanguageModel` | One file in `ai/providers/` |
+| Feedback on the AI's questions, used to improve them | Each `Challenge` already records the model and the version of the instructions that asked | A rating on each question, a place to read the ratings, and a set of sample Take 5s that every new version of the instructions is tested against before it goes live. A person changes the instructions; the app does not rewrite them itself |
+
+**Where the reuse deliberately stops.** The shared pieces are small things that are the same in every risk
+document: a matrix, a control, a Yes / No question, a check on wording. There is no general "document" or "form
+engine" that a Take 5 is configured out of. That would make the Take 5's own code harder to read and test, for
+features that may never be built. When a second kind of document is actually added, whatever it and the Take 5
+turn out to share gets pulled out then, with two real examples to shape it.
+
+**Company risk standards: all of it, or only the relevant parts?** Not decided; this is how to decide it. Giving
+the AI the whole standard every time is the simplest, but models get less reliable as more is put in front of
+them, and it costs more per question. A vector index finds passages by meaning, but it can miss the one clause
+that matters, it needs an embedding model (one more outside service, or one more thing to run), and its misses
+are hard to test for. A company's standards are usually a modest number of pages under clear headings, so the
+first thing to try is the plainest: split the standard at its headings and pick the sections that match the
+Take 5's hazards, on our own server. `StandardsSource` hides which method is used. The choice is made by
+measuring: a set of sample Take 5s, each with the section that should be found, run through each method. Move to
+a vector index only if the plain method misses, and then keep it inside the database the app already has
+rather than adding a separate vector database.
+
+**Keeping company information private.** Three things together make this possible. The app and its database are
+hosted where the company chooses. The app sends the AI as little as it can, and never the worker's name. And the
+AI provider is one file: it can be a provider's business service, a model reached through the company's own
+cloud account, or a model the company runs itself.
 
 ## Testing strategy
 
 | Kind | Covers | How |
 | --- | --- | --- |
-| Unit, domain | Every worked example in the spec, by number, plus all 25 matrix cells | Parametrised pytest tables that mirror the spec's tables. No fakes needed |
+| Unit, domain | Every worked example in the spec, by number, plus all 25 matrix cells. Also one made-up template and matrix, to prove nothing about the booklet is hard-coded in the rules | Parametrised pytest tables that mirror the spec's tables. No fakes needed |
 | Unit, services | Check, submit, answer, get and list, including every way the AI can fail | An in-memory `Take5Repository` and a stand-in `ChallengeAsker` |
 | Integration, storage | A Take 5 saved to SQLite comes back identical | A temporary database file per test |
 | Integration, API | Each endpoint: the right answers, and the right errors for a bad request | FastAPI's test client against the real app with a temporary database and a stand-in AI |
