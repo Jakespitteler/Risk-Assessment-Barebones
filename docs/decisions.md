@@ -23,9 +23,11 @@ Newest first. One short entry per non-obvious decision.
   Code on a computer only; CI's checks apply to every agent. The guard matches words, so it misses a command
   that reads a file without naming it (`grep -r KEY .`, `cp -r backend /tmp`), a folder named with no `/`
   (`cd secrets`, `ls .data`), a script that opens a file, a command inside `bash -c '...'`, and a commit after
-  `cd` into another repository. It doesn't hide environment variables. It blocks any shell command whose text
-  names a secret, including a commit message or a search for the word `.env`; a message goes in a file
-  instead (`git commit -F`), and a search uses the Grep tool where Claude Code has one.
+  `cd` into another repository. It is not a full shell parser, so deliberate tricks get past it: split words
+  (`ma''in`), git aliases, `git switch -` back to `main`, and commands built while running. It doesn't hide
+  environment variables. It blocks any shell command whose text names a secret, including a commit message or
+  a search for the word `.env`; a message goes in a file instead (`git commit -F`), and a search uses the Grep
+  tool where Claude Code has one.
 - Decided by: human (Jake, 2026-11-13: the plan, the OAuth token, replacing the other agent's review, and soft
   guards for `main`).
 

@@ -47,20 +47,19 @@ SECRET_PATH_PATTERN: re.Pattern[str] = re.compile(
       | [\w.-]+\.(?:pem|p12|pfx)(?![\w-])       # private keys and certificates
       | id_(?:rsa|dsa|ecdsa|ed25519)(?![\w-])
       | secrets[/\\]
-      | (?<=[/\\])\.(?:ssh|aws|data)(?![\w.-])  # ~/.ssh, backend/.data
+      | (?<=/)\.(?:ssh|aws|data)(?![\w.-])      # ~/.ssh, backend/.data
       | \.(?:ssh|aws|data)[/\\]                 # .data/take5.sqlite3
     )
     """,
     re.VERBOSE | re.IGNORECASE,
 )
 
-# A quoted string, in single or double quotes, with `\"` allowed inside double quotes.
-QUOTED_TEXT_PATTERN: re.Pattern[str] = re.compile(r"'[^']*'|\"(?:\\.|[^\"\\])*\"")
-SHELL_SEPARATOR_PATTERN: re.Pattern[str] = re.compile(r"&&|\|\||[;|&(){}`\n]")
-COMMAND_WRAPPERS: frozenset[str] = frozenset(
-    {"env", "command", "time", "sudo", "nohup", "exec", "xargs", "then", "do", "else"}
-)
-ENVIRONMENT_ASSIGNMENT_PATTERN: re.Pattern[str] = re.compile(r"[A-Za-z_]\w*=")
+# A quoted string on one line. Quotes that span lines are left alone, because an
+# apostrophe in a comment or a heredoc would otherwise pair with a later quote and
+# hide the commands between them.
+QUOTED_TEXT_PATTERN: re.Pattern[str] = re.compile(r"'[^'\n]*'|\"[^\"\n]*\"")
+SHELL_SEPARATOR_PATTERN: re.Pattern[str] = re.compile(r"&&|\|\||[;|&(){}`<>!\n]")
+GIT_PROGRAMS: frozenset[str] = frozenset({"git", "gh"})
 GIT_OPTIONS_WITH_A_VALUE: frozenset[str] = frozenset(
     {"-C", "-c", "--git-dir", "--work-tree"}
 )
@@ -85,8 +84,8 @@ def flatten_quoted_text(command: str) -> str:
     """Turn each quoted string into one word, so its contents can't look like commands.
 
     `git commit -m "fix; git push origin main"` becomes
-    `git commit -m fix__git_push_origin_main`. Backslashes are kept, because
-    PowerShell and Windows paths use them as folder separators.
+    `git commit -m fix__git_push_origin_main`. A string that holds `$(...)` or a
+    backtick is left as it is, because the shell runs what is inside it.
 
     Args:
         command: The full command line.
@@ -94,10 +93,14 @@ def flatten_quoted_text(command: str) -> str:
     Returns:
         The command line with spaces and operators inside quotes replaced by `_`.
     """
-    return QUOTED_TEXT_PATTERN.sub(
-        lambda quoted: re.sub(r"[\s;|&(){}`<>]", "_", quoted.group(0)[1:-1]) or "_",
-        command,
-    )
+
+    def flattened(quoted: re.Match[str]) -> str:
+        text: str = quoted.group(0)
+        if "$(" in text or "`" in text:
+            return text
+        return re.sub(r"[\s;|&(){}`<>!]", "_", text[1:-1]) or "_"
+
+    return QUOTED_TEXT_PATTERN.sub(flattened, command)
 
 
 def split_into_simple_commands(command: str) -> list[Words]:
@@ -105,35 +108,35 @@ def split_into_simple_commands(command: str) -> list[Words]:
 
     Args:
         command: The full command line. It may chain commands with `&&`, `||`, `;`,
-            `|`, `&` or new lines, and group them with brackets or braces.
+            `|`, `&` or new lines, continue lines with a backslash, and group
+            commands with brackets or braces.
 
     Returns:
         The words of each simple command, without the operators between them.
     """
-    parts: list[str] = SHELL_SEPARATOR_PATTERN.split(flatten_quoted_text(command))
+    joined_lines: str = command.replace("\\\n", " ")
+    parts: list[str] = SHELL_SEPARATOR_PATTERN.split(flatten_quoted_text(joined_lines))
     return [words for part in parts if (words := part.split())]
 
 
+def program_name(word: str) -> str:
+    """Give a program's name without folder, quotes or `.exe`, such as `git`."""
+    return Path(word.strip("'\"").replace("\\", "/")).stem.lower()
+
+
 def program_and_arguments(words: Words) -> Words:
-    """Drop `NAME=value` settings and wrappers such as `env -i` or `sudo`.
+    """Find git or gh in a simple command, past wrappers such as `sudo -u x` or `if`.
 
     Args:
         words: One simple command's words, such as `["HUSKY=0", "git", "commit"]`.
 
     Returns:
-        The program's name in lower case, without folder or `.exe`, then its arguments.
+        `git` or `gh`, then its arguments, or [] when the command runs neither.
     """
-    position: int = 0
-    while position < len(words) and (
-        ENVIRONMENT_ASSIGNMENT_PATTERN.match(words[position])
-        or words[position] in COMMAND_WRAPPERS
-        or (position > 0 and words[position].startswith("-"))
-    ):
-        position += 1
-    if position == len(words):
-        return []
-    program: str = Path(words[position].replace("\\", "/")).stem.lower()
-    return [program, *words[position + 1 :]]
+    for position, word in enumerate(words):
+        if program_name(word) in GIT_PROGRAMS:
+            return [program_name(word), *words[position + 1 :]]
+    return []
 
 
 def git_subcommand(arguments: Words) -> Words:
@@ -241,6 +244,9 @@ def branch_after(git_words: Words, branch: str) -> str:
     """
     if git_words[0] not in ("checkout", "switch") or "--" in git_words:
         return branch
+    for new_branch_option in ("-b", "-B", "-c", "-C"):
+        if new_branch_option in git_words[:-1]:
+            return git_words[git_words.index(new_branch_option) + 1]
     names: Words = [word for word in git_words[1:] if not word.startswith("-")]
     if not names or (git_words[0] == "checkout" and looks_like_a_file(names[-1])):
         return branch
@@ -249,8 +255,10 @@ def branch_after(git_words: Words, branch: str) -> str:
 
 def merges_a_pull_request(gh_words: Words) -> bool:
     """Tell whether a `gh` command merges: `gh pr merge 13` or `gh api .../merge`."""
-    after_pr: Words = gh_words[gh_words.index("pr") :] if "pr" in gh_words else []
-    return "merge" in after_pr or any(word.endswith("/merge") for word in gh_words)
+    after_pr: Words = gh_words[gh_words.index("pr") + 1 :] if "pr" in gh_words else []
+    return after_pr[:1] == ["merge"] or any(
+        word.endswith("/merge") for word in gh_words
+    )
 
 
 def reason_to_block_command(command: str, current_branch: str) -> str | None:

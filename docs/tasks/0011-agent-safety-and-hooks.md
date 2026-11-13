@@ -83,8 +83,9 @@ So a broken guard is noticed at once rather than waving calls through. The hooks
 PowerShell tool, which the guard first missed; that commit messages naming `.env` were blocked; that Windows
 reads hook input in the wrong code page; and a list of bypasses. A second pass found that letting commit and
 PR text through also let `git commit -F .env` and `gh pr create --body-file .env` through. The guard now reads
-the whole command text with no exceptions. All findings were fixed and tested, except those that only a
-sandbox could stop, which are listed under Limits in `docs/decisions.md`.
+the whole command text with no exceptions. A third pass found line continuations, `"$(git ...)"`, wrappers
+such as `if` or `timeout`, and apostrophes that paired with later quotes. All findings were fixed and tested,
+except those that only a sandbox could stop, which are listed under Limits in `docs/decisions.md`.
 
 **Follow-up tasks, approved by Jake (task files `0012` and `0013`):**
 

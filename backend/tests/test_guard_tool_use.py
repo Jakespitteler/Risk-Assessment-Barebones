@@ -130,6 +130,18 @@ def test_a_command_that_only_looks_like_a_secret_may_run(command: str) -> None:
         "gh pr merge 13 --squash",
         "gh -R owner/repo pr merge 13",
         "gh api -X PUT repos/owner/repo/pulls/13/merge",
+        "git push \\\n  --force origin claude/0011",
+        "git commit -m x \\\n  --no-verify",
+        "git push origin \\\n  main",
+        "# don't forget\ngit push origin main\necho 'done'",
+        'Set-Location "C:\\repo\\"; git push origin main; Write-Host "done"',
+        'echo "$(git push origin main)"',
+        'out="$(git push --force origin claude/0011 2>&1)"',
+        "if git push origin main; then echo ok; fi",
+        "while ! git push origin main; do sleep 1; done",
+        "timeout 60 git push origin main",
+        "sudo -u jake git push origin main",
+        "git push origin main>/dev/null",
     ],
 )
 def test_a_risky_git_command_is_blocked(command: str) -> None:
@@ -149,6 +161,7 @@ def test_a_risky_git_command_is_blocked(command: str) -> None:
         "git rebase claude/0011",
         "git checkout . && git commit -m x",
         "git checkout docs/spec.md && git commit -am x",
+        "cat > m.txt <<EOF\nDon't start yet\nEOF\ngit commit -F m.txt && echo 'ok'",
     ],
 )
 def test_changing_main_while_it_is_checked_out_is_blocked(command: str) -> None:
@@ -176,6 +189,8 @@ def test_changing_main_while_it_is_checked_out_is_blocked(command: str) -> None:
         "git checkout main docs/spec.md && git commit -m x",
         "git checkout main -- docs/spec.md && git commit -m x",
         "gh pr create --title 'Merge the guard' --body-file pr-body.md",
+        "gh pr list --search merge",
+        "grep -rn '\\.data' frontend/src",
     ],
 )
 def test_normal_work_on_a_task_branch_may_run(command: str) -> None:
@@ -284,3 +299,10 @@ def test_the_branch_is_unknown_outside_a_repository_or_folder(tmp_path: Path) ->
     """No repository, or a folder that is gone, gives no branch rather than an error."""
     assert current_branch_in(str(tmp_path)) == ""
     assert current_branch_in(str(tmp_path / "missing")) == ""
+
+
+def test_a_new_branch_from_main_may_be_committed_to() -> None:
+    """`git checkout -b` names a branch, even one with a dot in it."""
+    command: str = "git checkout -b claude/0012-v1.2 && git commit -m x"
+
+    assert reason_to_block_command(command, "main") is None
