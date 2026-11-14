@@ -1,9 +1,9 @@
 ---
 id: 0017
 title: Put each parameter on its own line when a Python signature is too long for one line
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/project-thread-az3qy9
 ---
 
 ## Goal
