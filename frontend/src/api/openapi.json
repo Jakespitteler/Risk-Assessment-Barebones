@@ -270,6 +270,14 @@
           "can_submit": {
             "type": "boolean",
             "title": "Can Submit"
+          },
+          "thinking_questions": {
+            "items": {
+              "$ref": "#/components/schemas/ThinkingQuestion"
+            },
+            "type": "array",
+            "title": "Thinking Questions",
+            "default": []
           }
         },
         "type": "object",
@@ -280,7 +288,7 @@
           "can_submit"
         ],
         "title": "DraftCheck",
-        "description": "What checking a draft found.\n\nAttributes:\n    errors: Every gap or mistake, in the order of the form.\n    warnings: Everything allowed that will stop the job, in the order of the form.\n        A warning never stops the draft being submitted.\n    assessment: The rated Take 5, or None while there are errors.\n    can_submit: True when there are no errors."
+        "description": "What checking a draft found.\n\nAttributes:\n    errors: Every gap or mistake, in the order of the form.\n    warnings: Everything allowed that will stop the job, in the order of the form.\n        A warning never stops the draft being submitted.\n    assessment: The rated Take 5, or None while there are errors.\n    can_submit: True when there are no errors.\n    thinking_questions: Applicable prompts, including ones already answered."
       },
       "ErrorMessage": {
         "properties": {
@@ -374,6 +382,11 @@
           },
           "after": {
             "$ref": "#/components/schemas/RiskRating"
+          },
+          "weak_controls_reason": {
+            "type": "string",
+            "title": "Weak Controls Reason",
+            "default": ""
           }
         },
         "type": "object",
@@ -406,11 +419,16 @@
           },
           "after": {
             "$ref": "#/components/schemas/RatingChoice"
+          },
+          "weak_controls_reason": {
+            "type": "string",
+            "title": "Weak Controls Reason",
+            "default": ""
           }
         },
         "type": "object",
         "title": "HazardDraft",
-        "description": "A hazard while the worker is still rating it and writing its controls.\n\nAttributes:\n    description: The hazard in the worker's own words.\n    before: The rating before controls.\n    controls: The controls, possibly none.\n    after: The rating after controls. Ignored when there are no controls (R6)."
+        "description": "A hazard while the worker is still rating it and writing its controls.\n\nAttributes:\n    description: The hazard in the worker's own words.\n    before: The rating before controls.\n    controls: The controls, possibly none.\n    after: The rating after controls. Ignored when there are no controls (R6).\n    weak_controls_reason: Why stronger controls aren't possible, when T3 asks."
       },
       "LevelGuidance": {
         "properties": {
@@ -904,6 +922,25 @@
         ],
         "title": "TemplateResponse",
         "description": "The card a new Take 5 is filled in on, so the phone keeps no copy of it.\n\nAttributes:\n    name: The template's name.\n    questions: The card's questions, in the order it prints them, each with its\n        role.\n    answer_choices: The answers a question can have, in the order to show them.\n    matrix: The risk matrix the hazards are rated on.\n    control_kinds: Every kind of control, strongest first.\n    likelihood_guidance: What each likelihood means, in the card's words.\n    consequence_guidance: What each consequence means, in the card's words.\n    control_guidance: The card's advice on choosing controls."
+      },
+      "ThinkingQuestion": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "message"
+        ],
+        "title": "ThinkingQuestion",
+        "description": "A question that applies even once its answer has been filled in.\n\nAttributes:\n    path: The answer's dotted field path.\n    message: The question to show beside the answer."
       },
       "Verdict": {
         "properties": {

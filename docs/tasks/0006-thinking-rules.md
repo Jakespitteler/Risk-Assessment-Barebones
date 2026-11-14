@@ -3,7 +3,7 @@ id: 0006
 title: Thinking rules (spec F4)
 status: in-progress
 owner: chatgpt
-branch: chatgpt/0006-thinking-rules
+branch: chatgpt/0006-thinking-api
 ---
 
 ## Goal
@@ -36,3 +36,7 @@ Claimed after 0017, 0016 and 0005 were completed. Planned as three stacked PRs: 
 worked examples; draft checking, API and saved answers; then the phone screens and end-to-end tests.
 Jake approved the API/data additions and short-job message on 2026-11-14; see `docs/decisions.md`.
 Update `docs/tasks/README.md` with the remaining order when this task is ready for review, as Jake requested.
+
+- Part 1: PR #25 (`chatgpt/0006-thinking-rules`), pure rules and examples 28 to 34 and 37 to 39.
+- Part 2: draft checking and saved answers, including examples 35 and 36. An answer remains saved after a
+  strong control is added, so an edit never discards the worker's words. It never changes the verdict.

@@ -54,7 +54,9 @@ def test_retries_return_one_document_and_different_input_cannot_replace_it(
     assert retry.json() == first.json()
     changed: SubmissionRequest = request.model_copy(
         update={
-            "draft": request.draft.model_copy(update={"job": "Another example job"}),
+            "draft": request.draft.model_copy(
+                update={"job": "Another example tyre job"},
+            ),
         },
     )
     assert (

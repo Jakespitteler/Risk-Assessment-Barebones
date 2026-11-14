@@ -138,6 +138,7 @@ export interface components {
          *             A warning never stops the draft being submitted.
          *         assessment: The rated Take 5, or None while there are errors.
          *         can_submit: True when there are no errors.
+         *         thinking_questions: Applicable prompts, including ones already answered.
          */
         DraftCheck: {
             /** Errors */
@@ -147,6 +148,11 @@ export interface components {
             assessment: components["schemas"]["Take5"] | null;
             /** Can Submit */
             can_submit: boolean;
+            /**
+             * Thinking Questions
+             * @default []
+             */
+            thinking_questions: components["schemas"]["ThinkingQuestion"][];
         };
         /**
          * ErrorMessage
@@ -215,6 +221,11 @@ export interface components {
             /** Controls */
             controls: components["schemas"]["Control"][];
             after: components["schemas"]["RiskRating"];
+            /**
+             * Weak Controls Reason
+             * @default
+             */
+            weak_controls_reason: string;
         };
         /**
          * HazardDraft
@@ -225,6 +236,7 @@ export interface components {
          *         before: The rating before controls.
          *         controls: The controls, possibly none.
          *         after: The rating after controls. Ignored when there are no controls (R6).
+         *         weak_controls_reason: Why stronger controls aren't possible, when T3 asks.
          */
         HazardDraft: {
             /**
@@ -239,6 +251,11 @@ export interface components {
              */
             controls: components["schemas"]["ControlDraft"][];
             after?: components["schemas"]["RatingChoice"];
+            /**
+             * Weak Controls Reason
+             * @default
+             */
+            weak_controls_reason: string;
         };
         /**
          * LevelGuidance
@@ -572,6 +589,20 @@ export interface components {
             consequence_guidance: components["schemas"]["LevelGuidance"][];
             /** Control Guidance */
             control_guidance: string;
+        };
+        /**
+         * ThinkingQuestion
+         * @description A question that applies even once its answer has been filled in.
+         *
+         *     Attributes:
+         *         path: The answer's dotted field path.
+         *         message: The question to show beside the answer.
+         */
+        ThinkingQuestion: {
+            /** Path */
+            path: string;
+            /** Message */
+            message: string;
         };
         /**
          * Verdict

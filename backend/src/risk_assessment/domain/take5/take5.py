@@ -24,6 +24,7 @@ class Hazard(BaseModel):
     before: RiskRating
     controls: tuple[Control, ...]
     after: RiskRating
+    weak_controls_reason: str = ""
 
     @model_validator(mode="after")
     def _controls_cannot_raise_or_invent_a_reduction(self) -> Self:

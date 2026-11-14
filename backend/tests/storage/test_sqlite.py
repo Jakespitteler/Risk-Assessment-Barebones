@@ -99,6 +99,8 @@ def test_a_take5_saved_before_the_card_had_questions_still_opens(
     old_document: dict[str, Any] = take5.model_dump(mode="json")
     del old_document["answers"]
     del old_document["template"]["questions"]
+    for hazard in old_document["hazards"]:
+        del hazard["weak_controls_reason"]
     with closing(sqlite3.connect(database)) as connection, connection:
         connection.execute(
             "CREATE TABLE take5s (id TEXT PRIMARY KEY, created_at TEXT, "
@@ -114,4 +116,5 @@ def test_a_take5_saved_before_the_card_had_questions_still_opens(
     assert reopened is not None
     assert reopened.answers == {}
     assert reopened.template.questions == ()
+    assert reopened.hazards[0].weak_controls_reason == ""
     assert reopened.verdict == take5.verdict

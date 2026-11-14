@@ -41,6 +41,7 @@ export const SMALL_TEMPLATE: TemplateResponse = {
 };
 
 export const HAZARD_DRAFT: HazardDraft = {
+  weak_controls_reason: "",
   description: "Moving wheel",
   before: { likelihood: "Often", consequence: "Serious" },
   controls: [{ description: "Chock the wheel", kind: "Isolate the hazard" }],
@@ -58,6 +59,7 @@ export const COMPLETE_DRAFT: Take5Draft = {
 };
 
 export const RATED_HAZARD = {
+  weak_controls_reason: "",
   description: "Moving wheel",
   before: {
     likelihood: "Often",
@@ -77,6 +79,7 @@ export const RATED_HAZARD = {
 };
 
 export const PASSING_CHECK: DraftCheck = {
+  thinking_questions: [],
   errors: [],
   warnings: [],
   can_submit: true,
