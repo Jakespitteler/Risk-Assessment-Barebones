@@ -2,6 +2,27 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-14: The card's questions are one list, answered by question ID (task 0005)
+
+- Decision: `Take5Template.questions` is one list in the card's order. Each `Question` has a short `id` (such as
+  `permits`), its `text` and its `role` (`stop` or `hazard`). The phone sends, and the saved Take 5 keeps,
+  `answers`: a map from question ID to `Yes`, `No` or `N/A`. A missing answer is the error
+  `answers.<question id>`. The front end puts a stop question on the think-through page and a hazard question
+  on the page after the hazard list. Rule V1 gives one reason per stop question answered No, in the card's order.
+  A No also gives a review warning, like a hazard with no controls (spec D14).
+- Why: The page a question goes on follows from its role, so the `sections` that `architecture.md` first listed
+  would have said the same thing twice. An ID keeps an answer tied to its question even if the wording is tidied,
+  and makes a readable error path; a question's wording could hold a full stop, which would break the dotted
+  path. One reason per No reads as a sentence ("You answered No to: Do you have the necessary permits? Sort this
+  out first.") where a joined list of questions would not.
+- Alternatives considered: The two fields `think_through` and `hazard_questions` that `architecture.md` first
+  listed (they name the booklet's two kinds in the data, so another card's kinds would need new fields).
+  Answers in a list matched to the questions by position (shorter, but nothing ties an answer to its question
+  if the card changes). One combined V1 reason naming every No.
+- Decided by: proposed by claude; the human approves it by merging task 0005's pull request. Jake chose the page
+  for the hazard questions (spec D13) and that a fix copies the answers with a warning on each No (spec D14) on
+  2026-11-14.
+
 ## 2026-11-14: Shared test data is plain functions in `tests/samples.py` (task 0016)
 
 - Decision: The API tests get their database and client from fixtures in `backend/tests/api/conftest.py`. The
@@ -174,7 +195,8 @@ Newest first. One short entry per non-obvious decision.
 ## 2026-11-13: Keep the unfinished Take 5 in the browser tab (task 0004 review)
 
 - Decision: The draft and its submission ID are kept in the tab's `sessionStorage` until the Take 5 is saved, a
-  409 says its ID is used, or the tab is closed. Only the worker's name is kept after that.
+  409 says its ID is used, or the tab is closed. Only the worker's name is kept after that. (Task 0005 added the
+  list of hazard questions a hazard was added from, spec D15.)
 - Why: On a phone a reload or a slip of the back gesture would otherwise lose everything typed, and the same ID
   must survive a reload so a retry can't save the Take 5 twice.
 - Alternatives considered: Keep it in memory only (lost on reload). `localStorage` (kept after the tab closes,

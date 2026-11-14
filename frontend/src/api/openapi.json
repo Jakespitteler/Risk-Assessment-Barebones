@@ -11,7 +11,7 @@
           "take5"
         ],
         "summary": "Get Template",
-        "description": "Return the template a new Take 5 is filled in on, and the control kinds.",
+        "description": "Return the template a new Take 5 is filled in on, and its choices.",
         "operationId": "get_template_api_take5_template_get",
         "responses": {
           "200": {
@@ -178,6 +178,16 @@
   },
   "components": {
     "schemas": {
+      "Answer": {
+        "type": "string",
+        "enum": [
+          "Yes",
+          "No",
+          "N/A"
+        ],
+        "title": "Answer",
+        "description": "The three answers a question can have. Nothing is picked to begin with."
+      },
       "Control": {
         "properties": {
           "description": {
@@ -421,6 +431,39 @@
         "title": "LevelGuidance",
         "description": "What one level of a scale means, in the card's own words.\n\nAttributes:\n    level: The level, such as \"Rare\".\n    meaning: What it means, such as \"Could happen, but only in rare cases\"."
       },
+      "Question": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Id"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "role": {
+            "$ref": "#/components/schemas/QuestionRole"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "text",
+          "role"
+        ],
+        "title": "Question",
+        "description": "One question on a card.\n\nAttributes:\n    id: A short name that stays the same if the wording is tidied, such as\n        `permits`. Answers are kept against it. Lower-case letters, digits and\n        underscores only, so it is safe in a dotted path like `answers.permits`.\n    text: The question as the card prints it.\n    role: What its answer means for the job."
+      },
+      "QuestionRole": {
+        "type": "string",
+        "enum": [
+          "stop",
+          "hazard"
+        ],
+        "title": "QuestionRole",
+        "description": "What a question's answer means for the job."
+      },
       "RatingChoice": {
         "properties": {
           "likelihood": {
@@ -544,6 +587,14 @@
           "template": {
             "$ref": "#/components/schemas/Take5Template"
           },
+          "answers": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Answer"
+            },
+            "type": "object",
+            "title": "Answers",
+            "default": {}
+          },
           "hazards": {
             "items": {
               "$ref": "#/components/schemas/Hazard"
@@ -634,6 +685,14 @@
           "template": {
             "$ref": "#/components/schemas/Take5Template"
           },
+          "answers": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Answer"
+            },
+            "type": "object",
+            "title": "Answers",
+            "default": {}
+          },
           "hazards": {
             "items": {
               "$ref": "#/components/schemas/Hazard"
@@ -649,7 +708,7 @@
           "hazards"
         ],
         "title": "Take5",
-        "description": "The hazards and template needed to rate a Take 5.\n\nLater tasks add the job, the worker and the rest of the completed card. Ratings\nmust match this template, so a caller cannot supply a different score or band."
+        "description": "The answers, hazards and template needed to give a Take 5 its verdict.\n\n`SavedTake5` adds the job, the worker and the rest of the completed card. Ratings\nmust match this template, so a caller cannot supply a different score or band.\n\nAttributes:\n    template: The card it was filled in on.\n    answers: The answer to each of the template's questions, by question ID.\n        Empty for a Take 5 saved before the app asked them, whose template has no\n        questions.\n    hazards: The rated hazards, at least one."
       },
       "Take5Draft": {
         "properties": {
@@ -667,6 +726,14 @@
             "type": "string",
             "title": "Location",
             "default": ""
+          },
+          "answers": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Answer"
+            },
+            "type": "object",
+            "title": "Answers",
+            "default": {}
           },
           "hazards": {
             "items": {
@@ -691,7 +758,7 @@
         },
         "type": "object",
         "title": "Take5Draft",
-        "description": "A Take 5 that hasn't been saved, as the phone sends it.\n\nAttributes:\n    worker_name: Who is doing the Take 5.\n    job: What the job is.\n    location: Where the job is.\n    hazards: The hazards, in the order the worker listed them.\n    fixes: The ID of the saved Take 5 this one fixes, or None for a fresh one."
+        "description": "A Take 5 that hasn't been saved, as the phone sends it.\n\nAttributes:\n    worker_name: Who is doing the Take 5.\n    job: What the job is.\n    location: Where the job is.\n    answers: The answers picked so far, by question ID. A question with no\n        answer is left out.\n    hazards: The hazards, in the order the worker listed them.\n    fixes: The ID of the saved Take 5 this one fixes, or None for a fresh one."
       },
       "Take5Response": {
         "properties": {
@@ -734,6 +801,14 @@
             "type": "string",
             "title": "Name"
           },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/Question"
+            },
+            "type": "array",
+            "title": "Questions",
+            "default": []
+          },
           "matrix": {
             "$ref": "#/components/schemas/RiskMatrix"
           },
@@ -765,13 +840,27 @@
           "matrix"
         ],
         "title": "Take5Template",
-        "description": "The card a Take 5 is filled in on. Each saved Take 5 keeps a copy of it.\n\nAttributes:\n    name: The card's name, such as \"Take 5 booklet\".\n    matrix: The risk matrix the hazards are rated on.\n    likelihood_guidance: What each likelihood means, shown beside the rating.\n    consequence_guidance: What each consequence means, shown beside the rating.\n    control_guidance: What makes a control strong or weak, shown beside the\n        controls."
+        "description": "The card a Take 5 is filled in on. Each saved Take 5 keeps a copy of it.\n\nAttributes:\n    name: The card's name, such as \"Take 5 booklet\".\n    questions: The card's questions, in the order it prints them. Empty for a\n        Take 5 saved before the app asked them.\n    matrix: The risk matrix the hazards are rated on.\n    likelihood_guidance: What each likelihood means, shown beside the rating.\n    consequence_guidance: What each consequence means, shown beside the rating.\n    control_guidance: What makes a control strong or weak, shown beside the\n        controls."
       },
       "TemplateResponse": {
         "properties": {
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/Question"
+            },
+            "type": "array",
+            "title": "Questions"
+          },
+          "answer_choices": {
+            "items": {
+              "$ref": "#/components/schemas/Answer"
+            },
+            "type": "array",
+            "title": "Answer Choices"
           },
           "matrix": {
             "$ref": "#/components/schemas/RiskMatrix"
@@ -805,6 +894,8 @@
         "type": "object",
         "required": [
           "name",
+          "questions",
+          "answer_choices",
           "matrix",
           "control_kinds",
           "likelihood_guidance",
@@ -812,7 +903,7 @@
           "control_guidance"
         ],
         "title": "TemplateResponse",
-        "description": "The card a new Take 5 is filled in on, so the phone keeps no copy of it.\n\nAttributes:\n    name: The template's name.\n    matrix: The risk matrix the hazards are rated on.\n    control_kinds: Every kind of control, strongest first.\n    likelihood_guidance: What each likelihood means, in the card's words.\n    consequence_guidance: What each consequence means, in the card's words.\n    control_guidance: The card's advice on choosing controls."
+        "description": "The card a new Take 5 is filled in on, so the phone keeps no copy of it.\n\nAttributes:\n    name: The template's name.\n    questions: The card's questions, in the order it prints them, each with its\n        role.\n    answer_choices: The answers a question can have, in the order to show them.\n    matrix: The risk matrix the hazards are rated on.\n    control_kinds: Every kind of control, strongest first.\n    likelihood_guidance: What each likelihood means, in the card's words.\n    consequence_guidance: What each consequence means, in the card's words.\n    control_guidance: The card's advice on choosing controls."
       },
       "Verdict": {
         "properties": {
@@ -834,7 +925,7 @@
           "reasons"
         ],
         "title": "Verdict",
-        "description": "Whether the job can start, and why not.\n\nAttributes:\n    can_start: True for Good to go, False for Don't start yet.\n    reasons: Every reason that applies, in the order of the rules (V2, then V3)."
+        "description": "Whether the job can start, and why not.\n\nAttributes:\n    can_start: True for Good to go, False for Don't start yet.\n    reasons: Every reason that applies, in the order of the rules (V1, V2, then\n        V3)."
       }
     }
   }

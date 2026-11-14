@@ -5,13 +5,15 @@ import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
 import { Notice } from "../../components/Notice";
 import { Warning } from "../../components/Warning";
+import { AnswerSummary } from "./AnswerSummary";
 import { HazardSummary } from "./HazardSummary";
 
 /**
- * Step 4: the worker's answers, rated by the back end. If anything is missing, the
- * worker is sent to the page where it is. Each warning the back end sends is shown on
- * its hazard. The only kind for now is a hazard with no controls, so its button opens
- * that hazard's controls. A warning never stops the worker finishing.
+ * The last step: the worker's answers, rated by the back end. If anything is missing,
+ * the worker is sent to the page where it is. Each warning the back end sends is shown
+ * beside what it is about, with a button that opens that page: a question answered No
+ * (change the answer), or a hazard with no controls (add a control). A warning never
+ * stops the worker finishing.
  */
 export function ReviewPage({
   draft,
@@ -41,6 +43,29 @@ export function ReviewPage({
   const assessment = check.data?.assessment;
   if (!assessment) return <p role="status">Checking your answers…</p>;
   const warnings = check.data?.warnings ?? [];
+  // The warnings on a field, or on anything inside it.
+  const warningsOn = (path: string) =>
+    warnings.filter(
+      (warning) => warning.path === path || warning.path.startsWith(`${path}.`),
+    );
+  // Each warning on a field, with a button that opens its page; null when there are none.
+  const showWarnings = (path: string, action: string) => {
+    const found = warningsOn(path);
+    if (!found.length) return null;
+    return found.map((warning) => (
+      <Warning key={warning.path}>
+        <p>{warning.message}</p>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            onOpenWarning(warning);
+          }}
+        >
+          {action}
+        </Button>
+      </Warning>
+    ));
+  };
   const details = [
     { term: "Name", value: draft.worker_name },
     { term: "Job", value: draft.job },
@@ -65,25 +90,16 @@ export function ReviewPage({
           ))}
         </dl>
       </Card>
+      <AnswerSummary
+        questions={assessment.template.questions}
+        answers={assessment.answers}
+        noteFor={(questionId) =>
+          showWarnings(`answers.${questionId}`, "Change answer")
+        }
+      />
       {assessment.hazards.map((hazard, index) => (
         <HazardSummary key={index} hazard={hazard} number={index + 1}>
-          {warnings
-            .filter((warning) =>
-              warning.path.startsWith(`hazards.${String(index)}.`),
-            )
-            .map((warning) => (
-              <Warning key={warning.path}>
-                <p>{warning.message}</p>
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    onOpenWarning(warning);
-                  }}
-                >
-                  Add a control
-                </Button>
-              </Warning>
-            ))}
+          {showWarnings(`hazards.${String(index)}`, "Add a control")}
         </HazardSummary>
       ))}
       <p>

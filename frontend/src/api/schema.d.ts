@@ -13,7 +13,7 @@ export interface paths {
         };
         /**
          * Get Template
-         * @description Return the template a new Take 5 is filled in on, and the control kinds.
+         * @description Return the template a new Take 5 is filled in on, and its choices.
          */
         get: operations["get_template_api_take5_template_get"];
         put?: never;
@@ -91,6 +91,12 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * Answer
+         * @description The three answers a question can have. Nothing is picked to begin with.
+         * @enum {string}
+         */
+        Answer: "Yes" | "No" | "N/A";
         /**
          * Control
          * @description What the worker will do about a hazard, and what kind of control it is.
@@ -249,6 +255,30 @@ export interface components {
             meaning: string;
         };
         /**
+         * Question
+         * @description One question on a card.
+         *
+         *     Attributes:
+         *         id: A short name that stays the same if the wording is tidied, such as
+         *             `permits`. Answers are kept against it. Lower-case letters, digits and
+         *             underscores only, so it is safe in a dotted path like `answers.permits`.
+         *         text: The question as the card prints it.
+         *         role: What its answer means for the job.
+         */
+        Question: {
+            /** Id */
+            id: string;
+            /** Text */
+            text: string;
+            role: components["schemas"]["QuestionRole"];
+        };
+        /**
+         * QuestionRole
+         * @description What a question's answer means for the job.
+         * @enum {string}
+         */
+        QuestionRole: "stop" | "hazard";
+        /**
          * RatingChoice
          * @description A likelihood and a consequence as the worker picked them; neither is preset.
          *
@@ -332,6 +362,13 @@ export interface components {
          */
         SavedTake5: {
             template: components["schemas"]["Take5Template"];
+            /**
+             * Answers
+             * @default {}
+             */
+            answers: {
+                [key: string]: components["schemas"]["Answer"];
+            };
             /** Hazards */
             hazards: components["schemas"]["Hazard"][];
             /**
@@ -377,13 +414,27 @@ export interface components {
         };
         /**
          * Take5
-         * @description The hazards and template needed to rate a Take 5.
+         * @description The answers, hazards and template needed to give a Take 5 its verdict.
          *
-         *     Later tasks add the job, the worker and the rest of the completed card. Ratings
+         *     `SavedTake5` adds the job, the worker and the rest of the completed card. Ratings
          *     must match this template, so a caller cannot supply a different score or band.
+         *
+         *     Attributes:
+         *         template: The card it was filled in on.
+         *         answers: The answer to each of the template's questions, by question ID.
+         *             Empty for a Take 5 saved before the app asked them, whose template has no
+         *             questions.
+         *         hazards: The rated hazards, at least one.
          */
         Take5: {
             template: components["schemas"]["Take5Template"];
+            /**
+             * Answers
+             * @default {}
+             */
+            answers: {
+                [key: string]: components["schemas"]["Answer"];
+            };
             /** Hazards */
             hazards: components["schemas"]["Hazard"][];
         };
@@ -395,6 +446,8 @@ export interface components {
          *         worker_name: Who is doing the Take 5.
          *         job: What the job is.
          *         location: Where the job is.
+         *         answers: The answers picked so far, by question ID. A question with no
+         *             answer is left out.
          *         hazards: The hazards, in the order the worker listed them.
          *         fixes: The ID of the saved Take 5 this one fixes, or None for a fresh one.
          */
@@ -414,6 +467,13 @@ export interface components {
              * @default
              */
             location: string;
+            /**
+             * Answers
+             * @default {}
+             */
+            answers: {
+                [key: string]: components["schemas"]["Answer"];
+            };
             /**
              * Hazards
              * @default []
@@ -448,6 +508,8 @@ export interface components {
          *
          *     Attributes:
          *         name: The card's name, such as "Take 5 booklet".
+         *         questions: The card's questions, in the order it prints them. Empty for a
+         *             Take 5 saved before the app asked them.
          *         matrix: The risk matrix the hazards are rated on.
          *         likelihood_guidance: What each likelihood means, shown beside the rating.
          *         consequence_guidance: What each consequence means, shown beside the rating.
@@ -457,6 +519,11 @@ export interface components {
         Take5Template: {
             /** Name */
             name: string;
+            /**
+             * Questions
+             * @default []
+             */
+            questions: components["schemas"]["Question"][];
             matrix: components["schemas"]["RiskMatrix"];
             /**
              * Likelihood Guidance
@@ -480,6 +547,9 @@ export interface components {
          *
          *     Attributes:
          *         name: The template's name.
+         *         questions: The card's questions, in the order it prints them, each with its
+         *             role.
+         *         answer_choices: The answers a question can have, in the order to show them.
          *         matrix: The risk matrix the hazards are rated on.
          *         control_kinds: Every kind of control, strongest first.
          *         likelihood_guidance: What each likelihood means, in the card's words.
@@ -489,6 +559,10 @@ export interface components {
         TemplateResponse: {
             /** Name */
             name: string;
+            /** Questions */
+            questions: components["schemas"]["Question"][];
+            /** Answer Choices */
+            answer_choices: components["schemas"]["Answer"][];
             matrix: components["schemas"]["RiskMatrix"];
             /** Control Kinds */
             control_kinds: components["schemas"]["ControlKind"][];
@@ -505,7 +579,8 @@ export interface components {
          *
          *     Attributes:
          *         can_start: True for Good to go, False for Don't start yet.
-         *         reasons: Every reason that applies, in the order of the rules (V2, then V3).
+         *         reasons: Every reason that applies, in the order of the rules (V1, V2, then
+         *             V3).
          */
         Verdict: {
             /** Can Start */

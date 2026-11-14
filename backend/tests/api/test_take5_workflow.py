@@ -11,14 +11,16 @@ from httpx2 import Response
 from risk_assessment.api.app import create_app
 from risk_assessment.api.schemas import SubmissionRequest, Take5Response
 from risk_assessment.domain.controls import ControlKind
+from risk_assessment.domain.questions import Answer
 from risk_assessment.domain.take5.draft import (
     ControlDraft,
     HazardDraft,
     RatingChoice,
     Take5Draft,
 )
+from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
 from risk_assessment.storage.sqlite import SqliteTake5Repository
-from tests.samples import sample_draft, sample_uncontrolled_draft
+from tests.samples import sample_answers, sample_draft, sample_uncontrolled_draft
 
 
 def test_submit_and_reopen_preserve_the_original_document(tmp_path: Path) -> None:
@@ -71,7 +73,13 @@ def test_check_returns_all_missing_fields_without_creating_storage(
     response: Response = client.post("/api/take5s/check", json={})
     assert response.status_code == 200
     paths: set[str] = {error["path"] for error in response.json()["errors"]}
-    assert paths == {"worker_name", "job", "location", "hazards"}
+    assert paths == {
+        "worker_name",
+        "job",
+        "location",
+        "hazards",
+        *(f"answers.{question.id}" for question in BOOKLET_TEMPLATE.questions),
+    }
     assert not response.json()["can_submit"]
     assert not database.exists()
 
@@ -333,3 +341,38 @@ def test_a_fix_of_an_unknown_take5_is_a_422_on_the_fixes_field(
         {"path": "fixes", "message": "The Take 5 this fixes could not be found."},
     ]
     assert repository.get(request.id) is None
+
+
+def test_example_19_a_no_to_a_stop_question_is_saved_and_stops_the_job(
+    client: TestClient,
+) -> None:
+    """The answers are saved with the Take 5, and a No gives the V1 reason."""
+    answers: dict[str, Answer] = sample_answers(permits=Answer.NO)
+    draft: Take5Draft = sample_draft().model_copy(update={"answers": answers})
+    request = SubmissionRequest(id=uuid4(), draft=draft)
+
+    response: Response = client.post(
+        "/api/take5s",
+        json=request.model_dump(mode="json"),
+    )
+
+    saved: Take5Response = Take5Response.model_validate(response.json())
+    assert saved.take5.answers == answers
+    assert not saved.take5.verdict.can_start
+    assert saved.take5.verdict.reasons == (
+        "You answered No to: Do you have the necessary permits? Sort this out first.",
+    )
+
+
+def test_an_answer_that_is_not_yes_no_or_na_is_a_field_error(
+    client: TestClient,
+) -> None:
+    """Only the three answers are accepted, and the error names the question."""
+    draft: dict[str, Any] = sample_draft().model_dump(mode="json")
+    draft["answers"]["permits"] = "Maybe"
+
+    response: Response = client.post("/api/take5s/check", json=draft)
+
+    assert response.status_code == 422
+    paths: list[str] = [error["path"] for error in response.json()["errors"]]
+    assert paths == ["answers.permits"]

@@ -10,9 +10,15 @@ import type {
   TemplateResponse,
 } from "./api/take5";
 
-// A made-up two-by-two card, so a test proves nothing about the booklet is built in.
+// A made-up card with two questions and a two-by-two matrix, so a test proves nothing
+// about the booklet is built in.
 export const SMALL_TEMPLATE: TemplateResponse = {
   name: "Example card",
+  questions: [
+    { id: "keys", text: "Have you got the gate keys?", role: "stop" },
+    { id: "dogs", text: "Are there dogs on site?", role: "hazard" },
+  ],
+  answer_choices: ["Yes", "No", "N/A"],
   matrix: {
     likelihoods: ["Often", "Seldom"],
     consequences: ["Scratch", "Serious"],
@@ -41,10 +47,13 @@ export const HAZARD_DRAFT: HazardDraft = {
   after: { likelihood: "Seldom", consequence: "Scratch" },
 };
 
+export const ANSWERS: Take5Draft["answers"] = { keys: "Yes", dogs: "No" };
+
 export const COMPLETE_DRAFT: Take5Draft = {
   worker_name: "Sam Example",
   job: "Change tyre",
   location: "Example workshop",
+  answers: ANSWERS,
   hazards: [HAZARD_DRAFT],
 };
 
@@ -71,7 +80,11 @@ export const PASSING_CHECK: DraftCheck = {
   errors: [],
   warnings: [],
   can_submit: true,
-  assessment: { template: SMALL_TEMPLATE, hazards: [RATED_HAZARD] },
+  assessment: {
+    template: SMALL_TEMPLATE,
+    answers: ANSWERS,
+    hazards: [RATED_HAZARD],
+  },
 };
 
 export const SAVED: Take5Response = {
@@ -83,6 +96,7 @@ export const SAVED: Take5Response = {
     job: "Change tyre",
     location: "Example workshop",
     template: SMALL_TEMPLATE,
+    answers: ANSWERS,
     hazards: [RATED_HAZARD],
     verdict: { can_start: true, reasons: [] },
   },

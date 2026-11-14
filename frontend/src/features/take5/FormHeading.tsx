@@ -2,11 +2,13 @@ import type { Ref } from "react";
 import type { Stage } from "./stage";
 import { stepOf } from "./stage";
 
-const STEPS = ["Job", "Hazards", "Assess", "Review"];
+const STEPS = ["Job", "Think", "Hazards", "Assess", "Review"];
 
 const TITLES: Record<Stage["page"], string> = {
   job: "The job in front of you",
+  think: "Think it through",
   hazards: "What could hurt someone?",
+  check: "Did you miss any?",
   before: "Before any controls",
   controls: "What will stop it?",
   after: "After your controls",
@@ -28,7 +30,7 @@ export function FormHeading({
   const step = stepOf(stage);
   return (
     <header className="flex flex-col gap-3">
-      <ol aria-label="Take 5 progress" className="grid grid-cols-4 gap-2">
+      <ol aria-label="Take 5 progress" className="grid grid-cols-5 gap-2">
         {STEPS.map((name, index) => (
           <li
             key={name}
@@ -40,7 +42,7 @@ export function FormHeading({
         ))}
       </ol>
       <p className="text-sm font-bold tracking-wide text-slate-700 uppercase">
-        Step {step} of 4
+        Step {step} of {STEPS.length}
         {"hazard" in stage &&
           ` · Hazard ${String(stage.hazard + 1)} of ${String(hazardCount)}`}
       </p>

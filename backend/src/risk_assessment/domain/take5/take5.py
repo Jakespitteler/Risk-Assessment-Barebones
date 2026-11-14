@@ -1,10 +1,12 @@
-"""Hazards and the rating of a whole Take 5 (spec rules R4 to R6)."""
+"""Hazards, answers and the rating of a whole Take 5 (spec rules R4 to R6)."""
 
+from collections.abc import Mapping
 from typing import ClassVar, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from risk_assessment.domain.controls import Control
+from risk_assessment.domain.questions import Answer
 from risk_assessment.domain.risk import RiskRating, rate
 from risk_assessment.domain.take5.template import Take5Template
 
@@ -36,16 +38,32 @@ class Hazard(BaseModel):
 
 
 class Take5(BaseModel):
-    """The hazards and template needed to rate a Take 5.
+    """The answers, hazards and template needed to give a Take 5 its verdict.
 
-    Later tasks add the job, the worker and the rest of the completed card. Ratings
+    `SavedTake5` adds the job, the worker and the rest of the completed card. Ratings
     must match this template, so a caller cannot supply a different score or band.
+
+    Attributes:
+        template: The card it was filled in on.
+        answers: The answer to each of the template's questions, by question ID.
+            Empty for a Take 5 saved before the app asked them, whose template has no
+            questions.
+        hazards: The rated hazards, at least one.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     template: Take5Template
+    answers: Mapping[str, Answer] = {}
     hazards: tuple[Hazard, ...] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _every_question_has_one_answer(self) -> Self:
+        """Refuse a missing answer, or an answer to a question the card doesn't ask."""
+        question_ids: set[str] = {question.id for question in self.template.questions}
+        if set(self.answers) != question_ids:
+            raise ValueError("Every question on the card needs exactly one answer.")
+        return self
 
     @model_validator(mode="after")
     def _ratings_use_the_template_matrix(self) -> Self:

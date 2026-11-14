@@ -9,6 +9,7 @@ from httpx2 import Response
 from risk_assessment.api.app import create_app
 from risk_assessment.api.schemas import TemplateResponse
 from risk_assessment.domain.controls import ControlKind
+from risk_assessment.domain.questions import Answer
 from risk_assessment.domain.risk import RiskCell, RiskMatrix
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE, LevelGuidance
 
@@ -43,6 +44,18 @@ def test_the_template_sends_the_templates_own_guidance_and_every_control_kind() 
         meaning="Expected to happen: once a week.",
     )
     assert template.control_kinds == tuple(ControlKind)
+
+
+def test_the_template_sends_its_questions_and_the_answers_they_can_have() -> None:
+    """The phone draws whatever questions the template holds, in the card's order."""
+    client = TestClient(create_app())
+
+    template: TemplateResponse = TemplateResponse.model_validate(
+        client.get("/api/take5/template").json(),
+    )
+
+    assert template.questions == BOOKLET_TEMPLATE.questions
+    assert template.answer_choices == (Answer.YES, Answer.NO, Answer.NOT_APPLICABLE)
 
 
 def _responses(path: str, method: str) -> dict[str, Any]:

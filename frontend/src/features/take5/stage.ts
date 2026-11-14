@@ -1,15 +1,22 @@
-import type { Take5Draft } from "../../api/take5";
+import type { Question, Take5Draft } from "../../api/take5";
 
 // Which page of the form is showing. It lives in the URL, so the phone's back gesture
-// steps back through the form instead of leaving it.
+// steps back through the form instead of leaving it. "think" holds the stop questions;
+// "check" holds the hazard questions, after the worker has listed hazards.
 export type HazardPage = "before" | "controls" | "after";
-export type Stage =
-  { page: "job" | "hazards" | "review" } | { page: HazardPage; hazard: number };
+type OtherPage = "job" | "think" | "hazards" | "check" | "review";
+export type Stage = { page: OtherPage } | { page: HazardPage; hazard: number };
 
 export const FIRST_STAGE: Stage = { page: "job" };
 
 const HAZARD_PAGES: readonly string[] = ["before", "controls", "after"];
-const OTHER_PAGES: readonly string[] = ["job", "hazards", "review"];
+const OTHER_PAGES: readonly string[] = [
+  "job",
+  "think",
+  "hazards",
+  "check",
+  "review",
+];
 
 /** Read the stage from a URL query such as `?page=before&hazard=0`. */
 export function stageFromSearch(search: URLSearchParams): Stage {
@@ -17,8 +24,7 @@ export function stageFromSearch(search: URLSearchParams): Stage {
   const hazard = Number(search.get("hazard"));
   if (HAZARD_PAGES.includes(page) && Number.isInteger(hazard) && hazard >= 0)
     return { page: page as HazardPage, hazard };
-  if (OTHER_PAGES.includes(page))
-    return { page: page as "job" | "hazards" | "review" };
+  if (OTHER_PAGES.includes(page)) return { page: page as OtherPage };
   return FIRST_STAGE;
 }
 
@@ -59,8 +65,12 @@ function lastPageOf(draft: Take5Draft, hazard: number): Stage {
 export function nextStage(stage: Stage, draft: Take5Draft): Stage {
   switch (stage.page) {
     case "job":
+      return { page: "think" };
+    case "think":
       return { page: "hazards" };
     case "hazards":
+      return draft.hazards.length ? { page: "check" } : stage;
+    case "check":
       return draft.hazards.length ? { page: "before", hazard: 0 } : stage;
     case "before":
       return { page: "controls", hazard: stage.hazard };
@@ -83,11 +93,15 @@ export function nextStage(stage: Stage, draft: Take5Draft): Stage {
 export function previousStage(stage: Stage, draft: Take5Draft): Stage {
   switch (stage.page) {
     case "job":
-    case "hazards":
+    case "think":
       return FIRST_STAGE;
+    case "hazards":
+      return { page: "think" };
+    case "check":
+      return { page: "hazards" };
     case "before":
       return stage.hazard === 0
-        ? { page: "hazards" }
+        ? { page: "check" }
         : lastPageOf(draft, stage.hazard - 1);
     case "controls":
       return { page: "before", hazard: stage.hazard };
@@ -100,9 +114,17 @@ export function previousStage(stage: Stage, draft: Take5Draft): Stage {
   }
 }
 
-/** The page a field error belongs on, from its dotted path such as `hazards.0.after`. */
-export function stageOfError(path: string): Stage {
+/**
+ * The page a field error belongs on, from its dotted path such as `hazards.0.after`.
+ * An answer's path is `answers.<question id>`: a stop question is on the think page and
+ * a hazard question on the check page.
+ */
+export function stageOfError(path: string, questions: Question[]): Stage {
   const [first, index, field] = path.split(".");
+  if (first === "answers") {
+    const role = questions.find((question) => question.id === index)?.role;
+    return { page: role === "hazard" ? "check" : "think" };
+  }
   if (first !== "hazards") return FIRST_STAGE;
   const hazard = Number(index);
   if (field === "before" || field === "controls" || field === "after")
@@ -110,9 +132,10 @@ export function stageOfError(path: string): Stage {
   return { page: "hazards" };
 }
 
-/** Which of the four steps a stage is part of, counting from 1. */
+/** Which of the five steps a stage is part of, counting from 1. */
 export function stepOf(stage: Stage): number {
   if (stage.page === "job") return 1;
-  if (stage.page === "hazards") return 2;
-  return stage.page === "review" ? 4 : 3;
+  if (stage.page === "think") return 2;
+  if (stage.page === "hazards" || stage.page === "check") return 3;
+  return stage.page === "review" ? 5 : 4;
 }

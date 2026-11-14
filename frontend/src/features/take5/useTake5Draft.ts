@@ -12,17 +12,20 @@ const DRAFT_KEY = "take5-draft";
 
 // Bump this when the draft's shape changes, so a tab left open across an update starts
 // afresh instead of loading answers in the old shape.
-const DRAFT_VERSION = 1;
+const DRAFT_VERSION = 2;
 
 interface StoredDraft {
   version: number;
   draft: Take5Draft;
   submissionId: string;
+  /** The hazard questions a hazard was added from, so their Yes shows it was done. */
+  addedFor?: string[];
 }
 
 export interface Removal {
   message: string;
   before: Take5Draft;
+  addedForBefore: string[];
 }
 
 const NOTHING_PICKED = { likelihood: null, consequence: null };
@@ -61,6 +64,7 @@ export function fixDraftOf(saved: SavedTake5): Take5Draft {
     worker_name: saved.worker_name,
     job: saved.job,
     location: saved.location,
+    answers: { ...saved.answers },
     hazards: saved.hazards.map(hazardDraftOf),
     fixes: saved.id,
   };
@@ -125,36 +129,59 @@ export function useTake5Draft() {
         worker_name: read(() => localStorage, WORKER_NAME_KEY) ?? "",
         job: "",
         location: "",
+        answers: {},
         hazards: [blankHazard()],
       },
   );
   const [submissionId] = useState(
     () => stored?.submissionId ?? newSubmissionId(),
   );
+  const [addedFor, setAddedFor] = useState<string[]>(
+    () => stored?.addedFor ?? [],
+  );
   const [removal, setRemoval] = useState<Removal | null>(null);
   const [kept, setKept] = useState(true);
 
   useEffect(() => {
     if (!kept) return;
-    const value: StoredDraft = { version: DRAFT_VERSION, draft, submissionId };
+    const value: StoredDraft = {
+      version: DRAFT_VERSION,
+      draft,
+      submissionId,
+      addedFor,
+    };
     write(() => sessionStorage, DRAFT_KEY, JSON.stringify(value));
-  }, [draft, submissionId, kept]);
+  }, [draft, submissionId, addedFor, kept]);
 
   return {
     draft,
     submissionId,
     removal,
+    addedFor,
+    /** Remember that a hazard was added from this hazard question. */
+    markAdded: (questionId: string) => {
+      setAddedFor((current) =>
+        current.includes(questionId) ? current : [...current, questionId],
+      );
+    },
     // An edit after a removal ends its undo, so Undo can never wipe newer answers.
     change: (update: (current: Take5Draft) => Take5Draft) => {
       setRemoval(null);
       setDraft(update);
     },
+    // A hazard isn't tied to the question it came from, so removing any hazard forgets
+    // every mark: each Yes then reminds the worker again until Undo puts them back.
     remove: (message: string, update: (current: Take5Draft) => Take5Draft) => {
-      setRemoval({ message, before: draft });
-      setDraft(update);
+      const after = update(draft);
+      setRemoval({ message, before: draft, addedForBefore: addedFor });
+      if (after.hazards.length < draft.hazards.length) setAddedFor([]);
+      setDraft(after);
     },
     undoRemoval: () => {
-      if (removal) setDraft(removal.before);
+      if (removal) {
+        setDraft(removal.before);
+        setAddedFor(removal.addedForBefore);
+      }
       setRemoval(null);
     },
     dismissRemoval: () => {

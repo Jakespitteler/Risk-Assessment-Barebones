@@ -3,6 +3,10 @@ import {
   CONTROL,
   HAZARD,
   addControl,
+  CHECK,
+  THINK,
+  answerAll,
+  answerThinkThrough,
   back,
   capture,
   controlledDraft,
@@ -29,9 +33,17 @@ test("a worker fills in, saves, reopens and starts a new Take 5", async ({
   await expect(page.getByLabel("Your name", { exact: true })).toHaveValue("");
   await capture(page, "take5-job");
   await fillJob(page);
+  await expect(focusedHeading(page)).toHaveText("Think it through");
+  await expect(page.getByRole("radio", { checked: true })).toHaveCount(0);
+  await capture(page, "take5-think");
+  await answerThinkThrough(page);
   await expect(focusedHeading(page)).toHaveText("What could hurt someone?");
   await page.getByLabel("Hazard 1", { exact: true }).fill(HAZARD);
   await capture(page, "take5-hazards");
+  await next(page);
+  await expect(focusedHeading(page)).toHaveText("Did you miss any?");
+  await expect(page.getByRole("radio", { checked: true })).toHaveCount(0);
+  await answerAll(page, CHECK, "No");
   await next(page);
   await expect(page.getByRole("radio", { checked: true })).toHaveCount(0);
   await page.getByText("What do the ratings mean?").click();
@@ -54,6 +66,7 @@ test("a worker fills in, saves, reopens and starts a new Take 5", async ({
   await next(page);
   await expect(heading(page, "One last look")).toBeVisible();
   await expect(page.getByText(CONTROL, { exact: true })).toBeVisible();
+  await expect(page.getByText("Thinking it through")).toBeVisible();
   await capture(page, "take5-review");
   expect(requests).not.toContain("POST /api/take5s");
 
@@ -98,6 +111,7 @@ test("a hazard with no controls skips the second rating and stops the job", asyn
 }) => {
   await page.goto("/");
   await fillJob(page);
+  await answerThinkThrough(page);
   await fillOneHazard(page);
   await pick(page, "Possible", "Minor");
   await next(page);
@@ -144,10 +158,15 @@ test("Enter in a one-line box continues; in a bigger box it starts a new line", 
   await expect(heading(page, "The job in front of you")).toBeVisible();
   await page.getByLabel("Where will you do it?").fill("Example workshop");
   await page.getByLabel("Where will you do it?").press("Enter");
+  await expect(heading(page, "Think it through")).toBeVisible();
+  await answerAll(page, THINK, "Yes");
+  await page.getByRole("radio", { name: "Yes" }).last().press("Enter");
   await expect(heading(page, "What could hurt someone?")).toBeVisible();
   await page.getByLabel("Hazard 1", { exact: true }).fill(HAZARD);
   await page.getByLabel("Hazard 1", { exact: true }).press("Enter");
   await expect(heading(page, "What could hurt someone?")).toBeVisible();
+  await next(page);
+  await answerAll(page, CHECK, "No");
   await next(page);
   await pick(page, "Possible", "Minor");
   await page.getByRole("radio", { name: "Minor" }).press("Enter");
@@ -180,7 +199,7 @@ test("Enter while Continue is checking sends one check and moves on once", async
   ).toBeDisabled();
   await location.press("Enter");
   release();
-  await expect(heading(page, "What could hurt someone?")).toBeVisible();
+  await expect(heading(page, "Think it through")).toBeVisible();
   expect(checks).toBe(1);
 });
 
@@ -203,6 +222,7 @@ test("controls that raise the risk are stopped on the after page (example 15)", 
 }) => {
   await page.goto("/");
   await fillJob(page);
+  await answerThinkThrough(page);
   await fillOneHazard(page);
   await pick(page, "Unlikely", "Minor");
   await next(page);
@@ -253,6 +273,7 @@ test("with no signal the answers stay, and Finish works once it is back", async 
 test("the back gesture and a reload keep every answer", async ({ page }) => {
   await page.goto("/");
   await fillJob(page);
+  await answerThinkThrough(page);
   await page
     .getByLabel("Hazard 1", { exact: true })
     .fill("First example hazard");
@@ -260,6 +281,8 @@ test("the back gesture and a reload keep every answer", async ({ page }) => {
   await page
     .getByLabel("Hazard 2", { exact: true })
     .fill("Second example hazard");
+  await next(page);
+  await answerAll(page, CHECK, "No");
   await next(page);
   await expect(
     page.getByText("First example hazard", { exact: true }),
@@ -283,6 +306,9 @@ test("the back gesture and a reload keep every answer", async ({ page }) => {
     page.getByRole("radio", { name: "Rare", exact: true }),
   ).toBeChecked();
   await back(page);
+  await expect(heading(page, "Did you miss any?")).toBeVisible();
+  await expect(page.getByRole("radio", { name: "No" }).first()).toBeChecked();
+  await back(page);
   await expect(page.getByLabel("Hazard 2", { exact: true })).toHaveValue(
     "Second example hazard",
   );
@@ -291,6 +317,7 @@ test("the back gesture and a reload keep every answer", async ({ page }) => {
 test("a removed hazard can be put back", async ({ page }) => {
   await page.goto("/");
   await fillJob(page);
+  await answerThinkThrough(page);
   await page.getByLabel("Hazard 1", { exact: true }).fill(HAZARD);
   await page.getByRole("button", { name: "Remove hazard 1" }).click();
   await expect(page.getByLabel("Hazard 1", { exact: true })).toHaveCount(0);

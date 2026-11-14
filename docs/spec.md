@@ -43,9 +43,12 @@ saved until the worker submits it. Then the app asks its one question, and then 
 2. **Think through the task.** Seven questions from the card (below). Each is answered Yes, No or N/A. Nothing is
    selected to begin with and there is no "all Yes" button. A No means *sort this out first*.
 3. **Spot the hazards.** The worker first writes at least one thing that could hurt them or someone else. Only
-   then does the app show the card's seven hazard questions as a cross-check ("did you miss any of these?").
-   A Yes shows "Make sure it's on your list" with a button to add a hazard. Every Take 5 has at least one
-   hazard: "no hazards" is not an answer on a mine site.
+   then does the app show the card's seven hazard questions as a cross-check ("did you miss any of these?"), on
+   their own page after the list, with the worker's list at the top (decision D13). A Yes shows "Make sure it's
+   on your list" with a button to add a hazard, which opens the list with a new empty hazard; Continue there
+   comes back to the questions. Once a hazard has been added from that Yes, it shows "Added to your list" with
+   an "Add another" link instead (decision D15). Every Take 5 has at least one hazard: "no hazards" is not an
+   answer on a mine site.
 4. **Assess the risk and make the changes.** For each hazard the worker:
    1. rates how likely and how bad it is **before** any controls,
    2. writes each control and picks what kind of control it is,
@@ -164,7 +167,8 @@ The verdict is *Don't start yet* if any of the reasons below apply, and *Good to
 that applies is shown, in this order. The verdict is worked out once, when the Take 5 is finished (the challenge
 question is answered), and saved with it, so a saved Take 5 always shows the verdict the worker was given.
 
-- **V1** A think-through question is answered No. ("You answered No to: ... Sort this out first.")
+- **V1** A think-through question is answered No. ("You answered No to: ... Sort this out first.") Each question
+  answered No is its own reason, in the card's order.
 - **V2** A hazard has no controls. ("Say how you will control: ...")
 - **V3** The Take 5's rating is 11 or more. ("The risk is High (12). At 11 or more you need a JHA before you
   start. Talk to your supervisor.") The app does not write JHAs.
@@ -343,19 +347,23 @@ The first four screens of the core workflow, saved when the worker submits.
 ### F3: The verdict
 
 - Acceptance: worked examples 18 to 27 pass as tests.
-- Acceptance: the result screen shows the verdict, every reason, each hazard with its controls and its before and
-  after ratings, and the challenge question with the worker's answer.
+- Acceptance: the result screen shows the verdict, every reason, each of the card's questions with the worker's
+  answer, each hazard with its controls and its before and after ratings, and the challenge question with the
+  worker's answer.
 - Acceptance: no screen ever shows a score without its band.
-- Acceptance: before Finish, the review warns about each hazard with no controls (it will mean Don't start yet),
-  with a way to add one. The warning never blocks Finish.
+- Acceptance: before Finish, the review warns about each think-through question answered No and each hazard with
+  no controls (either will mean Don't start yet), with a way to change it. A warning never blocks Finish.
 - Acceptance: a Don't start yet result offers to copy its answers into a new Take 5. The saved one never changes,
   and the two link to each other.
 - How the fix works (task 0010): the check returns *warnings* beside its errors: things that are allowed but
-  will stop the job. For now there is one, on each hazard with no controls (V2): "No controls: you'll be told
-  not to start." The review shows it on its hazard with an "Add a control" button that opens that hazard's
-  controls page; Continue there goes on to rate the new control and then back to the review. "Fix this in a new
-  Take 5" copies the name, job, location and every hazard's description, ratings and controls into a new draft
-  with a new ID, and opens it on the review. A hazard that had no controls was never rated after them, so its
+  will stop the job. There are two kinds. On each think-through question answered No (V1, task 0005): "You
+  answered No: you'll be told not to start." The review shows it under that answer with a "Change answer"
+  button that opens the think-through page; Continue there goes back to the review. On each hazard with no
+  controls (V2): "No controls: you'll be told not to start." The review shows it on its hazard with an "Add a
+  control" button that opens that hazard's controls page; Continue there goes on to rate the new control and
+  then back to the review. "Fix this in a new Take 5" copies the name, job, location, the answer to every
+  question (decision D14), and every hazard's description, ratings and controls into a new draft with a new ID,
+  and opens it on the review. A hazard that had no controls was never rated after them, so its
   after rating starts unpicked. The new Take 5 records which one it fixes. Only a saved Don't start yet can be
   fixed, and once it has a fix it links to the newest one instead of offering another.
 
@@ -409,8 +417,8 @@ under "Ready for later".
 
 ## Decisions made
 
-Jake made each of these on 2026-11-13. The reasons are in `decisions.md`. Changing one means changing this spec
-and its worked examples in the same PR.
+Jake made each of these on 2026-11-13, except where the row gives another date. The reasons are in
+`decisions.md`. Changing one means changing this spec and its worked examples in the same PR.
 
 | # | Decision | Chosen | Not chosen |
 | --- | --- | --- | --- |
@@ -426,6 +434,9 @@ and its worked examples in the same PR.
 | D10 | What happens when the AI can't be reached | The fixed fallback question (C3), so a Take 5 can always be finished | Wait for the AI |
 | D11 | Whether the AI judges the answer | No. It asks one question and the answer is saved (C5) | The AI marks the answer and can ask again |
 | D12 | The front-end libraries | React, TypeScript, Vite, Tailwind CSS, TanStack Query, React Router (see `architecture.md`) | Svelte or Vue |
+| D13 | Where the hazard questions go (2026-11-14) | Their own page after the hazard list, with the list at the top | Under the list on the same page |
+| D14 | What a fix does with the answers (2026-11-14) | Copies them; the review warns on each No with a way to change it | Leave them blank, so all 14 are answered again |
+| D15 | What a Yes shows after a hazard is added from it (2026-11-14) | A tick, "Added to your list", and an "Add another" link | The same reminder without its button; or the reminder and button unchanged |
 
 ## Open questions
 

@@ -20,7 +20,7 @@ import { SaveProblem } from "./SaveProblem";
 import type { Stage } from "./stage";
 import * as stages from "./stage";
 import { usePageFocus } from "./usePageFocus";
-import { useTake5Draft } from "./useTake5Draft";
+import { blankHazard, useTake5Draft } from "./useTake5Draft";
 
 export interface Take5FormProps {
   template: TemplateResponse;
@@ -42,13 +42,16 @@ export function Take5Form(props: Take5FormProps) {
   const checkDraft = useCheckDraft();
   const review = useDraftCheck(draft, stage.page === "review");
   const submit = useSubmitTake5();
-  const { heading, container, focusErrorsOn } = usePageFocus(stage);
+  const { heading, container, focusErrorsOn, focusFieldOn } =
+    usePageFocus(stage);
   const [allErrors, setErrors] = useState<FieldError[]>([]);
   const [fixing, setFixing] = useState(false);
   const [checking, setChecking] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
+  const stageOf = (path: string) =>
+    stages.stageOfError(path, template.questions);
   const isHere = (error: FieldError) =>
-    stages.sameStage(stages.stageOfError(error.path), stage);
+    stages.sameStage(stageOf(error.path), stage);
   // Only this page's errors show, so Back never shows a notice with nothing marked.
   const errors = allErrors.filter(isHere);
 
@@ -61,7 +64,7 @@ export function Take5Form(props: Take5FormProps) {
   function showGaps(found: FieldError[]) {
     const first = found[0];
     if (!first) return;
-    const target = stages.stageOfError(first.path);
+    const target = stageOf(first.path);
     setErrors(found);
     setFixing(true);
     onStageChange(target, { replace: true });
@@ -70,7 +73,7 @@ export function Take5Form(props: Take5FormProps) {
 
   /** Open the page a warning is about. Continue there comes back to the review. */
   function openWarning(warning: FieldWarning) {
-    const target = stages.stageOfError(warning.path);
+    const target = stageOf(warning.path);
     setErrors([]);
     setFixing(true);
     onStageChange(target, { replace: true });
@@ -83,9 +86,28 @@ export function Take5Form(props: Take5FormProps) {
   function nextGap(found: FieldError[]) {
     const following = stages.nextStage(stage, draft);
     const first = found[0];
-    if (first && stages.sameStage(stages.stageOfError(first.path), following))
+    if (first && stages.sameStage(stageOf(first.path), following))
       onStageChange(following);
     else showGaps(found);
+  }
+
+  /**
+   * A Yes to a hazard question: add an empty hazard and open the list with the cursor
+   * in it. Continue there comes back to the questions, with their answers kept and
+   * this question marked as added to the list.
+   */
+  function addHazard(questionId: string) {
+    take5.change((current) => ({
+      ...current,
+      hazards: [...current.hazards, blankHazard()],
+    }));
+    take5.markAdded(questionId);
+    const hazards: Stage = { page: "hazards" };
+    focusFieldOn(
+      hazards,
+      `hazards.${String(draft.hazards.length)}.description`,
+    );
+    onStageChange(hazards);
   }
 
   async function next() {
@@ -98,6 +120,20 @@ export function Take5Form(props: Take5FormProps) {
     if (check?.errors.some(isHere)) {
       setErrors(check.errors);
       focusErrorsOn(stage);
+      return;
+    }
+    // The questions check the list, so an empty hazard added from them (and left by
+    // going Back) is sent back to the list before the worker moves on.
+    const hazardList: Stage = { page: "hazards" };
+    if (
+      stage.page === "check" &&
+      check?.errors.some((error) =>
+        stages.sameStage(stageOf(error.path), hazardList),
+      )
+    ) {
+      setErrors(check.errors);
+      onStageChange(hazardList);
+      focusErrorsOn(hazardList);
       return;
     }
     setErrors([]);
@@ -161,6 +197,7 @@ export function Take5Form(props: Take5FormProps) {
         onErrorsChange={setErrors}
         onGaps={showGaps}
         onOpenWarning={openWarning}
+        onAddHazard={addHazard}
       />
       {take5.removal && (
         <UndoBar

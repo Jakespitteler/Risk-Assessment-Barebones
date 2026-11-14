@@ -1,9 +1,11 @@
 """Tests for keeping Take 5s in SQLite."""
 
+import json
 import sqlite3
 from contextlib import closing
 from datetime import timedelta
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
 from risk_assessment.domain.take5.saved import SavedTake5
@@ -86,3 +88,30 @@ def test_the_newest_fix_of_a_take5_is_found(tmp_path: Path) -> None:
     assert repository.fixed_by(first.id) == later_fix.id
     assert repository.fixed_by(later_fix.id) is None
     assert repository.get(first.id) == first
+
+
+def test_a_take5_saved_before_the_card_had_questions_still_opens(
+    tmp_path: Path,
+) -> None:
+    """A document with no answers, on a template with no questions, reads back."""
+    database: Path = tmp_path / "take5.sqlite3"
+    take5: SavedTake5 = sample_saved_take5()
+    old_document: dict[str, Any] = take5.model_dump(mode="json")
+    del old_document["answers"]
+    del old_document["template"]["questions"]
+    with closing(sqlite3.connect(database)) as connection, connection:
+        connection.execute(
+            "CREATE TABLE take5s (id TEXT PRIMARY KEY, created_at TEXT, "
+            "worker_name TEXT, job TEXT, document TEXT NOT NULL)",
+        )
+        connection.execute(
+            "INSERT INTO take5s VALUES (?, ?, ?, ?, ?)",
+            (str(take5.id), "", "", "", json.dumps(old_document)),
+        )
+
+    reopened: SavedTake5 | None = SqliteTake5Repository(database).get(take5.id)
+
+    assert reopened is not None
+    assert reopened.answers == {}
+    assert reopened.template.questions == ()
+    assert reopened.verdict == take5.verdict

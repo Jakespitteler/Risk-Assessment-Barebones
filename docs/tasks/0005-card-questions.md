@@ -1,9 +1,9 @@
 ---
 id: 0005
 title: Fill in a Take 5, part 2 - the card's questions (spec F2, F3)
-status: todo
-owner:
-branch:
+status: done
+owner: claude
+branch: claude/project-thread-4h589l
 ---
 
 ## Goal
@@ -13,18 +13,18 @@ seven hazard questions, where a Yes reminds the worker to list the hazard.
 
 ## Acceptance criteria
 
-- [ ] Part 2 of the core workflow (think through the task) exists, and the hazard questions are in part 3.
-- [ ] No answer is selected to begin with, there is no way to answer them all at once, and the Take 5 can't be
+- [x] Part 2 of the core workflow (think through the task) exists, and the hazard questions are in part 3.
+- [x] No answer is selected to begin with, there is no way to answer them all at once, and the Take 5 can't be
   submitted with one unanswered.
-- [ ] A Yes to a hazard question shows "Make sure it's on your list" with a button to add a hazard.
-- [ ] `domain/questions.py` has `Question`, `QuestionRole` and `Answer`, and the booklet's template has its
+- [x] A Yes to a hazard question shows "Make sure it's on your list" with a button to add a hazard.
+- [x] `domain/questions.py` has `Question`, `QuestionRole` and `Answer`, and the booklet's template has its
   fourteen questions. Verdict rule V1 is in `domain/take5/verdict.py` and works from the question's role, not its
   text; spec worked examples 19 to 21, 26 and 27 have tests.
-- [ ] The screens draw whatever questions the template holds; a test with a made-up template of two questions proves it.
-- [ ] The result screen shows each question with its answer.
-- [ ] A Playwright test covers a No (Don't start yet) and an N/A (Good to go).
-- [ ] Phone-width (360 px) screenshots of every new or changed screen are attached to the PR.
-- [ ] All checks pass.
+- [x] The screens draw whatever questions the template holds; a test with a made-up template of two questions proves it.
+- [x] The result screen shows each question with its answer.
+- [x] A Playwright test covers a No (Don't start yet) and an N/A (Good to go).
+- [x] Phone-width (360 px) screenshots of every new or changed screen are attached to the PR.
+- [x] All checks pass.
 
 ## Out of scope
 
@@ -34,3 +34,31 @@ seven hazard questions, where a Yes reminds the worker to list the hazard.
 
 Don't start until the spec is approved (task 0001 is `done`). Depends on 0004. Take 5s saved before this task have
 no answers to these questions; the result screen must still open them.
+
+Done by claude on 2026-11-14:
+
+- Jake chose (spec D13) that the hazard questions get their own page after the hazard list, with the list at the
+  top. Because Continue on the list needs a written hazard, the questions can't normally be reached before one is
+  written. Task 0006 still owns T1: a link straight to `?page=check` with no hazard written isn't stopped yet.
+- Jake chose (spec D14) that "Fix this in a new Take 5" copies the answers, and that the review warns on each
+  think-through question answered No ("You answered No: you'll be told not to start.") with a "Change answer"
+  button. Spec F3 is updated to match.
+- Jake chose (spec D15), after trying it, that once a hazard has been added from a Yes, the reminder becomes
+  "Added to your list" with an "Add another" link. Which questions have had a hazard added is kept with the
+  phone's draft (not sent to the back end), so it survives a reload but not a new Take 5. A hazard isn't tied to
+  the question it came from, so removing any hazard clears every tick and each Yes reminds again; Undo puts the
+  ticks back. (Assumption: tying each hazard to its question would change the data model for little gain.)
+- PR 23 closed by itself when PR 22's branch was deleted on merge, so the work moved to a new PR. AGENTS.md
+  step 3 now says to change the next PR's base to `main` before merging, not after.
+- Assumption: each No is its own V1 reason, in the card's order (spec V1 now says so).
+- The data shape (one list of questions with IDs and roles, answers by question ID) is in `docs/decisions.md`.
+- The form now has five steps: Job, Think, Hazards, Assess, Review. The review and the result screen list every
+  question with its answer.
+- A draft kept in the phone from before this change is dropped (its version went from 1 to 2), because it has no
+  answers.
+- Continue on the hazard-check page also checks the list, so an empty hazard added from a Yes (and left by going
+  Back) is sent back to the list first. A question ID may only hold lower-case letters, digits and underscores,
+  since it goes in the dotted path `answers.<id>`.
+- Left as it is: `answers` is a `Mapping` with a dict inside a frozen model, so unlike the tuples elsewhere it
+  could be changed at run time; pyright stops that in our code. The PR is about 1,800 changed lines, well over
+  the ~400 guideline, because one task covers the back end, two new pages and their tests.

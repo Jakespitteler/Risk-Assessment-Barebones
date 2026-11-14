@@ -6,21 +6,25 @@ reported in one pass, each with the dotted path of the field it belongs beside, 
 the draft being submitted, but they say what will stop the job.
 """
 
+from collections.abc import Mapping
 from typing import ClassVar
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from risk_assessment.domain.controls import Control, ControlKind
+from risk_assessment.domain.questions import Answer, Question, QuestionRole
 from risk_assessment.domain.risk import RiskMatrix, RiskRating, rate
 from risk_assessment.domain.take5.take5 import Hazard, Take5
 from risk_assessment.domain.take5.template import Take5Template
 
 FILL_IN_MESSAGE: str = "Fill in this field."
+NO_ANSWER_MESSAGE: str = "Pick Yes, No or N/A."
 NO_HAZARD_MESSAGE: str = "List at least one hazard."
 NO_KIND_MESSAGE: str = "Pick a control kind."
 HIGHER_AFTER_MESSAGE: str = "Controls cannot make the after risk higher than before."
 NO_CONTROLS_WARNING: str = "No controls: you'll be told not to start."
+STOP_ANSWER_WARNING: str = "You answered No: you'll be told not to start."
 
 
 class RatingChoice(BaseModel):
@@ -76,6 +80,8 @@ class Take5Draft(BaseModel):
         worker_name: Who is doing the Take 5.
         job: What the job is.
         location: Where the job is.
+        answers: The answers picked so far, by question ID. A question with no
+            answer is left out.
         hazards: The hazards, in the order the worker listed them.
         fixes: The ID of the saved Take 5 this one fixes, or None for a fresh one.
     """
@@ -85,6 +91,7 @@ class Take5Draft(BaseModel):
     worker_name: str = ""
     job: str = ""
     location: str = ""
+    answers: Mapping[str, Answer] = {}
     hazards: tuple[HazardDraft, ...] = ()
     fixes: UUID | None = None
 
@@ -153,6 +160,7 @@ def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
         ("location", draft.location),
     ):
         _required_text(value, path, errors)
+    answers: dict[str, Answer] = _answers(draft.answers, template.questions, errors)
     if not draft.hazards:
         errors.append(FieldError(path="hazards", message=NO_HAZARD_MESSAGE))
     hazards: list[Hazard] = []
@@ -166,17 +174,44 @@ def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
         if hazard is not None:
             hazards.append(hazard)
     assessment: Take5 | None = (
-        None if errors else Take5(template=template, hazards=tuple(hazards))
+        None
+        if errors
+        else Take5(template=template, answers=answers, hazards=tuple(hazards))
     )
     return DraftCheck(
         errors=tuple(errors),
-        warnings=_warnings(draft),
+        warnings=(
+            *_stop_answer_warnings(draft, template),
+            *_no_controls_warnings(draft),
+        ),
         assessment=assessment,
         can_submit=not errors,
     )
 
 
-def _warnings(draft: Take5Draft) -> tuple[FieldWarning, ...]:
+def _stop_answer_warnings(
+    draft: Take5Draft,
+    template: Take5Template,
+) -> tuple[FieldWarning, ...]:
+    """Warn about each stop question answered No, which will mean Don't start yet (V1).
+
+    Args:
+        draft: The worker's answers so far.
+        template: The template the draft is filled in on.
+
+    Returns:
+        One warning for each stop question answered No, on its `answers` path, in the
+        card's order.
+    """
+    return tuple(
+        FieldWarning(path=f"answers.{question.id}", message=STOP_ANSWER_WARNING)
+        for question in template.questions
+        if question.role is QuestionRole.STOP
+        and draft.answers.get(question.id) is Answer.NO
+    )
+
+
+def _no_controls_warnings(draft: Take5Draft) -> tuple[FieldWarning, ...]:
     """Warn about each hazard with no controls, which will mean Don't start yet (V2).
 
     Args:
@@ -190,6 +225,36 @@ def _warnings(draft: Take5Draft) -> tuple[FieldWarning, ...]:
         for index, hazard in enumerate(draft.hazards)
         if not hazard.controls
     )
+
+
+def _answers(
+    picked: Mapping[str, Answer],
+    questions: tuple[Question, ...],
+    errors: list[FieldError],
+) -> dict[str, Answer]:
+    """Check that every question on the card has an answer.
+
+    An answer to a question the card doesn't ask is left out, so it is never saved.
+
+    Args:
+        picked: The answers the worker picked, by question ID.
+        questions: The card's questions.
+        errors: Where to add an error, at `answers.<question ID>`, for each question
+            with no answer.
+
+    Returns:
+        The answers to the card's questions, in the card's order.
+    """
+    answers: dict[str, Answer] = {}
+    for question in questions:
+        answer: Answer | None = picked.get(question.id)
+        if answer is None:
+            errors.append(
+                FieldError(path=f"answers.{question.id}", message=NO_ANSWER_MESSAGE),
+            )
+        else:
+            answers[question.id] = answer
+    return answers
 
 
 def _hazard(

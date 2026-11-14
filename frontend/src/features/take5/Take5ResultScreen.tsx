@@ -5,6 +5,7 @@ import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
 import { RiskBadge } from "../../components/RiskBadge";
 import { Screen } from "../../components/Screen";
+import { AnswerSummary } from "./AnswerSummary";
 import { FixPanel } from "./FixPanel";
 import { HazardSummary } from "./HazardSummary";
 import { VerdictPanel } from "./VerdictPanel";
@@ -97,6 +98,10 @@ export function Take5ResultScreen({
             </div>
           </dl>
         </Card>
+        <AnswerSummary
+          questions={take5.template.questions}
+          answers={take5.answers}
+        />
         {take5.hazards.map((hazard, index) => (
           <HazardSummary key={index} hazard={hazard} number={index + 1} />
         ))}

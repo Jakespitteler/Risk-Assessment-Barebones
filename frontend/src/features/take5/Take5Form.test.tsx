@@ -38,7 +38,7 @@ function FormAt({ start }: { start: Stage }) {
 function storeDraft(draft = COMPLETE_DRAFT) {
   sessionStorage.setItem(
     "take5-draft",
-    JSON.stringify({ version: 1, draft, submissionId: SAVED.take5.id }),
+    JSON.stringify({ version: 2, draft, submissionId: SAVED.take5.id }),
   );
 }
 
@@ -79,6 +79,24 @@ it("starts with nothing filled in but the remembered name, and the heading focus
   );
 });
 
+it("starts afresh instead of loading a draft kept before the card had questions", () => {
+  // JSON leaves out an undefined field, so this is the old shape, with no answers.
+  const oldDraft = { ...COMPLETE_DRAFT, answers: undefined };
+  sessionStorage.setItem(
+    "take5-draft",
+    JSON.stringify({
+      version: 1,
+      draft: oldDraft,
+      submissionId: SAVED.take5.id,
+    }),
+  );
+  stubApi({});
+  renderWithApi(<FormAt start={{ page: "job" }} />);
+  expect(
+    screen.getByLabelText<HTMLTextAreaElement>("What is the job?").value,
+  ).toBe("");
+});
+
 it("keeps the worker on a page with gaps, shows them, and focuses the first", async () => {
   stubApi({
     "POST /api/take5s/check": {
@@ -112,7 +130,7 @@ it("moves on when the page has no gaps", async () => {
   renderWithApi(<FormAt start={{ page: "job" }} />);
   fireEvent.click(screen.getByRole("button", { name: "Continue" }));
   expect(
-    await screen.findByRole("heading", { name: "What could hurt someone?" }),
+    await screen.findByRole("heading", { name: "Think it through" }),
   ).toBeTruthy();
 });
 
@@ -125,7 +143,7 @@ it("moves on when the page is submitted, as Enter in a box does", async () => {
   );
   fireEvent.submit(location.form as HTMLFormElement);
   expect(
-    await screen.findByRole("heading", { name: "What could hurt someone?" }),
+    await screen.findByRole("heading", { name: "Think it through" }),
   ).toBeTruthy();
 });
 
@@ -204,7 +222,7 @@ it("moves on with no signal, even when the phone says it is offline", async () =
   renderWithApi(<FormAt start={{ page: "job" }} />);
   fireEvent.click(screen.getByRole("button", { name: "Continue" }));
   expect(
-    await screen.findByRole("heading", { name: "What could hurt someone?" }),
+    await screen.findByRole("heading", { name: "Think it through" }),
   ).toBeTruthy();
 });
 
@@ -298,7 +316,7 @@ it("focuses the heading on returning to a page that once had errors", async () =
   });
   fireEvent.change(job, { target: { value: "Change tyre" } });
   fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-  await screen.findByRole("heading", { name: "What could hurt someone?" });
+  await screen.findByRole("heading", { name: "Think it through" });
   fireEvent.click(screen.getByRole("button", { name: "Back" }));
   await waitFor(() => {
     expect(document.activeElement).toBe(
@@ -403,4 +421,136 @@ it("lets the worker finish with a warning showing", async () => {
   await waitFor(() => {
     expect(onSaved).toHaveBeenCalledWith(SAVED.take5.id);
   });
+});
+
+it("a Yes to a hazard question adds a hazard, then comes back to the questions", async () => {
+  storeDraft({ ...COMPLETE_DRAFT, answers: { keys: "Yes" } });
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  const dogs = screen.getByRole("group", { name: "Are there dogs on site?" });
+  expect(screen.queryByText("Make sure it’s on your list.")).toBeNull();
+  fireEvent.click(within(dogs).getByRole("radio", { name: "Yes" }));
+  expect(screen.getByText("Make sure it’s on your list.")).toBeTruthy();
+
+  fireEvent.click(screen.getByRole("button", { name: "Add a hazard" }));
+
+  expect(
+    await screen.findByRole("heading", { name: "What could hurt someone?" }),
+  ).toBeTruthy();
+  const newHazard = screen.getByLabelText<HTMLTextAreaElement>("Hazard 2");
+  await waitFor(() => {
+    expect(document.activeElement).toBe(newHazard);
+  });
+  fireEvent.change(newHazard, { target: { value: "Dog near the gate" } });
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+  expect(
+    await screen.findByRole("heading", { name: "Did you miss any?" }),
+  ).toBeTruthy();
+  expect(screen.getByText("Dog near the gate")).toBeTruthy();
+  expect(screen.getByText("Added to your list")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Add a hazard" })).toBeNull();
+  expect(
+    within(
+      screen.getByRole("group", { name: "Are there dogs on site?" }),
+    ).getByRole<HTMLInputElement>("radio", { name: "Yes" }).checked,
+  ).toBe(true);
+});
+
+it("still shows a hazard was added from a Yes after a reload", async () => {
+  storeDraft({ ...COMPLETE_DRAFT, answers: { keys: "Yes", dogs: "Yes" } });
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  const beforeReload = renderWithApi(<FormAt start={{ page: "check" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Add a hazard" }));
+  const newHazard = await screen.findByLabelText("Hazard 2");
+  fireEvent.change(newHazard, { target: { value: "Dog near the gate" } });
+  beforeReload.unmount();
+
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  expect(screen.getByText("Dog near the gate")).toBeTruthy();
+  expect(screen.getByText("Added to your list")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Add another" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Add a hazard" })).toBeNull();
+});
+
+it("reminds again about a Yes once the hazard added from it is removed", async () => {
+  storeDraft({ ...COMPLETE_DRAFT, answers: { keys: "Yes", dogs: "Yes" } });
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Add a hazard" }));
+  await screen.findByLabelText("Hazard 2");
+
+  fireEvent.click(screen.getByRole("button", { name: "Remove hazard 2" }));
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+  expect(
+    await screen.findByRole("heading", { name: "Did you miss any?" }),
+  ).toBeTruthy();
+  expect(screen.queryByText("Added to your list")).toBeNull();
+  expect(screen.getByText("Make sure it’s on your list.")).toBeTruthy();
+});
+
+it("shows the hazard as added again when its removal is undone", async () => {
+  storeDraft({ ...COMPLETE_DRAFT, answers: { keys: "Yes", dogs: "Yes" } });
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Add a hazard" }));
+  const newHazard = await screen.findByLabelText("Hazard 2");
+  fireEvent.change(newHazard, { target: { value: "Dog near the gate" } });
+
+  fireEvent.click(screen.getByRole("button", { name: "Remove hazard 2" }));
+  fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+  expect(
+    await screen.findByRole("heading", { name: "Did you miss any?" }),
+  ).toBeTruthy();
+  expect(screen.getByText("Added to your list")).toBeTruthy();
+});
+
+it("sends an unanswered question found at the review to the page for its role", async () => {
+  storeDraft({ ...COMPLETE_DRAFT, answers: { keys: "Yes" } });
+  stubApi({
+    "POST /api/take5s/check": {
+      status: 200,
+      body: {
+        errors: [{ path: "answers.dogs", message: "Pick Yes, No or N/A." }],
+        warnings: [],
+        assessment: null,
+        can_submit: false,
+      },
+    },
+  });
+  renderWithApi(<FormAt start={{ page: "review" }} />);
+  expect(
+    await screen.findByRole("heading", { name: "Did you miss any?" }),
+  ).toBeTruthy();
+  expect(screen.getByText("Pick Yes, No or N/A.")).toBeTruthy();
+});
+
+it("sends an empty hazard left on the list back there from the questions", async () => {
+  const blank = { ...HAZARD_DRAFT, description: "" };
+  storeDraft({ ...COMPLETE_DRAFT, hazards: [HAZARD_DRAFT, blank] });
+  stubApi({
+    "POST /api/take5s/check": {
+      status: 200,
+      body: {
+        errors: [
+          { path: "hazards.1.description", message: "Fill in this field." },
+        ],
+        warnings: [],
+        assessment: null,
+        can_submit: false,
+      },
+    },
+  });
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+  expect(
+    await screen.findByRole("heading", { name: "What could hurt someone?" }),
+  ).toBeTruthy();
+  const emptyHazard = screen.getByLabelText("Hazard 2");
+  await waitFor(() => {
+    expect(document.activeElement).toBe(emptyHazard);
+  });
+  expect(screen.getByText("Fill in this field.")).toBeTruthy();
 });

@@ -3,6 +3,7 @@
 import pytest
 from pydantic import BaseModel
 
+from risk_assessment.domain.questions import Answer
 from risk_assessment.domain.risk import RiskCell, RiskMatrix, RiskRating, rate
 from risk_assessment.domain.take5.take5 import Hazard, Take5
 from risk_assessment.domain.take5.template import (
@@ -10,13 +11,14 @@ from risk_assessment.domain.take5.template import (
     BOOKLET_TEMPLATE,
     Take5Template,
 )
-from tests.samples import BARRICADE, sample_hazard
+from tests.samples import BARRICADE, sample_answers, sample_hazard
 
 
 def test_example_11_the_highest_after_rating_counts() -> None:
     """After scores 5 and 9 give the whole Take 5 a rating of 9 Moderate."""
     take5 = Take5(
         template=BOOKLET_TEMPLATE,
+        answers=sample_answers(),
         hazards=(
             sample_hazard(("Possible", "Minor"), ("Unlikely", "Minor")),
             sample_hazard(("Possible", "Moderate"), ("Unlikely", "Moderate")),
@@ -30,6 +32,7 @@ def test_example_12_one_high_after_rating_needs_a_jha() -> None:
     """One hazard remaining at 12 High is enough to need a JHA."""
     take5 = Take5(
         template=BOOKLET_TEMPLATE,
+        answers=sample_answers(),
         hazards=(
             sample_hazard(("Possible", "Minor"), ("Unlikely", "Minor")),
             sample_hazard(("Likely", "Minor"), ("Likely", "Minor")),
@@ -43,6 +46,7 @@ def test_example_13_after_not_before_decides_the_jha() -> None:
     """Reducing 18 Extreme to 10 High puts the Take 5 below the JHA threshold."""
     take5 = Take5(
         template=BOOKLET_TEMPLATE,
+        answers=sample_answers(),
         hazards=(sample_hazard(("Possible", "Major"), ("Rare", "Major")),),
     )
     assert take5.rating == rate(BOOKLET_MATRIX, "Rare", "Major")
@@ -52,7 +56,7 @@ def test_example_13_after_not_before_decides_the_jha() -> None:
 def test_example_14_no_hazards_is_refused() -> None:
     """A Take 5 must contain at least one hazard, so it always has a rating."""
     with pytest.raises(ValueError, match="at least 1 item"):
-        Take5(template=BOOKLET_TEMPLATE, hazards=())
+        Take5(template=BOOKLET_TEMPLATE, answers=sample_answers(), hazards=())
 
 
 def test_example_15_controls_cannot_raise_the_score() -> None:
@@ -65,6 +69,7 @@ def test_example_16_controls_can_leave_the_score_unchanged() -> None:
     """An unchanged score of 8 Moderate is valid and needs no JHA."""
     take5 = Take5(
         template=BOOKLET_TEMPLATE,
+        answers=sample_answers(),
         hazards=(sample_hazard(("Possible", "Minor"), ("Possible", "Minor")),),
     )
     assert take5.rating == rate(BOOKLET_MATRIX, "Possible", "Minor")
@@ -80,7 +85,11 @@ def test_example_17_no_controls_reuses_the_before_rating() -> None:
         controls=(),
         after=before,
     )
-    take5 = Take5(template=BOOKLET_TEMPLATE, hazards=(hazard,))
+    take5 = Take5(
+        template=BOOKLET_TEMPLATE,
+        answers=sample_answers(),
+        hazards=(hazard,),
+    )
     assert hazard.after is before
     assert take5.rating == before
     assert not take5.needs_jha
@@ -101,6 +110,7 @@ def test_the_highest_before_hazard_need_not_have_the_highest_after() -> None:
     """Choose the highest residual score, not the hazard that started worst."""
     take5 = Take5(
         template=BOOKLET_TEMPLATE,
+        answers=sample_answers(),
         hazards=(
             sample_hazard(("Possible", "Major"), ("Unlikely", "Minor")),
             sample_hazard(("Possible", "Moderate"), ("Unlikely", "Moderate")),
@@ -112,7 +122,11 @@ def test_the_highest_before_hazard_need_not_have_the_highest_after() -> None:
 def test_scoring_models_are_frozen() -> None:
     """A validated assessment and its nested values cannot be assigned new fields."""
     hazard: Hazard = sample_hazard(("Possible", "Minor"), ("Unlikely", "Minor"))
-    take5 = Take5(template=BOOKLET_TEMPLATE, hazards=(hazard,))
+    take5 = Take5(
+        template=BOOKLET_TEMPLATE,
+        answers=sample_answers(),
+        hazards=(hazard,),
+    )
     values: tuple[tuple[BaseModel, str], ...] = (
         (take5, "hazards"),
         (hazard, "after"),
@@ -170,6 +184,7 @@ def test_a_supplied_rating_must_match_its_template(score: int, band: str) -> Non
     with pytest.raises(ValueError, match="must match the template's matrix"):
         Take5(
             template=BOOKLET_TEMPLATE,
+            answers=sample_answers(),
             hazards=(
                 Hazard(
                     description="Example hazard",
@@ -179,3 +194,31 @@ def test_a_supplied_rating_must_match_its_template(score: int, band: str) -> Non
                 ),
             ),
         )
+
+
+def test_a_take5_needs_an_answer_to_every_question_on_its_card() -> None:
+    """A missing answer can't be rated, since the verdict needs every answer."""
+    answers: dict[str, Answer] = sample_answers()
+    del answers["plan"]
+
+    with pytest.raises(ValueError, match="needs exactly one answer"):
+        Take5(template=BOOKLET_TEMPLATE, answers=answers, hazards=(sample_hazard(),))
+
+
+def test_a_take5_refuses_an_answer_to_a_question_its_card_does_not_ask() -> None:
+    """An answer to a made-up question is never kept."""
+    with pytest.raises(ValueError, match="needs exactly one answer"):
+        Take5(
+            template=BOOKLET_TEMPLATE,
+            answers=sample_answers() | {"made_up": Answer.YES},
+            hazards=(sample_hazard(),),
+        )
+
+
+def test_a_take5_on_a_card_with_no_questions_has_no_answers() -> None:
+    """A Take 5 saved before the app asked questions still opens."""
+    old_card: Take5Template = BOOKLET_TEMPLATE.model_copy(update={"questions": ()})
+
+    take5 = Take5(template=old_card, hazards=(sample_hazard(),))
+
+    assert take5.answers == {}

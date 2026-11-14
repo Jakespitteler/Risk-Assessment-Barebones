@@ -101,6 +101,7 @@ class Take5Service:
         now: datetime = datetime.now(UTC)
         submitted = SavedTake5(
             template=template,
+            answers=check.assessment.answers,
             hazards=check.assessment.hazards,
             id=submission_id,
             created_at=now,

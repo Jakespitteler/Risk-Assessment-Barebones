@@ -3,6 +3,7 @@ import {
   CONTROL,
   HAZARD,
   addControl,
+  answerThinkThrough,
   capture,
   fillJob,
   fillOneHazard,
@@ -21,6 +22,7 @@ test("a Don't start yet is fixed in a new Take 5, and the first stays as it was"
   // A hazard with no controls: the review warns, and Finish still saves it.
   await page.goto("/");
   await fillJob(page);
+  await answerThinkThrough(page);
   await fillOneHazard(page);
   await pick(page, "Possible", "Minor");
   await next(page);
