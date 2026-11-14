@@ -3,8 +3,8 @@
 A Take 5 app for mine-site workers, built by a human with AI coding agents (Claude Code and ChatGPT) working in the
 same repo.
 
-The app is the confidential property of [OWNER'S EXACT LEGAL NAME]. All rights are reserved: nobody may copy, use
-or share it without the owner's written permission. See [LICENSE](LICENSE).
+The app is the confidential property of Jake Spitteler. All rights are reserved: nobody may copy, use or share it
+without the owner's written permission. See [LICENSE](LICENSE).
 
 - How agents work here: [AGENTS.md](AGENTS.md)
 - What the app does: [docs/spec.md](docs/spec.md)

@@ -3,6 +3,7 @@ name = "risk-assessment"
 version = "0.1.0"
 description = "The Take 5 app's back end: every rule and all the data."
 requires-python = ">=3.13"
+license = "LicenseRef-Proprietary"
 dependencies = [
     "fastapi>=0.162",
     "pydantic>=2.14",

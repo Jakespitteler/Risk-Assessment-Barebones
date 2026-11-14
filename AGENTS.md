@@ -39,7 +39,10 @@ Run each from the folder shown.
 
 1. Pick the next `todo` task in the order in `docs/tasks/README.md`, or ask the human to create one.
 2. Claim it: set `status: in-progress` and `owner: <claude|chatgpt|human>` and commit that first.
-3. Work on a branch named `<owner>/<task-id>-<short-name>`. Never commit directly to `main`.
+3. Work on a branch named `<owner>/<task-id>-<short-name>`. If your tool can only push to a branch it names
+   (a Claude cloud thread uses `claude/project-thread-<id>`), use that one. Either way, write the branch in the
+   task file's `branch:` line. When other pull requests are open, start from the newest one's branch and target
+   it, so the PRs stack. Never commit directly to `main`.
 4. Keep the change to the task's scope. Note unrelated problems in the task file instead of fixing them.
 5. Done means: acceptance criteria met, tests added, all checks pass.
 6. Set `status: review`, open a PR using the template, and summarise what changed and how it was tested.
