@@ -25,7 +25,9 @@ Newest first. One short entry per non-obvious decision.
 - Decision: When other pull requests are open, a new task's branch starts from the newest one's branch and its
   pull request targets that branch. An agent whose tool can only push to a branch it names (a Claude cloud
   thread's `claude/project-thread-<id>`) uses that branch instead of `<owner>/<task-id>-<short-name>`, and
-  writes it in the task file. Stacked pull requests are merged oldest first, each onto `main`.
+  writes it in the task file. Stacked pull requests are merged oldest first, each onto `main`: after a merge,
+  the next one's base changes to `main` before the merged branch is deleted. When PR 18's branch was deleted
+  first, GitHub closed PR 19 instead of moving it, and PR 20 then merged into PR 19's branch, not `main`.
 - Why: Stacked pull requests keep each one small while the next task builds on unmerged work. Cloud threads
   cannot push any other branch name, so the old rule could never be followed there.
 - Alternatives considered: Every branch from `main` (later pull requests conflict with or repeat earlier ones).

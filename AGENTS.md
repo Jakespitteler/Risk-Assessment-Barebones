@@ -43,8 +43,8 @@ Run each from the folder shown.
 3. Work on a branch named `<owner>/<task-id>-<short-name>`. If your tool can only push to a branch it names
    (a Claude cloud thread uses `claude/project-thread-<id>`), use that one. Either way, write the branch in the
    task file's `branch:` line. When other pull requests are open, start from the newest one's branch and target
-   it, so the PRs stack. The human merges them oldest first; before merging the next one, its base must be `main`
-   (GitHub changes it by itself when the merged branch is deleted). Never commit directly to `main`.
+   it, so the PRs stack. The human merges them oldest first. After each merge, change the next PR's base to
+   `main` before the merged branch is deleted: deleting it can close the next PR. Never commit directly to `main`.
 4. Keep the change to the task's scope. Note unrelated problems in the task file instead of fixing them.
 5. Done means: acceptance criteria met, tests added, all checks pass.
 6. Set `status: review`, open a PR using the template, and summarise what changed and how it was tested.
