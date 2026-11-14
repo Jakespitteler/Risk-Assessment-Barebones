@@ -16,4 +16,7 @@ Recommended by Claude on 2026-11-13, agreed by Jake the same day.
 8. **0013, glossary and rule tracing.** Last, because its test fails for any spec rule with no test yet, and
    most of those rules arrive in 0005 to 0008.
 
+Task 0020 (Enter does what Continue does) is a small change Jake asked for while testing, done outside this
+order.
+
 When a task is added, or the human changes the order, update this list in the same pull request.

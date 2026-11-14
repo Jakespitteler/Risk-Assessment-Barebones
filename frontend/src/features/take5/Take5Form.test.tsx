@@ -126,7 +126,7 @@ it("moves on when the page is submitted, as Enter in a box does", async () => {
   const location = screen.getByLabelText<HTMLInputElement>(
     "Where will you do it?",
   );
-  fireEvent.submit(location);
+  fireEvent.submit(location.form as HTMLFormElement);
   expect(
     await screen.findByRole("heading", { name: "What could hurt someone?" }),
   ).toBeTruthy();

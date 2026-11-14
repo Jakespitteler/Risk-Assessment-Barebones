@@ -145,6 +145,43 @@ test("Enter in a one-line box continues; in a bigger box it starts a new line", 
   await page.getByLabel("Where will you do it?").fill("Example workshop");
   await page.getByLabel("Where will you do it?").press("Enter");
   await expect(heading(page, "What could hurt someone?")).toBeVisible();
+  await page.getByLabel("Hazard 1", { exact: true }).fill(HAZARD);
+  await page.getByLabel("Hazard 1", { exact: true }).press("Enter");
+  await expect(heading(page, "What could hurt someone?")).toBeVisible();
+  await next(page);
+  await pick(page, "Possible", "Minor");
+  await page.getByRole("radio", { name: "Minor" }).press("Enter");
+  await expect(heading(page, "What will stop it?")).toBeVisible();
+});
+
+test("Enter while Continue is checking sends one check and moves on once", async ({
+  page,
+}) => {
+  let checks = 0;
+  let release: () => void = () => {
+    throw new Error("The gate is not set up yet.");
+  };
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/take5s/check", async (route) => {
+    checks++;
+    await gate;
+    await route.continue();
+  });
+  await page.goto("/");
+  await page.getByLabel("Your name", { exact: true }).fill("Sam Example");
+  await page.getByLabel("What is the job?").fill("Change front tyre on LV12");
+  const location = page.getByLabel("Where will you do it?");
+  await location.fill("Example workshop");
+  await location.press("Enter");
+  await expect(
+    page.getByRole("button", { name: "Checking…", exact: true }),
+  ).toBeDisabled();
+  await location.press("Enter");
+  release();
+  await expect(heading(page, "What could hurt someone?")).toBeVisible();
+  expect(checks).toBe(1);
 });
 
 test("a gap found at the review is fixed in place, then back to the review", async ({

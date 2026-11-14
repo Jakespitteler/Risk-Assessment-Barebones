@@ -334,6 +334,8 @@ The first four screens of the core workflow, saved when the worker submits.
   unsaved answers.
 - Acceptance: Continue asks the back end about that page and names its gaps there, before moving on. A gap found
   at the review sends the worker to it, and back to the review once it is filled in.
+- Acceptance: Enter in a one-line box or on a picked rating does what Continue does. Enter in a bigger box, such
+  as the job, a hazard or a control, starts a new line. Enter never presses Finish.
 - Acceptance: removing a hazard or a control can be undone.
 - Acceptance: likelihood, consequence and control choices offer expandable guidance from the back end, using
   the approved card wording. Guidance never supplies a hazard or control answer for the worker.
