@@ -1,9 +1,9 @@
 ---
 id: 0015
 title: Change the licence so the app belongs to Talison Lithium and nobody else may copy or use it
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/project-thread-nidbht
 ---
 
 ## Goal
