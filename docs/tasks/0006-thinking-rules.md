@@ -21,7 +21,7 @@ controls for a serious hazard, and a real job description.
 - [x] The weak-controls question appears when T3 applies, must be answered or met with a strong control, and its
   answer is saved and shown on the result screen.
 - [x] A Playwright test covers each rule.
-- [ ] Phone-width (360 px) screenshots of every new or changed screen are attached to the PR.
+- [x] Phone-width (360 px) screenshots of every new or changed screen are attached to the PR.
 - [x] All checks pass.
 
 ## Out of scope
@@ -41,9 +41,11 @@ The work order now names 0018 as the next task after this stack is reviewed and 
 - Part 2: PR #26 (`chatgpt/0006-thinking-api`), draft checking and saved answers, including examples 35 and 36.
   An answer remains saved after a strong control is added, so an edit never discards the worker's words.
   It never changes the verdict.
-- Part 3: `chatgpt/0006-thinking-ui`, the phone prompt, saved summary and T1 navigation guard. The last
+- Part 3: PR #28 (`chatgpt/0006-thinking-ui`), the phone prompt, saved summary and T1 navigation guard. The last
   server question stays visible during rechecking to keep focus while typing; Finish never uses an old check.
   A written answer also stays visible if an unfinished new control temporarily removes the server's question.
   Existing tab drafts keep version 2 because the new answer has an empty default.
 - Six new Playwright tests cover T1 to T4, including offline navigation, reload, undo and saving/reopening.
   Seven 360 px screenshots were inspected. CI uploads them as `phone-screenshots`, rather than committing them.
+  PR #28 links to the uploaded artifact. Test the complete app from its branch; the middle API branch does
+  not yet have the answer box for T3.
