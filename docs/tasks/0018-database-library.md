@@ -229,6 +229,5 @@ Best done before 0007, because the saved Take 5 list is the first query beyond "
 cheaper to change storage before more code depends on it. Any switch touches only `storage/` and its tests, because
 the services and routes only know `Take5Repository`.
 
-The recommendation is recorded in `docs/decisions.md` as proposed by Claude. Jake confirms it by merging this
-task's pull request, or chooses another option in the thread, and the decision, this file and the order of work
-are changed to match before he merges.
+Jake chose the recommendation on 2026-11-14 ("we can stick with SQLite 3 for now"), and it is recorded in
+`docs/decisions.md`. No follow-up task is needed until one of the triggers above is planned.

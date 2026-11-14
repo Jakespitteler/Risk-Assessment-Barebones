@@ -16,8 +16,7 @@ Newest first. One short entry per non-obvious decision.
   session to learn, but columns are typed `Any`). The SQLAlchemy ORM now (best typed, but more to learn for no
   current gain). SQLModel (still 0.0.x, needs type workarounds, and invites joining the domain model to the table).
   The full comparison is in `docs/tasks/0018-database-library.md`.
-- Decided by: proposed by Claude in task 0018; Jake confirms it by merging that task's pull request, or picks
-  another option first.
+- Decided by: human (Jake, 2026-11-14, in chat), on Claude's proposal in task 0018.
 
 ## 2026-11-14: A T3 reason is saved only while T3 asks (task 0006 review)
 
