@@ -1,7 +1,7 @@
 ---
 id: 0020
 title: Pressing Enter on a Take 5 page does what Continue does
-status: review
+status: done
 owner: claude
 branch: claude/project-thread-iodiic
 ---
@@ -45,5 +45,6 @@ hazards or controls pages, where every box is a bigger one.
 - Enter on a picked rating also continues, because the browser submits a form from a radio button too.
 - Enter only presses a Continue that is enabled, so it can't start a second check while one is running.
 - jsdom can't press Enter in a form, so the unit test submits the form and the Playwright test presses Enter.
-- Task number: PR 16 holds 0015 to 0018 and PR 17 adds 0019, so this is 0020.
-- PR 17 (task 0010) also changes `Take5Form.tsx`, in other lines. Whichever merges second needs a small merge.
+- Task number: PRs 16 and 17 added tasks 0015 to 0019, so this is 0020.
+- PR 17 (task 0010) also changed `Take5Form.tsx`, in other lines. It merged first, and main merged into this
+  branch without a conflict.
