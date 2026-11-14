@@ -1,9 +1,9 @@
 ---
 id: 0016
 title: Share the back end's test set-up through conftest.py files
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/project-thread-a5tkiz
 ---
 
 ## Goal
