@@ -39,6 +39,11 @@ Known templates that fit, best first:
 3. **Business Source License 1.1.** Allows non-production use and turns into an open source licence after a set
    date. Not a fit, because the app would become open later.
 
+Progress (2026-11-14, claude): `LICENSE` now holds template 1, the "All rights reserved" notice, and the README
+says who owns the app. Both have `[OWNER'S EXACT LEGAL NAME]` where the name goes, so the pull request stays a
+draft until question 1 is answered. Its "except" sentence allows anyone with written permission, which is the
+recommended answer to question 3. Nothing is recorded in `docs/decisions.md` yet.
+
 Questions for Jake (he answers in chat, and the thread updates this file):
 
 1. What is the owner's exact legal name, as it appears on Talison's documents (for example "Talison Lithium Pty
