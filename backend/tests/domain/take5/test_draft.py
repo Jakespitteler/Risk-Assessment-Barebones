@@ -92,7 +92,8 @@ def test_an_empty_draft_names_every_missing_field_and_nothing_else() -> None:
 def test_example_14_no_hazards_cannot_be_submitted() -> None:
     """Every Take 5 has at least one hazard (R5)."""
     check: DraftCheck = check_draft(
-        _draft().model_copy(update={"hazards": ()}), BOOKLET_TEMPLATE
+        _draft().model_copy(update={"hazards": ()}),
+        BOOKLET_TEMPLATE,
     )
 
     assert check.errors == (FieldError(path="hazards", message=NO_HAZARD_MESSAGE),)
@@ -102,7 +103,8 @@ def test_example_14_no_hazards_cannot_be_submitted() -> None:
 def test_an_answer_of_only_spaces_is_blank(field: str) -> None:
     """Spaces alone don't fill in a field."""
     check: DraftCheck = check_draft(
-        _draft().model_copy(update={field: "   "}), BOOKLET_TEMPLATE
+        _draft().model_copy(update={field: "   "}),
+        BOOKLET_TEMPLATE,
     )
 
     assert check.errors == (FieldError(path=field, message=FILL_IN_MESSAGE),)
@@ -111,7 +113,7 @@ def test_an_answer_of_only_spaces_is_blank(field: str) -> None:
 def test_a_half_picked_rating_names_the_missing_half() -> None:
     """A likelihood without a consequence is not a rating, so no score is shown."""
     hazard: HazardDraft = _hazard().model_copy(
-        update={"before": RatingChoice(likelihood="Possible")}
+        update={"before": RatingChoice(likelihood="Possible")},
     )
 
     check: DraftCheck = check_draft(_draft(hazard), BOOKLET_TEMPLATE)
@@ -124,7 +126,7 @@ def test_a_half_picked_rating_names_the_missing_half() -> None:
 def test_a_level_that_is_not_on_the_card_is_not_picked() -> None:
     """The phone can't send a level the matrix doesn't have."""
     hazard: HazardDraft = _hazard().model_copy(
-        update={"after": RatingChoice(likelihood="Invented", consequence="Minor")}
+        update={"after": RatingChoice(likelihood="Invented", consequence="Minor")},
     )
 
     check: DraftCheck = check_draft(_draft(hazard), BOOKLET_TEMPLATE)
@@ -140,7 +142,7 @@ def test_a_control_needs_its_wording_and_its_kind() -> None:
         controls=(
             ControlDraft(description=" ", kind=ControlKind.PPE),
             ControlDraft(description="Gloves"),
-        )
+        ),
     )
 
     check: DraftCheck = check_draft(_draft(hazard), BOOKLET_TEMPLATE)
@@ -154,7 +156,8 @@ def test_a_control_needs_its_wording_and_its_kind() -> None:
 def test_example_15_controls_cannot_raise_the_score() -> None:
     """Unlikely / Minor (5) then Possible / Minor (8) can't be submitted (R6)."""
     hazard: HazardDraft = _hazard(
-        before=("Unlikely", "Minor"), after=("Possible", "Minor")
+        before=("Unlikely", "Minor"),
+        after=("Possible", "Minor"),
     )
 
     check: DraftCheck = check_draft(_draft(hazard), BOOKLET_TEMPLATE)
@@ -180,7 +183,7 @@ def test_example_16_an_unchanged_score_is_allowed() -> None:
 def test_example_17_with_no_controls_after_is_the_before_rating() -> None:
     """With no controls the after choice is ignored, so it is not rated again (R6)."""
     hazard: HazardDraft = _hazard(controls=()).model_copy(
-        update={"after": RatingChoice()}
+        update={"after": RatingChoice()},
     )
 
     check: DraftCheck = check_draft(_draft(hazard), BOOKLET_TEMPLATE)
@@ -197,7 +200,7 @@ def test_example_17_with_no_controls_after_is_the_before_rating() -> None:
 def test_example_17_a_hazard_with_no_controls_is_warned_about() -> None:
     """The warning says the job will be stopped (V2), and it never blocks submitting."""
     hazard: HazardDraft = _hazard(controls=()).model_copy(
-        update={"after": RatingChoice()}
+        update={"after": RatingChoice()},
     )
 
     check: DraftCheck = check_draft(_draft(hazard), BOOKLET_TEMPLATE)

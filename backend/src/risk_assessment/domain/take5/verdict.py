@@ -38,6 +38,6 @@ def verdict(take5: Take5) -> Verdict:
         reasons.append(
             f"The risk is {take5.rating.band} ({take5.rating.score}). "
             f"At {take5.template.matrix.jha_threshold} or more you need a JHA before "
-            "you start. Talk to your supervisor."
+            "you start. Talk to your supervisor.",
         )
     return Verdict(can_start=not reasons, reasons=tuple(reasons))

@@ -48,7 +48,7 @@ class RiskMatrix(BaseModel):
         if not (rows_match and columns_match):
             raise ValueError(
                 "A risk matrix needs one row per likelihood"
-                " and one cell per consequence."
+                " and one cell per consequence.",
             )
         return self
 
@@ -90,7 +90,10 @@ def rate(matrix: RiskMatrix, likelihood: str, consequence: str) -> RiskRating:
     column: int = _position_on_scale(matrix.consequences, consequence, "consequence")
     cell: RiskCell = matrix.cells[row][column]
     return RiskRating(
-        likelihood=likelihood, consequence=consequence, score=cell.score, band=cell.band
+        likelihood=likelihood,
+        consequence=consequence,
+        score=cell.score,
+        band=cell.band,
     )
 
 

@@ -28,7 +28,7 @@ class Hazard(BaseModel):
         """Refuse higher after risk, or any changed rating without controls (R6)."""
         if not self.controls and self.after != self.before:
             raise ValueError(
-                "Without controls, the after rating must be the before rating."
+                "Without controls, the after rating must be the before rating.",
             )
         if self.after.score > self.before.score:
             raise ValueError("Controls cannot make the after risk higher than before.")
@@ -53,11 +53,13 @@ class Take5(BaseModel):
         for hazard in self.hazards:
             for rating in (hazard.before, hazard.after):
                 expected: RiskRating = rate(
-                    self.template.matrix, rating.likelihood, rating.consequence
+                    self.template.matrix,
+                    rating.likelihood,
+                    rating.consequence,
                 )
                 if rating != expected:
                     raise ValueError(
-                        "Every hazard rating must match the template's matrix."
+                        "Every hazard rating must match the template's matrix.",
                     )
         return self
 
@@ -65,7 +67,8 @@ class Take5(BaseModel):
     def rating(self) -> RiskRating:
         """Return the highest after rating across the hazards (R4, R5)."""
         return max(
-            (hazard.after for hazard in self.hazards), key=lambda rating: rating.score
+            (hazard.after for hazard in self.hazards),
+            key=lambda rating: rating.score,
         )
 
     @property

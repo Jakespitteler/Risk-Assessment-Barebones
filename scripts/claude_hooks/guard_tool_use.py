@@ -61,13 +61,13 @@ QUOTED_TEXT_PATTERN: re.Pattern[str] = re.compile(r"'[^'\n]*'|\"[^\"\n]*\"")
 SHELL_SEPARATOR_PATTERN: re.Pattern[str] = re.compile(r"&&|\|\||[;|&(){}`<>!\n]")
 GIT_PROGRAMS: frozenset[str] = frozenset({"git", "gh"})
 GIT_OPTIONS_WITH_A_VALUE: frozenset[str] = frozenset(
-    {"-C", "-c", "--git-dir", "--work-tree"}
+    {"-C", "-c", "--git-dir", "--work-tree"},
 )
 MAIN_NAMES: frozenset[str] = frozenset(
-    {PROTECTED_BRANCH, f"heads/{PROTECTED_BRANCH}", f"refs/heads/{PROTECTED_BRANCH}"}
+    {PROTECTED_BRANCH, f"heads/{PROTECTED_BRANCH}", f"refs/heads/{PROTECTED_BRANCH}"},
 )
 SUBCOMMANDS_THAT_CHANGE_A_BRANCH: frozenset[str] = frozenset(
-    {"commit", "merge", "cherry-pick", "revert", "am", "rebase", "push"}
+    {"commit", "merge", "cherry-pick", "revert", "am", "rebase", "push"},
 )
 # The spell checker skips option letters in a pattern and git's short form of --force.
 # cspell:ignore aqsv aqsvm forc
@@ -293,7 +293,9 @@ def reason_to_block_command(command: str, current_branch: str) -> str | None:
 
 
 def reason_to_block_tool_call(
-    tool_name: str, tool_input: Mapping[str, Any], current_branch: str
+    tool_name: str,
+    tool_input: Mapping[str, Any],
+    current_branch: str,
 ) -> str | None:
     """Decide whether a tool call must be blocked.
 
@@ -359,7 +361,9 @@ def main() -> int:
         current_branch_in(hook_input.get("cwd", "")) if needs_branch else ""
     )
     reason: str | None = reason_to_block_tool_call(
-        tool_name, tool_input, current_branch
+        tool_name,
+        tool_input,
+        current_branch,
     )
     if reason is None:
         return 0

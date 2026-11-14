@@ -32,14 +32,15 @@ def test_the_template_sends_the_templates_own_guidance_and_every_control_kind() 
     client = TestClient(create_app())
 
     template: TemplateResponse = TemplateResponse.model_validate(
-        client.get("/api/take5/template").json()
+        client.get("/api/take5/template").json(),
     )
 
     assert template.likelihood_guidance == BOOKLET_TEMPLATE.likelihood_guidance
     assert template.consequence_guidance == BOOKLET_TEMPLATE.consequence_guidance
     assert template.control_guidance == BOOKLET_TEMPLATE.control_guidance
     assert template.likelihood_guidance[0] == LevelGuidance(
-        level="Almost Certain", meaning="Expected to happen: once a week."
+        level="Almost Certain",
+        meaning="Expected to happen: once a week.",
     )
     assert template.control_kinds == tuple(ControlKind)
 
@@ -71,7 +72,9 @@ def _responses(path: str, method: str) -> dict[str, Any]:
     ],
 )
 def test_every_error_reply_is_declared_with_one_shape(
-    path: str, method: str, errors: dict[str, str]
+    path: str,
+    method: str,
+    errors: dict[str, str],
 ) -> None:
     """The front end's generated types know every error an endpoint can send."""
     responses: dict[str, Any] = _responses(path, method)

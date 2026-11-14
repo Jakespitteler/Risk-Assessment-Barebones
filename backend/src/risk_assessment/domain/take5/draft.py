@@ -158,7 +158,10 @@ def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
     hazards: list[Hazard] = []
     for index, hazard_draft in enumerate(draft.hazards):
         hazard: Hazard | None = _hazard(
-            hazard_draft, template.matrix, f"hazards.{index}", errors
+            hazard_draft,
+            template.matrix,
+            f"hazards.{index}",
+            errors,
         )
         if hazard is not None:
             hazards.append(hazard)
@@ -190,7 +193,10 @@ def _warnings(draft: Take5Draft) -> tuple[FieldWarning, ...]:
 
 
 def _hazard(
-    draft: HazardDraft, matrix: RiskMatrix, path: str, errors: list[FieldError]
+    draft: HazardDraft,
+    matrix: RiskMatrix,
+    path: str,
+    errors: list[FieldError],
 ) -> Hazard | None:
     """Check one hazard and rate it.
 
@@ -212,7 +218,9 @@ def _hazard(
     controls: list[Control] = []
     for index, control_draft in enumerate(draft.controls):
         control: Control | None = _control(
-            control_draft, f"{path}.controls.{index}", errors
+            control_draft,
+            f"{path}.controls.{index}",
+            errors,
         )
         if control is not None:
             controls.append(control)
@@ -226,12 +234,17 @@ def _hazard(
     if len(errors) > errors_before or before is None or after is None:
         return None
     return Hazard(
-        description=description, before=before, controls=tuple(controls), after=after
+        description=description,
+        before=before,
+        controls=tuple(controls),
+        after=after,
     )
 
 
 def _control(
-    draft: ControlDraft, path: str, errors: list[FieldError]
+    draft: ControlDraft,
+    path: str,
+    errors: list[FieldError],
 ) -> Control | None:
     """Check one control.
 
@@ -253,7 +266,10 @@ def _control(
 
 
 def _rating(
-    choice: RatingChoice, matrix: RiskMatrix, path: str, errors: list[FieldError]
+    choice: RatingChoice,
+    matrix: RiskMatrix,
+    path: str,
+    errors: list[FieldError],
 ) -> RiskRating | None:
     """Check that both halves of a rating are picked, then look it up (R1).
 
@@ -267,10 +283,16 @@ def _rating(
         The rating, or None if either half is missing or not on the matrix's scale.
     """
     likelihood: str | None = _picked(
-        choice.likelihood, matrix.likelihoods, f"{path}.likelihood", errors
+        choice.likelihood,
+        matrix.likelihoods,
+        f"{path}.likelihood",
+        errors,
     )
     consequence: str | None = _picked(
-        choice.consequence, matrix.consequences, f"{path}.consequence", errors
+        choice.consequence,
+        matrix.consequences,
+        f"{path}.consequence",
+        errors,
     )
     if likelihood is None or consequence is None:
         return None
@@ -278,7 +300,10 @@ def _rating(
 
 
 def _picked(
-    level: str | None, scale: tuple[str, ...], path: str, errors: list[FieldError]
+    level: str | None,
+    scale: tuple[str, ...],
+    path: str,
+    errors: list[FieldError],
 ) -> str | None:
     """Check that a level was picked from a scale.
 

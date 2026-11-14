@@ -94,7 +94,8 @@ class SqliteTake5Repository:
         """
         with closing(self._connect()) as connection:
             row: tuple[str] | None = connection.execute(
-                _SELECT_NEWEST_FIX, (str(take5_id),)
+                _SELECT_NEWEST_FIX,
+                (str(take5_id),),
             ).fetchone()
         return UUID(row[0]) if row is not None else None
 
@@ -125,6 +126,7 @@ def _read(connection: sqlite3.Connection, take5_id: UUID) -> SavedTake5 | None:
         The saved Take 5, or None if there is none with this ID.
     """
     row: tuple[str] | None = connection.execute(
-        _SELECT_DOCUMENT, (str(take5_id),)
+        _SELECT_DOCUMENT,
+        (str(take5_id),),
     ).fetchone()
     return SavedTake5.model_validate_json(row[0]) if row is not None else None

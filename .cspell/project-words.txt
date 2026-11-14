@@ -25,6 +25,7 @@ pyproject
 pytest
 pythonpath
 reinstalls
+Spitteler
 Starlette
 subagents
 Talison

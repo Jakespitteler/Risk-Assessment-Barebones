@@ -3,6 +3,7 @@ name = "risk-assessment"
 version = "0.1.0"
 description = "The Take 5 app's back end: every rule and all the data."
 requires-python = ">=3.13"
+license = "LicenseRef-Proprietary"
 dependencies = [
     "fastapi>=0.162",
     "pydantic>=2.14",
@@ -19,8 +20,9 @@ build-backend = "uv_build"
 
 [tool.ruff.lint]
 # E/W/F: errors, I: import order, N: naming, UP: modern Python, B: likely bugs,
-# SIM: simpler code, ANN: type hints everywhere, D: docstrings.
-select = ["E", "W", "F", "I", "N", "UP", "B", "SIM", "ANN", "D"]
+# SIM: simpler code, ANN: type hints everywhere, D: docstrings,
+# COM812: a trailing comma, so anything too long for one line gets one item per line.
+select = ["E", "W", "F", "I", "N", "UP", "B", "SIM", "ANN", "D", "COM812"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
