@@ -7,6 +7,7 @@ import {
 } from "react-router";
 import { NewTake5Screen } from "./features/take5/NewTake5Screen";
 import { RateRiskScreen } from "./features/take5/RateRiskScreen";
+import { SavedTake5sScreen } from "./features/take5/SavedTake5sScreen";
 import { Take5ResultScreen } from "./features/take5/Take5ResultScreen";
 import { keepFixDraft } from "./features/take5/useTake5Draft";
 import type { Stage } from "./features/take5/stage";
@@ -65,6 +66,7 @@ function SavedTake5Route() {
 // Every screen and its URL. The only place React Router is set up.
 const router = createBrowserRouter([
   { path: "/", element: <NewTake5Route /> },
+  { path: "/take5s", element: <SavedTake5sScreen /> },
   { path: "/take5s/:id", element: <SavedTake5Route /> },
   { path: "/rate-risk", element: <RateRiskScreen /> },
 ]);

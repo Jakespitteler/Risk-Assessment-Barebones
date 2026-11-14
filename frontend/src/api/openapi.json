@@ -70,6 +70,30 @@
       }
     },
     "/api/take5s": {
+      "get": {
+        "tags": [
+          "take5"
+        ],
+        "summary": "List Take5S",
+        "description": "Return every saved Take 5, newest first, each with its saved verdict.",
+        "operationId": "list_take5s_api_take5s_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Take5Summary"
+                  },
+                  "type": "array",
+                  "title": "Response List Take5S Api Take5S Get"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "take5"
@@ -812,6 +836,42 @@
         ],
         "title": "Take5Response",
         "description": "A saved Take 5, with the overall rating the back end worked out for it.\n\nAttributes:\n    take5: The saved Take 5, with its verdict and a copy of its template.\n    rating: The Take 5's rating (spec R4 and R5).\n    fixed_by: The ID of the newest Take 5 that fixes this one, or None. It is\n        found when the Take 5 is opened, because the saved one never changes.\n    offers_fix: True when the result should offer to fix this Take 5 in a new\n        one: it said Don't start yet and has no fix yet."
+      },
+      "Take5Summary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "worker_name": {
+            "type": "string",
+            "title": "Worker Name"
+          },
+          "job": {
+            "type": "string",
+            "title": "Job"
+          },
+          "can_start": {
+            "type": "boolean",
+            "title": "Can Start"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "worker_name",
+          "job",
+          "can_start"
+        ],
+        "title": "Take5Summary",
+        "description": "One line of the saved Take 5 list: enough to find it, not the whole card.\n\nAttributes:\n    id: The Take 5's ID, to open it.\n    created_at: When it was saved.\n    worker_name: Who did it.\n    job: What the job is.\n    can_start: The verdict it was saved with: True for Good to go, False for\n        Don't start yet."
       },
       "Take5Template": {
         "properties": {

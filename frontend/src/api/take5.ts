@@ -21,6 +21,7 @@ export type FieldWarning = Schemas["FieldWarning"];
 export type Hazard = Schemas["Hazard"];
 export type Take5Response = Schemas["Take5Response"];
 export type SavedTake5 = Schemas["SavedTake5"];
+export type Take5Summary = Schemas["Take5Summary"];
 type FormErrors = Schemas["FormErrors"];
 
 // Long enough for one bar of signal, short enough that the worker isn't left waiting.
@@ -160,6 +161,19 @@ export function useSavedTake5(id: string) {
     queryFn: () =>
       request<Take5Response>(`/api/take5s/${encodeURIComponent(id)}`),
     staleTime: Infinity,
+    retry: retryOnNetworkError,
+    networkMode: NETWORK_MODE,
+  });
+}
+
+/**
+ * Every saved Take 5, newest first. Asked for again each time the list opens, so a
+ * Take 5 saved since then shows.
+ */
+export function useSavedTake5List() {
+  return useQuery({
+    queryKey: ["take5s"],
+    queryFn: () => request<Take5Summary[]>("/api/take5s"),
     retry: retryOnNetworkError,
     networkMode: NETWORK_MODE,
   });

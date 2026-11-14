@@ -10,6 +10,7 @@ from risk_assessment.api.schemas import (
     FormErrors,
     SubmissionRequest,
     Take5Response,
+    Take5Summary,
     TemplateResponse,
 )
 from risk_assessment.domain.controls import ControlKind
@@ -78,6 +79,11 @@ def create_router(service: Take5Service) -> APIRouter:
             raise HTTPException(status_code=409, detail=str(error)) from error
         return _response(saved, service)
 
+    @router.get("/api/take5s")
+    def list_take5s() -> tuple[Take5Summary, ...]:
+        """Return every saved Take 5, newest first, each with its saved verdict."""
+        return tuple(_summary(saved) for saved in service.list_newest_first())
+
     @router.get("/api/take5s/{take5_id}", responses=_UNREADABLE | _NOT_FOUND)
     def get(take5_id: UUID) -> Take5Response:
         """Return a saved Take 5 with the verdict the worker was given."""
@@ -87,6 +93,24 @@ def create_router(service: Take5Service) -> APIRouter:
         return _response(saved, service)
 
     return router
+
+
+def _summary(saved: SavedTake5) -> Take5Summary:
+    """Build one line of the list from a saved Take 5.
+
+    Args:
+        saved: The saved Take 5.
+
+    Returns:
+        Its line in the list.
+    """
+    return Take5Summary(
+        id=saved.id,
+        created_at=saved.created_at,
+        worker_name=saved.worker_name,
+        job=saved.job,
+        can_start=saved.verdict.can_start,
+    )
 
 
 def _response(saved: SavedTake5, service: Take5Service) -> Take5Response:

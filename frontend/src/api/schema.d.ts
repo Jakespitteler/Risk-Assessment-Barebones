@@ -51,7 +51,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List Take5S
+         * @description Return every saved Take 5, newest first, each with its saved verdict.
+         */
+        get: operations["list_take5s_api_take5s_get"];
         put?: never;
         /**
          * Submit
@@ -520,6 +524,36 @@ export interface components {
             offers_fix: boolean;
         };
         /**
+         * Take5Summary
+         * @description One line of the saved Take 5 list: enough to find it, not the whole card.
+         *
+         *     Attributes:
+         *         id: The Take 5's ID, to open it.
+         *         created_at: When it was saved.
+         *         worker_name: Who did it.
+         *         job: What the job is.
+         *         can_start: The verdict it was saved with: True for Good to go, False for
+         *             Don't start yet.
+         */
+        Take5Summary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Worker Name */
+            worker_name: string;
+            /** Job */
+            job: string;
+            /** Can Start */
+            can_start: boolean;
+        };
+        /**
          * Take5Template
          * @description The card a Take 5 is filled in on. Each saved Take 5 keeps a copy of it.
          *
@@ -677,6 +711,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FormErrors"];
+                };
+            };
+        };
+    };
+    list_take5s_api_take5s_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Take5Summary"][];
                 };
             };
         };

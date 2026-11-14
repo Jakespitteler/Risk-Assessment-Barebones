@@ -1,4 +1,4 @@
-"""Check, submit and get Take 5s, through storage that can be swapped."""
+"""Check, submit, get and list Take 5s, through storage that can be swapped."""
 
 from datetime import UTC, datetime
 from typing import Any
@@ -131,6 +131,16 @@ class Take5Service:
             The saved Take 5, or None if there is none with this ID.
         """
         return self._repository.get(take5_id)
+
+    def list_newest_first(self) -> tuple[SavedTake5, ...]:
+        """Get every saved Take 5 as it was saved, the newest first.
+
+        Everyone using the app sees the same list (spec decision D8).
+
+        Returns:
+            The saved Take 5s, newest first.
+        """
+        return self._repository.list_newest_first()
 
     def fixed_by(self, take5_id: UUID) -> UUID | None:
         """Find the newest saved Take 5 that fixes this one.

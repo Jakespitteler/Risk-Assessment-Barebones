@@ -9,8 +9,7 @@ Recommended by Claude on 2026-11-13, agreed by Jake the same day. Tasks 0015 to 
 Complete: 0001 to 0006, 0010 to 0012, 0014 to 0018 and 0020. Task 0018 decided to keep the built-in `sqlite3` for
 now (`docs/decisions.md`, 2026-11-14), so no task to switch storage is in the order below.
 
-1. **0007, saved Take 5s.** Next. Its list is the first query beyond "save one" and "get one", and it follows the
-   storage decision in 0018. Depends on 0004, which is complete.
+1. **0007, saved Take 5s.** Built on 2026-11-14 and awaiting review. Its pull request is stacked on 0018's.
 2. **0019, back out of a Take 5 and keep drafts.** Jake asked for it on 2026-11-14. After 0007, so a list of
    drafts can sit beside the list of saved Take 5s. Jake answers its "Decide first" questions before it starts.
    Keeping drafts on the server would add a second table with its own repository, which is one of 0018's reasons

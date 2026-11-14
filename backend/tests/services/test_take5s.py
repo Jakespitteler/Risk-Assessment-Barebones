@@ -37,6 +37,17 @@ class MemoryRepository:
         """Read the document or return nothing."""
         return self.documents.get(take5_id)
 
+    def list_newest_first(self) -> tuple[SavedTake5, ...]:
+        """Return every document, newest first, the last saved first on a tie."""
+        last_saved_first: list[SavedTake5] = list(reversed(self.documents.values()))
+        return tuple(
+            sorted(
+                last_saved_first,
+                key=lambda take5: take5.created_at,
+                reverse=True,
+            ),
+        )
+
     def fixed_by(self, take5_id: UUID) -> UUID | None:
         """Return the newest document whose `fixes` is this ID."""
         fixes: list[SavedTake5] = [
@@ -177,3 +188,20 @@ def test_a_take5_cannot_fix_itself() -> None:
     )
     assert service.get(submission_id) == first
     assert service.fixed_by(submission_id) is None
+
+
+def test_the_list_is_newest_first_with_each_verdict_as_it_was_saved() -> None:
+    """Listing applies no rules: each Take 5 keeps the verdict it was saved with."""
+    service: Take5Service = _service()
+    stopped: SavedTake5 = service.submit(sample_uncontrolled_draft(), uuid4())
+    good_to_go: SavedTake5 = service.submit(sample_draft(), uuid4())
+
+    listed: tuple[SavedTake5, ...] = service.list_newest_first()
+
+    assert listed == (good_to_go, stopped)
+    assert [take5.verdict.can_start for take5 in listed] == [True, False]
+
+
+def test_the_list_is_empty_before_anything_is_saved() -> None:
+    """A new app has nothing to list."""
+    assert _service().list_newest_first() == ()

@@ -8,6 +8,7 @@ import { Screen } from "../../components/Screen";
 import { AnswerSummary } from "./AnswerSummary";
 import { FixPanel } from "./FixPanel";
 import { HazardSummary } from "./HazardSummary";
+import { SavedListLink } from "./SavedListLink";
 import { VerdictPanel } from "./VerdictPanel";
 
 const NEW_TAKE5_LINK =
@@ -67,7 +68,7 @@ export function Take5ResultScreen({
     { term: "Location", value: take5.location },
   ];
   return (
-    <Screen subtitle="Saved Take 5">
+    <Screen subtitle="Saved Take 5" aside={<SavedListLink />}>
       <div ref={page} className="flex flex-col gap-6">
         <VerdictPanel verdict={take5.verdict} />
         <FixPanel

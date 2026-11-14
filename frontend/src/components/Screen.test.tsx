@@ -12,3 +12,16 @@ it("puts the page in one main landmark with the app's name", () => {
   expect(main.textContent).toContain("Take 5");
   expect(main.textContent).toContain("Before you start");
 });
+
+it("puts the aside at the right of the top bar", () => {
+  render(
+    <Screen subtitle="Before you start" aside={<a href="/elsewhere">Away</a>}>
+      <h1>The job</h1>
+    </Screen>,
+  );
+  expect(
+    screen
+      .getByRole("banner")
+      .contains(screen.getByRole("link", { name: "Away" })),
+  ).toBe(true);
+});

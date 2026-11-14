@@ -103,6 +103,13 @@ function showResult(saved: Take5Response, onFix = vi.fn()) {
   );
 }
 
+it("links to the list of saved Take 5s", () => {
+  showResult(SAVED);
+  expect(
+    screen.getByRole("link", { name: "Saved Take 5s" }).getAttribute("href"),
+  ).toBe("/take5s");
+});
+
 it("offers to fix a Don't start yet in a new Take 5", () => {
   const onFix = vi.fn();
   showResult(STOPPED, onFix);

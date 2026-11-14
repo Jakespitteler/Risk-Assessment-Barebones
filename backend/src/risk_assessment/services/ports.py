@@ -31,6 +31,15 @@ class Take5Repository(Protocol):
         """
         ...
 
+    def list_newest_first(self) -> tuple[SavedTake5, ...]:
+        """Get every saved Take 5, the newest first.
+
+        Returns:
+            The saved Take 5s, newest first. Two saved at the same moment keep the
+            order they were saved in, the later one first.
+        """
+        ...
+
     def fixed_by(self, take5_id: UUID) -> UUID | None:
         """Find the newest saved Take 5 whose `fixes` is this ID.
 
