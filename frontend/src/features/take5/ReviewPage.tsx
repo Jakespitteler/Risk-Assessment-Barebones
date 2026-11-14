@@ -48,8 +48,11 @@ export function ReviewPage({
     warnings.filter(
       (warning) => warning.path === path || warning.path.startsWith(`${path}.`),
     );
-  const showWarnings = (path: string, action: string) =>
-    warningsOn(path).map((warning) => (
+  // Each warning on a field, with a button that opens its page; null when there are none.
+  const showWarnings = (path: string, action: string) => {
+    const found = warningsOn(path);
+    if (!found.length) return null;
+    return found.map((warning) => (
       <Warning key={warning.path}>
         <p>{warning.message}</p>
         <Button
@@ -62,6 +65,7 @@ export function ReviewPage({
         </Button>
       </Warning>
     ));
+  };
   const details = [
     { term: "Name", value: draft.worker_name },
     { term: "Job", value: draft.job },

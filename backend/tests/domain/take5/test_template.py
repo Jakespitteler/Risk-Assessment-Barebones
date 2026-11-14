@@ -58,3 +58,9 @@ def test_a_card_cannot_have_two_questions_with_one_id() -> None:
             ),
             matrix=BOOKLET_MATRIX,
         )
+
+
+def test_a_question_id_cannot_hold_a_full_stop() -> None:
+    """An ID goes in a dotted path, `answers.<id>`, so a full stop would split it."""
+    with pytest.raises(ValueError, match="pattern"):
+        Question(id="gate.keys", text="Is the gate shut?", role=QuestionRole.STOP)

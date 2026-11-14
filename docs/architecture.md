@@ -163,7 +163,7 @@ in the front end, because they are about what is on the screen: spec T1 (hiding 
 hazard is written), skipping the after-controls page of a hazard with no controls, putting each question on the
 page for its role (stop questions on the think-through page, hazard questions after the hazard list), and
 showing "Make sure it's on your list" after a Yes to a hazard question. The back end still
-decides that such a hazard's after rating is its before rating (R6).
+decides that the after rating of a hazard with no controls is its before rating (R6).
 
 While developing, Vite serves the front end and passes `/api` calls on to FastAPI. When hosted, FastAPI serves
 the built front-end files itself, so there is still only one program to run.
@@ -173,7 +173,7 @@ the built front-end files itself, so there is still only one program to run.
 | Entity | Key fields | Notes |
 | --- | --- | --- |
 | `Take5` | `id`, `created_at`, `worker_name`, `job`, `location`, `answers` (question ID to answer), `hazards`, `challenge`, `finished_at`, `verdict`, `template` | One filled-in card. `template` is a copy of the template it was filled in on, so it always shows the questions and matrix the worker was given. `finished_at` and `verdict` are empty until the challenge question is answered (spec C6). Never changed once finished |
-| `SavedTake5` (task 0004) | Extends the scoring `Take5` with `id`, `created_at`, `worker_name`, `job`, `location`, `finished_at`, `verdict`, `fixes` | The implemented submitted document. Until task 0008 it is finished immediately. The base `Take5` holds what the verdict needs (the template, `answers` and the hazards); later tasks add the remaining card fields. `answers` (task 0005) has one answer for each of the template's questions, by question ID. A Take 5 saved before task 0005 has none, and its template copy has no questions, so it still opens `fixes` (task 0010) is the ID of the Don't start yet it fixes, or empty. It points back only, so the first one is never changed; its fix is found by searching for its ID in `fixes` |
+| `SavedTake5` (task 0004) | Extends the scoring `Take5` with `id`, `created_at`, `worker_name`, `job`, `location`, `finished_at`, `verdict`, `fixes` | The implemented submitted document. Until task 0008 it is finished immediately. The base `Take5` holds what the verdict needs (the template, `answers` and the hazards); later tasks add the remaining card fields. `answers` (task 0005) has one answer for each of the template's questions, by question ID. A Take 5 saved before task 0005 has none, and its template copy has no questions, so it still opens. `fixes` (task 0010) is the ID of the Don't start yet it fixes, or empty. It points back only, so the first one is never changed; its fix is found by searching for its ID in `fixes` |
 | `Hazard` | `description`, `before` (rating), `controls`, `after` (rating), `weak_controls_reason` | Belongs to one Take 5. With no controls `after` is `before` (spec R6). `weak_controls_reason` is the worker's answer to spec T3, when it was asked |
 | `Control` | `description`, `kind` (`ControlKind`) | Belongs to one hazard |
 | `RiskRating` | `likelihood`, `consequence`, and from the matrix: `score`, `band` | A value, not a stored row. Score and band are always worked out, never typed in |

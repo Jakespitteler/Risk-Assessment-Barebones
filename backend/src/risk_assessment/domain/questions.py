@@ -7,7 +7,7 @@ question's wording. Another company's card is then different data, not different
 from enum import StrEnum
 from typing import ClassVar
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class QuestionRole(StrEnum):
@@ -33,13 +33,14 @@ class Question(BaseModel):
 
     Attributes:
         id: A short name that stays the same if the wording is tidied, such as
-            `permits`. Answers are kept against it.
+            `permits`. Answers are kept against it. Lower-case letters, digits and
+            underscores only, so it is safe in a dotted path like `answers.permits`.
         text: The question as the card prints it.
         role: What its answer means for the job.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
-    id: str
+    id: str = Field(pattern=r"^[a-z0-9_]+$")
     text: str
     role: QuestionRole

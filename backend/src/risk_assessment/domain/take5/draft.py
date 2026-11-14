@@ -180,7 +180,10 @@ def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
     )
     return DraftCheck(
         errors=tuple(errors),
-        warnings=(*_stop_answer_warnings(draft, template), *_warnings(draft)),
+        warnings=(
+            *_stop_answer_warnings(draft, template),
+            *_no_controls_warnings(draft),
+        ),
         assessment=assessment,
         can_submit=not errors,
     )
@@ -208,7 +211,7 @@ def _stop_answer_warnings(
     )
 
 
-def _warnings(draft: Take5Draft) -> tuple[FieldWarning, ...]:
+def _no_controls_warnings(draft: Take5Draft) -> tuple[FieldWarning, ...]:
     """Warn about each hazard with no controls, which will mean Don't start yet (V2).
 
     Args:

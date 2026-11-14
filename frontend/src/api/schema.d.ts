@@ -260,7 +260,8 @@ export interface components {
          *
          *     Attributes:
          *         id: A short name that stays the same if the wording is tidied, such as
-         *             `permits`. Answers are kept against it.
+         *             `permits`. Answers are kept against it. Lower-case letters, digits and
+         *             underscores only, so it is safe in a dotted path like `answers.permits`.
          *         text: The question as the card prints it.
          *         role: What its answer means for the job.
          */

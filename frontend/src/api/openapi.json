@@ -435,6 +435,7 @@
         "properties": {
           "id": {
             "type": "string",
+            "pattern": "^[a-z0-9_]+$",
             "title": "Id"
           },
           "text": {
@@ -452,7 +453,7 @@
           "role"
         ],
         "title": "Question",
-        "description": "One question on a card.\n\nAttributes:\n    id: A short name that stays the same if the wording is tidied, such as\n        `permits`. Answers are kept against it.\n    text: The question as the card prints it.\n    role: What its answer means for the job."
+        "description": "One question on a card.\n\nAttributes:\n    id: A short name that stays the same if the wording is tidied, such as\n        `permits`. Answers are kept against it. Lower-case letters, digits and\n        underscores only, so it is safe in a dotted path like `answers.permits`.\n    text: The question as the card prints it.\n    role: What its answer means for the job."
       },
       "QuestionRole": {
         "type": "string",

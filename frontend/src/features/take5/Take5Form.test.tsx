@@ -79,6 +79,24 @@ it("starts with nothing filled in but the remembered name, and the heading focus
   );
 });
 
+it("starts afresh instead of loading a draft kept before the card had questions", () => {
+  // JSON leaves out an undefined field, so this is the old shape, with no answers.
+  const oldDraft = { ...COMPLETE_DRAFT, answers: undefined };
+  sessionStorage.setItem(
+    "take5-draft",
+    JSON.stringify({
+      version: 1,
+      draft: oldDraft,
+      submissionId: SAVED.take5.id,
+    }),
+  );
+  stubApi({});
+  renderWithApi(<FormAt start={{ page: "job" }} />);
+  expect(
+    screen.getByLabelText<HTMLTextAreaElement>("What is the job?").value,
+  ).toBe("");
+});
+
 it("keeps the worker on a page with gaps, shows them, and focuses the first", async () => {
   stubApi({
     "POST /api/take5s/check": {
@@ -454,4 +472,32 @@ it("sends an unanswered question found at the review to the page for its role", 
     await screen.findByRole("heading", { name: "Did you miss any?" }),
   ).toBeTruthy();
   expect(screen.getByText("Pick Yes, No or N/A.")).toBeTruthy();
+});
+
+it("sends an empty hazard left on the list back there from the questions", async () => {
+  const blank = { ...HAZARD_DRAFT, description: "" };
+  storeDraft({ ...COMPLETE_DRAFT, hazards: [HAZARD_DRAFT, blank] });
+  stubApi({
+    "POST /api/take5s/check": {
+      status: 200,
+      body: {
+        errors: [
+          { path: "hazards.1.description", message: "Fill in this field." },
+        ],
+        warnings: [],
+        assessment: null,
+        can_submit: false,
+      },
+    },
+  });
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+  expect(
+    await screen.findByRole("heading", { name: "What could hurt someone?" }),
+  ).toBeTruthy();
+  const emptyHazard = screen.getByLabelText("Hazard 2");
+  await waitFor(() => {
+    expect(document.activeElement).toBe(emptyHazard);
+  });
+  expect(screen.getByText("Fill in this field.")).toBeTruthy();
 });

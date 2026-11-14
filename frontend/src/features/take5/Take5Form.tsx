@@ -120,6 +120,20 @@ export function Take5Form(props: Take5FormProps) {
       focusErrorsOn(stage);
       return;
     }
+    // The questions check the list, so an empty hazard added from them (and left by
+    // going Back) is sent back to the list before the worker moves on.
+    const hazardList: Stage = { page: "hazards" };
+    if (
+      stage.page === "check" &&
+      check?.errors.some((error) =>
+        stages.sameStage(stageOf(error.path), hazardList),
+      )
+    ) {
+      setErrors(check.errors);
+      onStageChange(hazardList);
+      focusErrorsOn(hazardList);
+      return;
+    }
     setErrors([]);
     if (fixing && check && !check.can_submit) nextGap(check.errors);
     else if (fixing && check) {

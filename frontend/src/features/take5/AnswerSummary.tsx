@@ -19,6 +19,7 @@ export function AnswerSummary({
 }: {
   questions: Question[];
   answers: Partial<Record<string, Answer>>;
+  /** Anything to say under one answer, or null for nothing. */
   noteFor?: (questionId: string) => ReactNode;
 }) {
   return GROUPS.map(({ role, title }) => {
@@ -28,17 +29,21 @@ export function AnswerSummary({
       <Card key={role}>
         <h2 className="text-xl font-bold">{title}</h2>
         <dl className="flex flex-col divide-y divide-stone-300">
-          {asked.map((question) => (
-            <div key={question.id} className="flex flex-col gap-2 py-2">
-              <div className="flex items-start justify-between gap-4">
+          {asked.map((question) => {
+            const note = noteFor?.(question.id);
+            return (
+              <div
+                key={question.id}
+                className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 py-2"
+              >
                 <dt>{question.text}</dt>
-                <dd className="min-w-12 shrink-0 text-right font-bold">
+                <dd className="min-w-12 text-right font-bold">
                   {answers[question.id]}
                 </dd>
+                {note && <dd className="col-span-2">{note}</dd>}
               </div>
-              {noteFor?.(question.id)}
-            </div>
-          ))}
+            );
+          })}
         </dl>
       </Card>
     );

@@ -3,6 +3,7 @@ import type {
   FieldError,
   FieldWarning,
   HazardDraft,
+  Question,
   Take5Draft,
   TemplateResponse,
 } from "../../api/take5";
@@ -63,7 +64,7 @@ export function FormPage({
       answers: { ...current.answers, [questionId]: picked },
     }));
   }
-  const questionsFor = (role: "stop" | "hazard") =>
+  const questionsFor = (role: Question["role"]) =>
     template.questions.filter((question) => question.role === role);
   // Removing shifts the numbers of the items after it, so every error is cleared.
   function removeItem(
