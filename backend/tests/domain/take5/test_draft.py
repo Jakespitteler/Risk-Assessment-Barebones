@@ -20,53 +20,12 @@ from risk_assessment.domain.take5.draft import (
 )
 from risk_assessment.domain.take5.take5 import Hazard
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
-
-
-def _hazard(
-    before: tuple[str, str] = ("Possible", "Minor"),
-    after: tuple[str, str] = ("Unlikely", "Minor"),
-    controls: tuple[ControlDraft, ...] = (
-        ControlDraft(description="Barricade the area", kind=ControlKind.BARRICADE),
-    ),
-) -> HazardDraft:
-    """Make a complete hazard, rated 8 then 5 with one control unless told otherwise.
-
-    Args:
-        before: The likelihood and consequence before controls.
-        after: The likelihood and consequence after controls.
-        controls: The controls.
-
-    Returns:
-        The hazard as the phone would send it.
-    """
-    return HazardDraft(
-        description="Moving wheel",
-        before=RatingChoice(likelihood=before[0], consequence=before[1]),
-        controls=controls,
-        after=RatingChoice(likelihood=after[0], consequence=after[1]),
-    )
-
-
-def _draft(*hazards: HazardDraft) -> Take5Draft:
-    """Make a complete draft.
-
-    Args:
-        *hazards: Its hazards. With none, it has one complete hazard.
-
-    Returns:
-        The draft as the phone would send it.
-    """
-    return Take5Draft(
-        worker_name="Sam Example",
-        job="Change tyre on LV12",
-        location="Example workshop",
-        hazards=hazards or (_hazard(),),
-    )
+from tests.samples import sample_draft, sample_hazard_draft
 
 
 def test_a_complete_draft_is_rated_and_can_be_submitted() -> None:
     """With nothing missing the check returns the rated Take 5."""
-    check: DraftCheck = check_draft(_draft(), BOOKLET_TEMPLATE)
+    check: DraftCheck = check_draft(sample_draft(), BOOKLET_TEMPLATE)
 
     assert check.errors == ()
     assert check.can_submit
@@ -92,7 +51,7 @@ def test_an_empty_draft_names_every_missing_field_and_nothing_else() -> None:
 def test_example_14_no_hazards_cannot_be_submitted() -> None:
     """Every Take 5 has at least one hazard (R5)."""
     check: DraftCheck = check_draft(
-        _draft().model_copy(update={"hazards": ()}),
+        sample_draft().model_copy(update={"hazards": ()}),
         BOOKLET_TEMPLATE,
     )
 
@@ -103,7 +62,7 @@ def test_example_14_no_hazards_cannot_be_submitted() -> None:
 def test_an_answer_of_only_spaces_is_blank(field: str) -> None:
     """Spaces alone don't fill in a field."""
     check: DraftCheck = check_draft(
-        _draft().model_copy(update={field: "   "}),
+        sample_draft().model_copy(update={field: "   "}),
         BOOKLET_TEMPLATE,
     )
 
@@ -112,11 +71,11 @@ def test_an_answer_of_only_spaces_is_blank(field: str) -> None:
 
 def test_a_half_picked_rating_names_the_missing_half() -> None:
     """A likelihood without a consequence is not a rating, so no score is shown."""
-    hazard: HazardDraft = _hazard().model_copy(
+    hazard: HazardDraft = sample_hazard_draft().model_copy(
         update={"before": RatingChoice(likelihood="Possible")},
     )
 
-    check: DraftCheck = check_draft(_draft(hazard), BOOKLET_TEMPLATE)
+    check: DraftCheck = check_draft(sample_draft(hazard), BOOKLET_TEMPLATE)
 
     assert check.errors == (
         FieldError(path="hazards.0.before.consequence", message="Pick a consequence."),
@@ -125,11 +84,11 @@ def test_a_half_picked_rating_names_the_missing_half() -> None:
 
 def test_a_level_that_is_not_on_the_card_is_not_picked() -> None:
     """The phone can't send a level the matrix doesn't have."""
-    hazard: HazardDraft = _hazard().model_copy(
+    hazard: HazardDraft = sample_hazard_draft().model_copy(
         update={"after": RatingChoice(likelihood="Invented", consequence="Minor")},
     )
 
-    check: DraftCheck = check_draft(_draft(hazard), BOOKLET_TEMPLATE)
+    check: DraftCheck = check_draft(sample_draft(hazard), BOOKLET_TEMPLATE)
 
     assert check.errors == (
         FieldError(path="hazards.0.after.likelihood", message="Pick a likelihood."),
@@ -138,14 +97,14 @@ def test_a_level_that_is_not_on_the_card_is_not_picked() -> None:
 
 def test_a_control_needs_its_wording_and_its_kind() -> None:
     """Each half of a control is named beside its own field."""
-    hazard: HazardDraft = _hazard(
+    hazard: HazardDraft = sample_hazard_draft(
         controls=(
             ControlDraft(description=" ", kind=ControlKind.PPE),
             ControlDraft(description="Gloves"),
         ),
     )
 
-    check: DraftCheck = check_draft(_draft(hazard), BOOKLET_TEMPLATE)
+    check: DraftCheck = check_draft(sample_draft(hazard), BOOKLET_TEMPLATE)
 
     assert check.errors == (
         FieldError(path="hazards.0.controls.0.description", message=FILL_IN_MESSAGE),
@@ -155,12 +114,12 @@ def test_a_control_needs_its_wording_and_its_kind() -> None:
 
 def test_example_15_controls_cannot_raise_the_score() -> None:
     """Unlikely / Minor (5) then Possible / Minor (8) can't be submitted (R6)."""
-    hazard: HazardDraft = _hazard(
+    hazard: HazardDraft = sample_hazard_draft(
         before=("Unlikely", "Minor"),
         after=("Possible", "Minor"),
     )
 
-    check: DraftCheck = check_draft(_draft(hazard), BOOKLET_TEMPLATE)
+    check: DraftCheck = check_draft(sample_draft(hazard), BOOKLET_TEMPLATE)
 
     assert check.errors == (
         FieldError(path="hazards.0.after", message=HIGHER_AFTER_MESSAGE),
@@ -169,9 +128,9 @@ def test_example_15_controls_cannot_raise_the_score() -> None:
 
 def test_example_16_an_unchanged_score_is_allowed() -> None:
     """Possible / Minor (8) then Possible / Minor (8) is rated 8 Moderate (R6)."""
-    hazard: HazardDraft = _hazard(after=("Possible", "Minor"))
+    hazard: HazardDraft = sample_hazard_draft(after=("Possible", "Minor"))
 
-    check: DraftCheck = check_draft(_draft(hazard), BOOKLET_TEMPLATE)
+    check: DraftCheck = check_draft(sample_draft(hazard), BOOKLET_TEMPLATE)
 
     assert check.assessment is not None
     assert (check.assessment.rating.score, check.assessment.rating.band) == (
@@ -182,11 +141,11 @@ def test_example_16_an_unchanged_score_is_allowed() -> None:
 
 def test_example_17_with_no_controls_after_is_the_before_rating() -> None:
     """With no controls the after choice is ignored, so it is not rated again (R6)."""
-    hazard: HazardDraft = _hazard(controls=()).model_copy(
+    hazard: HazardDraft = sample_hazard_draft(controls=()).model_copy(
         update={"after": RatingChoice()},
     )
 
-    check: DraftCheck = check_draft(_draft(hazard), BOOKLET_TEMPLATE)
+    check: DraftCheck = check_draft(sample_draft(hazard), BOOKLET_TEMPLATE)
 
     assert check.assessment is not None
     rated: Hazard = check.assessment.hazards[0]
@@ -199,11 +158,11 @@ def test_example_17_with_no_controls_after_is_the_before_rating() -> None:
 
 def test_example_17_a_hazard_with_no_controls_is_warned_about() -> None:
     """The warning says the job will be stopped (V2), and it never blocks submitting."""
-    hazard: HazardDraft = _hazard(controls=()).model_copy(
+    hazard: HazardDraft = sample_hazard_draft(controls=()).model_copy(
         update={"after": RatingChoice()},
     )
 
-    check: DraftCheck = check_draft(_draft(hazard), BOOKLET_TEMPLATE)
+    check: DraftCheck = check_draft(sample_draft(hazard), BOOKLET_TEMPLATE)
 
     assert check.warnings == (
         FieldWarning(path="hazards.0.controls", message=NO_CONTROLS_WARNING),
@@ -214,14 +173,17 @@ def test_example_17_a_hazard_with_no_controls_is_warned_about() -> None:
 
 def test_a_hazard_with_controls_gets_no_warning() -> None:
     """Example 18's controlled hazard has nothing to warn about."""
-    assert check_draft(_draft(), BOOKLET_TEMPLATE).warnings == ()
+    assert check_draft(sample_draft(), BOOKLET_TEMPLATE).warnings == ()
 
 
 def test_each_warning_is_on_its_own_hazard() -> None:
     """Only the second hazard has no controls, so only it is warned about."""
-    uncontrolled: HazardDraft = _hazard(controls=())
+    uncontrolled: HazardDraft = sample_hazard_draft(controls=())
 
-    check: DraftCheck = check_draft(_draft(_hazard(), uncontrolled), BOOKLET_TEMPLATE)
+    check: DraftCheck = check_draft(
+        sample_draft(sample_hazard_draft(), uncontrolled),
+        BOOKLET_TEMPLATE,
+    )
 
     assert [warning.path for warning in check.warnings] == ["hazards.1.controls"]
 
@@ -230,7 +192,7 @@ def test_a_draft_with_gaps_is_still_warned_about() -> None:
     """A warning comes with the errors, so the worker hears about it on any page."""
     blank: HazardDraft = HazardDraft()
 
-    check: DraftCheck = check_draft(_draft(blank), BOOKLET_TEMPLATE)
+    check: DraftCheck = check_draft(sample_draft(blank), BOOKLET_TEMPLATE)
 
     assert not check.can_submit
     assert [warning.path for warning in check.warnings] == ["hazards.0.controls"]
@@ -238,9 +200,14 @@ def test_a_draft_with_gaps_is_still_warned_about() -> None:
 
 def test_errors_on_a_later_hazard_carry_its_own_index() -> None:
     """The second hazard's gap is named against the second hazard."""
-    incomplete: HazardDraft = _hazard().model_copy(update={"description": ""})
+    incomplete: HazardDraft = sample_hazard_draft().model_copy(
+        update={"description": ""},
+    )
 
-    check: DraftCheck = check_draft(_draft(_hazard(), incomplete), BOOKLET_TEMPLATE)
+    check: DraftCheck = check_draft(
+        sample_draft(sample_hazard_draft(), incomplete),
+        BOOKLET_TEMPLATE,
+    )
 
     assert check.errors == (
         FieldError(path="hazards.1.description", message=FILL_IN_MESSAGE),
@@ -249,9 +216,11 @@ def test_errors_on_a_later_hazard_carry_its_own_index() -> None:
 
 def test_answers_are_trimmed() -> None:
     """Spaces at either end are not kept."""
-    hazard: HazardDraft = _hazard().model_copy(update={"description": "  Dust  "})
+    hazard: HazardDraft = sample_hazard_draft().model_copy(
+        update={"description": "  Dust  "},
+    )
 
-    check: DraftCheck = check_draft(_draft(hazard), BOOKLET_TEMPLATE)
+    check: DraftCheck = check_draft(sample_draft(hazard), BOOKLET_TEMPLATE)
 
     assert check.assessment is not None
     assert check.assessment.hazards[0].description == "Dust"

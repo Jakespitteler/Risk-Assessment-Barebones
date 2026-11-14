@@ -1,20 +1,17 @@
 """Worked examples 18 and 22 to 25: the verdict rules V2 and V3, word for word."""
 
-from risk_assessment.domain.controls import Control, ControlKind
+from risk_assessment.domain.controls import Control
 from risk_assessment.domain.risk import rate
 from risk_assessment.domain.take5.take5 import Hazard, Take5
 from risk_assessment.domain.take5.template import BOOKLET_MATRIX, BOOKLET_TEMPLATE
 from risk_assessment.domain.take5.verdict import Verdict, verdict
-
-_BARRICADE: tuple[Control, ...] = (
-    Control(description="Barricade the hazard", kind=ControlKind.BARRICADE),
-)
+from tests.samples import BARRICADE, sample_hazard
 
 
 def _take5(
     before: tuple[str, str] = ("Possible", "Minor"),
     after: tuple[str, str] = ("Unlikely", "Minor"),
-    controls: tuple[Control, ...] = _BARRICADE,
+    controls: tuple[Control, ...] = (BARRICADE,),
 ) -> Take5:
     """Make the spec's default Take 5 for these examples: 8 then 5, with a barricade.
 
@@ -28,14 +25,7 @@ def _take5(
     """
     return Take5(
         template=BOOKLET_TEMPLATE,
-        hazards=(
-            Hazard(
-                description="Moving wheel",
-                before=rate(BOOKLET_MATRIX, *before),
-                controls=controls,
-                after=rate(BOOKLET_MATRIX, *(after if controls else before)),
-            ),
-        ),
+        hazards=(sample_hazard(before, after if controls else before, controls),),
     )
 
 

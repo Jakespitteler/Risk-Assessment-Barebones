@@ -3,7 +3,6 @@
 import pytest
 from pydantic import BaseModel
 
-from risk_assessment.domain.controls import Control, ControlKind
 from risk_assessment.domain.risk import RiskCell, RiskMatrix, RiskRating, rate
 from risk_assessment.domain.take5.take5 import Hazard, Take5
 from risk_assessment.domain.take5.template import (
@@ -11,18 +10,7 @@ from risk_assessment.domain.take5.template import (
     BOOKLET_TEMPLATE,
     Take5Template,
 )
-
-_BARRICADE = Control(description="Barricade the hazard", kind=ControlKind.BARRICADE)
-
-
-def _hazard(before: tuple[str, str], after: tuple[str, str]) -> Hazard:
-    """Build a booklet hazard with the single control used in examples 11 to 16."""
-    return Hazard(
-        description="Example hazard",
-        before=rate(BOOKLET_MATRIX, *before),
-        controls=(_BARRICADE,),
-        after=rate(BOOKLET_MATRIX, *after),
-    )
+from tests.samples import BARRICADE, sample_hazard
 
 
 def test_example_11_the_highest_after_rating_counts() -> None:
@@ -30,8 +18,8 @@ def test_example_11_the_highest_after_rating_counts() -> None:
     take5 = Take5(
         template=BOOKLET_TEMPLATE,
         hazards=(
-            _hazard(("Possible", "Minor"), ("Unlikely", "Minor")),
-            _hazard(("Possible", "Moderate"), ("Unlikely", "Moderate")),
+            sample_hazard(("Possible", "Minor"), ("Unlikely", "Minor")),
+            sample_hazard(("Possible", "Moderate"), ("Unlikely", "Moderate")),
         ),
     )
     assert take5.rating == rate(BOOKLET_MATRIX, "Unlikely", "Moderate")
@@ -43,8 +31,8 @@ def test_example_12_one_high_after_rating_needs_a_jha() -> None:
     take5 = Take5(
         template=BOOKLET_TEMPLATE,
         hazards=(
-            _hazard(("Possible", "Minor"), ("Unlikely", "Minor")),
-            _hazard(("Likely", "Minor"), ("Likely", "Minor")),
+            sample_hazard(("Possible", "Minor"), ("Unlikely", "Minor")),
+            sample_hazard(("Likely", "Minor"), ("Likely", "Minor")),
         ),
     )
     assert take5.rating == rate(BOOKLET_MATRIX, "Likely", "Minor")
@@ -55,7 +43,7 @@ def test_example_13_after_not_before_decides_the_jha() -> None:
     """Reducing 18 Extreme to 10 High puts the Take 5 below the JHA threshold."""
     take5 = Take5(
         template=BOOKLET_TEMPLATE,
-        hazards=(_hazard(("Possible", "Major"), ("Rare", "Major")),),
+        hazards=(sample_hazard(("Possible", "Major"), ("Rare", "Major")),),
     )
     assert take5.rating == rate(BOOKLET_MATRIX, "Rare", "Major")
     assert not take5.needs_jha
@@ -70,14 +58,14 @@ def test_example_14_no_hazards_is_refused() -> None:
 def test_example_15_controls_cannot_raise_the_score() -> None:
     """An increase from 5 Low to 8 Moderate is refused."""
     with pytest.raises(ValueError, match="cannot make the after risk higher"):
-        _hazard(("Unlikely", "Minor"), ("Possible", "Minor"))
+        sample_hazard(("Unlikely", "Minor"), ("Possible", "Minor"))
 
 
 def test_example_16_controls_can_leave_the_score_unchanged() -> None:
     """An unchanged score of 8 Moderate is valid and needs no JHA."""
     take5 = Take5(
         template=BOOKLET_TEMPLATE,
-        hazards=(_hazard(("Possible", "Minor"), ("Possible", "Minor")),),
+        hazards=(sample_hazard(("Possible", "Minor"), ("Possible", "Minor")),),
     )
     assert take5.rating == rate(BOOKLET_MATRIX, "Possible", "Minor")
     assert not take5.needs_jha
@@ -114,8 +102,8 @@ def test_the_highest_before_hazard_need_not_have_the_highest_after() -> None:
     take5 = Take5(
         template=BOOKLET_TEMPLATE,
         hazards=(
-            _hazard(("Possible", "Major"), ("Unlikely", "Minor")),
-            _hazard(("Possible", "Moderate"), ("Unlikely", "Moderate")),
+            sample_hazard(("Possible", "Major"), ("Unlikely", "Minor")),
+            sample_hazard(("Possible", "Moderate"), ("Unlikely", "Moderate")),
         ),
     )
     assert take5.rating == rate(BOOKLET_MATRIX, "Unlikely", "Moderate")
@@ -123,12 +111,12 @@ def test_the_highest_before_hazard_need_not_have_the_highest_after() -> None:
 
 def test_scoring_models_are_frozen() -> None:
     """A validated assessment and its nested values cannot be assigned new fields."""
-    hazard: Hazard = _hazard(("Possible", "Minor"), ("Unlikely", "Minor"))
+    hazard: Hazard = sample_hazard(("Possible", "Minor"), ("Unlikely", "Minor"))
     take5 = Take5(template=BOOKLET_TEMPLATE, hazards=(hazard,))
     values: tuple[tuple[BaseModel, str], ...] = (
         (take5, "hazards"),
         (hazard, "after"),
-        (_BARRICADE, "kind"),
+        (BARRICADE, "kind"),
         (BOOKLET_TEMPLATE, "matrix"),
     )
     for value, field_name in values:
@@ -155,7 +143,7 @@ def test_a_second_matrix_supplies_its_own_scales_bands_and_jha_threshold() -> No
             Hazard(
                 description="Example hazard",
                 before=before,
-                controls=(_BARRICADE,),
+                controls=(BARRICADE,),
                 after=after,
             ),
         ),

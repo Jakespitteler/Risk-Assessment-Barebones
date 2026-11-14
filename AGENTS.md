@@ -19,8 +19,9 @@ Run each from the folder shown.
 - Test: in `backend/`, `uv run pytest`. In `frontend/`, `npm test` and `npm run test:e2e`.
 - Lint/format: in `backend/`, `uv run ruff check .` and `uv run ruff format .`. When the lint finds `COM812`
   (missing trailing comma), run `uv run ruff check --fix --select COM812 . ../scripts`, then format again. In
-  `frontend/`, `npm run lint` and `npm run format`. Markdown, in the repo root: `npx markdownlint-cli2@0.24.0 "**/*.md"`.
-  `check.py` also lints `scripts/` with the back end's settings and type checks it with the root `pyproject.toml`.
+  `frontend/`, `npm run lint` and `npm run format`. Markdown, in the repo root:
+  `npx markdownlint-cli2@0.24.0 "**/*.md"`. `check.py` also lints `scripts/` with the back end's settings and
+  type checks it with the root `pyproject.toml`.
 - Spelling (Australian English), in the repo root: `npx -y -p cspell@10.5.0 -p @cspell/dict-en-au@1.1.31 cspell
   -c .cspell/cli.json "**"`.
 - Typecheck: in `backend/`, `uv run pyright --project ..`. In `frontend/`, `npm run typecheck`.

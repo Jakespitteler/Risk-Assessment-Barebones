@@ -113,6 +113,8 @@ backend/
             errors.py          turns errors into the declared error replies
         settings.py        settings read from the environment (database path, AI provider, AI key)
     tests/                 mirrors src/risk_assessment/
+        samples.py         the made-up Take 5s that tests in more than one folder share
+        api/conftest.py    the API tests' set-up: an empty database and a client for each test
 frontend/
     package.json
     src/

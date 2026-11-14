@@ -6,12 +6,8 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from risk_assessment.domain.controls import ControlKind
 from risk_assessment.domain.take5.draft import (
-    ControlDraft,
     FieldError,
-    HazardDraft,
-    RatingChoice,
     Take5Draft,
 )
 from risk_assessment.domain.take5.fix import NOT_SAVED_MESSAGE, NOTHING_TO_FIX_MESSAGE
@@ -19,6 +15,11 @@ from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.template import BOOKLET_MATRIX, Take5Template
 from risk_assessment.services.take5s import InvalidDraftError, Take5Service
 from risk_assessment.storage.sqlite import SqliteTake5Repository
+from tests.samples import (
+    sample_draft,
+    sample_hazard_draft,
+    sample_uncontrolled_draft,
+)
 
 
 class MemoryRepository:
@@ -49,31 +50,11 @@ class MemoryRepository:
         return newest.id if newest is not None else None
 
 
-def _draft() -> Take5Draft:
-    """One controlled hazard, before and after both 8 Moderate."""
-    choice = RatingChoice(likelihood="Possible", consequence="Minor")
-    return Take5Draft(
-        worker_name="Sam Example",
-        job="Example maintenance task",
-        location="Example bay",
-        hazards=(
-            HazardDraft(
-                description="Example hazard",
-                before=choice,
-                after=choice,
-                controls=(
-                    ControlDraft(
-                        description="Barricade the area",
-                        kind=ControlKind.BARRICADE,
-                    ),
-                ),
-            ),
-        ),
-    )
-
-
 def test_the_saved_template_and_verdict_survive_a_new_template() -> None:
     """Reading or retrying must retain the original template and verdict."""
+    draft_rated_8_after: Take5Draft = sample_draft(
+        sample_hazard_draft(after=("Possible", "Minor")),
+    )
     repository = MemoryRepository()
     original_template = Take5Template(
         name="Example original card",
@@ -81,7 +62,7 @@ def test_the_saved_template_and_verdict_survive_a_new_template() -> None:
     )
     original = Take5Service(repository, original_template)
     submission_id: UUID = uuid4()
-    saved: SavedTake5 = original.submit(_draft(), submission_id)
+    saved: SavedTake5 = original.submit(draft_rated_8_after, submission_id)
     assert not saved.verdict.can_start
     later_template = Take5Template(
         name="Example later card",
@@ -89,7 +70,7 @@ def test_the_saved_template_and_verdict_survive_a_new_template() -> None:
     )
     later = Take5Service(repository, later_template)
     assert later.get(submission_id) == saved
-    assert later.submit(_draft(), submission_id) == saved
+    assert later.submit(draft_rated_8_after, submission_id) == saved
     assert len(repository.documents) == 1
 
 
@@ -101,21 +82,12 @@ def test_concurrent_retries_store_the_first_document_once(tmp_path: Path) -> Non
 
     def submit() -> SavedTake5:
         """Send the same worker input using the same submission identifier."""
-        return service.submit(_draft(), submission_id)
+        return service.submit(sample_draft(), submission_id)
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         first: Future[SavedTake5] = pool.submit(submit)
         second: Future[SavedTake5] = pool.submit(submit)
         assert first.result() == second.result()
-
-
-def _uncontrolled_draft() -> Take5Draft:
-    """Example 22: the default draft with its one hazard left without controls."""
-    draft: Take5Draft = _draft()
-    hazard: HazardDraft = draft.hazards[0].model_copy(
-        update={"controls": (), "after": RatingChoice()},
-    )
-    return draft.model_copy(update={"hazards": (hazard,)})
 
 
 def _service() -> Take5Service:
@@ -142,10 +114,10 @@ def _fixes_errors(service: Take5Service, draft: Take5Draft) -> tuple[FieldError,
 def test_a_fix_points_back_and_the_first_take5_is_unchanged() -> None:
     """The fix records `fixes`; the first is found to be fixed but never rewritten."""
     service: Take5Service = _service()
-    first: SavedTake5 = service.submit(_uncontrolled_draft(), uuid4())
+    first: SavedTake5 = service.submit(sample_uncontrolled_draft(), uuid4())
 
     fix: SavedTake5 = service.submit(
-        _draft().model_copy(update={"fixes": first.id}),
+        sample_draft().model_copy(update={"fixes": first.id}),
         uuid4(),
     )
 
@@ -159,8 +131,8 @@ def test_a_fix_points_back_and_the_first_take5_is_unchanged() -> None:
 def test_the_newest_fix_is_the_one_found() -> None:
     """If a Take 5 is fixed twice, its result links to the later fix."""
     service: Take5Service = _service()
-    first: SavedTake5 = service.submit(_uncontrolled_draft(), uuid4())
-    fixed: Take5Draft = _draft().model_copy(update={"fixes": first.id})
+    first: SavedTake5 = service.submit(sample_uncontrolled_draft(), uuid4())
+    fixed: Take5Draft = sample_draft().model_copy(update={"fixes": first.id})
 
     service.submit(fixed, uuid4())
     later: SavedTake5 = service.submit(fixed, uuid4())
@@ -170,7 +142,7 @@ def test_the_newest_fix_is_the_one_found() -> None:
 
 def test_a_fix_of_a_take5_that_is_not_saved_is_refused() -> None:
     """The phone can't link a new Take 5 to one that doesn't exist."""
-    draft: Take5Draft = _draft().model_copy(update={"fixes": uuid4()})
+    draft: Take5Draft = sample_draft().model_copy(update={"fixes": uuid4()})
 
     assert _fixes_errors(_service(), draft) == (
         FieldError(path="fixes", message=NOT_SAVED_MESSAGE),
@@ -180,8 +152,8 @@ def test_a_fix_of_a_take5_that_is_not_saved_is_refused() -> None:
 def test_a_fix_of_a_good_to_go_is_refused() -> None:
     """Only a Don't start yet has something to fix."""
     service: Take5Service = _service()
-    good_to_go: SavedTake5 = service.submit(_draft(), uuid4())
-    draft: Take5Draft = _draft().model_copy(update={"fixes": good_to_go.id})
+    good_to_go: SavedTake5 = service.submit(sample_draft(), uuid4())
+    draft: Take5Draft = sample_draft().model_copy(update={"fixes": good_to_go.id})
 
     assert _fixes_errors(service, draft) == (
         FieldError(path="fixes", message=NOTHING_TO_FIX_MESSAGE),
@@ -192,8 +164,8 @@ def test_a_take5_cannot_fix_itself() -> None:
     """A retry of a Take 5 that names its own ID is refused, not linked to itself."""
     service: Take5Service = _service()
     submission_id: UUID = uuid4()
-    first: SavedTake5 = service.submit(_uncontrolled_draft(), submission_id)
-    draft: Take5Draft = _uncontrolled_draft().model_copy(
+    first: SavedTake5 = service.submit(sample_uncontrolled_draft(), submission_id)
+    draft: Take5Draft = sample_uncontrolled_draft().model_copy(
         update={"fixes": submission_id},
     )
 

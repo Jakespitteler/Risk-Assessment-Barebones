@@ -2,58 +2,19 @@
 
 import sqlite3
 from contextlib import closing
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from uuid import uuid4
 
-from risk_assessment.domain.controls import Control, ControlKind
-from risk_assessment.domain.risk import rate
 from risk_assessment.domain.take5.saved import SavedTake5
-from risk_assessment.domain.take5.take5 import Hazard
-from risk_assessment.domain.take5.template import BOOKLET_MATRIX, BOOKLET_TEMPLATE
-from risk_assessment.domain.take5.verdict import Verdict
 from risk_assessment.storage.sqlite import SqliteTake5Repository
-
-
-def _saved(job: str = "Change tyre on LV12") -> SavedTake5:
-    """Make a saved Take 5 with one controlled hazard and every field filled in.
-
-    Args:
-        job: The job.
-
-    Returns:
-        The saved Take 5, with a new ID.
-    """
-    now: datetime = datetime(2026, 11, 13, 7, 30, tzinfo=UTC)
-    return SavedTake5(
-        template=BOOKLET_TEMPLATE,
-        hazards=(
-            Hazard(
-                description="Moving wheel",
-                before=rate(BOOKLET_MATRIX, "Possible", "Minor"),
-                controls=(
-                    Control(
-                        description="Barricade the area",
-                        kind=ControlKind.BARRICADE,
-                    ),
-                ),
-                after=rate(BOOKLET_MATRIX, "Unlikely", "Minor"),
-            ),
-        ),
-        id=uuid4(),
-        created_at=now,
-        finished_at=now,
-        worker_name="Sam Example",
-        job=job,
-        location="Example workshop",
-        verdict=Verdict(can_start=True, reasons=()),
-    )
+from tests.samples import sample_saved_take5
 
 
 def test_a_saved_take5_reads_back_exactly_as_it_was_saved(tmp_path: Path) -> None:
     """Every field, the template copy and the verdict survive a new connection."""
     database: Path = tmp_path / "take5.sqlite3"
-    take5: SavedTake5 = _saved()
+    take5: SavedTake5 = sample_saved_take5()
 
     SqliteTake5Repository(database).add(take5)
 
@@ -63,8 +24,8 @@ def test_a_saved_take5_reads_back_exactly_as_it_was_saved(tmp_path: Path) -> Non
 def test_a_second_save_with_the_same_id_keeps_the_first(tmp_path: Path) -> None:
     """A saved Take 5 is never replaced."""
     repository = SqliteTake5Repository(tmp_path / "take5.sqlite3")
-    first: SavedTake5 = _saved()
-    second: SavedTake5 = _saved(job="Another example job").model_copy(
+    first: SavedTake5 = sample_saved_take5()
+    second: SavedTake5 = sample_saved_take5(job="Another example job").model_copy(
         update={"id": first.id},
     )
 
@@ -85,7 +46,7 @@ def test_the_file_and_its_folder_are_made_on_first_use(tmp_path: Path) -> None:
     repository = SqliteTake5Repository(database)
     assert not database.exists()
 
-    repository.add(_saved())
+    repository.add(sample_saved_take5())
 
     assert database.exists()
 
@@ -93,7 +54,7 @@ def test_the_file_and_its_folder_are_made_on_first_use(tmp_path: Path) -> None:
 def test_the_columns_beside_the_document_are_filled_in(tmp_path: Path) -> None:
     """The table matches docs/architecture.md, so a later list can sort and find."""
     database: Path = tmp_path / "take5.sqlite3"
-    take5: SavedTake5 = _saved()
+    take5: SavedTake5 = sample_saved_take5()
 
     SqliteTake5Repository(database).add(take5)
 
@@ -112,11 +73,11 @@ def test_the_columns_beside_the_document_are_filled_in(tmp_path: Path) -> None:
 def test_the_newest_fix_of_a_take5_is_found(tmp_path: Path) -> None:
     """`fixed_by` reads `fixes` from inside each document and picks the newest."""
     repository = SqliteTake5Repository(tmp_path / "take5.sqlite3")
-    first: SavedTake5 = _saved()
-    earlier_fix: SavedTake5 = _saved().model_copy(
+    first: SavedTake5 = sample_saved_take5()
+    earlier_fix: SavedTake5 = sample_saved_take5().model_copy(
         update={"fixes": first.id, "created_at": first.created_at + timedelta(hours=1)},
     )
-    later_fix: SavedTake5 = _saved().model_copy(
+    later_fix: SavedTake5 = sample_saved_take5().model_copy(
         update={"fixes": first.id, "created_at": first.created_at + timedelta(hours=2)},
     )
     for take5 in (first, later_fix, earlier_fix):
