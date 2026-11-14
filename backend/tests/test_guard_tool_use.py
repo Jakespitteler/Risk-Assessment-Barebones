@@ -1,5 +1,8 @@
 """Tests for the hook that stops Claude Code touching secrets or breaking git rules."""
 
+# Git accepts these short forms of --force and --no-verify, so the tests use them.
+# cspell:ignore forc verif
+
 import io
 import json
 import subprocess

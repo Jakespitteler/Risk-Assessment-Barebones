@@ -23,7 +23,7 @@ ROOT: Path = Path(__file__).resolve().parents[2]
         ("closed", "Jake", False, False, "task", False),
     ],
 )
-def test_review_gate(
+def test_review_gate_skips_drafts_forks_main_and_its_own_pushes(
     action: str, sender: str, draft: bool, fork: bool, branch: str, expected: bool
 ) -> None:
     """Allow ordinary PR changes, but reject drafts, forks and reviewer loops.

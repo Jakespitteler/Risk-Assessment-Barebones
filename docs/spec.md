@@ -350,6 +350,14 @@ The first four screens of the core workflow, saved when the worker submits.
   with a way to add one. The warning never blocks Finish.
 - Acceptance: a Don't start yet result offers to copy its answers into a new Take 5. The saved one never changes,
   and the two link to each other.
+- How the fix works (task 0010): the check returns *warnings* beside its errors: things that are allowed but
+  will stop the job. For now there is one, on each hazard with no controls (V2): "No controls: you'll be told
+  not to start." The review shows it on its hazard with an "Add a control" button that opens that hazard's
+  controls page; Continue there goes on to rate the new control and then back to the review. "Fix this in a new
+  Take 5" copies the name, job, location and every hazard's description, ratings and controls into a new draft
+  with a new ID, and opens it on the review. A hazard that had no controls was never rated after them, so its
+  after rating starts unpicked. The new Take 5 records which one it fixes. Only a saved Don't start yet can be
+  fixed, and once it has a fix it links to the newest one instead of offering another.
 
 ### F4: Thinking rules
 
@@ -379,7 +387,8 @@ The first four screens of the core workflow, saved when the worker submits.
 - Sign-in, supervisors, crews and approvals.
 - Scanning a filled-in paper card, photos of the job, PDFs of a Take 5, and admin tools.
 - Working with no signal, and keeping a half-filled Take 5 if the app is closed.
-- Starting a Take 5 from an earlier one. Copying is the fastest way to stop thinking.
+- Starting a Take 5 from an earlier one, except to fix a Don't start yet (F3). Copying is the fastest way to stop
+  thinking.
 
 ### Planned for later
 

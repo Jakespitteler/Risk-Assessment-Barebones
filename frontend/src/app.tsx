@@ -8,6 +8,7 @@ import {
 import { NewTake5Screen } from "./features/take5/NewTake5Screen";
 import { RateRiskScreen } from "./features/take5/RateRiskScreen";
 import { Take5ResultScreen } from "./features/take5/Take5ResultScreen";
+import { keepFixDraft } from "./features/take5/useTake5Draft";
 import type { Stage } from "./features/take5/stage";
 import { stageFromSearch, stageToSearch } from "./features/take5/stage";
 
@@ -46,7 +47,19 @@ function NewTake5Route() {
 
 function SavedTake5Route() {
   const { id } = useParams();
-  return <Take5ResultScreen id={id ?? ""} />;
+  const navigate = useNavigate();
+  return (
+    <Take5ResultScreen
+      id={id ?? ""}
+      // The copy opens on the review, where its warnings point at what to fix.
+      onFix={(take5) => {
+        keepFixDraft(take5);
+        void navigate(
+          `/?${new URLSearchParams(stageToSearch({ page: "review" })).toString()}`,
+        );
+      }}
+    />
+  );
 }
 
 // Every screen and its URL. The only place React Router is set up.

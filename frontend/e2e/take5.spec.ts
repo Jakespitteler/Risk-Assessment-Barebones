@@ -90,7 +90,7 @@ test("a rating of 12 says Don't start yet with the JHA reason", async ({
       { exact: true },
     ),
   ).toBeVisible();
-  await capture(page, "take5-dont-start");
+  await capture(page, "take5-do-not-start");
 });
 
 test("a hazard with no controls skips the second rating and stops the job", async ({

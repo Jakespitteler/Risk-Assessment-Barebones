@@ -2,7 +2,7 @@
 
 import sqlite3
 from contextlib import closing
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
@@ -106,3 +106,21 @@ def test_the_columns_beside_the_document_are_filled_in(tmp_path: Path) -> None:
         "Sam Example",
         "Change tyre on LV12",
     )
+
+
+def test_the_newest_fix_of_a_take5_is_found(tmp_path: Path) -> None:
+    """`fixed_by` reads `fixes` from inside each document and picks the newest."""
+    repository = SqliteTake5Repository(tmp_path / "take5.sqlite3")
+    first: SavedTake5 = _saved()
+    earlier_fix: SavedTake5 = _saved().model_copy(
+        update={"fixes": first.id, "created_at": first.created_at + timedelta(hours=1)}
+    )
+    later_fix: SavedTake5 = _saved().model_copy(
+        update={"fixes": first.id, "created_at": first.created_at + timedelta(hours=2)}
+    )
+    for take5 in (first, later_fix, earlier_fix):
+        repository.add(take5)
+
+    assert repository.fixed_by(first.id) == later_fix.id
+    assert repository.fixed_by(later_fix.id) is None
+    assert repository.get(first.id) == first

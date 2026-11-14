@@ -30,3 +30,14 @@ class Take5Repository(Protocol):
             The saved Take 5, or None if there is none with this ID.
         """
         ...
+
+    def fixed_by(self, take5_id: UUID) -> UUID | None:
+        """Find the newest saved Take 5 whose `fixes` is this ID.
+
+        Args:
+            take5_id: The ID of the Take 5 that may have been fixed.
+
+        Returns:
+            The newest fix's ID, or None if there is none.
+        """
+        ...

@@ -32,8 +32,8 @@ PATH_FIELDS: tuple[str, ...] = ("file_path", "path", "notebook_path", "glob")
 MERGE_TOOLS: frozenset[str] = frozenset({"mcp__github__merge_pull_request"})
 MERGE_REASON: str = "Only the human merges a pull request (AGENTS.md)."
 
-# A name that holds secrets or worker data. The look-behind and look-aheads only match
-# whole names, so `.venv`, `os.environ`, `process.env.PORT` and `jq .data` don't
+# A name that holds secrets or worker data. The look-behind and look-ahead checks only
+# match whole names, so `.venv`, `os.environ`, `process.env.PORT` and `jq .data` don't
 # match. Folders only match beside a `/` or `\`. Key files ending in `.key` are left
 # to the deny rules, because `event.key` is ordinary code.
 SECRET_PATH_PATTERN: re.Pattern[str] = re.compile(
@@ -69,6 +69,8 @@ MAIN_NAMES: frozenset[str] = frozenset(
 SUBCOMMANDS_THAT_CHANGE_A_BRANCH: frozenset[str] = frozenset(
     {"commit", "merge", "cherry-pick", "revert", "am", "rebase", "push"}
 )
+# The spell checker skips option letters in a pattern and git's short form of --force.
+# cspell:ignore aqsv aqsvm forc
 # `-n` is `--no-verify` on a commit. These are the commit options that take no value
 # and may share its dash, as in `-anm`.
 COMMIT_NO_VERIFY_PATTERN: re.Pattern[str] = re.compile(r"-[aqsv]*n[aqsvm]*")
