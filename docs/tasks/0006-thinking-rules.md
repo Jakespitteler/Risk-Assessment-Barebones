@@ -1,9 +1,9 @@
 ---
 id: 0006
 title: Thinking rules (spec F4)
-status: todo
-owner:
-branch:
+status: in-progress
+owner: chatgpt
+branch: chatgpt/0006-thinking-rules
 ---
 
 ## Goal
@@ -31,3 +31,8 @@ controls for a serious hazard, and a real job description.
 ## Notes / assumptions
 
 Don't start until the spec is approved (task 0001 is `done`). Depends on 0005.
+
+Claimed after 0017, 0016 and 0005 were completed. Planned as three stacked PRs: pure rules and their
+worked examples; draft checking, API and saved answers; then the phone screens and end-to-end tests.
+The API/data additions need Jake's approval before implementation. Update `docs/tasks/README.md` with the
+remaining order when this task is ready for review, as Jake requested.
