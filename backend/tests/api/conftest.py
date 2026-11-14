@@ -17,7 +17,7 @@ def repository(tmp_path: Path) -> SqliteTake5Repository:
         tmp_path: pytest's temporary folder for this test.
 
     Returns:
-        The repository. Nothing is written to disk until a Take 5 is saved.
+        The repository. Its file is not made until the repository is first used.
     """
     return SqliteTake5Repository(tmp_path / "take5.sqlite3")
 

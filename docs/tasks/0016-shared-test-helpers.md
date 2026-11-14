@@ -38,10 +38,12 @@ Best done after 0010 and before 0005, so the tests that 0005 to 0008 add use the
 
 - `backend/tests/api/conftest.py` has two fixtures: `repository`, an empty SQLite database in `tmp_path`, and
   `client`, the real app over that same repository. A test that checks what was saved asks for both. 14 of the
-  17 tests in `test_take5_workflow.py` that built their own client now use the fixture. The 3 that don't each
-  need the database file itself: two reopen the same file with a new repository, and one checks that no file
-  was created. The two template tests in `test_take5_routes.py` keep `TestClient(create_app())`, because they
-  don't touch a database at all.
+  16 tests in `test_take5_workflow.py` now use the fixture. It replaces 14 of the 17 clients that file built by
+  hand: 11 in the one-line form the first criterion quotes, and 3 over a `repository` the test also reads
+  from. The 2 tests that don't use it each need the database file itself: one saves and then reopens the same
+  file with a new repository, so it builds two clients, and one checks that no file was created. The two
+  template tests in `test_take5_routes.py` keep `TestClient(create_app())`, because they don't touch a database
+  at all.
 - The shared builders are plain functions in `backend/tests/samples.py`, not in a `conftest.py`, because
   pytest's documentation says not to import from a `conftest.py`, and a fixture can't take arguments. Why is in
   `docs/decisions.md`. They are `sample_draft()`, `sample_hazard_draft()`, `sample_uncontrolled_draft()`
@@ -50,9 +52,12 @@ Best done after 0010 and before 0005, so the tests that 0005 to 0008 add use the
   in `test_draft.py`, the `_hazard()` in `test_take5.py`, the hazard inside `_take5()` in `test_verdict.py`, and
   the `_saved()` copies in `test_fix.py` and `test_sqlite.py`. Local helpers used by one file only, such as
   `_take5()` and `_service()`, stay where they are.
-- Assumption: only the made-up names changed. The services tests' draft was a different made-up job ("Example
-  maintenance task"), and two domain tests named their hazard "Example hazard" and their control "Barricade the
-  hazard". They now use the shared example. No assertion reads those names, and one services test that needs
-  the after rating to stay 8 asks for it: `sample_hazard_draft(after=("Possible", "Minor"))`.
+- Assumption: only made-up details that no assertion reads changed. The services tests' draft was a different
+  made-up job ("Example maintenance task" in "Example bay", with the hazard "Example hazard"), rated 8 then 8.
+  `test_take5.py` named its hazard "Example hazard", it and `test_verdict.py` named their control "Barricade
+  the hazard", and the API tests named theirs "Barricade the work area". They now use the shared example, so
+  the services tests' draft is rated 8 then 5. That is Good to go on the booklet's matrix either way. The one
+  services test that needs the after rating to stay 8 asks for it:
+  `sample_hazard_draft(after=("Possible", "Minor"))`.
 - Checked: the same 301 tests are collected before and after (compared by name), and all pass.
 - Also wrapped the 121-character Markdown line in `AGENTS.md` left over from task 0017.
