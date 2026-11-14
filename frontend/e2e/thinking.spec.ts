@@ -153,7 +153,9 @@ test("T3: adding an unfinished control keeps an existing answer visible", async 
   await expect(page.getByText(QUESTION)).toHaveCount(0);
   await expect(page.getByLabel(LABEL)).toHaveValue(REASON);
   await expect(
-    page.getByText("Your earlier answer is kept. You can still edit it."),
+    page.getByText(
+      "Your answer is kept here. It is only saved if the question still applies.",
+    ),
   ).toBeVisible();
   await capture(page, "thinking-kept-answer");
 });

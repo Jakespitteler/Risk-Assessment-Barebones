@@ -57,6 +57,21 @@ it("shows the server's wording and field error, and keeps focus while checking a
   });
 });
 
+it("checks once the worker pauses typing, not once for every key", async () => {
+  const calls = stubApi({
+    "POST /api/take5s/check": { status: 200, body: checked },
+  });
+  renderWithApi(<Answer />);
+  const input = await screen.findByLabelText(label);
+  for (const typed of ["L", "Li", "Liv", "Live"])
+    fireEvent.change(input, { target: { value: typed } });
+  await waitFor(() => {
+    expect(calls).toHaveLength(2);
+  });
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  expect(calls).toHaveLength(2);
+});
+
 it("keeps a written answer visible when the next server reply removes the question", async () => {
   const calls = stubApi({
     "POST /api/take5s/check": [
@@ -75,7 +90,9 @@ it("keeps a written answer visible when the next server reply removes the questi
       "Kept answer",
     );
     expect(
-      screen.getByText("Your earlier answer is kept. You can still edit it."),
+      screen.getByText(
+        "Your answer is kept here. It is only saved if the question still applies.",
+      ),
     ).toBeTruthy();
   });
 });

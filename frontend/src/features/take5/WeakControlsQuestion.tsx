@@ -5,6 +5,11 @@ import { Field } from "../../components/Field";
 import { FIELD_STYLE } from "../../components/fieldStyle";
 import { Notice } from "../../components/Notice";
 import { fieldProps } from "./fieldProps";
+import { useSettledValue } from "./useSettledValue";
+
+// Ask about the controls once the worker pauses typing. One check per key pressed
+// would send dozens of requests over a site's weak signal.
+const PAUSE_BEFORE_CHECK_MS = 400;
 
 /** Show the server's T3 question; keep its answer box mounted during a new check. */
 export function WeakControlsQuestion({
@@ -18,7 +23,11 @@ export function WeakControlsQuestion({
   errorFor: (path: string) => string | undefined;
   onChange: (answer: string) => void;
 }) {
-  const check = useDraftCheck(draft, true, true);
+  const check = useDraftCheck(
+    useSettledValue(draft, PAUSE_BEFORE_CHECK_MS),
+    true,
+    true,
+  );
   const path = `hazards.${String(index)}.weak_controls_reason`;
   const question = (check.data?.thinking_questions ?? []).find(
     (item) => item.path === path,
@@ -53,7 +62,7 @@ export function WeakControlsQuestion({
           <p>
             {question
               ? "You can add a stronger control instead of writing a reason."
-              : "Your earlier answer is kept. You can still edit it."}
+              : "Your answer is kept here. It is only saved if the question still applies."}
           </p>
         </div>
       )}

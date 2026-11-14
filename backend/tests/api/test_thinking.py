@@ -173,11 +173,15 @@ def test_wording_errors_are_inline_errors_on_check_and_save(
 
 
 @pytest.mark.parametrize("reason", ["", REASON])
-def test_a_strong_control_removes_the_question_but_keeps_any_written_answer(
+def test_a_strong_control_removes_the_question_and_the_reason_is_not_rated(
     client: TestClient,
     reason: str,
 ) -> None:
-    """A strong control is the alternative to answering, and never deletes input."""
+    """A strong control is the alternative to answering.
+
+    The phone's draft still holds what was written, but the rated hazard doesn't, so a
+    saved Take 5 never explains why a strong control it lists wasn't possible.
+    """
     hazard: HazardDraft = _weak_hazard(reason)
     hazard = hazard.model_copy(update={"controls": (*hazard.controls, BARRICADE_DRAFT)})
     response: Response = client.post(
@@ -186,7 +190,7 @@ def test_a_strong_control_removes_the_question_but_keeps_any_written_answer(
     )
     assert response.json()["thinking_questions"] == []
     assert response.json()["can_submit"] is True
-    assert response.json()["assessment"]["hazards"][0]["weak_controls_reason"] == reason
+    assert response.json()["assessment"]["hazards"][0]["weak_controls_reason"] == ""
 
 
 def test_the_question_appears_before_the_after_rating_is_picked(

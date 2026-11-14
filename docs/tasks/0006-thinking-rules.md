@@ -39,7 +39,7 @@ The work order now names 0018 as the next task after this stack is reviewed and 
 
 - Part 1: PR #25 (`chatgpt/0006-thinking-rules`), pure rules and examples 28 to 34 and 37 to 39.
 - Part 2: PR #26 (`chatgpt/0006-thinking-api`), draft checking and saved answers, including examples 35 and 36.
-  An answer remains saved after a strong control is added, so an edit never discards the worker's words.
+  The draft keeps an answer after a strong control is added, so an edit never discards the worker's words.
   It never changes the verdict.
 - Part 3: PR #28 (`chatgpt/0006-thinking-ui`), the phone prompt, saved summary and T1 navigation guard. The last
   server question stays visible during rechecking to keep focus while typing; Finish never uses an old check.
