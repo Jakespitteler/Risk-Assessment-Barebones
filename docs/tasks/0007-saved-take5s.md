@@ -1,9 +1,9 @@
 ---
 id: 0007
 title: Saved Take 5s (spec F5)
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/project-thread-87dbya
 ---
 
 ## Goal
