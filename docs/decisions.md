@@ -5,13 +5,14 @@ Newest first. One short entry per non-obvious decision.
 ## 2026-11-14: Anything too long for one line puts one item per line (task 0017)
 
 - Decision: Ruff's `COM812` (missing trailing comma) is on. A `def`, call, list, dictionary or set that doesn't
-  fit on one line gets a trailing comma, so Ruff's formatter puts each item on its own line. One that fits stays
-  on one line. The format-on-save hook runs Ruff's formatter, then `ruff check --fix --select COM812`, then the
-  formatter again, so a short `def` split by hand goes back onto one line first.
+  fit on one line gets a trailing comma, so Ruff's formatter puts each item on its own line. The format-on-save
+  hook runs Ruff's formatter, then `ruff check --fix --select COM812`, then the formatter again, so a short `def`
+  split by hand goes back onto one line first. The limit: once something has a trailing comma, Ruff keeps it
+  split even if a later edit makes it short enough for one line. Delete the comma to join it again.
 - Why: Jake's rule is one parameter per line for a `def` that doesn't fit. Without a trailing comma the
   formatter first puts all the parameters together on one indented line. A check means nobody has to remember
   the rule. `COM812` can't tell a `def` from a call, so calls and collections follow it too: 118 places in 29
-  files changed when it was turned on, 12 of them `def` lines.
+  files changed when it was turned on, 22 of them `def` lines.
 - Alternatives considered: A small script of our own that checks `def` lines only (exactly the rule, but custom
   code to keep, and it reports rather than fixes). Writing the rule down with no check. Ruff warns on every
   `ruff format` run that `COM812` may conflict with the formatter; the conflict only happens when the formatter

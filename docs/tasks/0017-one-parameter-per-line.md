@@ -35,11 +35,19 @@ Ruff can enforce this, so nobody has to remember it.
 ## Notes / assumptions
 
 `COM812` cannot apply to `def` lines only: it also splits calls, lists and dictionaries that are already broken
-over several lines. A trial run changed 98 places in 28 files (about 320 lines), mostly calls. Question for Jake:
-is the same layout fine for calls and collections? If not, the rule can only be written down in AGENTS.md, and no
-check will catch it.
+over several lines. Turning it on changed 118 places in 29 files, 22 of them `def` lines and the rest mostly
+calls. Question for Jake (open): is the same layout fine for calls and collections? Claude recommends yes and
+built that. If not, a small script of our own could check `def` lines only, or the rule can only be written
+down in AGENTS.md.
 
-Ruff's documentation warns that `COM812` and its formatter can disagree. Running `ruff check --fix` before
-`ruff format` gives a stable result, so `check.py` and the format-on-save hook must run them in that order.
+Ruff's documentation warns that `COM812` and its formatter can disagree. Assumption (Claude): the hook runs
+`ruff format`, then `ruff check --fix --select COM812`, then `ruff format` again. Formatting first puts a short
+`def` that was split by hand back onto one line, so only what is really too long gets a comma; the last format
+then splits those items. Running the fix first would keep a short hand-split `def` split. `check.py` runs the
+lint before the format check, so a missing comma is reported as `COM812`. Ruff keeps anything with a trailing
+comma split, so a signature shortened later stays split until its comma is deleted.
+
+Mechanical reformat: its own commit, made only by the three Ruff commands; every changed file has the same syntax
+tree as before. Ruff prints its `COM812` conflict warning on every format run; it is left visible.
 
 Best done soon, before more code is written, and in its own pull request because it touches many files.

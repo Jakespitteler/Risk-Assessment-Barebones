@@ -6,13 +6,14 @@
 Claude Code runs this after every Edit or Write (a `PostToolUse` hook, set in
 `.claude/settings.json`) and passes the call as JSON on standard input. Python goes
 through Ruff's formatter, front-end files through Prettier, and Markdown through
-markdownlint's safe fixes. It only formats. The one lint fix it applies to Python is
-Ruff's trailing comma (`COM812`), which puts one item per line when a line is too long.
-It never runs Ruff's other fixes, which would delete an import that Claude added one
-edit before using it.
+markdownlint's safe fixes. Besides formatting, it applies one lint fix to Python: Ruff's
+trailing comma (`COM812`), which puts one item per line when a line is too long. It
+never runs Ruff's other fixes, which would delete an import that Claude added one edit
+before using it.
 
-The edit has already happened, so this hook can't block it. When the formatter fails,
-for example on a syntax error, the hook exits with code 2 so Claude sees the message.
+The edit has already happened, so this hook can't block it. When a command fails, for
+example on a syntax error, the hook stops and exits with code 2 so Claude sees the
+message.
 """
 
 import json
@@ -48,7 +49,7 @@ def python_format_commands(
     edited_file: Path,
     backend_folder: Path,
 ) -> tuple[FormatCommand, ...]:
-    """Format a Python file so each long signature, call or list has one item per line.
+    """List the commands that give each long signature, call or list one item per line.
 
     The formatter runs first, so a short `def` broken over lines by hand goes back onto
     one line. Ruff's trailing comma fix then marks what is still too long, and the
@@ -61,10 +62,10 @@ def python_format_commands(
     Returns:
         The three commands, in the order they must run.
     """
-    ruff_settings: list[str] = ["uv", "run", "ruff", "--config", "pyproject.toml"]
-    ruff_format: list[str] = [*ruff_settings, "format", str(edited_file)]
+    ruff_with_settings: list[str] = ["uv", "run", "ruff", "--config", "pyproject.toml"]
+    ruff_format: list[str] = [*ruff_with_settings, "format", str(edited_file)]
     add_trailing_commas: list[str] = [
-        *ruff_settings,
+        *ruff_with_settings,
         "check",
         "--fix",
         "--select",
