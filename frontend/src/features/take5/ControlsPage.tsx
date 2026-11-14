@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { ControlDraft, TemplateResponse } from "../../api/take5";
 import { Button } from "../../components/Button";
 import { ControlEditor } from "../../components/ControlEditor";
@@ -12,6 +13,7 @@ export function ControlsPage({
   onChange,
   onAdd,
   onRemove,
+  children,
 }: {
   path: string;
   controls: ControlDraft[];
@@ -20,6 +22,7 @@ export function ControlsPage({
   onChange: (index: number, control: ControlDraft) => void;
   onAdd: () => void;
   onRemove: (index: number) => void;
+  children?: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -54,6 +57,7 @@ export function ControlsPage({
       <Button variant="secondary" onClick={onAdd}>
         Add a control
       </Button>
+      {children}
     </div>
   );
 }

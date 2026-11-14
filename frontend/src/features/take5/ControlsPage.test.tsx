@@ -14,9 +14,12 @@ it("says when there are no controls yet, and adds one", () => {
       onChange={vi.fn()}
       onAdd={onAdd}
       onRemove={vi.fn()}
-    />,
+    >
+      <p>A question about these controls</p>
+    </ControlsPage>,
   );
   expect(screen.getByText("No controls listed yet.")).toBeTruthy();
+  expect(screen.getByText("A question about these controls")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Add a control" }));
   expect(onAdd).toHaveBeenCalledOnce();
 });

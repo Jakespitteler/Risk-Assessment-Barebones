@@ -17,6 +17,11 @@ from risk_assessment.domain.questions import Answer, Question, QuestionRole
 from risk_assessment.domain.risk import RiskMatrix, RiskRating, rate
 from risk_assessment.domain.take5.take5 import Hazard, Take5
 from risk_assessment.domain.take5.template import Take5Template
+from risk_assessment.domain.take5.thinking import (
+    control_wording_error,
+    job_wording_error,
+    weak_controls_question,
+)
 
 FILL_IN_MESSAGE: str = "Fill in this field."
 NO_ANSWER_MESSAGE: str = "Pick Yes, No or N/A."
@@ -63,6 +68,7 @@ class HazardDraft(BaseModel):
         before: The rating before controls.
         controls: The controls, possibly none.
         after: The rating after controls. Ignored when there are no controls (R6).
+        weak_controls_reason: Why stronger controls aren't possible, when T3 asks.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -71,6 +77,7 @@ class HazardDraft(BaseModel):
     before: RatingChoice = Field(default_factory=RatingChoice)
     controls: tuple[ControlDraft, ...] = ()
     after: RatingChoice = Field(default_factory=RatingChoice)
+    weak_controls_reason: str = ""
 
 
 class Take5Draft(BaseModel):
@@ -124,6 +131,20 @@ class FieldWarning(BaseModel):
     message: str
 
 
+class ThinkingQuestion(BaseModel):
+    """A question that applies even once its answer has been filled in.
+
+    Attributes:
+        path: The answer's dotted field path.
+        message: The question to show beside the answer.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    path: str
+    message: str
+
+
 class DraftCheck(BaseModel):
     """What checking a draft found.
 
@@ -133,6 +154,7 @@ class DraftCheck(BaseModel):
             A warning never stops the draft being submitted.
         assessment: The rated Take 5, or None while there are errors.
         can_submit: True when there are no errors.
+        thinking_questions: Applicable prompts, including ones already answered.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -141,6 +163,7 @@ class DraftCheck(BaseModel):
     warnings: tuple[FieldWarning, ...]
     assessment: Take5 | None
     can_submit: bool
+    thinking_questions: tuple[ThinkingQuestion, ...] = ()
 
 
 def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
@@ -154,12 +177,14 @@ def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
         The errors and warnings, and the rated Take 5 when there are no errors.
     """
     errors: list[FieldError] = []
+    questions: list[ThinkingQuestion] = []
     for path, value in (
         ("worker_name", draft.worker_name),
         ("job", draft.job),
         ("location", draft.location),
     ):
         _required_text(value, path, errors)
+    _job_wording(draft.job, errors)
     answers: dict[str, Answer] = _answers(draft.answers, template.questions, errors)
     if not draft.hazards:
         errors.append(FieldError(path="hazards", message=NO_HAZARD_MESSAGE))
@@ -170,6 +195,7 @@ def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
             template.matrix,
             f"hazards.{index}",
             errors,
+            questions,
         )
         if hazard is not None:
             hazards.append(hazard)
@@ -186,6 +212,7 @@ def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
         ),
         assessment=assessment,
         can_submit=not errors,
+        thinking_questions=tuple(questions),
     )
 
 
@@ -262,17 +289,21 @@ def _hazard(
     matrix: RiskMatrix,
     path: str,
     errors: list[FieldError],
+    questions: list[ThinkingQuestion],
 ) -> Hazard | None:
     """Check one hazard and rate it.
 
     With no controls the after rating is the before rating (R6), and controls can't
-    make the after score higher than the before score (R6).
+    make the after score higher than the before score (R6). The weak-controls reason
+    is rated only while T3 asks for it, so a hazard that now has a strong control
+    isn't saved with an explanation of why it couldn't have one.
 
     Args:
         draft: The hazard as the worker filled it in.
         matrix: The matrix to rate it on.
         path: The hazard's dotted path, such as `hazards.0`.
         errors: Where to add any errors found.
+        questions: Where to add the thinking question, even when already answered.
 
     Returns:
         The rated hazard, or None if it has any error.
@@ -289,6 +320,18 @@ def _hazard(
         )
         if control is not None:
             controls.append(control)
+    kinds: tuple[ControlKind, ...] = tuple(
+        control.kind for control in draft.controls if control.kind is not None
+    )
+    question: str | None = (
+        weak_controls_question(before, kinds, matrix)
+        if before is not None and len(kinds) == len(draft.controls)
+        else None
+    )
+    if question is not None:
+        answer_path: str = f"{path}.weak_controls_reason"
+        questions.append(ThinkingQuestion(path=answer_path, message=question))
+        _required_text(draft.weak_controls_reason, answer_path, errors)
     after: RiskRating | None = (
         _rating(draft.after, matrix, f"{path}.after", errors)
         if draft.controls
@@ -303,6 +346,9 @@ def _hazard(
         before=before,
         controls=tuple(controls),
         after=after,
+        weak_controls_reason=(
+            draft.weak_controls_reason.strip() if question is not None else ""
+        ),
     )
 
 
@@ -322,10 +368,13 @@ def _control(
         The control, or None if its wording or its kind is missing.
     """
     description: str = _required_text(draft.description, f"{path}.description", errors)
+    message: str | None = control_wording_error(description)
+    if message is not None:
+        errors.append(FieldError(path=f"{path}.description", message=message))
     if draft.kind is None:
         errors.append(FieldError(path=f"{path}.kind", message=NO_KIND_MESSAGE))
         return None
-    if not description:
+    if not description or message is not None:
         return None
     return Control(description=description, kind=draft.kind)
 
@@ -386,6 +435,20 @@ def _picked(
         errors.append(FieldError(path=path, message=f"Pick a {scale_name}."))
         return None
     return level
+
+
+def _job_wording(job: str, errors: list[FieldError]) -> None:
+    """Report a job description that is too short to say what the job is (T4).
+
+    A blank job already has the "fill in" error, so it gets no second one.
+
+    Args:
+        job: The worker's job description.
+        errors: Where to add an error if it is too short.
+    """
+    message: str | None = job_wording_error(job) if job.strip() else None
+    if message is not None:
+        errors.append(FieldError(path="job", message=message))
 
 
 def _required_text(value: str, path: str, errors: list[FieldError]) -> str:

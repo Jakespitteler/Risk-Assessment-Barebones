@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import type { components } from "./schema";
 
 type Schemas = components["schemas"];
@@ -91,7 +96,11 @@ function checkKey(draft: Take5Draft) {
  * What the back end says is missing from a draft, and its ratings. Saves nothing.
  * Only asks while `enabled`, so the review can share the answer with the Finish button.
  */
-export function useDraftCheck(draft: Take5Draft, enabled = true) {
+export function useDraftCheck(
+  draft: Take5Draft,
+  enabled = true,
+  keepQuestion = false,
+) {
   return useQuery({
     queryKey: checkKey(draft),
     queryFn: () => request<DraftCheck>("/api/take5s/check", draft),
@@ -99,6 +108,9 @@ export function useDraftCheck(draft: Take5Draft, enabled = true) {
     retry: retryOnNetworkError,
     networkMode: NETWORK_MODE,
     enabled,
+    // Only the controls prompt retains old data during editing. Review and Finish
+    // must wait for the check of the current draft, never a previous answer.
+    placeholderData: keepQuestion ? keepPreviousData : undefined,
   });
 }
 

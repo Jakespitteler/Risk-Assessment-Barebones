@@ -33,6 +33,7 @@ const NOTHING_PICKED = { likelihood: null, consequence: null };
 export function blankHazard(): HazardDraft {
   return {
     description: "",
+    weak_controls_reason: "",
     before: { ...NOTHING_PICKED },
     controls: [],
     after: { ...NOTHING_PICKED },
@@ -44,6 +45,7 @@ function hazardDraftOf(hazard: Hazard): HazardDraft {
   const { likelihood, consequence } = hazard.after;
   return {
     description: hazard.description,
+    weak_controls_reason: hazard.weak_controls_reason,
     before: {
       likelihood: hazard.before.likelihood,
       consequence: hazard.before.consequence,

@@ -53,6 +53,12 @@ export function HazardSummary({
       ) : (
         <p>No controls listed.</p>
       )}
+      {hazard.weak_controls_reason && (
+        <div>
+          <h3 className="font-bold">Why stronger controls weren't possible</h3>
+          <p className="whitespace-pre-wrap">{hazard.weak_controls_reason}</p>
+        </div>
+      )}
       {children}
     </Card>
   );

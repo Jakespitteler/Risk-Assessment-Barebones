@@ -87,7 +87,7 @@ backend/
                                    Take 5 is filled in on. BOOKLET_TEMPLATE is the only one for now
                 take5.py           Take5, Hazard: the filled-in card                      (spec R4 to R6)
                 draft.py           Take5Draft (what the phone sends) and check_draft(): every
-                                   gap and warning, named by its field's dotted path      (spec R5, R6, V2)
+                                   gap, warning and thinking question by field path       (spec R5, R6, V2, T2 to T4)
                 fix.py             which saved Take 5 a new one may fix                   (spec F3)
                 saved.py           SavedTake5: a Take 5 as it was saved, with its verdict
                 verdict.py         verdict(take5) -> Verdict with its reasons            (spec V1 to V3)
@@ -123,6 +123,8 @@ frontend/
                            control editor, button, card, field, guidance, notice, warning, undo bar
         features/take5/    the Take 5's screens: the four parts of the form, the question, the result, the list.
                            stage.ts is which page shows (kept in the URL); useTake5Draft.ts keeps the draft
+                           WeakControlsQuestion.tsx draws the server's thinking prompt on the controls page,
+                           checking once typing pauses (useSettledValue.ts)
         test-utils.tsx     the fake card, drafts and API replies the Vitest tests share
         app.tsx            the routes (the only place React Router is set up)
     e2e/                   Playwright tests and screenshots
@@ -154,6 +156,13 @@ always `FormErrors` (`detail` and a list of field errors, each with its dotted `
 gap or the request couldn't be read. A 404 or a 409 is `ErrorMessage` (`detail`). The front end retries a
 request that got no answer, never one that did; `POST /api/take5s` is safe to retry because the phone makes its
 ID once and sends it every time.
+
+The check also returns `thinking_questions`: each has the answer's dotted `path` and the question's
+`message`. A question stays present when answered, while an unanswered required question also has a field
+error. `HazardDraft` and saved `Hazard` carry `weak_controls_reason`, defaulting to an empty string for older
+drafts and documents. The phone's draft keeps the answer even if a later edit adds a strong control, so editing
+never discards the worker's words, but the rated `Hazard` (and so the saved Take 5) keeps it only while T3 still
+asks. It never changes the verdict.
 
 **The front end holds no rules and no card.** It gets the questions and the matrix from
 `GET /api/take5/template`, draws whatever it is sent, and shows a score by looking it up in that matrix. It finds

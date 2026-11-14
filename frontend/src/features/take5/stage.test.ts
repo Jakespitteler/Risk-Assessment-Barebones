@@ -122,3 +122,20 @@ describe("stage", () => {
     });
   });
 });
+
+it("guards a direct hazard-question link until a hazard is written", () => {
+  for (const hazards of [[], [{ ...HAZARD_DRAFT, description: " \n " }]]) {
+    expect(
+      shownStage({ page: "check" }, { ...COMPLETE_DRAFT, hazards }),
+    ).toEqual({ page: "hazards" });
+  }
+  expect(shownStage({ page: "check" }, COMPLETE_DRAFT)).toEqual({
+    page: "check",
+  });
+});
+
+it("sends a weak-controls answer error to that hazard's controls page", () => {
+  expect(
+    stageOfError("hazards.1.weak_controls_reason", SMALL_TEMPLATE.questions),
+  ).toEqual({ page: "controls", hazard: 1 });
+});

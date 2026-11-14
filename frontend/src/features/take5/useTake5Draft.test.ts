@@ -15,6 +15,7 @@ it("copies every answer of a saved Take 5 and says which one it fixes", () => {
     hazards: [
       {
         description: "Moving wheel",
+        weak_controls_reason: "",
         before: { likelihood: "Often", consequence: "Serious" },
         controls: [
           { description: "Chock the wheel", kind: "Isolate the hazard" },
@@ -31,6 +32,18 @@ it("leaves the after rating unpicked for a hazard that had no controls", () => {
     likelihood: null,
     consequence: null,
   });
+});
+
+it("copies the weak-controls answer into a correction", () => {
+  const reason = "Live testing, so the panel can't be isolated";
+  const saved = {
+    ...SAVED.take5,
+    hazards: SAVED.take5.hazards.map((hazard) => ({
+      ...hazard,
+      weak_controls_reason: reason,
+    })),
+  };
+  expect(fixDraftOf(saved).hazards[0]?.weak_controls_reason).toBe(reason);
 });
 
 it("keeps the copy as this tab's draft, with a new submission ID", () => {

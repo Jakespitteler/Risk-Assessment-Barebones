@@ -1,3 +1,4 @@
+import type { Take5Draft } from "../../api/take5";
 import { onlineManager } from "@tanstack/react-query";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { useState } from "react";
@@ -352,13 +353,25 @@ it("opens a warning's controls page, then goes on to rate and back to the review
     assessment: null,
     can_submit: false,
   };
-  stubApi({
-    "POST /api/take5s/check": [
-      { status: 200, body: warned },
-      { status: 200, body: needsAfter },
-      { status: 200, body: PASSING_CHECK },
-    ],
-  });
+  // Controls are checked while editing as well as on Continue: reply from the
+  // submitted draft, not from how many requests happened before it.
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+      if (typeof init?.body !== "string")
+        throw new Error("Expected a JSON draft");
+      const draft = JSON.parse(init.body) as Take5Draft;
+      const current = draft.hazards[0];
+      const body = !current?.controls.length
+        ? warned
+        : !current.after?.likelihood
+          ? needsAfter
+          : PASSING_CHECK;
+      return Promise.resolve(
+        new Response(JSON.stringify(body), { status: 200 }),
+      );
+    }),
+  );
   renderWithApi(<FormAt start={{ page: "review" }} />);
   fireEvent.click(await screen.findByRole("button", { name: "Add a control" }));
   expect(
@@ -553,4 +566,18 @@ it("sends an empty hazard left on the list back there from the questions", async
     expect(document.activeElement).toBe(emptyHazard);
   });
   expect(screen.getByText("Fill in this field.")).toBeTruthy();
+});
+
+it("never renders the hazard questions for a direct link with a blank hazard", () => {
+  storeDraft({
+    ...COMPLETE_DRAFT,
+    hazards: [{ ...HAZARD_DRAFT, description: "  " }],
+  });
+  stubApi({});
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  expect(screen.getByLabelText("Hazard 1")).toBeTruthy();
+  expect(
+    screen.queryByRole("heading", { name: "Did you miss any?" }),
+  ).toBeNull();
+  expect(moves).toEqual([{ page: "hazards", replace: true }]);
 });
