@@ -2,6 +2,24 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-14: Shared test data is plain functions in `tests/samples.py` (task 0016)
+
+- Decision: The API tests get their database and client from fixtures in `backend/tests/api/conftest.py`. The
+  made-up drafts, hazards and saved Take 5s that tests in more than one folder use are plain functions in
+  `backend/tests/samples.py`, imported as `from tests.samples import sample_draft`. A builder used in one file
+  stays in that file. Every builder makes the same example (a moving wheel, 8 then 5 with a barricade) unless a
+  test passes arguments.
+- Why: Set-up suits fixtures: pytest hands each test a fresh one. Data suits functions: a test can pass
+  arguments, and pyright checks each call. A builder in a `conftest.py` is meant to be shared as a fixture, and
+  a fixture that returns a function is harder to read. pytest advises against importing from a `conftest.py`
+  unless it sits in a package; a plain module avoids the question. The front end does the same with
+  `test-utils.tsx`. The import works because `backend/tests/` has an `__init__.py` and pytest uses its default
+  import mode, which puts `backend/` on the path; switching to `--import-mode=importlib` would break it.
+- Alternatives considered: Builders in a `conftest.py`, as task 0016's notes first suggested (shared, but only
+  as fixtures). A separate copy in each folder, as before (each file reads on its own, but the copies had
+  started to drift: two `_draft()` builders made different Take 5s).
+- Decided by: proposed by claude; the human approves it by merging task 0016's pull request
+
 ## 2026-11-14: Anything too long for one line puts one item per line (task 0017)
 
 - Decision: Ruff's `COM812` (missing trailing comma) is on. A `def`, call, list, dictionary or set that doesn't

@@ -1,9 +1,9 @@
 ---
 id: 0016
 title: Share the back end's test set-up through conftest.py files
-status: todo
-owner:
-branch:
+status: done
+owner: claude
+branch: claude/project-thread-a5tkiz
 ---
 
 ## Goal
@@ -13,14 +13,14 @@ end has no fixtures and no `conftest.py`, so each test file builds its own clien
 
 ## Acceptance criteria
 
-- [ ] `backend/tests/api/conftest.py` has a `client` fixture: a `TestClient` over `create_app` with a fresh
+- [x] `backend/tests/api/conftest.py` has a `client` fixture: a `TestClient` over `create_app` with a fresh
   SQLite repository in `tmp_path`. It replaces the 13 copies of
   `TestClient(create_app(SqliteTake5Repository(tmp_path / "take5.sqlite3")))` in `test_take5_workflow.py`. Tests
   that need their own repository (for example, reopening the same database) keep building it.
-- [ ] One shared builder for a sample draft replaces the copies of `_draft()` in `tests/api/` and
+- [x] One shared builder for a sample draft replaces the copies of `_draft()` in `tests/api/` and
   `tests/services/`. The same goes for the hazard builders in `tests/domain/take5/`.
-- [ ] Each fixture and builder has a docstring that says what it gives, and its name says what it is.
-- [ ] No test's meaning changes: the same tests, the same assertions, and all checks pass.
+- [x] Each fixture and builder has a docstring that says what it gives, and its name says what it is.
+- [x] No test's meaning changes: the same tests, the same assertions, and all checks pass.
 
 ## Out of scope
 
@@ -33,3 +33,31 @@ can pass arguments to them. Fixtures suit set-up such as the client. Put a build
 in more than one folder use it; otherwise keep it in the folder's own `conftest.py`.
 
 Best done after 0010 and before 0005, so the tests that 0005 to 0008 add use the shared set-up from the start.
+
+### What was done (claude, 2026-11-14)
+
+- `backend/tests/api/conftest.py` has two fixtures: `repository`, an empty SQLite database in `tmp_path`, and
+  `client`, the real app over that same repository. A test that checks what was saved asks for both. 14 of the
+  16 tests in `test_take5_workflow.py` now use the fixture. It replaces 14 of the 17 clients that file built by
+  hand: 11 in the one-line form the first criterion quotes, and 3 over a `repository` the test also reads
+  from. The 2 tests that don't use it each need the database file itself: one saves and then reopens the same
+  file with a new repository, so it builds two clients, and one checks that no file was created. The two
+  template tests in `test_take5_routes.py` keep `TestClient(create_app())`, because they don't touch a database
+  at all.
+- The shared builders are plain functions in `backend/tests/samples.py`, not in a `conftest.py`, because
+  a `conftest.py` is meant for fixtures, not imports, and a fixture can't take arguments. Why is in
+  `docs/decisions.md`. They are `sample_draft()`, `sample_hazard_draft()`, `sample_uncontrolled_draft()`
+  (example 22), `sample_hazard()` and `sample_saved_take5()`, with the `BARRICADE` controls they use. They
+  replace two `_draft()` and two "without controls" builders (API and services), the `_hazard()` and `_draft()`
+  in `test_draft.py`, the `_hazard()` in `test_take5.py`, the hazard inside `_take5()` in `test_verdict.py`, and
+  the `_saved()` copies in `test_fix.py` and `test_sqlite.py`. Local helpers used by one file only, such as
+  `_take5()` and `_service()`, stay where they are.
+- Assumption: only made-up details that no assertion reads changed. The services tests' draft was a different
+  made-up job ("Example maintenance task" in "Example bay", with the hazard "Example hazard"), rated 8 then 8.
+  `test_take5.py` named its hazard "Example hazard", it and `test_verdict.py` named their control "Barricade
+  the hazard", and the API tests named theirs "Barricade the work area". They now use the shared example, so
+  the services tests' draft is rated 8 then 5. That is Good to go on the booklet's matrix either way. The one
+  services test that needs the after rating to stay 8 asks for it:
+  `sample_hazard_draft(after=("Possible", "Minor"))`.
+- Checked: the same 301 tests are collected before and after (compared by name), and all pass.
+- Also wrapped the 121-character Markdown line in `AGENTS.md` left over from task 0017.
