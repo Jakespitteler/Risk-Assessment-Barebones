@@ -5,38 +5,21 @@
     "ruff.importStrategy": "useBundled",
     "ruff.path": [],
     "ruff.configuration": "${workspaceFolder}/backend/pyproject.toml",
+    // A VS Code setting name below is spelt the American way.
+    // cspell:ignore organize
     "[python]": {
         "editor.defaultFormatter": "charliermarsh.ruff",
         "editor.codeActionsOnSave": {
             "source.organizeImports.ruff": "explicit"
         }
     },
+    // The app's text uses a typographic apostrophe and a multiplication sign (the close button) on purpose.
+    "editor.unicodeHighlight.allowedCharacters": {
+        "’": true,
+        "×": true
+    },
     "files.associations": {
         ".prettierignore": "ignore",
         ".npmrc": "ini"
-    },
-    "cSpell.words": [
-        "Barebones",
-        "creationflags",
-        "docstrings",
-        "fastapi",
-        "formatters",
-        "httpx",
-        "killpg",
-        "NONINFRINGEMENT",
-        "parametrize",
-        "pushback",
-        "pydantic",
-        "pydocstyle",
-        "pyproject",
-        "pytest",
-        "Starlette",
-        "sublicense",
-        "taskkill",
-        "testpaths",
-        "tradeoffs",
-        "uvicorn",
-        "venv",
-        "vite"
-    ]
+    }
 }

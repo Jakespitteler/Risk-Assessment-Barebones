@@ -2,6 +2,18 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-14: The CI reviewer runs Opus 5.5 with at most 15 turns
+
+- Decision: `agent-review.yml` passes `--model claude-opus-5-5` and `--max-turns 15` (was 40). Without
+  `--model` the review runs on the action's default model, because `model:` in `.claude/agents/reviewer.md`
+  only applies to the local subagent. That a pull request's own code, such as `scripts/check.py`, runs in its
+  review is an accepted risk; the action already restores the agent files from `main`.
+- Why: Jake chose Opus 5.5, and asked for a lower turn cap to protect his usage. The first live review (no
+  fixes, on the default model) took 7 turns, so 5 would stop it before it posts its comment. 15 leaves room to
+  fix one thing and run the checks again. The cap is only a ceiling; a review uses what it needs.
+- Alternatives considered: 5 turns (too few, as above) and keeping 40 (more room than a review needs).
+- Decided by: human (Jake, 2026-11-14), after Claude's review of task 0012.
+
 ## 2026-11-13: Fix a Don't start yet in a new Take 5 that points back (task 0010)
 
 - Decision: A worker told Don't start yet can copy its answers into a new Take 5 and fix them there. The new
@@ -19,6 +31,23 @@ Newest first. One short entry per non-obvious decision.
   first page (more thinking, but slower; the review's warning already points at what to fix).
 - Decided by: the human (the fix and the warning, the `fixes` data model change, the copy opening on the review,
   one offered fix, and refusing a fix of a Good to go); claude proposed the search and the warning's shape
+
+## 2026-11-13: Spell check in Australian English, shared through the repo
+
+- Decision: Spelling is Australian English, checked by cspell with its `en-AU` dictionary, which is what Jake's
+  VS Code extension (Australian English - Code Spell Checker) uses. `cspell.json` in the root holds the shared
+  settings, and VS Code and the command line both read it. Project words live in `.cspell/project-words.txt`,
+  not in `.vscode/settings.json`, so any agent can see and extend them. `.cspell/cli.json` adds the `en-AU`
+  dictionary for the command line; the editor gets it from the extension. The `.gitignore` files and `LICENSE` are
+  skipped: they are mostly template text and file patterns. `.vscode/extensions.json` recommends the extension,
+  because without it VS Code would flag nearly every word (the shared settings ask for a dictionary that only
+  the extension or `.cspell/cli.json` supplies).
+- Why: Jake asked for the whole repo to pass his spell checker, and ChatGPT can only follow what is in the repo.
+- Alternatives considered: importing the dictionary in `cspell.json` (the editor would show an import error,
+  because the dictionary is not installed in the repo), and adding cspell as an npm dependency (needs approval;
+  `npx` with pinned versions works the same way as markdownlint does now).
+- Decided by: human (Jake asked for it, 2026-11-13). He chose the same day to run it in `scripts/check.py`, so
+  CI fails on a spelling mistake.
 
 ## 2026-11-13: Bound the automated review and skip its own pushes (task 0012)
 
@@ -103,7 +132,7 @@ Newest first. One short entry per non-obvious decision.
 - Decision: Design for the worker's own phone at the job, including sun and gloves. After listing hazards,
   assess one at a time with separate before, controls and after steps. Show guidance in expandable sections.
 - Why: Jake confirmed that usage context and chose focused hazard assessment and expandable guidance.
-  The card's descriptions help explain ratings without preselecting answers or supplying hazards.
+  The card's descriptions help explain ratings without pre-selecting answers or supplying hazards.
 - Alternatives considered: Shared tablets or desktop-first use; every hazard on one long page; always-visible
   explanations or labels alone. Front-end copies of card guidance would drift, so the API supplies it.
 - Decided by: human (Jake), selecting these options in task 0004's questions.
