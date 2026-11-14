@@ -17,8 +17,8 @@ Newest first. One short entry per non-obvious decision.
   code to keep, and it reports rather than fixes). Writing the rule down with no check. Ruff warns on every
   `ruff format` run that `COM812` may conflict with the formatter; the conflict only happens when the formatter
   runs before the fix and nothing runs after, so the warning is left as it is rather than hidden with `--quiet`.
-- Decided by: human (Jake, 2026-11-14) set the rule. How far it reaches waits on Jake; Claude recommends `COM812`
-  everywhere.
+- Decided by: human (Jake, 2026-11-14) set the rule, then chose Claude's recommendation of `COM812` everywhere
+  over a `def`-only script or no check.
 
 ## 2026-11-14: Open pull requests stack, and a tool's forced branch name is allowed
 

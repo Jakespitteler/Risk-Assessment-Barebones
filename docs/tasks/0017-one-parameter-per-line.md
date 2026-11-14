@@ -1,7 +1,7 @@
 ---
 id: 0017
 title: Put each parameter on its own line when a Python signature is too long for one line
-status: review
+status: done
 owner: claude
 branch: claude/project-thread-az3qy9
 ---
@@ -22,11 +22,11 @@ Ruff can enforce this, so nobody has to remember it.
 
 ## Acceptance criteria
 
-- [ ] `backend/pyproject.toml` turns on Ruff's `COM812` (missing trailing comma). With a trailing comma, Ruff's
+- [x] `backend/pyproject.toml` turns on Ruff's `COM812` (missing trailing comma). With a trailing comma, Ruff's
   formatter puts each item on its own line.
-- [ ] `scripts/check.py` runs the lint before the format check, and `.claude/` hooks keep working.
-- [ ] Every Python file in `backend/` and `scripts/` follows the rule, and all checks pass.
-- [ ] `docs/decisions.md` records the rule.
+- [x] `scripts/check.py` runs the lint before the format check, and `.claude/` hooks keep working.
+- [x] Every Python file in `backend/` and `scripts/` follows the rule, and all checks pass.
+- [x] `docs/decisions.md` records the rule.
 
 ## Out of scope
 
@@ -36,9 +36,8 @@ Ruff can enforce this, so nobody has to remember it.
 
 `COM812` cannot apply to `def` lines only: it also splits calls, lists and dictionaries that are already broken
 over several lines. Turning it on changed 118 places in 29 files, 22 of them `def` lines and the rest mostly
-calls. Question for Jake (open): is the same layout fine for calls and collections? Claude recommends yes and
-built that. If not, a small script of our own could check `def` lines only, or the rule can only be written
-down in AGENTS.md.
+calls. Question for Jake: is the same layout fine for calls and collections? Answered 2026-11-14: yes, `COM812`
+everywhere (Claude's recommendation), rather than a `def`-only script of our own or no check.
 
 Ruff's documentation warns that `COM812` and its formatter can disagree. Assumption (Claude): the hook runs
 `ruff format`, then `ruff check --fix --select COM812`, then `ruff format` again. Formatting first puts a short
