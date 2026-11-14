@@ -11,9 +11,11 @@ Recommended by Claude on 2026-11-13, agreed by Jake the same day.
 3. **0005, the card's questions.** Depends on 0004.
 4. **0006, thinking rules.** Depends on 0005.
 5. **0007, saved Take 5s.** Depends on 0004 only, so it can swap with 0005 or 0006.
-6. **0008, the challenge question.** Depends on 0005.
-7. **0009, the first AI provider.** Depends on 0008.
-8. **0013, glossary and rule tracing.** Last, because its test fails for any spec rule with no test yet, and
+6. **0019, back out of a Take 5 and keep drafts.** Jake asked for it on 2026-11-14. After 0007, so a list of
+   drafts can sit beside the list of saved Take 5s. Jake answers its "Decide first" questions before it starts.
+7. **0008, the challenge question.** Depends on 0005.
+8. **0009, the first AI provider.** Depends on 0008.
+9. **0013, glossary and rule tracing.** Last, because its test fails for any spec rule with no test yet, and
    most of those rules arrive in 0005 to 0008.
 
 When a task is added, or the human changes the order, update this list in the same pull request.
