@@ -2,6 +2,19 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-14: Thinking questions come from the draft check (task 0006)
+
+- Decision: `POST /api/take5s/check` adds `thinking_questions`, each with a field `path` and `message`.
+  A T3 question remains present when answered, so the phone keeps showing the answer without deciding whether
+  the rule applies. `HazardDraft` and `Hazard` gain `weak_controls_reason`, defaulting to an empty string for
+  older drafts and saved documents. A missing required answer is also a normal field error. The short-job
+  message is "Describe the job in at least four words." No dependencies are added.
+- Why: The back end owns when the question applies; a field error alone would disappear when answered and
+  take the answer box with it. Defaults keep existing records readable and unfinished drafts usable.
+- Alternatives considered: Calculating the rule in TypeScript (duplicates a safety rule), or using only an
+  error (cannot represent an answered question that still applies).
+- Decided by: human (Jake, 2026-11-14), approving these additions and the message before implementation.
+
 ## 2026-11-14: The card's questions are one list, answered by question ID (task 0005)
 
 - Decision: `Take5Template.questions` is one list in the card's order. Each `Question` has a short `id` (such as

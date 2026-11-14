@@ -34,5 +34,5 @@ Don't start until the spec is approved (task 0001 is `done`). Depends on 0005.
 
 Claimed after 0017, 0016 and 0005 were completed. Planned as three stacked PRs: pure rules and their
 worked examples; draft checking, API and saved answers; then the phone screens and end-to-end tests.
-The API/data additions need Jake's approval before implementation. Update `docs/tasks/README.md` with the
-remaining order when this task is ready for review, as Jake requested.
+Jake approved the API/data additions and short-job message on 2026-11-14; see `docs/decisions.md`.
+Update `docs/tasks/README.md` with the remaining order when this task is ready for review, as Jake requested.
