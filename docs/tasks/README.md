@@ -13,8 +13,8 @@ now (`docs/decisions.md`, 2026-11-14), so no task to switch storage is in the or
    storage decision in 0018. Depends on 0004, which is complete.
 2. **0019, back out of a Take 5 and keep drafts.** Jake asked for it on 2026-11-14. After 0007, so a list of
    drafts can sit beside the list of saved Take 5s. Jake answers its "Decide first" questions before it starts.
-   Keeping drafts on the server would be the first change to a table that holds saved Take 5s, which is one of
-   0018's reasons to move storage to SQLAlchemy first.
+   Keeping drafts on the server would add a second table with its own repository, which is one of 0018's reasons
+   to move storage to SQLAlchemy first.
 3. **0008, the challenge question.** Depends on 0005, which is complete.
 4. **0009, the first AI provider.** Depends on 0008.
 5. **0013, glossary and rule tracing.** Last, because its test fails for any spec rule with no test yet, and

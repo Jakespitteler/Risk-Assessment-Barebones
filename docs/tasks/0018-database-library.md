@@ -1,7 +1,7 @@
 ---
 id: 0018
 title: Decide whether SQLAlchemy (or a similar library) would make the storage code better or simpler
-status: review
+status: done
 owner: claude
 branch: claude/project-thread-2vyyeo
 ---
@@ -11,7 +11,7 @@ branch: claude/project-thread-2vyyeo
 ## Goal
 
 Jake asked (2026-11-14) whether SQLAlchemy or a similar library would improve or simplify the code. Storage today
-is one file, `storage/sqlite.py` (about 110 lines), using Python's built-in `sqlite3` with hand-written SQL behind
+is one file, `storage/sqlite.py` (about 130 lines), using Python's built-in `sqlite3` with hand-written SQL behind
 the `Take5Repository` interface. The 2026-11-13 decision "Store each Take 5 as one JSON document" chose that over
 SQLAlchemy and Alembic for one table. This task checks that choice against what is coming, and recommends.
 
@@ -24,7 +24,7 @@ SQLAlchemy and Alembic for one table. This task checks that choice against what 
   migrations, for example Alembic), other cards such as JHAs, and a company database (for example PostgreSQL) for
   a private deployment.
 - [x] A recommendation with the trade-offs, and a small code sample of `add` and `get` in the recommended option.
-- [ ] Jake's decision recorded in `docs/decisions.md`. If he chooses a library, a follow-up task to switch is added
+- [x] Jake's decision recorded in `docs/decisions.md`. If he chooses a library, a follow-up task to switch is added
   to the order of work; adding the dependency needs his approval there.
 
 ## Out of scope
@@ -61,15 +61,18 @@ the library versions had 43 to 56, and they skipped the "make the folder on firs
 
 ### SQLAlchemy Core
 
-- **Replaces:** the five SQL strings, with a `Table` definition and queries built in Python, such as
+- **Replaces:** the four SQL strings, with a `Table` definition and queries built in Python, such as
   `select(take5s.c.document).where(take5s.c.id == str(take5_id))`.
 - **Adds:** one dependency (it needs only `typing-extensions`) and an `Engine` that opens connections.
 - **Makes easier:** one set of queries for SQLite and PostgreSQL. In the prototype, reading `document["fixes"]`
-  became `JSON_EXTRACT` on SQLite and `->>` on PostgreSQL without any change. Alembic can manage table changes.
-- **Hides:** the SQL itself, which the library writes. One part still names the database: "insert unless the ID
-  is saved" uses `sqlalchemy.dialects.sqlite.insert(...).on_conflict_do_nothing()`.
+  compiled to `JSON_EXTRACT` for SQLite and to `->>` for PostgreSQL (compiled only, not run against PostgreSQL).
+  Alembic can write migrations by comparing the `Table` with the database (autogenerate). There is no session to
+  learn: a query runs when it is called, as with `sqlite3`.
+- **Hides:** the SQL itself, which the library writes. "Insert unless the ID is saved" can be written for one
+  database (`sqlalchemy.dialects.sqlite.insert(...).on_conflict_do_nothing()`) or, for any database, as "insert,
+  and catch `IntegrityError`".
 - **Typing with pyright strict:** the weakest library option. A `Table`'s columns are typed `Any`, so
-  `select(take5s.c.document)` is `Select[Any, Any]` and a wrong column type passes pyright without a word.
+  `select(take5s.c.document)` is `Select[Any]` and a wrong column type passes pyright without a word.
 - **Mainstream and lasting:** SQLAlchemy is the standard Python database toolkit (first released 2006, version 2
   in 2023), and Core is the layer the rest of it is built on.
 
@@ -79,11 +82,9 @@ the library versions had 43 to 56, and they skipped the "make the folder on firs
   `Mapped[str]`) and a `Session` for each request.
 - **Adds:** one dependency, the row class, and the ORM's ideas: sessions, the unit of work and the identity map.
   Relationships and lazy loading exist but would go unused, because a Take 5 is one JSON document in one table.
-- **Makes easier:** everything Core does, plus full types. Alembic can write a migration by comparing the row
-  class with the database (autogenerate). A JHA table would be one more row class.
+- **Makes easier:** everything Core does, plus full types. A JHA table would be one more row class.
 - **Hides:** more than Core: the session decides when it writes and reads. The well-known surprises (lazy loading,
-  stale objects) mostly come with relationships, which this design doesn't use. "Insert unless the ID is saved"
-  becomes "insert, and catch `IntegrityError`", which works the same on every database.
+  stale objects) mostly come with relationships, which this design doesn't use.
 - **Typing with pyright strict:** the best. `select(Take5Row.id, Take5Row.job)` is `Select[str, str]`, and pyright
   found nothing to fix.
 - **Mainstream and lasting:** the most widely used Python ORM, and what the original Risk-Assessment app uses.
@@ -99,25 +100,27 @@ the library versions had 43 to 56, and they skipped the "make the folder on firs
 - **Typing with pyright strict:** needs workarounds. `__tablename__ = "take5s"` is a type error without a
   `# type: ignore`, and columns look like plain `str`, so sorting needs `col(Take5Row.created_at).desc()`.
 - **Mainstream and lasting:** popular in FastAPI tutorials and written by FastAPI's author, but still versioned
-  0.0.x four years after its first release in 2021. Jake asked for nothing that looks likely to be replaced.
+  0.0.x five years after its first release in 2021. Jake asked for nothing that looks likely to be replaced.
 
 ## What is coming
 
 - **Saved Take 5 list (0007).** One more query. With `sqlite3` it is one more SQL string; no option changes the
   work much.
-- **Drafts (0019).** Recommended on the phone, which needs no table change. If Jake chooses the server instead, it
-  brings a new table or column, and so the first migration.
+- **Drafts (0019).** Recommended on the phone, which needs no table change. If Jake chooses the server instead, a
+  new drafts table needs no migration (it is made the way `take5s` is, on first use), but it is a second table
+  with its own repository code; a draft column on `take5s` would be the first migration.
 - **Table changes.** A new field in the Take 5 needs no migration: a field with a default reads old documents, as
-  `weak_controls_reason` did in task 0006. Only a new column beside the document, or a new table, does. With
-  `sqlite3` that is a short hand-written step; with SQLAlchemy it is Alembic, which brings two more dependencies
-  (Mako and MarkupSafe) and a `migrations/` folder.
-- **Other cards such as JHAs.** Each gets its own repository (docs/architecture.md, Ready for later). With `sqlite3` each
-  would copy much of `sqlite.py`; a shared helper for "a table of JSON documents" would fix that, whichever option
-  is used. With the ORM, each is one row class.
+  `weak_controls_reason` did in task 0006. A new table doesn't either. Only changing a table that already holds
+  rows does, such as a new column beside the document. With `sqlite3` that is a short hand-written step; with
+  SQLAlchemy it is Alembic, which brings two more dependencies (Mako and MarkupSafe) and a `migrations/` folder.
+- **Other cards such as JHAs.** Each gets its own repository (docs/architecture.md, Ready for later). With
+  `sqlite3` each would copy much of `sqlite.py`; a shared helper for "a table of JSON documents" would fix that,
+  whichever option is used. With the ORM, each is one row class.
 - **A company database (for example PostgreSQL).** The strongest reason for SQLAlchemy. With `sqlite3`, a
   PostgreSQL deployment needs a second file (`storage/postgres.py`) with the same queries in PostgreSQL's SQL,
-  plus a driver such as `psycopg`. With SQLAlchemy it is mostly a different connection URL plus the same driver,
-  and the storage tests could run against both.
+  plus a driver such as `psycopg`. With SQLAlchemy the queries stay the same, but the `document` column must be
+  declared as JSON (PostgreSQL's `->>` doesn't work on plain text), the same driver is still needed, and this was
+  only compiled, not run against PostgreSQL. The storage tests could then run against both.
 
 ## Recommendation
 
@@ -125,19 +128,23 @@ Keep `sqlite3` for now. When the first of these is planned, switch to the SQLAlc
 no relationships) with Alembic, as its own task:
 
 1. a deployment on a company database such as PostgreSQL;
-2. the first change to a table that already holds saved Take 5s (a new column, or a new table such as server-kept
-   drafts);
-3. a second kind of card with its own table.
+2. the first change to a table that already holds rows, such as a new column beside the document;
+3. a second table with its own repository: another kind of card, or drafts kept on the server.
 
-**Why not now.** Nothing in the next tasks needs it: 0007 adds one query, and 0019 is recommended on the phone.
-The file would not get meaningfully shorter. Jake wants to understand the back end fully, and a handful of plain
-SQL statements are easier to follow than a query builder and a session's rules. A switch costs about the same later
-as now, because only `storage/` and its tests know how Take 5s are stored; the services and routes only know
-`Take5Repository`.
+**Why not now.** Nothing in the next tasks needs it: 0007 adds one query, and 0019 is recommended on the phone. The
+file would get 8 to 21 lines shorter out of 64, which is not a reason on its own. Jake wants to understand the back
+end fully, and a handful of plain SQL statements are easier to follow than a query builder and a session's rules. A
+switch costs about the same later as now, because only `storage/` and its tests know how Take 5s are stored; the
+services and routes only know `Take5Repository`. Later adds two small steps: an Alembic starting point for
+databases that already hold Take 5s, and deciding whether `created_at`, `worker_name` and `job` stay nullable
+(today they may be empty; the ORM sample's `Mapped[str]` columns may not).
 
-**Why the ORM, when the time comes.** Real types under pyright strict (Core gives `Any`), migrations Alembic can
-write for us, and an "insert unless saved" that works on any database. Not SQLModel: it is still 0.0.x, needs type
-workarounds, and invites joining the domain model to the table, which the boundaries forbid.
+**Why the ORM, when the time comes.** Core and the ORM both get Alembic's autogenerate and an "insert unless
+saved" that works on any database. The difference is typing: under pyright strict the ORM's columns have real types,
+while Core's are `Any`, so a wrong column type would pass unnoticed. The price is the session and its rules, which
+Core doesn't have. Since the project runs pyright strict everywhere, the types win, but this is close, and Core
+is a sound choice if Jake prefers fewer ideas to learn. Not SQLModel: it is still 0.0.x, needs type workarounds,
+and invites joining the domain model to the table, which the boundaries forbid.
 
 **Trade-off accepted.** Until then the SQL works only on SQLite, and the first migration or PostgreSQL deployment
 pays for the switch: one file and its tests, plus Jake's approval of the new dependencies.
@@ -172,7 +179,7 @@ def get(self, take5_id: UUID) -> SavedTake5 | None:
 
 def _read(connection: sqlite3.Connection, take5_id: UUID) -> SavedTake5 | None:
     row: tuple[str] | None = connection.execute(
-        "SELECT document FROM take5s WHERE id = ?",
+        _SELECT_DOCUMENT,  # SELECT document FROM take5s WHERE id = ?
         (str(take5_id),),
     ).fetchone()
     return SavedTake5.model_validate_json(row[0]) if row is not None else None
