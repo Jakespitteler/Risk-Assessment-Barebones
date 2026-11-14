@@ -1,9 +1,9 @@
 ---
 id: 0018
 title: Decide whether SQLAlchemy (or a similar library) would make the storage code better or simpler
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/project-thread-2vyyeo
 ---
 
 ## Goal
