@@ -346,7 +346,9 @@ def _hazard(
         before=before,
         controls=tuple(controls),
         after=after,
-        weak_controls_reason=draft.weak_controls_reason.strip() if question else "",
+        weak_controls_reason=(
+            draft.weak_controls_reason.strip() if question is not None else ""
+        ),
     )
 
 

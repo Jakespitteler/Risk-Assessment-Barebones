@@ -1,7 +1,7 @@
 ---
 id: 0006
 title: Thinking rules (spec F4)
-status: review
+status: done
 owner: chatgpt
 branch: chatgpt/0006-thinking-ui
 ---
@@ -49,3 +49,7 @@ The work order now names 0018 as the next task after this stack is reviewed and 
   Seven 360 px screenshots were inspected. CI uploads them as `phone-screenshots`, rather than committing them.
   PR #28 links to the uploaded artifact. Test the complete app from its branch; the middle API branch does
   not yet have the answer box for T3.
+- Claude reviewed all three PRs on 2026-11-14 and pushed two fixes to PR #28: the controls page checks the
+  draft once typing pauses (it sent one request per key), and a T3 reason is saved only while T3 still asks
+  (see `docs/decisions.md`). Noted, not changed: T3 is not judged while a new control has no kind yet, so the
+  question briefly hides; the kind's own error still blocks submitting.

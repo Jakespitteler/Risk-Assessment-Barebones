@@ -2,6 +2,17 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-14: A T3 reason is saved only while T3 asks (task 0006 review)
+
+- Decision: The phone's draft keeps what the worker wrote for T3, but the rated `Hazard`, and so the saved
+  Take 5, keeps it only while the question still applies. Adding a strong control or lowering the before rating
+  below 11 drops it from what is saved. This replaces part 2's "the answer remains saved".
+- Why: A saved Take 5 is a record. Showing "Why stronger controls weren't possible" beside an isolation control
+  the worker did add contradicts itself.
+- Alternatives considered: Save every answer ever written (keeps a reason that no longer explains anything), or
+  clear the box when the question goes (throws away the worker's words if they undo).
+- Decided by: Claude in review of PR #28; Jake confirms it by merging that PR, or asks for it to be undone.
+
 ## 2026-11-14: Thinking questions come from the draft check (task 0006)
 
 - Decision: `POST /api/take5s/check` adds `thinking_questions`, each with a field `path` and `message`.

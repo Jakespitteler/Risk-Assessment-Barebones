@@ -23,11 +23,15 @@ export function WeakControlsQuestion({
   errorFor: (path: string) => string | undefined;
   onChange: (answer: string) => void;
 }) {
-  const check = useDraftCheck(
+  // A check Continue already made of this exact draft is used at once, so its
+  // question and error show together. Otherwise wait for typing to pause.
+  const current = useDraftCheck(draft, false);
+  const settled = useDraftCheck(
     useSettledValue(draft, PAUSE_BEFORE_CHECK_MS),
     true,
     true,
   );
+  const check = current.data ? current : settled;
   const path = `hazards.${String(index)}.weak_controls_reason`;
   const question = (check.data?.thinking_questions ?? []).find(
     (item) => item.path === path,
@@ -62,7 +66,7 @@ export function WeakControlsQuestion({
           <p>
             {question
               ? "You can add a stronger control instead of writing a reason."
-              : "Your answer is kept here. It is only saved if the question still applies."}
+              : "Your answer is kept here. It is saved only if the question applies when you finish."}
           </p>
         </div>
       )}

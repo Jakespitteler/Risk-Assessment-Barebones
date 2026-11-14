@@ -91,7 +91,7 @@ it("keeps a written answer visible when the next server reply removes the questi
     );
     expect(
       screen.getByText(
-        "Your answer is kept here. It is only saved if the question still applies.",
+        "Your answer is kept here. It is saved only if the question applies when you finish.",
       ),
     ).toBeTruthy();
   });

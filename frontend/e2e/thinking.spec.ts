@@ -98,6 +98,17 @@ test("T3: a required answer survives reload, review, saving and reopening withou
   await capture(page, "thinking-result");
 });
 
+test("T3: Continue straight after picking a weak kind shows the question and focuses it", async ({
+  page,
+}) => {
+  await controls(page);
+  await page.getByLabel("What will you do?").fill("Wear insulating gloves");
+  await page.getByLabel("Kind of control").selectOption("Wear PPE");
+  await next(page);
+  await expect(page.getByText(QUESTION)).toBeVisible();
+  await expect(page.getByLabel(LABEL)).toBeFocused();
+});
+
 test("T3: adding a strong control removes the requirement and undo restores it", async ({
   page,
 }) => {
@@ -154,7 +165,7 @@ test("T3: adding an unfinished control keeps an existing answer visible", async 
   await expect(page.getByLabel(LABEL)).toHaveValue(REASON);
   await expect(
     page.getByText(
-      "Your answer is kept here. It is only saved if the question still applies.",
+      "Your answer is kept here. It is saved only if the question applies when you finish.",
     ),
   ).toBeVisible();
   await capture(page, "thinking-kept-answer");

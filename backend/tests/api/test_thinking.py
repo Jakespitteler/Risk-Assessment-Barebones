@@ -205,3 +205,29 @@ def test_the_question_appears_before_the_after_rating_is_picked(
     assert response.json()["thinking_questions"] == [
         {"path": ANSWER_PATH, "message": QUESTION},
     ]
+
+
+@pytest.mark.parametrize(
+    "no_longer_asked",
+    [
+        {"controls": (*_weak_hazard().controls, BARRICADE_DRAFT)},
+        {"before": RatingChoice(likelihood="Rare", consequence="Major")},
+    ],
+    ids=["a strong control was added", "the before rating fell below 11"],
+)
+def test_a_reason_is_not_saved_once_the_question_no_longer_applies(
+    client: TestClient,
+    repository: SqliteTake5Repository,
+    no_longer_asked: dict[str, object],
+) -> None:
+    """A saved Take 5 never explains away a strong control or a lower risk."""
+    hazard: HazardDraft = _weak_hazard(REASON).model_copy(update=no_longer_asked)
+    request = SubmissionRequest(id=uuid4(), draft=sample_draft(hazard))
+    response: Response = client.post(
+        "/api/take5s",
+        json=request.model_dump(mode="json"),
+    )
+    assert response.status_code == 200
+    saved: SavedTake5 | None = repository.get(request.id)
+    assert saved is not None
+    assert saved.hazards[0].weak_controls_reason == ""
