@@ -1,7 +1,7 @@
 ---
 id: 0007
 title: Saved Take 5s (spec F5)
-status: in-progress
+status: done
 owner: claude
 branch: claude/project-thread-87dbya
 ---
@@ -52,3 +52,8 @@ What was built (2026-11-14, Claude), and the assumptions made:
   one, and will add it to that test.
 - **Not shown in the list:** the location, and whether a Don't start yet has since been fixed. Both are
   questions for Jake in the pull request.
+- **A failed refresh keeps the list.** The list is asked for again when the phone comes back to the app; if that
+  fails, the list already on screen stays.
+- **Found, not fixed here:** the result screen writes its date the browser's default way ("14/11/2026, 6:52:04
+  pm") while the list writes "14 Nov 2026, 6:52 pm". Asked in the pull request. And the draft that "Fix this in a
+  new Take 5" can replace is noted in task 0019.

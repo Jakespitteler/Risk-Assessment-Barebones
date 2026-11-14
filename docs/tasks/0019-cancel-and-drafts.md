@@ -53,3 +53,6 @@ To be finished once the choices above are made. Expected:
 
 Best done after task 0007 (saved Take 5s), whose list a list of drafts would sit beside. The draft is kept by
 `frontend/src/features/take5/useTake5Draft.ts` today; task 0010's `keepFixDraft()` writes a draft there too.
+Found in task 0007: the first page of the form links to the saved Take 5s, so a worker can go from a half-done
+draft to a saved Don't start yet and press "Fix this in a new Take 5", which replaces that draft without a
+warning. This task should decide what happens then.

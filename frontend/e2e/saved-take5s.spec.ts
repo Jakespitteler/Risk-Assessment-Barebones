@@ -59,13 +59,14 @@ test("a worker finds saved Take 5s newest first and opens one as it was saved", 
   // Newest first, each with its verdict, job, worker and date.
   await expect(heading(page, "Saved Take 5s")).toBeVisible();
   const items = page.getByRole("listitem");
-  const good = items.filter({ hasText: GOOD_JOB });
-  const stopped = items.filter({ hasText: STOPPED_JOB });
+  // Newest first, so the first match is this run's, even on a retry.
+  const good = items.filter({ hasText: GOOD_JOB }).first();
+  const stopped = items.filter({ hasText: STOPPED_JOB }).first();
   await expect(good).toContainText("Good to go");
   await expect(good).toContainText("Alex Example");
   await expect(stopped).toContainText("Don’t start yet");
   await expect(stopped.locator("time")).toHaveText(
-    /^\d{1,2} [A-Z][a-z]{2} \d{4}, \d{1,2}:\d{2} [ap]m$/,
+    /^\d{1,2}\s[A-Z][a-z]{2}\s\d{4},\s\d{1,2}:\d{2}\s[ap]m$/,
   );
   const jobs = await items.allTextContents();
   expect(jobs.findIndex((text) => text.includes(STOPPED_JOB))).toBeLessThan(

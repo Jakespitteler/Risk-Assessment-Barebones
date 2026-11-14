@@ -18,8 +18,10 @@ _INSERT: str = (
     "VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING"
 )
 _SELECT_DOCUMENT: str = "SELECT document FROM take5s WHERE id = ?"
-# Every time is saved in UTC in the same ISO format, so the text sorts by time. The
-# row ID breaks a tie, so the one saved last comes first.
+# The service saves every time in UTC, and ISO text in one time zone sorts by time.
+# A time with no fraction of a second, such as 07:30:00+00:00, still sorts before
+# 07:30:00.000005+00:00, because "+" sorts before ".". The row ID breaks a tie, so
+# the one saved last comes first.
 _SELECT_NEWEST_FIRST: str = (
     "SELECT document FROM take5s ORDER BY created_at DESC, rowid DESC"
 )

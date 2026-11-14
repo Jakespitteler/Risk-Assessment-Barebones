@@ -142,6 +142,19 @@ def test_the_list_is_newest_first_whatever_order_they_were_saved_in(
     )
 
 
+def test_a_whole_second_lists_before_a_fraction_of_it(tmp_path: Path) -> None:
+    """07:30:00 is saved without a fraction, yet still sorts before 07:30:00.000005."""
+    repository = SqliteTake5Repository(tmp_path / "take5.sqlite3")
+    on_the_second: SavedTake5 = sample_saved_take5()
+    just_after: SavedTake5 = sample_saved_take5().model_copy(
+        update={"created_at": on_the_second.created_at + timedelta(microseconds=5)},
+    )
+    repository.add(just_after)
+    repository.add(on_the_second)
+
+    assert repository.list_newest_first() == (just_after, on_the_second)
+
+
 def test_two_saved_at_the_same_moment_list_the_last_saved_first(
     tmp_path: Path,
 ) -> None:

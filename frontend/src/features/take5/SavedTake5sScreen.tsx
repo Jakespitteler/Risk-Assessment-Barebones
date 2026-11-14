@@ -73,7 +73,7 @@ export function SavedTake5sScreen() {
             Loading saved Take 5s…
           </h1>
         )}
-        {list.isError && (
+        {list.isLoadingError && (
           <>
             <h1 tabIndex={-1} className={HEADING}>
               The saved Take 5s couldn’t be loaded
@@ -82,7 +82,8 @@ export function SavedTake5sScreen() {
             <Button onClick={() => void list.refetch()}>Try again</Button>
           </>
         )}
-        {list.isSuccess && (
+        {/* A failed refresh keeps the list it already has. */}
+        {list.data && (
           <>
             <h1 tabIndex={-1} className={HEADING}>
               Saved Take 5s

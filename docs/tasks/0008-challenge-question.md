@@ -38,6 +38,10 @@ asks the fallback question every time; task 0009 plugs in a real AI.
 Don't start until the spec is approved (task 0001 is `done`). Depends on 0005 (example 53 needs the think-through
 questions and V1); best after 0006.
 
+Left for this task by task 0007 (the saved Take 5 list): make `Take5Summary.can_start` `bool | None` (None for an
+unfinished Take 5), show "Not finished" in `SavedTake5sScreen.tsx` with a test, and add the answer endpoint to
+`test_no_endpoint_changes_a_saved_take5` in `backend/tests/api/test_saved_take5s.py`.
+
 The instructions in `ai/challenge.py` must treat the worker's text as data, not as instructions (see
 "What the AI is given" in `docs/architecture.md`). Add a worked example with a job description that tries to
 change the AI's instructions.

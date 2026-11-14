@@ -1,7 +1,7 @@
 import { fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type { Take5Summary } from "../../api/take5";
-import { renderWithApi, stubApi } from "../../test-utils";
+import { quickClient, renderWithApi, stubApi } from "../../test-utils";
 import { SavedTake5sScreen } from "./SavedTake5sScreen";
 
 afterEach(() => {
@@ -43,6 +43,23 @@ it("lists each saved Take 5 in the order sent, with its verdict, job, worker and
   );
   expect(oldest?.getByText("Good to go")).toBeTruthy();
   expect(oldest?.getByText("Change tyre")).toBeTruthy();
+});
+
+it("moves the focus to the heading, so a screen reader starts there", async () => {
+  stubApi({ "GET /api/take5s": { status: 200, body: LIST } });
+  renderWithApi(<SavedTake5sScreen />);
+  const heading = await screen.findByRole("heading", { name: "Saved Take 5s" });
+  expect(document.activeElement).toBe(heading);
+});
+
+it("keeps showing the list when a refresh fails", async () => {
+  stubApi({ "GET /api/take5s": [{ status: 200, body: LIST }, "offline"] });
+  const client = quickClient();
+  renderWithApi(<SavedTake5sScreen />, client);
+  expect(await screen.findByText("Replace conveyor idler")).toBeTruthy();
+  await client.refetchQueries({ queryKey: ["take5s"] });
+  expect(screen.getByRole("heading", { name: "Saved Take 5s" })).toBeTruthy();
+  expect(screen.getByText("Replace conveyor idler")).toBeTruthy();
 });
 
 it("opens a saved Take 5's result screen from its card", async () => {

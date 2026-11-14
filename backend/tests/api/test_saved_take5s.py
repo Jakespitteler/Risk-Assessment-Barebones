@@ -9,7 +9,9 @@ from httpx2 import Response
 from risk_assessment.api.app import create_app
 from risk_assessment.api.schemas import SubmissionRequest
 from risk_assessment.domain.take5.draft import Take5Draft
-from tests.samples import sample_draft, sample_uncontrolled_draft
+from risk_assessment.domain.take5.verdict import Verdict
+from risk_assessment.storage.sqlite import SqliteTake5Repository
+from tests.samples import sample_draft, sample_saved_take5, sample_uncontrolled_draft
 
 
 def _submit(client: TestClient, draft: Take5Draft) -> dict[str, Any]:
@@ -60,6 +62,25 @@ def test_the_list_is_newest_first_with_the_date_worker_job_and_verdict(
             "can_start": False,
         },
     ]
+
+
+def test_the_list_sends_the_verdict_saved_not_one_worked_out_again(
+    client: TestClient,
+    repository: SqliteTake5Repository,
+) -> None:
+    """A Take 5 stopped by an older rule still lists as Don't start yet.
+
+    Its one hazard is controlled, so today's rules would say Good to go.
+    """
+    stopped_by_an_older_rule = Verdict(
+        can_start=False,
+        reasons=("An older rule stopped this job.",),
+    )
+    repository.add(sample_saved_take5(verdict=stopped_by_an_older_rule))
+
+    listed: list[dict[str, Any]] = client.get("/api/take5s").json()
+
+    assert [line["can_start"] for line in listed] == [False]
 
 
 def test_the_list_is_empty_before_anything_is_saved(client: TestClient) -> None:

@@ -2,6 +2,20 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-14: The saved Take 5 list sends one short line per Take 5 (task 0007)
+
+- Decision: `GET /api/take5s` returns a list of `Take5Summary` (`id`, `created_at`, `worker_name`, `job`,
+  `can_start`), newest first, with no paging. `Take5Repository` gains `list_newest_first()`. The verdict is the one
+  saved with each Take 5, never worked out again. Task 0008 makes `can_start` `bool | None`, None meaning "Not
+  finished".
+- Why: The list screen shows only the date, worker, job and verdict (spec F5). Sending the whole card, with its
+  template copy, for every Take 5 would be slow on a weak signal. Paging, search and filters are out of scope for
+  now.
+- Alternatives considered: Sending each whole `SavedTake5` (no new shape, but much bigger). A `Verdict` with its
+  reasons in each line (the list doesn't show the reasons). Paging now (more code before there are enough Take 5s
+  to need it).
+- Decided by: claude, in task 0007; Jake approves by merging its pull request.
+
 ## 2026-11-14: Keep the built-in sqlite3 until storage needs more (task 0018)
 
 - Decision: Storage stays on Python's built-in `sqlite3` with hand-written SQL. It moves to the SQLAlchemy ORM
