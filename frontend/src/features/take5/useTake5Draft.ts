@@ -18,6 +18,8 @@ interface StoredDraft {
   version: number;
   draft: Take5Draft;
   submissionId: string;
+  /** The hazard questions a hazard was added from, so their Yes shows it was done. */
+  addedFor?: string[];
 }
 
 export interface Removal {
@@ -133,19 +135,34 @@ export function useTake5Draft() {
   const [submissionId] = useState(
     () => stored?.submissionId ?? newSubmissionId(),
   );
+  const [addedFor, setAddedFor] = useState<string[]>(
+    () => stored?.addedFor ?? [],
+  );
   const [removal, setRemoval] = useState<Removal | null>(null);
   const [kept, setKept] = useState(true);
 
   useEffect(() => {
     if (!kept) return;
-    const value: StoredDraft = { version: DRAFT_VERSION, draft, submissionId };
+    const value: StoredDraft = {
+      version: DRAFT_VERSION,
+      draft,
+      submissionId,
+      addedFor,
+    };
     write(() => sessionStorage, DRAFT_KEY, JSON.stringify(value));
-  }, [draft, submissionId, kept]);
+  }, [draft, submissionId, addedFor, kept]);
 
   return {
     draft,
     submissionId,
     removal,
+    addedFor,
+    /** Remember that a hazard was added from this hazard question. */
+    markAdded: (questionId: string) => {
+      setAddedFor((current) =>
+        current.includes(questionId) ? current : [...current, questionId],
+      );
+    },
     // An edit after a removal ends its undo, so Undo can never wipe newer answers.
     change: (update: (current: Take5Draft) => Take5Draft) => {
       setRemoval(null);

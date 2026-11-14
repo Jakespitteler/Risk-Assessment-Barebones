@@ -93,13 +93,15 @@ export function Take5Form(props: Take5FormProps) {
 
   /**
    * A Yes to a hazard question: add an empty hazard and open the list with the cursor
-   * in it. Continue there comes back to the questions, with their answers kept.
+   * in it. Continue there comes back to the questions, with their answers kept and
+   * this question marked as added to the list.
    */
-  function addHazard() {
+  function addHazard(questionId: string) {
     take5.change((current) => ({
       ...current,
       hazards: [...current.hazards, blankHazard()],
     }));
+    take5.markAdded(questionId);
     const hazards: Stage = { page: "hazards" };
     focusFieldOn(
       hazards,

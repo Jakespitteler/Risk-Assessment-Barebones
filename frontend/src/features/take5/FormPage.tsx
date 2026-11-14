@@ -36,7 +36,7 @@ export function FormPage({
   onErrorsChange: (errors: FieldError[]) => void;
   onGaps: (errors: FieldError[]) => void;
   onOpenWarning: (warning: FieldWarning) => void;
-  onAddHazard: () => void;
+  onAddHazard: (questionId: string) => void;
 }) {
   const { draft, change, remove } = take5;
   const errorFor = (path: string) =>
@@ -102,6 +102,7 @@ export function FormPage({
         questions={questionsFor("hazard")}
         choices={template.answer_choices}
         answers={draft.answers}
+        addedFor={take5.addedFor}
         errorFor={errorFor}
         onAnswer={answer}
         onAddHazard={onAddHazard}

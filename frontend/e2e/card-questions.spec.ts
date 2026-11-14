@@ -107,4 +107,9 @@ test("a Yes to a hazard question offers to add it to the list", async ({
       name: "Yes",
     }),
   ).toBeChecked();
+  await expect(page.getByText("Added to your list")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add a hazard" })).toHaveCount(
+    0,
+  );
+  await capture(page, "questions-hazard-check-added");
 });

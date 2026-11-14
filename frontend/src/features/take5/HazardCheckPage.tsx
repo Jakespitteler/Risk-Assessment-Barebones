@@ -6,13 +6,15 @@ import { Warning } from "../../components/Warning";
 
 /**
  * Step 3, after the list: the card's hazard questions, as a check on what the worker
- * wrote. Their list is shown first, so a Yes can be checked against it.
+ * wrote. Their list is shown first, so a Yes can be checked against it. Once a hazard
+ * has been added from a Yes, the reminder becomes a tick, with a way to add another.
  */
 export function HazardCheckPage({
   hazards,
   questions,
   choices,
   answers,
+  addedFor,
   errorFor,
   onAnswer,
   onAddHazard,
@@ -21,9 +23,10 @@ export function HazardCheckPage({
   questions: Question[];
   choices: Answer[];
   answers: Partial<Record<string, Answer>>;
+  addedFor: string[];
   errorFor: (path: string) => string | undefined;
   onAnswer: (questionId: string, answer: Answer) => void;
-  onAddHazard: () => void;
+  onAddHazard: (questionId: string) => void;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -50,14 +53,34 @@ export function HazardCheckPage({
                 onAnswer(question.id, answer);
               }}
             />
-            {answers[question.id] === "Yes" && (
-              <Warning>
-                <p>Make sure it’s on your list.</p>
-                <Button variant="secondary" onClick={onAddHazard}>
-                  Add a hazard
-                </Button>
-              </Warning>
-            )}
+            {answers[question.id] === "Yes" &&
+              (addedFor.includes(question.id) ? (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-semibold text-green-800">
+                    <span aria-hidden="true">✓ </span>Added to your list
+                  </p>
+                  <Button
+                    variant="quiet"
+                    onClick={() => {
+                      onAddHazard(question.id);
+                    }}
+                  >
+                    Add another
+                  </Button>
+                </div>
+              ) : (
+                <Warning>
+                  <p>Make sure it’s on your list.</p>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      onAddHazard(question.id);
+                    }}
+                  >
+                    Add a hazard
+                  </Button>
+                </Warning>
+              ))}
           </Card>
         );
       })}

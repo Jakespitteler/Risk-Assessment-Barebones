@@ -46,8 +46,9 @@ saved until the worker submits it. Then the app asks its one question, and then 
    then does the app show the card's seven hazard questions as a cross-check ("did you miss any of these?"), on
    their own page after the list, with the worker's list at the top (decision D13). A Yes shows "Make sure it's
    on your list" with a button to add a hazard, which opens the list with a new empty hazard; Continue there
-   comes back to the questions. Every Take 5 has at least one hazard: "no hazards" is not an answer on a mine
-   site.
+   comes back to the questions. Once a hazard has been added from that Yes, it shows "Added to your list" with
+   an "Add another" link instead (decision D15). Every Take 5 has at least one hazard: "no hazards" is not an
+   answer on a mine site.
 4. **Assess the risk and make the changes.** For each hazard the worker:
    1. rates how likely and how bad it is **before** any controls,
    2. writes each control and picks what kind of control it is,
@@ -435,6 +436,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D12 | The front-end libraries | React, TypeScript, Vite, Tailwind CSS, TanStack Query, React Router (see `architecture.md`) | Svelte or Vue |
 | D13 | Where the hazard questions go (2026-11-14) | Their own page after the hazard list, with the list at the top | Under the list on the same page |
 | D14 | What a fix does with the answers (2026-11-14) | Copies them; the review warns on each No with a way to change it | Leave them blank, so all 14 are answered again |
+| D15 | What a Yes shows after a hazard is added from it (2026-11-14) | A tick, "Added to your list", and an "Add another" link | The same reminder without its button; or the reminder and button unchanged |
 
 ## Open questions
 

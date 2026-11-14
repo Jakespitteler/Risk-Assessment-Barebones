@@ -447,6 +447,8 @@ it("a Yes to a hazard question adds a hazard, then comes back to the questions",
     await screen.findByRole("heading", { name: "Did you miss any?" }),
   ).toBeTruthy();
   expect(screen.getByText("Dog near the gate")).toBeTruthy();
+  expect(screen.getByText("Added to your list")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Add a hazard" })).toBeNull();
   expect(
     within(
       screen.getByRole("group", { name: "Are there dogs on site?" }),

@@ -43,6 +43,11 @@ Done by claude on 2026-11-14:
 - Jake chose (spec D14) that "Fix this in a new Take 5" copies the answers, and that the review warns on each
   think-through question answered No ("You answered No: you'll be told not to start.") with a "Change answer"
   button. Spec F3 is updated to match.
+- Jake chose (spec D15), after trying it, that once a hazard has been added from a Yes, the reminder becomes
+  "Added to your list" with an "Add another" link. Which questions have had a hazard added is kept with the
+  phone's draft (not sent to the back end), so it survives a reload but not a new Take 5.
+- PR 23 closed by itself when PR 22's branch was deleted on merge, so the work moved to a new PR. AGENTS.md
+  step 3 now says to change the next PR's base to `main` before merging, not after.
 - Assumption: each No is its own V1 reason, in the card's order (spec V1 now says so).
 - The data shape (one list of questions with IDs and roles, answers by question ID) is in `docs/decisions.md`.
 - The form now has five steps: Job, Think, Hazards, Assess, Review. The review and the result screen list every
