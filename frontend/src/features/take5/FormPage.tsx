@@ -17,6 +17,7 @@ import type { Stage } from "./stage";
 import { ThinkPage } from "./ThinkPage";
 import type { Take5DraftState } from "./useTake5Draft";
 import { blankHazard } from "./useTake5Draft";
+import { WeakControlsQuestion } from "./WeakControlsQuestion";
 
 /** The page for a stage, wired to the draft. An edit clears that field's errors. */
 export function FormPage({
@@ -173,7 +174,18 @@ export function FormPage({
             ),
           }));
         }}
-      />
+      >
+        <WeakControlsQuestion
+          draft={draft}
+          index={index}
+          errorFor={errorFor}
+          onChange={(weakControlsReason) => {
+            editHazard(index, "weak_controls_reason", {
+              weak_controls_reason: weakControlsReason,
+            });
+          }}
+        />
+      </ControlsPage>
     );
   const when = stage.page;
   return (

@@ -123,6 +123,7 @@ frontend/
                            control editor, button, card, field, guidance, notice, warning, undo bar
         features/take5/    the Take 5's screens: the four parts of the form, the question, the result, the list.
                            stage.ts is which page shows (kept in the URL); useTake5Draft.ts keeps the draft
+                           WeakControlsQuestion.tsx draws the server's thinking prompt on the controls page
         test-utils.tsx     the fake card, drafts and API replies the Vitest tests share
         app.tsx            the routes (the only place React Router is set up)
     e2e/                   Playwright tests and screenshots

@@ -18,3 +18,19 @@ it("says when a hazard has no controls", () => {
   expect(screen.getByText("No controls listed.")).toBeTruthy();
   expect(screen.getByText("Hazard 2")).toBeTruthy();
 });
+
+it("shows the saved reason without changing or summarising it", () => {
+  const reason = "Live testing, so the panel can't be isolated";
+  render(
+    <HazardSummary
+      hazard={{ ...RATED_HAZARD, weak_controls_reason: reason }}
+      number={1}
+    />,
+  );
+  expect(
+    screen.getByRole("heading", {
+      name: "Why stronger controls weren't possible",
+    }),
+  ).toBeTruthy();
+  expect(screen.getByText(reason)).toBeTruthy();
+});

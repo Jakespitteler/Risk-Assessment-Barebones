@@ -43,8 +43,13 @@ export function sameStage(first: Stage, second: Stage): boolean {
   );
 }
 
-/** A stage the draft can show: a hazard that was removed sends the worker to the list. */
+/** Guard T1 and pages for removed hazards; neither may skip the hazard list. */
 export function shownStage(stage: Stage, draft: Take5Draft): Stage {
+  if (
+    stage.page === "check" &&
+    !draft.hazards.some((hazard) => hazard.description.trim())
+  )
+    return { page: "hazards" };
   if (!("hazard" in stage)) return stage;
   const hazard = draft.hazards[stage.hazard];
   if (!hazard) return { page: "hazards" };
@@ -127,6 +132,7 @@ export function stageOfError(path: string, questions: Question[]): Stage {
   }
   if (first !== "hazards") return FIRST_STAGE;
   const hazard = Number(index);
+  if (field === "weak_controls_reason") return { page: "controls", hazard };
   if (field === "before" || field === "controls" || field === "after")
     return { page: field, hazard };
   return { page: "hazards" };
