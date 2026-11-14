@@ -44,8 +44,9 @@ Known templates that fit, best first:
 
 Jake's answers (2026-11-14, in chat):
 
-1. Owner: Jake Spitteler (the name the old MIT licence used), for now, instead of Talison Lithium. If Talison is to own it later, change the name in
-   `LICENSE` and `README.md`; whether that needs a signed assignment is a question for a lawyer.
+1. Owner: Jake Spitteler (the name the old MIT licence used), for now, instead of Talison Lithium. If Talison is
+   to own it later, change the name in `LICENSE` and `README.md`; whether that needs a signed assignment is a
+   question for a lawyer.
 2. Already Talison's? Not needed while Jake is the owner.
 3. Who may use it: not answered. Assumed: nobody without the owner's written permission, which is what the
    notice says. Jake can still give anyone written permission.
