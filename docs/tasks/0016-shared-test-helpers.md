@@ -1,7 +1,7 @@
 ---
 id: 0016
 title: Share the back end's test set-up through conftest.py files
-status: review
+status: done
 owner: claude
 branch: claude/project-thread-a5tkiz
 ---
@@ -45,7 +45,7 @@ Best done after 0010 and before 0005, so the tests that 0005 to 0008 add use the
   template tests in `test_take5_routes.py` keep `TestClient(create_app())`, because they don't touch a database
   at all.
 - The shared builders are plain functions in `backend/tests/samples.py`, not in a `conftest.py`, because
-  pytest's documentation says not to import from a `conftest.py`, and a fixture can't take arguments. Why is in
+  a `conftest.py` is meant for fixtures, not imports, and a fixture can't take arguments. Why is in
   `docs/decisions.md`. They are `sample_draft()`, `sample_hazard_draft()`, `sample_uncontrolled_draft()`
   (example 22), `sample_hazard()` and `sample_saved_take5()`, with the `BARRICADE` controls they use. They
   replace two `_draft()` and two "without controls" builders (API and services), the `_hazard()` and `_draft()`

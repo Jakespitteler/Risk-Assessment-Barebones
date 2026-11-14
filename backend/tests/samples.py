@@ -6,8 +6,8 @@ Sam Example changing a tyre on LV12, with one hazard, a moving wheel, rated
 `model_copy`, to change only the part it is about.
 
 These are plain functions rather than pytest fixtures, so a test can pass them
-arguments and pyright checks each call. pytest's own advice is not to import from a
-`conftest.py`, so they live here instead.
+arguments and pyright checks each call. They live here rather than in a `conftest.py`,
+which is meant for fixtures rather than imports.
 """
 
 from datetime import UTC, datetime
