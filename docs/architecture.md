@@ -162,8 +162,9 @@ out what is missing or needs another look by asking
 in the front end, because they are about what is on the screen: spec T1 (hiding the hazard questions until a
 hazard is written), skipping the after-controls page of a hazard with no controls, putting each question on the
 page for its role (stop questions on the think-through page, hazard questions after the hazard list), and
-showing "Make sure it's on your list" after a Yes to a hazard question. The back end still
-decides that the after rating of a hazard with no controls is its before rating (R6).
+showing "Make sure it's on your list" after a Yes to a hazard question, then "Added to your list" once a hazard
+has been added from it (spec D15). The back end still decides that the after rating of a hazard with no controls
+is its before rating (R6).
 
 While developing, Vite serves the front end and passes `/api` calls on to FastAPI. When hosted, FastAPI serves
 the built front-end files itself, so there is still only one program to run.

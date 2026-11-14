@@ -195,7 +195,8 @@ Newest first. One short entry per non-obvious decision.
 ## 2026-11-13: Keep the unfinished Take 5 in the browser tab (task 0004 review)
 
 - Decision: The draft and its submission ID are kept in the tab's `sessionStorage` until the Take 5 is saved, a
-  409 says its ID is used, or the tab is closed. Only the worker's name is kept after that.
+  409 says its ID is used, or the tab is closed. Only the worker's name is kept after that. (Task 0005 added the
+  list of hazard questions a hazard was added from, spec D15.)
 - Why: On a phone a reload or a slip of the back gesture would otherwise lose everything typed, and the same ID
   must survive a reload so a retry can't save the Take 5 twice.
 - Alternatives considered: Keep it in memory only (lost on reload). `localStorage` (kept after the tab closes,

@@ -25,6 +25,7 @@ interface StoredDraft {
 export interface Removal {
   message: string;
   before: Take5Draft;
+  addedForBefore: string[];
 }
 
 const NOTHING_PICKED = { likelihood: null, consequence: null };
@@ -168,12 +169,19 @@ export function useTake5Draft() {
       setRemoval(null);
       setDraft(update);
     },
+    // A hazard isn't tied to the question it came from, so removing any hazard forgets
+    // every mark: each Yes then reminds the worker again until Undo puts them back.
     remove: (message: string, update: (current: Take5Draft) => Take5Draft) => {
-      setRemoval({ message, before: draft });
-      setDraft(update);
+      const after = update(draft);
+      setRemoval({ message, before: draft, addedForBefore: addedFor });
+      if (after.hazards.length < draft.hazards.length) setAddedFor([]);
+      setDraft(after);
     },
     undoRemoval: () => {
-      if (removal) setDraft(removal.before);
+      if (removal) {
+        setDraft(removal.before);
+        setAddedFor(removal.addedForBefore);
+      }
       setRemoval(null);
     },
     dismissRemoval: () => {

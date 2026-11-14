@@ -456,6 +456,57 @@ it("a Yes to a hazard question adds a hazard, then comes back to the questions",
   ).toBe(true);
 });
 
+it("still shows a hazard was added from a Yes after a reload", async () => {
+  storeDraft({ ...COMPLETE_DRAFT, answers: { keys: "Yes", dogs: "Yes" } });
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  const beforeReload = renderWithApi(<FormAt start={{ page: "check" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Add a hazard" }));
+  const newHazard = await screen.findByLabelText("Hazard 2");
+  fireEvent.change(newHazard, { target: { value: "Dog near the gate" } });
+  beforeReload.unmount();
+
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  expect(screen.getByText("Dog near the gate")).toBeTruthy();
+  expect(screen.getByText("Added to your list")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Add another" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Add a hazard" })).toBeNull();
+});
+
+it("reminds again about a Yes once the hazard added from it is removed", async () => {
+  storeDraft({ ...COMPLETE_DRAFT, answers: { keys: "Yes", dogs: "Yes" } });
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Add a hazard" }));
+  await screen.findByLabelText("Hazard 2");
+
+  fireEvent.click(screen.getByRole("button", { name: "Remove hazard 2" }));
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+  expect(
+    await screen.findByRole("heading", { name: "Did you miss any?" }),
+  ).toBeTruthy();
+  expect(screen.queryByText("Added to your list")).toBeNull();
+  expect(screen.getByText("Make sure it’s on your list.")).toBeTruthy();
+});
+
+it("shows the hazard as added again when its removal is undone", async () => {
+  storeDraft({ ...COMPLETE_DRAFT, answers: { keys: "Yes", dogs: "Yes" } });
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Add a hazard" }));
+  const newHazard = await screen.findByLabelText("Hazard 2");
+  fireEvent.change(newHazard, { target: { value: "Dog near the gate" } });
+
+  fireEvent.click(screen.getByRole("button", { name: "Remove hazard 2" }));
+  fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+  expect(
+    await screen.findByRole("heading", { name: "Did you miss any?" }),
+  ).toBeTruthy();
+  expect(screen.getByText("Added to your list")).toBeTruthy();
+});
+
 it("sends an unanswered question found at the review to the page for its role", async () => {
   storeDraft({ ...COMPLETE_DRAFT, answers: { keys: "Yes" } });
   stubApi({

@@ -43,3 +43,20 @@ it("keeps the copy as this tab's draft, with a new submission ID", () => {
   expect(stored.submissionId).not.toBe(STOPPED.take5.id);
   expect(stored.submissionId).toMatch(/^[0-9a-f-]{36}$/);
 });
+
+it("starts the copy with no hazard question marked as added to the list", () => {
+  sessionStorage.setItem(
+    "take5-draft",
+    JSON.stringify({
+      version: 2,
+      draft: fixDraftOf(SAVED.take5),
+      submissionId: SAVED.take5.id,
+      addedFor: ["dogs"],
+    }),
+  );
+  keepFixDraft(STOPPED.take5);
+  const stored = JSON.parse(sessionStorage.getItem("take5-draft") ?? "{}") as {
+    addedFor?: string[];
+  };
+  expect(stored.addedFor).toBeUndefined();
+});
