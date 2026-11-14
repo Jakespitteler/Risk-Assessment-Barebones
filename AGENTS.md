@@ -20,6 +20,8 @@ Run each from the folder shown.
 - Lint/format: in `backend/`, `uv run ruff check .` and `uv run ruff format .`. In `frontend/`, `npm run lint`
   and `npm run format`. Markdown, in the repo root: `npx markdownlint-cli2@0.24.0 "**/*.md"`.
   `check.py` also lints `scripts/` with the back end's settings and type checks it with the root `pyproject.toml`.
+- Spelling (Australian English), in the repo root: `npx -y -p cspell@10.5.0 -p @cspell/dict-en-au@1.1.31 cspell
+  -c .cspell/cli.json "**"`.
 - Typecheck: in `backend/`, `uv run pyright --project ..`. In `frontend/`, `npm run typecheck`.
 - API types: in `frontend/`, `npm run generate:api` after any change to the API. Commit both files it writes.
 - All checks (what CI runs): in the repo root, `uv run scripts/check.py`.
@@ -75,8 +77,10 @@ Run each from the folder shown.
   function, in plain words. Small single-purpose functions; plain data and pure functions in `domain/`.
   Values are frozen pydantic models. Explicitly annotate assigned variables and module constants, except
   direct constructor calls where the class already makes the type clear (for example, `app = FastAPI(...)`).
-  Keep annotations for collections and computed results. Pyright and Pylance share `[tool.pyright]` in the
-  root `pyproject.toml`; the back end's package and Ruff settings stay in `backend/pyproject.toml`.
+  Keep annotations for collections and computed results. A `def` that doesn't fit on one line puts each
+  parameter on its own line, with a trailing comma (task 0017 makes Ruff enforce it). Pyright and Pylance
+  share `[tool.pyright]` in the root `pyproject.toml`; the back end's package and Ruff settings stay in
+  `backend/pyproject.toml`.
 - **TypeScript.** Strict mode. API types only come from the generated `src/api/schema.d.ts`; never write them
   by hand. The front end holds no rules: it draws what the back end sends.
 - **Errors.** `domain/` raises `ValueError` with a message a person can read. Routes turn errors into HTTP
@@ -85,6 +89,9 @@ Run each from the folder shown.
 - **Tests.** pytest for the back end; a test's name says what it proves, and a test of a spec worked example is
   named `test_example_<number>_...`. Vitest and React Testing Library find things by role or label, as a
   person would. Playwright runs at 360 px wide and saves screenshots to `frontend/test-results/screenshots/`.
+- **Spelling.** Australian English (`colour`, `organise`), the same as Jake's VS Code spell checker. The spell
+  check must find nothing. Add a real project or technical word to `.cspell/project-words.txt`, in sorted order;
+  for a deliberate non-word in one file, write `cspell:ignore <word>` in a comment there.
 - **Markdown.** No markdownlint warnings (settings in `.markdownlint-cli2.jsonc`). Wrap prose at about 115
   characters.
 

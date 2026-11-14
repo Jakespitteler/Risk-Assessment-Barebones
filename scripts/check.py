@@ -36,9 +36,21 @@ class Check(NamedTuple):
 PYTHON_FOLDERS: list[str] = [".", "../scripts"]
 RUFF: list[str] = ["uv", "run", "ruff"]
 RUFF_SETTINGS: list[str] = ["--config", "pyproject.toml"]
+# cspell with the Australian English dictionary that Jake's VS Code spell checker uses.
+SPELL_CHECKER: list[str] = [
+    "-p",
+    "cspell@10.5.0",
+    "-p",
+    "@cspell/dict-en-au@1.1.31",
+    "cspell",
+    "--config",
+    ".cspell/cli.json",
+    "--no-progress",
+]
 
 CHECKS: list[Check] = [
     Check("Markdown", [NPX, "--yes", "markdownlint-cli2@0.24.0", "**/*.md"], "."),
+    Check("Spelling", [NPX, "--yes", *SPELL_CHECKER, "**"], "."),
     Check(
         "Back end lint", [*RUFF, "check", *RUFF_SETTINGS, *PYTHON_FOLDERS], "backend"
     ),

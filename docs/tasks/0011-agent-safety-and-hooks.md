@@ -1,7 +1,7 @@
 ---
 id: 0011
 title: Agent safety settings and hooks for Claude Code
-status: review
+status: done
 owner: claude
 branch: claude/project-thread-7tuvvd
 ---
