@@ -53,7 +53,9 @@ CHECKS: list[Check] = [
     Check("Markdown", [NPX, "--yes", "markdownlint-cli2@0.24.0", "**/*.md"], "."),
     Check("Spelling", [NPX, "--yes", *SPELL_CHECKER, "**"], "."),
     Check(
-        "Back end lint", [*RUFF, "check", *RUFF_SETTINGS, *PYTHON_FOLDERS], "backend"
+        "Back end lint",
+        [*RUFF, "check", *RUFF_SETTINGS, *PYTHON_FOLDERS],
+        "backend",
     ),
     Check(
         "Back end format",

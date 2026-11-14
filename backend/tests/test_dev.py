@@ -56,7 +56,9 @@ def test_backend_wait_retries_until_the_api_responds() -> None:
     response.__enter__.return_value.status = 200
     with (
         patch.object(
-            dev, "urlopen", side_effect=[URLError("starting"), response]
+            dev,
+            "urlopen",
+            side_effect=[URLError("starting"), response],
         ) as request,
         patch.object(dev.time, "sleep") as sleep,
     ):

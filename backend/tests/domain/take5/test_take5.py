@@ -87,7 +87,10 @@ def test_example_17_no_controls_reuses_the_before_rating() -> None:
     """Without controls there is no second rating; 8 Moderate remains 8 Moderate."""
     before: RiskRating = rate(BOOKLET_MATRIX, "Possible", "Minor")
     hazard = Hazard(
-        description="Example hazard", before=before, controls=(), after=before
+        description="Example hazard",
+        before=before,
+        controls=(),
+        after=before,
     )
     take5 = Take5(template=BOOKLET_TEMPLATE, hazards=(hazard,))
     assert hazard.after is before
@@ -158,7 +161,10 @@ def test_a_second_matrix_supplies_its_own_scales_bands_and_jha_threshold() -> No
         ),
     )
     assert take5.rating == RiskRating(
-        likelihood="Infrequent", consequence="Injury", score=6, band="Review"
+        likelihood="Infrequent",
+        consequence="Injury",
+        score=6,
+        band="Review",
     )
     assert take5.needs_jha
     assert not matrix.needs_jha(rate(matrix, "Frequent", "Scratch").score)
@@ -168,7 +174,10 @@ def test_a_second_matrix_supplies_its_own_scales_bands_and_jha_threshold() -> No
 def test_a_supplied_rating_must_match_its_template(score: int, band: str) -> None:
     """Neither a forged score nor a forged band can override the template's lookup."""
     forged = RiskRating(
-        likelihood="Possible", consequence="Minor", score=score, band=band
+        likelihood="Possible",
+        consequence="Minor",
+        score=score,
+        band=band,
     )
     with pytest.raises(ValueError, match="must match the template's matrix"):
         Take5(

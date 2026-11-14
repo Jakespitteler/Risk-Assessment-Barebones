@@ -78,7 +78,9 @@ def test_other_files_are_left_alone(edited_file: Path) -> None:
 
 
 def run_formatter(
-    monkeypatch: pytest.MonkeyPatch, file_path: str, formatter_result: int
+    monkeypatch: pytest.MonkeyPatch,
+    file_path: str,
+    formatter_result: int,
 ) -> tuple[int, MagicMock]:
     """Run the hook's `main` for an edit, with the formatter replaced by a stand-in.
 
@@ -92,16 +94,22 @@ def run_formatter(
     stdin_bytes: bytes = json.dumps(hook_input, ensure_ascii=False).encode()
     monkeypatch.setattr("sys.stdin", io.TextIOWrapper(io.BytesIO(stdin_bytes)))
     completed: subprocess.CompletedProcess[str] = subprocess.CompletedProcess(
-        [], formatter_result, stdout="", stderr="error: unexpected EOF"
+        [],
+        formatter_result,
+        stdout="",
+        stderr="error: unexpected EOF",
     )
     with patch.object(
-        format_edited_file.subprocess, "run", return_value=completed
+        format_edited_file.subprocess,
+        "run",
+        return_value=completed,
     ) as formatter:
         return format_edited_file.main(), formatter
 
 
 def test_a_formatter_error_is_shown_to_claude(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Exit code 2 shows Claude the message, and the later formatters don't run."""
     edited_file: Path = format_edited_file.REPO_ROOT / "scripts" / "dev.py"

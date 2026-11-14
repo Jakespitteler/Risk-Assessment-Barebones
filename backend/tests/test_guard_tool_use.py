@@ -217,7 +217,8 @@ def test_normal_work_on_a_task_branch_may_run(command: str) -> None:
     ],
 )
 def test_a_risky_tool_call_is_blocked(
-    tool_name: str, tool_input: dict[str, str]
+    tool_name: str,
+    tool_input: dict[str, str],
 ) -> None:
     """File tools are checked by path, shells by their text, and merging by name."""
     assert reason_to_block_tool_call(tool_name, tool_input, TASK_BRANCH) is not None
@@ -231,14 +232,17 @@ def test_a_risky_tool_call_is_blocked(
     ],
 )
 def test_an_ordinary_tool_call_may_go_ahead(
-    tool_name: str, tool_input: dict[str, str]
+    tool_name: str,
+    tool_input: dict[str, str],
 ) -> None:
     """Reading code, or searching the docs for the word `.env`, is allowed."""
     assert reason_to_block_tool_call(tool_name, tool_input, TASK_BRANCH) is None
 
 
 def run_guard(
-    monkeypatch: pytest.MonkeyPatch, hook_input: dict[str, object], encoding: str
+    monkeypatch: pytest.MonkeyPatch,
+    hook_input: dict[str, object],
+    encoding: str,
 ) -> int:
     """Run the hook's `main` with a tool call on standard input, as Claude Code does.
 
@@ -257,7 +261,8 @@ def run_guard(
 
 
 def test_main_blocks_with_exit_code_2_and_says_why(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Claude Code blocks a call on exit code 2 and shows Claude standard error."""
     hook_input: dict[str, object] = {
@@ -270,7 +275,8 @@ def test_main_blocks_with_exit_code_2_and_says_why(
 
 
 def test_main_reads_utf_8_even_on_a_windows_code_page(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     """A curly quote in UTF-8 can't be read as cp1252 text, so the hook reads bytes."""
     hook_input: dict[str, object] = {

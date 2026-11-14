@@ -104,7 +104,8 @@ _BOOKLET_LIKELIHOOD_GUIDANCE: tuple[LevelGuidance, ...] = (
     LevelGuidance(level="Likely", meaning="May easily happen: once a month."),
     LevelGuidance(level="Possible", meaning="May happen: once every year."),
     LevelGuidance(
-        level="Unlikely", meaning="May happen sometime: once every 10 years."
+        level="Unlikely",
+        meaning="May happen sometime: once every 10 years.",
     ),
     LevelGuidance(
         level="Rare",
@@ -115,7 +116,8 @@ _BOOKLET_CONSEQUENCE_GUIDANCE: tuple[LevelGuidance, ...] = (
     LevelGuidance(level="Low", meaning="First aid treatment."),
     LevelGuidance(level="Minor", meaning="Medical treatment."),
     LevelGuidance(
-        level="Moderate", meaning="Classified injury: lost time or restricted work."
+        level="Moderate",
+        meaning="Classified injury: lost time or restricted work.",
     ),
     LevelGuidance(level="Major", meaning="Fatality or severe permanent disability."),
     LevelGuidance(

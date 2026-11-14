@@ -27,7 +27,7 @@ REPO_ROOT: Path = Path(__file__).resolve().parents[2]
 NPX: str = shutil.which("npx") or "npx"
 MARKDOWNLINT: str = "markdownlint-cli2@0.24.0"
 FRONTEND_SUFFIXES: frozenset[str] = frozenset(
-    {".ts", ".tsx", ".js", ".jsx", ".css", ".json", ".html"}
+    {".ts", ".tsx", ".js", ".jsx", ".css", ".json", ".html"},
 )
 
 # `uv run` points VIRTUAL_ENV at this script's own environment. Ruff must run in the

@@ -8,7 +8,7 @@ import pytest
 
 REPO_ROOT: Path = Path(__file__).resolve().parents[2]
 SETTINGS: dict[str, Any] = json.loads(
-    (REPO_ROOT / ".claude" / "settings.json").read_text(encoding="utf-8")
+    (REPO_ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"),
 )
 HOOK_GROUPS: list[dict[str, Any]] = [
     group for groups in SETTINGS["hooks"].values() for group in groups

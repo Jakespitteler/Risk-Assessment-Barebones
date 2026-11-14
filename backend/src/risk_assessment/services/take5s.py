@@ -92,7 +92,9 @@ class Take5Service:
             previous.template if previous is not None else self._template
         )
         check: DraftCheck = self._with_fixes_error(
-            check_draft(draft, template), draft.fixes, submission_id
+            check_draft(draft, template),
+            draft.fixes,
+            submission_id,
         )
         if check.assessment is None:
             raise InvalidDraftError(check)
@@ -114,7 +116,7 @@ class Take5Service:
         )
         if _answers(saved) != _answers(submitted):
             raise SubmissionConflictError(
-                "This Take 5 was already saved with different answers."
+                "This Take 5 was already saved with different answers.",
             )
         return saved
 
@@ -141,7 +143,10 @@ class Take5Service:
         return self._repository.fixed_by(take5_id)
 
     def _with_fixes_error(
-        self, check: DraftCheck, fixes: UUID | None, submission_id: UUID
+        self,
+        check: DraftCheck,
+        fixes: UUID | None,
+        submission_id: UUID,
     ) -> DraftCheck:
         """Add an error if the draft says it fixes a Take 5 it can't fix.
 
@@ -166,7 +171,7 @@ class Take5Service:
                 "errors": (*check.errors, error),
                 "assessment": None,
                 "can_submit": False,
-            }
+            },
         )
 
 
