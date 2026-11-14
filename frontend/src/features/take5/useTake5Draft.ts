@@ -12,7 +12,7 @@ const DRAFT_KEY = "take5-draft";
 
 // Bump this when the draft's shape changes, so a tab left open across an update starts
 // afresh instead of loading answers in the old shape.
-const DRAFT_VERSION = 1;
+const DRAFT_VERSION = 2;
 
 interface StoredDraft {
   version: number;
@@ -61,6 +61,7 @@ export function fixDraftOf(saved: SavedTake5): Take5Draft {
     worker_name: saved.worker_name,
     job: saved.job,
     location: saved.location,
+    answers: { ...saved.answers },
     hazards: saved.hazards.map(hazardDraftOf),
     fixes: saved.id,
   };
@@ -125,6 +126,7 @@ export function useTake5Draft() {
         worker_name: read(() => localStorage, WORKER_NAME_KEY) ?? "",
         job: "",
         location: "",
+        answers: {},
         hazards: [blankHazard()],
       },
   );

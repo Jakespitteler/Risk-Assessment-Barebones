@@ -11,6 +11,7 @@ it("copies every answer of a saved Take 5 and says which one it fixes", () => {
     worker_name: "Sam Example",
     job: "Change tyre",
     location: "Example workshop",
+    answers: { keys: "Yes", dogs: "No" },
     hazards: [
       {
         description: "Moving wheel",

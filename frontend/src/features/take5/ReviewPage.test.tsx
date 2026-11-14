@@ -120,3 +120,35 @@ it("says when the draft is a copy made to fix a Don't start yet", async () => {
     ),
   ).toBeTruthy();
 });
+
+it("shows each answer, and a No's warning with a button to change it", async () => {
+  const warning = {
+    path: "answers.keys",
+    message: "You answered No: you'll be told not to start.",
+  };
+  stubApi({
+    "POST /api/take5s/check": {
+      status: 200,
+      body: {
+        ...PASSING_CHECK,
+        assessment: {
+          ...PASSING_CHECK.assessment,
+          answers: { keys: "No", dogs: "No" },
+        },
+        warnings: [warning],
+      },
+    },
+  });
+  const onOpenWarning = vi.fn();
+  renderWithApi(
+    <ReviewPage
+      draft={COMPLETE_DRAFT}
+      onGaps={vi.fn()}
+      onOpenWarning={onOpenWarning}
+    />,
+  );
+  expect(await screen.findByText(warning.message)).toBeTruthy();
+  expect(screen.getByText("Have you got the gate keys?")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Change answer" }));
+  expect(onOpenWarning).toHaveBeenCalledWith(warning);
+});

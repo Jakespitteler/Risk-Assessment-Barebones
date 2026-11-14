@@ -6,6 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 from risk_assessment.domain.controls import ControlKind
+from risk_assessment.domain.questions import Answer, Question
 from risk_assessment.domain.risk import RiskMatrix, RiskRating
 from risk_assessment.domain.take5.draft import FieldError, Take5Draft
 from risk_assessment.domain.take5.saved import SavedTake5
@@ -17,6 +18,9 @@ class TemplateResponse(BaseModel):
 
     Attributes:
         name: The template's name.
+        questions: The card's questions, in the order it prints them, each with its
+            role.
+        answer_choices: The answers a question can have, in the order to show them.
         matrix: The risk matrix the hazards are rated on.
         control_kinds: Every kind of control, strongest first.
         likelihood_guidance: What each likelihood means, in the card's words.
@@ -27,6 +31,8 @@ class TemplateResponse(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     name: str
+    questions: tuple[Question, ...]
+    answer_choices: tuple[Answer, ...]
     matrix: RiskMatrix
     control_kinds: tuple[ControlKind, ...]
     likelihood_guidance: tuple[LevelGuidance, ...]

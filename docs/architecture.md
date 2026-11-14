@@ -142,7 +142,7 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 
 | Endpoint | What it does |
 | --- | --- |
-| `GET /api/take5/template` | The template a new Take 5 is filled in on: its questions, its matrix and its guidance, plus the control kinds |
+| `GET /api/take5/template` | The template a new Take 5 is filled in on: its questions, its matrix and its guidance, plus the answers a question can have and the control kinds |
 | `POST /api/take5s/check` | Checks a draft and returns what is missing, its warnings (allowed, but they will stop the job) and which thinking rules apply. Saves nothing |
 | `POST /api/take5s` | Checks and saves a Take 5, asks the AI (or the fallback) for its question, and returns both |
 | `POST /api/take5s/{id}/answer` | Saves the answer, works out the verdict, and returns the finished Take 5 |
@@ -158,9 +158,11 @@ ID once and sends it every time.
 **The front end holds no rules and no card.** It gets the questions and the matrix from
 `GET /api/take5/template`, draws whatever it is sent, and shows a score by looking it up in that matrix. It finds
 out what is missing or needs another look by asking
-`POST /api/take5s/check`. So there is exactly one copy of every rule, in Python, under test. Two behaviours live
+`POST /api/take5s/check`. So there is exactly one copy of every rule, in Python, under test. A few behaviours live
 in the front end, because they are about what is on the screen: spec T1 (hiding the hazard questions until a
-hazard is written), and skipping the after-controls page of a hazard with no controls. The back end still
+hazard is written), skipping the after-controls page of a hazard with no controls, putting each question on the
+page for its role (stop questions on the think-through page, hazard questions after the hazard list), and
+showing "Make sure it's on your list" after a Yes to a hazard question. The back end still
 decides that such a hazard's after rating is its before rating (R6).
 
 While developing, Vite serves the front end and passes `/api` calls on to FastAPI. When hosted, FastAPI serves
@@ -170,12 +172,12 @@ the built front-end files itself, so there is still only one program to run.
 
 | Entity | Key fields | Notes |
 | --- | --- | --- |
-| `Take5` | `id`, `created_at`, `worker_name`, `job`, `location`, `think_through` (question to answer), `hazard_questions` (question to answer), `hazards`, `challenge`, `finished_at`, `verdict`, `template` | One filled-in card. `template` is a copy of the template it was filled in on, so it always shows the questions and matrix the worker was given. `finished_at` and `verdict` are empty until the challenge question is answered (spec C6). Never changed once finished |
-| `SavedTake5` (task 0004) | Extends the scoring `Take5` with `id`, `created_at`, `worker_name`, `job`, `location`, `finished_at`, `verdict`, `fixes` | The implemented submitted document. Until task 0008 it is finished immediately. The base `Take5` retains its reusable scoring fields; later tasks add the remaining card fields. `fixes` (task 0010) is the ID of the Don't start yet it fixes, or empty. It points back only, so the first one is never changed; its fix is found by searching for its ID in `fixes` |
+| `Take5` | `id`, `created_at`, `worker_name`, `job`, `location`, `answers` (question ID to answer), `hazards`, `challenge`, `finished_at`, `verdict`, `template` | One filled-in card. `template` is a copy of the template it was filled in on, so it always shows the questions and matrix the worker was given. `finished_at` and `verdict` are empty until the challenge question is answered (spec C6). Never changed once finished |
+| `SavedTake5` (task 0004) | Extends the scoring `Take5` with `id`, `created_at`, `worker_name`, `job`, `location`, `finished_at`, `verdict`, `fixes` | The implemented submitted document. Until task 0008 it is finished immediately. The base `Take5` holds what the verdict needs (the template, `answers` and the hazards); later tasks add the remaining card fields. `answers` (task 0005) has one answer for each of the template's questions, by question ID. A Take 5 saved before task 0005 has none, and its template copy has no questions, so it still opens `fixes` (task 0010) is the ID of the Don't start yet it fixes, or empty. It points back only, so the first one is never changed; its fix is found by searching for its ID in `fixes` |
 | `Hazard` | `description`, `before` (rating), `controls`, `after` (rating), `weak_controls_reason` | Belongs to one Take 5. With no controls `after` is `before` (spec R6). `weak_controls_reason` is the worker's answer to spec T3, when it was asked |
 | `Control` | `description`, `kind` (`ControlKind`) | Belongs to one hazard |
 | `RiskRating` | `likelihood`, `consequence`, and from the matrix: `score`, `band` | A value, not a stored row. Score and band are always worked out, never typed in |
-| `Take5Template` | `name`, `sections` (each a title and its questions, each question with a role), `matrix`, `likelihood_guidance`, `consequence_guidance` (each a level and its meaning), `control_guidance` | The card as data. The rules never name a question: a *stop* question answered No stops the job, whichever card it is on |
+| `Take5Template` | `name`, `questions` (each an `id`, its `text` and its `role`: `stop` or `hazard`), `matrix`, `likelihood_guidance`, `consequence_guidance` (each a level and its meaning), `control_guidance` | The card as data. The rules never name a question: a *stop* question answered No stops the job, whichever card it is on. The page a question shows on follows from its role, so there are no separate sections |
 | `RiskMatrix` | the likelihood and consequence scales, the score and band of each cell, the score that needs a JHA | The matrix as data. `rate()` is given the matrix, so another company's matrix needs no new code |
 | `Challenge` | `question`, `asked_by` (`ai` or `fallback`), `model`, `instructions_version`, `answer` | Belongs to one Take 5. `answer` is empty until the worker gives one. `model` and `instructions_version` say which AI asked and with which version of its instructions; both are empty for the fallback |
 | `Verdict` | `can_start`, `reasons` | Worked out once by `domain/take5/verdict.py` when the Take 5 is finished, then saved inside it, so a later rule change never rewrites an old verdict |

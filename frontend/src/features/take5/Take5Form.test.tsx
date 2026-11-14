@@ -38,7 +38,7 @@ function FormAt({ start }: { start: Stage }) {
 function storeDraft(draft = COMPLETE_DRAFT) {
   sessionStorage.setItem(
     "take5-draft",
-    JSON.stringify({ version: 1, draft, submissionId: SAVED.take5.id }),
+    JSON.stringify({ version: 2, draft, submissionId: SAVED.take5.id }),
   );
 }
 
@@ -112,7 +112,7 @@ it("moves on when the page has no gaps", async () => {
   renderWithApi(<FormAt start={{ page: "job" }} />);
   fireEvent.click(screen.getByRole("button", { name: "Continue" }));
   expect(
-    await screen.findByRole("heading", { name: "What could hurt someone?" }),
+    await screen.findByRole("heading", { name: "Think it through" }),
   ).toBeTruthy();
 });
 
@@ -125,7 +125,7 @@ it("moves on when the page is submitted, as Enter in a box does", async () => {
   );
   fireEvent.submit(location.form as HTMLFormElement);
   expect(
-    await screen.findByRole("heading", { name: "What could hurt someone?" }),
+    await screen.findByRole("heading", { name: "Think it through" }),
   ).toBeTruthy();
 });
 
@@ -204,7 +204,7 @@ it("moves on with no signal, even when the phone says it is offline", async () =
   renderWithApi(<FormAt start={{ page: "job" }} />);
   fireEvent.click(screen.getByRole("button", { name: "Continue" }));
   expect(
-    await screen.findByRole("heading", { name: "What could hurt someone?" }),
+    await screen.findByRole("heading", { name: "Think it through" }),
   ).toBeTruthy();
 });
 
@@ -298,7 +298,7 @@ it("focuses the heading on returning to a page that once had errors", async () =
   });
   fireEvent.change(job, { target: { value: "Change tyre" } });
   fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-  await screen.findByRole("heading", { name: "What could hurt someone?" });
+  await screen.findByRole("heading", { name: "Think it through" });
   fireEvent.click(screen.getByRole("button", { name: "Back" }));
   await waitFor(() => {
     expect(document.activeElement).toBe(
@@ -403,4 +403,55 @@ it("lets the worker finish with a warning showing", async () => {
   await waitFor(() => {
     expect(onSaved).toHaveBeenCalledWith(SAVED.take5.id);
   });
+});
+
+it("a Yes to a hazard question adds a hazard, then comes back to the questions", async () => {
+  storeDraft({ ...COMPLETE_DRAFT, answers: { keys: "Yes" } });
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  const dogs = screen.getByRole("group", { name: "Are there dogs on site?" });
+  expect(screen.queryByText("Make sure it’s on your list.")).toBeNull();
+  fireEvent.click(within(dogs).getByRole("radio", { name: "Yes" }));
+  expect(screen.getByText("Make sure it’s on your list.")).toBeTruthy();
+
+  fireEvent.click(screen.getByRole("button", { name: "Add a hazard" }));
+
+  expect(
+    await screen.findByRole("heading", { name: "What could hurt someone?" }),
+  ).toBeTruthy();
+  const newHazard = screen.getByLabelText<HTMLTextAreaElement>("Hazard 2");
+  await waitFor(() => {
+    expect(document.activeElement).toBe(newHazard);
+  });
+  fireEvent.change(newHazard, { target: { value: "Dog near the gate" } });
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+  expect(
+    await screen.findByRole("heading", { name: "Did you miss any?" }),
+  ).toBeTruthy();
+  expect(screen.getByText("Dog near the gate")).toBeTruthy();
+  expect(
+    within(
+      screen.getByRole("group", { name: "Are there dogs on site?" }),
+    ).getByRole<HTMLInputElement>("radio", { name: "Yes" }).checked,
+  ).toBe(true);
+});
+
+it("sends an unanswered question found at the review to the page for its role", async () => {
+  storeDraft({ ...COMPLETE_DRAFT, answers: { keys: "Yes" } });
+  stubApi({
+    "POST /api/take5s/check": {
+      status: 200,
+      body: {
+        errors: [{ path: "answers.dogs", message: "Pick Yes, No or N/A." }],
+        warnings: [],
+        assessment: null,
+        can_submit: false,
+      },
+    },
+  });
+  renderWithApi(<FormAt start={{ page: "review" }} />);
+  expect(
+    await screen.findByRole("heading", { name: "Did you miss any?" }),
+  ).toBeTruthy();
+  expect(screen.getByText("Pick Yes, No or N/A.")).toBeTruthy();
 });

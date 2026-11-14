@@ -13,6 +13,7 @@ from risk_assessment.api.schemas import (
     TemplateResponse,
 )
 from risk_assessment.domain.controls import ControlKind
+from risk_assessment.domain.questions import Answer
 from risk_assessment.domain.take5.draft import DraftCheck, Take5Draft
 from risk_assessment.domain.take5.fix import offers_a_fix
 from risk_assessment.domain.take5.saved import SavedTake5
@@ -46,10 +47,12 @@ def create_router(service: Take5Service) -> APIRouter:
 
     @router.get("/api/take5/template")
     def get_template() -> TemplateResponse:
-        """Return the template a new Take 5 is filled in on, and the control kinds."""
+        """Return the template a new Take 5 is filled in on, and its choices."""
         template: Take5Template = service.template
         return TemplateResponse(
             name=template.name,
+            questions=template.questions,
+            answer_choices=tuple(Answer),
             matrix=template.matrix,
             control_kinds=tuple(ControlKind),
             likelihood_guidance=template.likelihood_guidance,

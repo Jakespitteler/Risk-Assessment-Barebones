@@ -42,6 +42,40 @@ it("shows the saved verdict, the overall rating and each hazard", async () => {
   ).toBeTruthy();
 });
 
+it("shows each of the card's questions with the worker's answer", async () => {
+  stubApi({
+    [`GET /api/take5s/${SAVED.take5.id}`]: { status: 200, body: SAVED },
+  });
+  renderWithApi(<Take5ResultScreen id={SAVED.take5.id} onFix={vi.fn()} />);
+  expect(
+    await screen.findByRole("heading", { name: "Thinking it through" }),
+  ).toBeTruthy();
+  expect(screen.getByText("Have you got the gate keys?")).toBeTruthy();
+  expect(screen.getByText("Are there dogs on site?")).toBeTruthy();
+});
+
+it("still opens a Take 5 saved before the card had questions", async () => {
+  const old: Take5Response = {
+    ...SAVED,
+    take5: {
+      ...SAVED.take5,
+      template: { ...SAVED.take5.template, questions: [] },
+      answers: {},
+    },
+  };
+  stubApi({
+    [`GET /api/take5s/${SAVED.take5.id}`]: { status: 200, body: old },
+  });
+  renderWithApi(<Take5ResultScreen id={SAVED.take5.id} onFix={vi.fn()} />);
+  expect(
+    await screen.findByRole("heading", { name: "Good to go" }),
+  ).toBeTruthy();
+  expect(screen.getByRole("heading", { name: "Moving wheel" })).toBeTruthy();
+  expect(
+    screen.queryByRole("heading", { name: "Thinking it through" }),
+  ).toBeNull();
+});
+
 it("says a Take 5 that doesn't exist can't be found, with no Try again", async () => {
   stubApi({
     [`GET /api/take5s/${SAVED.take5.id}`]: {

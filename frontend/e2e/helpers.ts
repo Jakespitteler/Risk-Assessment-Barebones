@@ -27,11 +27,44 @@ export async function fillJob(page: Page) {
   await page.getByLabel("What is the job?").fill("Change front tyre on LV12");
   await page.getByLabel("Where will you do it?").fill("Example workshop");
   await next(page);
+  await expect(heading(page, "Think it through")).toBeVisible();
+}
+
+export const THINK = "Think it through";
+export const CHECK = "Did you miss any?";
+
+/**
+ * Once the page with this heading shows, answer each of its questions, by wording:
+ * as `changed` says, or else `answer`.
+ */
+export async function answerAll(
+  page: Page,
+  pageHeading: string,
+  answer: string,
+  changed: Record<string, string> = {},
+) {
+  await expect(heading(page, pageHeading)).toBeVisible();
+  for (const group of await page.getByRole("group").all()) {
+    const question = (await group.locator("legend").textContent()) ?? "";
+    await group.getByText(changed[question] ?? answer, { exact: true }).click();
+  }
+}
+
+/** Answer the think-through questions, Yes unless `changed` says otherwise. */
+export async function answerThinkThrough(
+  page: Page,
+  changed: Record<string, string> = {},
+) {
+  await answerAll(page, THINK, "Yes", changed);
+  await next(page);
   await expect(heading(page, "What could hurt someone?")).toBeVisible();
 }
 
+/** List one hazard, then answer every hazard question No. */
 export async function fillOneHazard(page: Page) {
   await page.getByLabel("Hazard 1", { exact: true }).fill(HAZARD);
+  await next(page);
+  await answerAll(page, CHECK, "No");
   await next(page);
   await expect(heading(page, "Before any controls")).toBeVisible();
 }
@@ -64,9 +97,11 @@ export async function controlledDraft(
   page: Page,
   before: [string, string] = ["Possible", "Minor"],
   after: [string, string] = ["Unlikely", "Minor"],
+  thinkAnswers: Record<string, string> = {},
 ) {
   await page.goto("/");
   await fillJob(page);
+  await answerThinkThrough(page, thinkAnswers);
   await fillOneHazard(page);
   await pick(page, ...before);
   await next(page);

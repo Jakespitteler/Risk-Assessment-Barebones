@@ -1,4 +1,5 @@
 import type {
+  Answer,
   FieldError,
   FieldWarning,
   HazardDraft,
@@ -6,11 +7,13 @@ import type {
   TemplateResponse,
 } from "../../api/take5";
 import { ControlsPage } from "./ControlsPage";
+import { HazardCheckPage } from "./HazardCheckPage";
 import { HazardListPage } from "./HazardListPage";
 import { JobPage } from "./JobPage";
 import { RatingPage } from "./RatingPage";
 import { ReviewPage } from "./ReviewPage";
 import type { Stage } from "./stage";
+import { ThinkPage } from "./ThinkPage";
 import type { Take5DraftState } from "./useTake5Draft";
 import { blankHazard } from "./useTake5Draft";
 
@@ -23,6 +26,7 @@ export function FormPage({
   onErrorsChange,
   onGaps,
   onOpenWarning,
+  onAddHazard,
 }: {
   stage: Stage;
   take5: Take5DraftState;
@@ -31,6 +35,7 @@ export function FormPage({
   onErrorsChange: (errors: FieldError[]) => void;
   onGaps: (errors: FieldError[]) => void;
   onOpenWarning: (warning: FieldWarning) => void;
+  onAddHazard: () => void;
 }) {
   const { draft, change, remove } = take5;
   const errorFor = (path: string) =>
@@ -52,6 +57,14 @@ export function FormPage({
       ),
     }));
   }
+  function answer(questionId: string, picked: Answer) {
+    edit(`answers.${questionId}`, (current) => ({
+      ...current,
+      answers: { ...current.answers, [questionId]: picked },
+    }));
+  }
+  const questionsFor = (role: "stop" | "hazard") =>
+    template.questions.filter((question) => question.role === role);
   // Removing shifts the numbers of the items after it, so every error is cleared.
   function removeItem(
     message: string,
@@ -69,6 +82,28 @@ export function FormPage({
         onEdit={(field, value) => {
           edit(field, (current) => ({ ...current, [field]: value }));
         }}
+      />
+    );
+  if (stage.page === "think")
+    return (
+      <ThinkPage
+        questions={questionsFor("stop")}
+        choices={template.answer_choices}
+        answers={draft.answers}
+        errorFor={errorFor}
+        onAnswer={answer}
+      />
+    );
+  if (stage.page === "check")
+    return (
+      <HazardCheckPage
+        hazards={draft.hazards}
+        questions={questionsFor("hazard")}
+        choices={template.answer_choices}
+        answers={draft.answers}
+        errorFor={errorFor}
+        onAnswer={answer}
+        onAddHazard={onAddHazard}
       />
     );
   if (stage.page === "hazards")

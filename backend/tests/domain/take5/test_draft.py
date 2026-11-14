@@ -3,12 +3,15 @@
 import pytest
 
 from risk_assessment.domain.controls import ControlKind
+from risk_assessment.domain.questions import Answer
 from risk_assessment.domain.take5.draft import (
     FILL_IN_MESSAGE,
     HIGHER_AFTER_MESSAGE,
+    NO_ANSWER_MESSAGE,
     NO_CONTROLS_WARNING,
     NO_HAZARD_MESSAGE,
     NO_KIND_MESSAGE,
+    STOP_ANSWER_WARNING,
     ControlDraft,
     DraftCheck,
     FieldError,
@@ -20,7 +23,7 @@ from risk_assessment.domain.take5.draft import (
 )
 from risk_assessment.domain.take5.take5 import Hazard
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
-from tests.samples import sample_draft, sample_hazard_draft
+from tests.samples import sample_answers, sample_draft, sample_hazard_draft
 
 
 def test_a_complete_draft_is_rated_and_can_be_submitted() -> None:
@@ -42,10 +45,76 @@ def test_an_empty_draft_names_every_missing_field_and_nothing_else() -> None:
         FieldError(path="worker_name", message=FILL_IN_MESSAGE),
         FieldError(path="job", message=FILL_IN_MESSAGE),
         FieldError(path="location", message=FILL_IN_MESSAGE),
+        *(
+            FieldError(path=f"answers.{question.id}", message=NO_ANSWER_MESSAGE)
+            for question in BOOKLET_TEMPLATE.questions
+        ),
         FieldError(path="hazards", message=NO_HAZARD_MESSAGE),
     )
     assert check.assessment is None
     assert not check.can_submit
+
+
+def test_the_answers_are_kept_with_the_rated_take5() -> None:
+    """Each question's answer reaches the assessment, so the verdict can use it."""
+    answers: dict[str, Answer] = sample_answers(permits=Answer.NOT_APPLICABLE)
+    check: DraftCheck = check_draft(
+        sample_draft().model_copy(update={"answers": answers}),
+        BOOKLET_TEMPLATE,
+    )
+
+    assert check.assessment is not None
+    assert check.assessment.answers == answers
+
+
+def test_an_unanswered_question_is_named_by_its_id() -> None:
+    """A question with no answer is a gap beside that question, and nothing else is."""
+    answers: dict[str, Answer] = sample_answers()
+    del answers["permits"]
+
+    check: DraftCheck = check_draft(
+        sample_draft().model_copy(update={"answers": answers}),
+        BOOKLET_TEMPLATE,
+    )
+
+    assert check.errors == (
+        FieldError(path="answers.permits", message=NO_ANSWER_MESSAGE),
+    )
+    assert check.assessment is None
+
+
+def test_an_answer_to_a_question_the_card_does_not_ask_is_not_kept() -> None:
+    """Only the card's own questions are answered, so nothing else is saved."""
+    check: DraftCheck = check_draft(
+        sample_draft().model_copy(
+            update={"answers": sample_answers() | {"made_up": Answer.NO}},
+        ),
+        BOOKLET_TEMPLATE,
+    )
+
+    assert check.assessment is not None
+    assert check.assessment.answers == sample_answers()
+
+
+def test_a_no_to_a_stop_question_is_a_warning_that_still_lets_it_submit() -> None:
+    """A No will stop the job (V1), so the review is told, but it is allowed."""
+    check: DraftCheck = check_draft(
+        sample_draft().model_copy(
+            update={
+                "answers": sample_answers(
+                    permits=Answer.NO,
+                    ppe=Answer.NOT_APPLICABLE,
+                    heights=Answer.NO,
+                ),
+            },
+        ),
+        BOOKLET_TEMPLATE,
+    )
+
+    assert check.warnings == (
+        FieldWarning(path="answers.permits", message=STOP_ANSWER_WARNING),
+    )
+    assert check.can_submit
 
 
 def test_example_14_no_hazards_cannot_be_submitted() -> None:

@@ -13,7 +13,7 @@ it("shows the step, the hazard and a focusable heading", () => {
       headingRef={heading}
     />,
   );
-  expect(screen.getByText("Step 3 of 4 · Hazard 2 of 3")).toBeTruthy();
+  expect(screen.getByText("Step 4 of 5 · Hazard 2 of 3")).toBeTruthy();
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
     "After your controls",
   );

@@ -4,6 +4,8 @@ import type { components } from "./schema";
 type Schemas = components["schemas"];
 export type RiskMatrix = Schemas["RiskMatrix"];
 export type TemplateResponse = Schemas["TemplateResponse"];
+export type Question = Schemas["Question"];
+export type Answer = Schemas["Answer"];
 export type Take5Draft = Schemas["Take5Draft"];
 export type HazardDraft = Schemas["HazardDraft"];
 export type ControlDraft = Schemas["ControlDraft"];
