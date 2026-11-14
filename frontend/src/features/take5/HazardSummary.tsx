@@ -1,14 +1,20 @@
+import type { ReactNode } from "react";
 import type { Hazard } from "../../api/take5";
 import { Card } from "../../components/Card";
 import { RiskBadge } from "../../components/RiskBadge";
 
-/** One rated hazard as the back end returned it: its ratings and its controls. */
+/**
+ * One rated hazard as the back end returned it: its ratings and its controls. Anything
+ * the back end says about it, such as a warning, goes in `children` at the end.
+ */
 export function HazardSummary({
   hazard,
   number,
+  children,
 }: {
   hazard: Hazard;
   number: number;
+  children?: ReactNode;
 }) {
   const ratings = [
     { title: "Before controls", rating: hazard.before },
@@ -47,6 +53,7 @@ export function HazardSummary({
       ) : (
         <p>No controls listed.</p>
       )}
+      {children}
     </Card>
   );
 }

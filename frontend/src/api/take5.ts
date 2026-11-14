@@ -10,8 +10,10 @@ export type ControlDraft = Schemas["ControlDraft"];
 export type RatingChoice = Schemas["RatingChoice"];
 export type DraftCheck = Schemas["DraftCheck"];
 export type FieldError = Schemas["FieldError"];
+export type FieldWarning = Schemas["FieldWarning"];
 export type Hazard = Schemas["Hazard"];
 export type Take5Response = Schemas["Take5Response"];
+export type SavedTake5 = Schemas["SavedTake5"];
 type FormErrors = Schemas["FormErrors"];
 
 // Long enough for one bar of signal, short enough that the worker isn't left waiting.
@@ -118,6 +120,7 @@ export function useCheckDraft() {
 /**
  * Save a Take 5. The ID stays the same on every retry, so a retry after a lost answer
  * can't save it twice. The saved Take 5 goes straight into the result screen's cache.
+ * The Take 5 it fixes, if any, is read again when next opened, so it shows its fix.
  */
 export function useSubmitTake5() {
   const queryClient = useQueryClient();
@@ -128,6 +131,10 @@ export function useSubmitTake5() {
     networkMode: NETWORK_MODE,
     onSuccess: (saved) => {
       queryClient.setQueryData(["take5", saved.take5.id], saved);
+      if (saved.take5.fixes)
+        void queryClient.invalidateQueries({
+          queryKey: ["take5", saved.take5.fixes],
+        });
     },
   });
 }

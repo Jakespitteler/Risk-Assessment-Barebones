@@ -1,9 +1,10 @@
 import { onlineManager } from "@tanstack/react-query";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   COMPLETE_DRAFT,
+  HAZARD_DRAFT,
   PASSING_CHECK,
   SAVED,
   SMALL_TEMPLATE,
@@ -34,14 +35,10 @@ function FormAt({ start }: { start: Stage }) {
   );
 }
 
-function storeDraft() {
+function storeDraft(draft = COMPLETE_DRAFT) {
   sessionStorage.setItem(
     "take5-draft",
-    JSON.stringify({
-      version: 1,
-      draft: COMPLETE_DRAFT,
-      submissionId: SAVED.take5.id,
-    }),
+    JSON.stringify({ version: 1, draft, submissionId: SAVED.take5.id }),
   );
 }
 
@@ -298,4 +295,99 @@ it("focuses the heading on returning to a page that once had errors", async () =
   expect(
     screen.queryByText("Fill in the highlighted answers to carry on."),
   ).toBeNull();
+});
+
+it("opens a warning's controls page, then goes on to rate and back to the review", async () => {
+  const hazard = {
+    ...HAZARD_DRAFT,
+    controls: [],
+    after: { likelihood: null, consequence: null },
+  };
+  storeDraft({ ...COMPLETE_DRAFT, hazards: [hazard] });
+  const warned = {
+    ...PASSING_CHECK,
+    warnings: [
+      {
+        path: "hazards.0.controls",
+        message: "No controls: you'll be told not to start.",
+      },
+    ],
+  };
+  const needsAfter = {
+    errors: [
+      { path: "hazards.0.after.likelihood", message: "Pick a likelihood." },
+    ],
+    warnings: [],
+    assessment: null,
+    can_submit: false,
+  };
+  stubApi({
+    "POST /api/take5s/check": [
+      { status: 200, body: warned },
+      { status: 200, body: needsAfter },
+      { status: 200, body: PASSING_CHECK },
+    ],
+  });
+  renderWithApi(<FormAt start={{ page: "review" }} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Add a control" }));
+  expect(
+    await screen.findByRole("heading", { name: "What will stop it?" }),
+  ).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Add a control" }));
+  fireEvent.change(screen.getByLabelText("What will you do?"), {
+    target: { value: "Chock the wheel" },
+  });
+  fireEvent.change(screen.getByLabelText("Kind of control"), {
+    target: { value: "Isolate the hazard" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+  // The new control's after rating opens as the next page, not marked as a mistake.
+  expect(
+    await screen.findByRole("heading", { name: "After your controls" }),
+  ).toBeTruthy();
+  expect(screen.queryByText("Pick a likelihood.")).toBeNull();
+  for (const [group, level] of [
+    ["How likely is it?", "Seldom"],
+    ["How bad would it be?", "Scratch"],
+  ] as const)
+    fireEvent.click(
+      within(screen.getByRole("group", { name: group })).getByRole("radio", {
+        name: level,
+      }),
+    );
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+  expect(
+    await screen.findByRole("heading", { name: "One last look" }),
+  ).toBeTruthy();
+  expect(moves).toEqual([
+    { page: "controls", replace: true },
+    { page: "after", replace: false },
+    { page: "review", replace: true },
+  ]);
+});
+
+it("lets the worker finish with a warning showing", async () => {
+  storeDraft();
+  stubApi({
+    "POST /api/take5s/check": {
+      status: 200,
+      body: {
+        ...PASSING_CHECK,
+        warnings: [
+          {
+            path: "hazards.0.controls",
+            message: "No controls: you'll be told not to start.",
+          },
+        ],
+      },
+    },
+    "POST /api/take5s": { status: 200, body: SAVED },
+  });
+  renderWithApi(<FormAt start={{ page: "review" }} />);
+  await screen.findByText("No controls: you'll be told not to start.");
+  await clickFinish();
+  await waitFor(() => {
+    expect(onSaved).toHaveBeenCalledWith(SAVED.take5.id);
+  });
 });

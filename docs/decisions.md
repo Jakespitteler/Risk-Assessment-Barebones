@@ -2,6 +2,36 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-14: The CI reviewer runs Opus 5.5 with at most 15 turns
+
+- Decision: `agent-review.yml` passes `--model claude-opus-5-5` and `--max-turns 15` (was 40). Without
+  `--model` the review runs on the action's default model, because `model:` in `.claude/agents/reviewer.md`
+  only applies to the local subagent. That a pull request's own code, such as `scripts/check.py`, runs in its
+  review is an accepted risk; the action already restores the agent files from `main`.
+- Why: Jake chose Opus 5.5, and asked for a lower turn cap to protect his usage. The first live review (no
+  fixes, on the default model) took 7 turns, so 5 would stop it before it posts its comment. 15 leaves room to
+  fix one thing and run the checks again. The cap is only a ceiling; a review uses what it needs.
+- Alternatives considered: 5 turns (too few, as above) and keeping 40 (more room than a review needs).
+- Decided by: human (Jake, 2026-11-14), after Claude's review of task 0012.
+
+## 2026-11-13: Fix a Don't start yet in a new Take 5 that points back (task 0010)
+
+- Decision: A worker told Don't start yet can copy its answers into a new Take 5 and fix them there. The new
+  Take 5 records the first one's ID in `fixes`. The first one is never written to: opening it finds its newest
+  fix by searching the saved documents (`json_extract` on `fixes`), and the reply carries it as `fixed_by`.
+  The copy opens on the review. Once a Take 5 has a fix it links to it and no longer offers another. The back
+  end refuses (422) a `fixes` that is not a saved Don't start yet. Before Finish, the check warns about each
+  hazard with no controls; a warning never blocks Finish.
+- Why: A saved Take 5 is final, so the only way to add a forgotten control was to type everything again. The
+  link lets a supervisor see that a job was first planned without a control. Searching for the fix keeps the
+  rule that a finished Take 5 never changes, and needs no new column or table change.
+- Alternatives considered: Editing the saved Take 5 (breaks "never changed"). Writing `fixed_by` into the first
+  one (changes a finished Take 5). A `fixes` column beside the document (faster to search, but existing
+  databases would need a table change; add one if the list of Take 5s grows large). Opening the copy on the
+  first page (more thinking, but slower; the review's warning already points at what to fix).
+- Decided by: the human (the fix and the warning, the `fixes` data model change, the copy opening on the review,
+  one offered fix, and refusing a fix of a Good to go); claude proposed the search and the warning's shape
+
 ## 2026-11-13: Spell check in Australian English, shared through the repo
 
 - Decision: Spelling is Australian English, checked by cspell with its `en-AU` dictionary, which is what Jake's
@@ -18,18 +48,6 @@ Newest first. One short entry per non-obvious decision.
   `npx` with pinned versions works the same way as markdownlint does now).
 - Decided by: human (Jake asked for it, 2026-11-13). He chose the same day to run it in `scripts/check.py`, so
   CI fails on a spelling mistake.
-
-## 2026-11-14: The CI reviewer runs Opus 5.5 with at most 15 turns
-
-- Decision: `agent-review.yml` passes `--model claude-opus-5-5` and `--max-turns 15` (was 40). Without
-  `--model` the review runs on the action's default model, because `model:` in `.claude/agents/reviewer.md`
-  only applies to the local subagent. That a pull request's own code, such as `scripts/check.py`, runs in its
-  review is an accepted risk; the action already restores the agent files from `main`.
-- Why: Jake chose Opus 5.5, and asked for a lower turn cap to protect his usage. The first live review (no
-  fixes, on the default model) took 7 turns, so 5 would stop it before it posts its comment. 15 leaves room to
-  fix one thing and run the checks again. The cap is only a ceiling; a review uses what it needs.
-- Alternatives considered: 5 turns (too few, as above) and keeping 40 (more room than a review needs).
-- Decided by: human (Jake, 2026-11-14), after Claude's review of task 0012.
 
 ## 2026-11-13: Bound the automated review and skip its own pushes (task 0012)
 

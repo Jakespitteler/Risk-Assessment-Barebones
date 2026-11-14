@@ -6,11 +6,13 @@ from risk_assessment.domain.controls import ControlKind
 from risk_assessment.domain.take5.draft import (
     FILL_IN_MESSAGE,
     HIGHER_AFTER_MESSAGE,
+    NO_CONTROLS_WARNING,
     NO_HAZARD_MESSAGE,
     NO_KIND_MESSAGE,
     ControlDraft,
     DraftCheck,
     FieldError,
+    FieldWarning,
     HazardDraft,
     RatingChoice,
     Take5Draft,
@@ -190,6 +192,45 @@ def test_example_17_with_no_controls_after_is_the_before_rating() -> None:
         8,
         "Moderate",
     )
+
+
+def test_example_17_a_hazard_with_no_controls_is_warned_about() -> None:
+    """The warning says the job will be stopped (V2), and it never blocks submitting."""
+    hazard: HazardDraft = _hazard(controls=()).model_copy(
+        update={"after": RatingChoice()}
+    )
+
+    check: DraftCheck = check_draft(_draft(hazard), BOOKLET_TEMPLATE)
+
+    assert check.warnings == (
+        FieldWarning(path="hazards.0.controls", message=NO_CONTROLS_WARNING),
+    )
+    assert check.can_submit
+    assert NO_CONTROLS_WARNING == "No controls: you'll be told not to start."
+
+
+def test_a_hazard_with_controls_gets_no_warning() -> None:
+    """Example 18's controlled hazard has nothing to warn about."""
+    assert check_draft(_draft(), BOOKLET_TEMPLATE).warnings == ()
+
+
+def test_each_warning_is_on_its_own_hazard() -> None:
+    """Only the second hazard has no controls, so only it is warned about."""
+    uncontrolled: HazardDraft = _hazard(controls=())
+
+    check: DraftCheck = check_draft(_draft(_hazard(), uncontrolled), BOOKLET_TEMPLATE)
+
+    assert [warning.path for warning in check.warnings] == ["hazards.1.controls"]
+
+
+def test_a_draft_with_gaps_is_still_warned_about() -> None:
+    """A warning comes with the errors, so the worker hears about it on any page."""
+    blank: HazardDraft = HazardDraft()
+
+    check: DraftCheck = check_draft(_draft(blank), BOOKLET_TEMPLATE)
+
+    assert not check.can_submit
+    assert [warning.path for warning in check.warnings] == ["hazards.0.controls"]
 
 
 def test_errors_on_a_later_hazard_carry_its_own_index() -> None:

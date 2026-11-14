@@ -14,6 +14,7 @@ from risk_assessment.api.schemas import (
 )
 from risk_assessment.domain.controls import ControlKind
 from risk_assessment.domain.take5.draft import DraftCheck, Take5Draft
+from risk_assessment.domain.take5.fix import offers_a_fix
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.template import Take5Template
 from risk_assessment.services.take5s import SubmissionConflictError, Take5Service
@@ -58,7 +59,7 @@ def create_router(service: Take5Service) -> APIRouter:
 
     @router.post("/api/take5s/check", responses=_UNREADABLE)
     def check(draft: Take5Draft) -> DraftCheck:
-        """Return what is missing and the ratings, without saving anything."""
+        """Return what is missing, the warnings and the ratings, saving nothing."""
         return service.check(draft)
 
     @router.post("/api/take5s", responses=_UNREADABLE | _CONFLICT)
@@ -72,7 +73,7 @@ def create_router(service: Take5Service) -> APIRouter:
             saved: SavedTake5 = service.submit(request.draft, request.id)
         except SubmissionConflictError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
-        return Take5Response(take5=saved, rating=saved.rating)
+        return _response(saved, service)
 
     @router.get("/api/take5s/{take5_id}", responses=_UNREADABLE | _NOT_FOUND)
     def get(take5_id: UUID) -> Take5Response:
@@ -80,6 +81,25 @@ def create_router(service: Take5Service) -> APIRouter:
         saved: SavedTake5 | None = service.get(take5_id)
         if saved is None:
             raise HTTPException(status_code=404, detail=_NOT_FOUND_MESSAGE)
-        return Take5Response(take5=saved, rating=saved.rating)
+        return _response(saved, service)
 
     return router
+
+
+def _response(saved: SavedTake5, service: Take5Service) -> Take5Response:
+    """Build the reply for a saved Take 5: its rating, its fix, and if it offers one.
+
+    Args:
+        saved: The saved Take 5.
+        service: The service that finds its fix.
+
+    Returns:
+        The reply.
+    """
+    fixed_by: UUID | None = service.fixed_by(saved.id)
+    return Take5Response(
+        take5=saved,
+        rating=saved.rating,
+        fixed_by=fixed_by,
+        offers_fix=offers_a_fix(saved, fixed_by),
+    )

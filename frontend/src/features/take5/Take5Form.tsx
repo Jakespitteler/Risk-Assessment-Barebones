@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import type { FieldError, TemplateResponse } from "../../api/take5";
+import type {
+  FieldError,
+  FieldWarning,
+  TemplateResponse,
+} from "../../api/take5";
 import {
   ApiError,
   useCheckDraft,
@@ -61,6 +65,26 @@ export function Take5Form(props: Take5FormProps) {
     focusErrorsOn(target);
   }
 
+  /** Open the page a warning is about. Continue there comes back to the review. */
+  function openWarning(warning: FieldWarning) {
+    const target = stages.stageOfError(warning.path);
+    setErrors([]);
+    setFixing(true);
+    onStageChange(target, { replace: true });
+  }
+
+  /**
+   * While fixing, go to the next gap. A gap on the very next page, such as the after
+   * rating a new control needs, opens as normal, without marking it as a mistake.
+   */
+  function nextGap(found: FieldError[]) {
+    const following = stages.nextStage(stage, draft);
+    const first = found[0];
+    if (first && stages.sameStage(stages.stageOfError(first.path), following))
+      onStageChange(following);
+    else showGaps(found);
+  }
+
   async function next() {
     setProblem(null);
     take5.dismissRemoval();
@@ -74,9 +98,9 @@ export function Take5Form(props: Take5FormProps) {
       return;
     }
     setErrors([]);
-    if (fixing && check && !check.can_submit) showGaps(check.errors);
+    if (fixing && check && !check.can_submit) nextGap(check.errors);
     else if (fixing && check) {
-      // Replace the page that was fixed, so Back from the review goes where it always does.
+      // Replace the page that was fixed, so Back from the review steps back one page.
       setFixing(false);
       onStageChange({ page: "review" }, { replace: true });
     } else onStageChange(stages.nextStage(stage, draft));
@@ -125,6 +149,7 @@ export function Take5Form(props: Take5FormProps) {
         errors={errors}
         onErrorsChange={setErrors}
         onGaps={showGaps}
+        onOpenWarning={openWarning}
       />
       {take5.removal && (
         <UndoBar
