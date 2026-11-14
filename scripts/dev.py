@@ -50,7 +50,10 @@ def install_frontend_if_needed() -> None:
         and (node_modules / "vite" / "bin" / "vite.js").is_file()
     ):
         subprocess.run(
-            [NPM, "ci"], cwd=REPO_ROOT / "frontend", env=SERVER_ENVIRONMENT, check=True
+            [NPM, "ci"],
+            cwd=REPO_ROOT / "frontend",
+            env=SERVER_ENVIRONMENT,
+            check=True,
         )
 
 
@@ -81,7 +84,10 @@ def start(command: list[str], folder: str) -> subprocess.Popen[bytes]:
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
         )
     return subprocess.Popen(
-        command, cwd=REPO_ROOT / folder, env=SERVER_ENVIRONMENT, start_new_session=True
+        command,
+        cwd=REPO_ROOT / folder,
+        env=SERVER_ENVIRONMENT,
+        start_new_session=True,
     )
 
 

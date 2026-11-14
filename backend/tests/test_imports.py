@@ -57,7 +57,7 @@ def _imports(module_path: Path) -> list[str]:
         Each imported name, such as `risk_assessment.domain.risk.rate`.
     """
     package: str = ".".join(
-        ("risk_assessment", *module_path.relative_to(_PACKAGE_ROOT).parent.parts)
+        ("risk_assessment", *module_path.relative_to(_PACKAGE_ROOT).parent.parts),
     )
     imports: list[str] = []
     for node in ast.walk(ast.parse(module_path.read_text(encoding="utf-8"))):
@@ -83,7 +83,9 @@ def _is_within(name: str, prefixes: tuple[str, ...]) -> bool:
 
 
 @pytest.mark.parametrize(
-    "module_path", _modules(), ids=lambda path: str(path.relative_to(_PACKAGE_ROOT))
+    "module_path",
+    _modules(),
+    ids=lambda path: str(path.relative_to(_PACKAGE_ROOT)),
 )
 def test_imports_follow_the_architecture(module_path: Path) -> None:
     """Each module imports only its own package, what it may use, and libraries."""

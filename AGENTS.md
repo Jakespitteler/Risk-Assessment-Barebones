@@ -17,8 +17,9 @@ Run each from the folder shown.
 - Install: in `backend/`, `uv sync`. In `frontend/`, `npm ci` then `npx playwright install chromium`.
 - Run: in the repo root, `uv run scripts/dev.py`, then open <http://localhost:5173>. Ctrl+C stops it.
 - Test: in `backend/`, `uv run pytest`. In `frontend/`, `npm test` and `npm run test:e2e`.
-- Lint/format: in `backend/`, `uv run ruff check .` and `uv run ruff format .`. In `frontend/`, `npm run lint`
-  and `npm run format`. Markdown, in the repo root: `npx markdownlint-cli2@0.24.0 "**/*.md"`.
+- Lint/format: in `backend/`, `uv run ruff check .` and `uv run ruff format .`. When the lint finds `COM812`
+  (missing trailing comma), run `uv run ruff check --fix --select COM812 . ../scripts`, then format again. In
+  `frontend/`, `npm run lint` and `npm run format`. Markdown, in the repo root: `npx markdownlint-cli2@0.24.0 "**/*.md"`.
   `check.py` also lints `scripts/` with the back end's settings and type checks it with the root `pyproject.toml`.
 - Spelling (Australian English), in the repo root: `npx -y -p cspell@10.5.0 -p @cspell/dict-en-au@1.1.31 cspell
   -c .cspell/cli.json "**"`.
@@ -81,9 +82,9 @@ Run each from the folder shown.
   function, in plain words. Small single-purpose functions; plain data and pure functions in `domain/`.
   Values are frozen pydantic models. Explicitly annotate assigned variables and module constants, except
   direct constructor calls where the class already makes the type clear (for example, `app = FastAPI(...)`).
-  Keep annotations for collections and computed results. A `def` that doesn't fit on one line puts each
-  parameter on its own line, with a trailing comma (task 0017 makes Ruff enforce it). Pyright and Pylance
-  share `[tool.pyright]` in the root `pyproject.toml`; the back end's package and Ruff settings stay in
+  Keep annotations for collections and computed results. A `def`, call, list or dictionary that doesn't fit
+  on one line puts each item on its own line, with a trailing comma (Ruff's `COM812` checks it). Pyright and
+  Pylance share `[tool.pyright]` in the root `pyproject.toml`; the back end's package and Ruff settings stay in
   `backend/pyproject.toml`.
 - **TypeScript.** Strict mode. API types only come from the generated `src/api/schema.d.ts`; never write them
   by hand. The front end holds no rules: it draws what the back end sends.

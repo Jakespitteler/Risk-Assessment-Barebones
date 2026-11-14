@@ -19,7 +19,8 @@ def test_the_database_is_in_the_ignored_data_folder_by_default(
 
 
 def test_the_database_path_can_be_set_from_the_environment(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     """`TAKE5_DATABASE_PATH` moves the database."""
     monkeypatch.setenv("TAKE5_DATABASE_PATH", str(tmp_path / "other.sqlite3"))

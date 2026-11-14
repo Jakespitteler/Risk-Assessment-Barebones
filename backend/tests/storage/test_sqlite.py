@@ -33,7 +33,8 @@ def _saved(job: str = "Change tyre on LV12") -> SavedTake5:
                 before=rate(BOOKLET_MATRIX, "Possible", "Minor"),
                 controls=(
                     Control(
-                        description="Barricade the area", kind=ControlKind.BARRICADE
+                        description="Barricade the area",
+                        kind=ControlKind.BARRICADE,
                     ),
                 ),
                 after=rate(BOOKLET_MATRIX, "Unlikely", "Minor"),
@@ -64,7 +65,7 @@ def test_a_second_save_with_the_same_id_keeps_the_first(tmp_path: Path) -> None:
     repository = SqliteTake5Repository(tmp_path / "take5.sqlite3")
     first: SavedTake5 = _saved()
     second: SavedTake5 = _saved(job="Another example job").model_copy(
-        update={"id": first.id}
+        update={"id": first.id},
     )
 
     repository.add(first)
@@ -98,7 +99,7 @@ def test_the_columns_beside_the_document_are_filled_in(tmp_path: Path) -> None:
 
     with closing(sqlite3.connect(database)) as connection:
         row: tuple[str, str, str, str] = connection.execute(
-            "SELECT id, created_at, worker_name, job FROM take5s"
+            "SELECT id, created_at, worker_name, job FROM take5s",
         ).fetchone()
     assert row == (
         str(take5.id),
@@ -113,10 +114,10 @@ def test_the_newest_fix_of_a_take5_is_found(tmp_path: Path) -> None:
     repository = SqliteTake5Repository(tmp_path / "take5.sqlite3")
     first: SavedTake5 = _saved()
     earlier_fix: SavedTake5 = _saved().model_copy(
-        update={"fixes": first.id, "created_at": first.created_at + timedelta(hours=1)}
+        update={"fixes": first.id, "created_at": first.created_at + timedelta(hours=1)},
     )
     later_fix: SavedTake5 = _saved().model_copy(
-        update={"fixes": first.id, "created_at": first.created_at + timedelta(hours=2)}
+        update={"fixes": first.id, "created_at": first.created_at + timedelta(hours=2)},
     )
     for take5 in (first, later_fix, earlier_fix):
         repository.add(take5)

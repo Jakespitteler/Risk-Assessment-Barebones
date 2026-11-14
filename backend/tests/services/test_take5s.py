@@ -42,7 +42,9 @@ class MemoryRepository:
             take5 for take5 in self.documents.values() if take5.fixes == take5_id
         ]
         newest: SavedTake5 | None = max(
-            fixes, key=lambda take5: take5.created_at, default=None
+            fixes,
+            key=lambda take5: take5.created_at,
+            default=None,
         )
         return newest.id if newest is not None else None
 
@@ -61,7 +63,8 @@ def _draft() -> Take5Draft:
                 after=choice,
                 controls=(
                     ControlDraft(
-                        description="Barricade the area", kind=ControlKind.BARRICADE
+                        description="Barricade the area",
+                        kind=ControlKind.BARRICADE,
                     ),
                 ),
             ),
@@ -110,7 +113,7 @@ def _uncontrolled_draft() -> Take5Draft:
     """Example 22: the default draft with its one hazard left without controls."""
     draft: Take5Draft = _draft()
     hazard: HazardDraft = draft.hazards[0].model_copy(
-        update={"controls": (), "after": RatingChoice()}
+        update={"controls": (), "after": RatingChoice()},
     )
     return draft.model_copy(update={"hazards": (hazard,)})
 
@@ -142,7 +145,8 @@ def test_a_fix_points_back_and_the_first_take5_is_unchanged() -> None:
     first: SavedTake5 = service.submit(_uncontrolled_draft(), uuid4())
 
     fix: SavedTake5 = service.submit(
-        _draft().model_copy(update={"fixes": first.id}), uuid4()
+        _draft().model_copy(update={"fixes": first.id}),
+        uuid4(),
     )
 
     assert fix.fixes == first.id
@@ -190,7 +194,7 @@ def test_a_take5_cannot_fix_itself() -> None:
     submission_id: UUID = uuid4()
     first: SavedTake5 = service.submit(_uncontrolled_draft(), submission_id)
     draft: Take5Draft = _uncontrolled_draft().model_copy(
-        update={"fixes": submission_id}
+        update={"fixes": submission_id},
     )
 
     with pytest.raises(InvalidDraftError) as refusal:

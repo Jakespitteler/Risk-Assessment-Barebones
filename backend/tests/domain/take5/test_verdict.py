@@ -47,14 +47,15 @@ def test_example_18_nothing_different_is_good_to_go() -> None:
 def test_example_22_a_hazard_with_no_controls_says_how_to_control_it() -> None:
     """V2 names the hazard that has no controls."""
     assert verdict(_take5(controls=())) == Verdict(
-        can_start=False, reasons=("Say how you will control: Moving wheel",)
+        can_start=False,
+        reasons=("Say how you will control: Moving wheel",),
     )
 
 
 def test_example_23_a_rating_of_12_needs_a_jha() -> None:
     """V3 applies at 11 or more."""
     result: Verdict = verdict(
-        _take5(before=("Likely", "Minor"), after=("Likely", "Minor"))
+        _take5(before=("Likely", "Minor"), after=("Likely", "Minor")),
     )
 
     assert result == Verdict(
@@ -69,7 +70,7 @@ def test_example_23_a_rating_of_12_needs_a_jha() -> None:
 def test_example_24_a_rating_of_exactly_11_needs_a_jha() -> None:
     """V3 applies at exactly the threshold."""
     result: Verdict = verdict(
-        _take5(before=("Almost Certain", "Low"), after=("Almost Certain", "Low"))
+        _take5(before=("Almost Certain", "Low"), after=("Almost Certain", "Low")),
     )
 
     assert result == Verdict(
@@ -84,7 +85,7 @@ def test_example_24_a_rating_of_exactly_11_needs_a_jha() -> None:
 def test_example_25_an_after_rating_of_10_is_good_to_go() -> None:
     """V3 uses the after rating, and 10 is below the threshold."""
     result: Verdict = verdict(
-        _take5(before=("Possible", "Major"), after=("Rare", "Major"))
+        _take5(before=("Possible", "Major"), after=("Rare", "Major")),
     )
 
     assert result == Verdict(can_start=True, reasons=())

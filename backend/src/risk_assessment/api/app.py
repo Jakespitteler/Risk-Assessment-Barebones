@@ -12,7 +12,8 @@ from risk_assessment.storage.sqlite import SqliteTake5Repository
 
 
 def create_app(
-    repository: Take5Repository | None = None, settings: Settings | None = None
+    repository: Take5Repository | None = None,
+    settings: Settings | None = None,
 ) -> FastAPI:
     """Build the API.
 

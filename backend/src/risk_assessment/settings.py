@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     """
 
     model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
-        env_prefix="TAKE5_", frozen=True
+        env_prefix="TAKE5_",
+        frozen=True,
     )
 
     database_path: Path = _DEFAULT_DATABASE_PATH

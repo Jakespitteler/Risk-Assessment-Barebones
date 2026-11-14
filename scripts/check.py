@@ -32,7 +32,8 @@ class Check(NamedTuple):
     folder: str
 
 
-# Ruff uses the back end's settings; Pyright uses the root pyproject.toml.
+# Ruff uses the back end's settings; Pyright uses the root pyproject.toml. The lint runs
+# before the format check, so a missing trailing comma (COM812) is named as the cause.
 PYTHON_FOLDERS: list[str] = [".", "../scripts"]
 RUFF: list[str] = ["uv", "run", "ruff"]
 RUFF_SETTINGS: list[str] = ["--config", "pyproject.toml"]
@@ -52,7 +53,9 @@ CHECKS: list[Check] = [
     Check("Markdown", [NPX, "--yes", "markdownlint-cli2@0.24.0", "**/*.md"], "."),
     Check("Spelling", [NPX, "--yes", *SPELL_CHECKER, "**"], "."),
     Check(
-        "Back end lint", [*RUFF, "check", *RUFF_SETTINGS, *PYTHON_FOLDERS], "backend"
+        "Back end lint",
+        [*RUFF, "check", *RUFF_SETTINGS, *PYTHON_FOLDERS],
+        "backend",
     ),
     Check(
         "Back end format",

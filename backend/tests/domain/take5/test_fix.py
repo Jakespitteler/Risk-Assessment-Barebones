@@ -38,7 +38,8 @@ def _saved(verdict: Verdict) -> SavedTake5:
                 before=rate(BOOKLET_MATRIX, "Possible", "Minor"),
                 controls=(
                     Control(
-                        description="Barricade the area", kind=ControlKind.BARRICADE
+                        description="Barricade the area",
+                        kind=ControlKind.BARRICADE,
                     ),
                 ),
                 after=rate(BOOKLET_MATRIX, "Unlikely", "Minor"),
@@ -71,7 +72,8 @@ def test_a_good_to_go_cannot_be_fixed() -> None:
     good_to_go = Verdict(can_start=True, reasons=())
 
     assert fixes_error(_saved(good_to_go)) == FieldError(
-        path="fixes", message=NOTHING_TO_FIX_MESSAGE
+        path="fixes",
+        message=NOTHING_TO_FIX_MESSAGE,
     )
 
 
@@ -84,7 +86,9 @@ _GOOD_TO_GO = Verdict(can_start=True, reasons=())
     [(_STOPPED, False, True), (_STOPPED, True, False), (_GOOD_TO_GO, False, False)],
 )
 def test_a_fix_is_offered_only_for_a_dont_start_yet_with_no_fix_yet(
-    verdict: Verdict, has_a_fix: bool, offered: bool
+    verdict: Verdict,
+    has_a_fix: bool,
+    offered: bool,
 ) -> None:
     """Once fixed, the result links to its fix instead of offering another."""
     fixed_by = uuid4() if has_a_fix else None
