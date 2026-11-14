@@ -7,7 +7,7 @@ Newest first. One short entry per non-obvious decision.
 - Decision: When other pull requests are open, a new task's branch starts from the newest one's branch and its
   pull request targets that branch. An agent whose tool can only push to a branch it names (a Claude cloud
   thread's `claude/project-thread-<id>`) uses that branch instead of `<owner>/<task-id>-<short-name>`, and
-  writes it in the task file.
+  writes it in the task file. Stacked pull requests are merged oldest first, each onto `main`.
 - Why: Stacked pull requests keep each one small while the next task builds on unmerged work. Cloud threads
   cannot push any other branch name, so the old rule could never be followed there.
 - Alternatives considered: Every branch from `main` (later pull requests conflict with or repeat earlier ones).
@@ -16,17 +16,17 @@ Newest first. One short entry per non-obvious decision.
 ## 2026-11-14: The app is Jake's, all rights reserved (task 0015)
 
 - Decision: `LICENSE` is a proprietary "All rights reserved" notice with Jake Spitteler as the owner, in place
-  of MIT. Nobody may use, copy, change or share the code without the owner's written permission. `frontend/package.json`
-  says `"license": "UNLICENSED"` and `backend/pyproject.toml` says `license = "LicenseRef-Proprietary"`, so
-  tools do not read the project as open source. Source files carry no copyright header.
-- Why: Jake wants nobody else to copy or use the app. He first named Talison Lithium as the owner, then chose to
-  be the owner for now; changing the name later is a one-line edit, though a lawyer should say whether that
-  also needs a signed assignment.
+  of MIT. Nobody may use, copy, change or share the code without the owner's written permission.
+  `frontend/package.json` says `"license": "UNLICENSED"` and `backend/pyproject.toml` says
+  `license = "LicenseRef-Proprietary"`, so tools do not read the project as open source. Source files carry no
+  copyright header. Copies taken before this change keep their MIT rights.
+- Why: Jake wants nobody else to copy or use the app. Jake first named Talison Lithium as the owner, then chose
+  to be the owner for now. Changing the owner later means changing the name in `LICENSE` and `README.md`; a
+  lawyer should say whether that also needs a signed assignment. This is not legal advice.
 - Alternatives considered: PolyForm Strict 1.0.0 (still allows non-commercial use) and Business Source License
   1.1 (becomes open source after a set date). Neither stops all use. A header in every file was left out as
   extra upkeep for little gain while `LICENSE` covers the repo.
-- Decided by: human (Jake, 2026-11-14), choosing Claude's recommended template and package settings. Copies
-  taken before this change keep their MIT rights. Not legal advice.
+- Decided by: human (Jake, 2026-11-14), choosing Claude's recommended template and package settings.
 
 ## 2026-11-14: The CI reviewer runs Opus 5.5 with at most 15 turns
 
