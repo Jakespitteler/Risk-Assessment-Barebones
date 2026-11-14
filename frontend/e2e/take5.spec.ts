@@ -131,6 +131,22 @@ test("Continue shows that page's gaps there and puts the cursor in the first", a
   await expect(name).toHaveAttribute("aria-invalid", "false");
 });
 
+test("Enter in a one-line box continues; in a bigger box it starts a new line", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByLabel("Your name", { exact: true }).fill("Sam Example");
+  const job = page.getByLabel("What is the job?");
+  await job.fill("Change front tyre");
+  await job.press("Enter");
+  await job.pressSequentially("on LV12");
+  await expect(job).toHaveValue("Change front tyre\non LV12");
+  await expect(heading(page, "The job in front of you")).toBeVisible();
+  await page.getByLabel("Where will you do it?").fill("Example workshop");
+  await page.getByLabel("Where will you do it?").press("Enter");
+  await expect(heading(page, "What could hurt someone?")).toBeVisible();
+});
+
 test("a gap found at the review is fixed in place, then back to the review", async ({
   page,
 }) => {

@@ -1,14 +1,16 @@
 import { Button } from "../../components/Button";
 import type { Stage } from "./stage";
 
-/** Back, and Continue or Finish, side by side at the bottom where a thumb reaches. */
+/**
+ * Back, and Continue or Finish, side by side at the bottom where a thumb reaches.
+ * Continue submits the form around it, so Enter presses it too. Finish never does.
+ */
 export function FormNav({
   stage,
   busy,
   canFinish,
   label,
   onBack,
-  onContinue,
   onFinish,
 }: {
   stage: Stage;
@@ -16,7 +18,6 @@ export function FormNav({
   canFinish: boolean;
   label: string | undefined;
   onBack: () => void;
-  onContinue: () => void;
   onFinish: () => void;
 }) {
   const last = stage.page === "review";
@@ -29,7 +30,8 @@ export function FormNav({
       )}
       <Button
         disabled={busy || (last && !canFinish)}
-        onClick={last ? onFinish : onContinue}
+        type={last ? "button" : "submit"}
+        onClick={last ? onFinish : undefined}
         className="col-start-2"
       >
         {label ?? (last ? "Finish Take 5" : "Continue")}

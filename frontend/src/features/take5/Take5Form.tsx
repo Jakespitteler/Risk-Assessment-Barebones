@@ -26,7 +26,10 @@ export interface Take5FormProps {
   onSaved: (id: string) => void;
 }
 
-/** The form, one page at a time. Each Continue asks the back end what is missing. */
+/**
+ * The form, one page at a time. Each Continue asks the back end what is missing.
+ * Each page is a real form, so Enter in a one-line box presses Continue.
+ */
 export function Take5Form(props: Take5FormProps) {
   const { template, onStageChange, onSaved } = props;
   const take5 = useTake5Draft();
@@ -106,7 +109,15 @@ export function Take5Form(props: Take5FormProps) {
 
   const hazard = "hazard" in stage ? draft.hazards[stage.hazard] : undefined;
   return (
-    <div ref={container} className="flex flex-col gap-6">
+    <form
+      ref={container}
+      noValidate
+      className="flex flex-col gap-6"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void next();
+      }}
+    >
       <FormHeading
         stage={stage}
         hazardCount={draft.hazards.length}
@@ -147,9 +158,8 @@ export function Take5Form(props: Take5FormProps) {
         onBack={() => {
           props.onBack(stages.previousStage(stage, draft));
         }}
-        onContinue={() => void next()}
         onFinish={finish}
       />
-    </div>
+    </form>
   );
 }
