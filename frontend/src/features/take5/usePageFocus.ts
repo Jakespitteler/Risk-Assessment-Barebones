@@ -8,7 +8,7 @@ import type { Stage } from "./stage";
  */
 export function usePageFocus(stage: Stage) {
   const heading = useRef<HTMLHeadingElement>(null);
-  const container = useRef<HTMLDivElement>(null);
+  const container = useRef<HTMLFormElement>(null);
   // The page whose first error takes the focus next. It is used once, then cleared.
   const errorsOn = useRef<string | null>(null);
   const [attempt, setAttempt] = useState(0);

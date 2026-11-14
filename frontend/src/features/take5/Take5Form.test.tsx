@@ -116,6 +116,19 @@ it("moves on when the page has no gaps", async () => {
   ).toBeTruthy();
 });
 
+it("moves on when the page is submitted, as Enter in a box does", async () => {
+  storeDraft();
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "job" }} />);
+  const location = screen.getByLabelText<HTMLInputElement>(
+    "Where will you do it?",
+  );
+  fireEvent.submit(location.form as HTMLFormElement);
+  expect(
+    await screen.findByRole("heading", { name: "What could hurt someone?" }),
+  ).toBeTruthy();
+});
+
 it("puts a removed hazard back on Undo", () => {
   storeDraft();
   stubApi({});

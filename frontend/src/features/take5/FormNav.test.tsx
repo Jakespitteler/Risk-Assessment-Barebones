@@ -4,7 +4,7 @@ import type { Stage } from "./stage";
 import { FormNav } from "./FormNav";
 
 function nav(stage: Stage, busy = false, canFinish = true, label?: string) {
-  const handlers = { onBack: vi.fn(), onContinue: vi.fn(), onFinish: vi.fn() };
+  const handlers = { onBack: vi.fn(), onFinish: vi.fn() };
   const view = render(
     <FormNav
       stage={stage}
@@ -22,10 +22,22 @@ it("has no Back on the first page", () => {
   expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
 });
 
+it("submits the form with Continue, so Enter in a box presses it", () => {
+  nav({ page: "job" });
+  expect(
+    screen.getByRole<HTMLButtonElement>("button", { name: "Continue" }).type,
+  ).toBe("submit");
+});
+
 it("finishes on the review", () => {
   const { onFinish } = nav({ page: "review" });
-  fireEvent.click(screen.getByRole("button", { name: "Finish Take 5" }));
+  const finish = screen.getByRole<HTMLButtonElement>("button", {
+    name: "Finish Take 5",
+  });
+  fireEvent.click(finish);
   expect(onFinish).toHaveBeenCalledOnce();
+  // Saving can't be taken back, so Enter never presses Finish.
+  expect(finish.type).toBe("button");
 });
 
 it("is disabled while busy, with what it is doing", () => {
