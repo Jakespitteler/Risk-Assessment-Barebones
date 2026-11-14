@@ -2,6 +2,23 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-14: Keep the built-in sqlite3 until storage needs more (task 0018)
+
+- Decision: Storage stays on Python's built-in `sqlite3` with hand-written SQL. It moves to the SQLAlchemy ORM
+  (version 2's typed style, no relationships) with Alembic, as its own task, when the first of these is planned:
+  a company database such as PostgreSQL, the first change to a table that already holds saved Take 5s, or a
+  second kind of card with its own table. No dependencies are added now.
+- Why: The next tasks need one more query (0007) and no table change. A library made the file only a few lines
+  shorter in a tried-out version, and plain SQL is easier for Jake to follow. Only `storage/` knows how Take 5s
+  are stored, so switching later costs about what it costs now. When the time comes, the ORM gives real types
+  under pyright strict and Alembic can write its migrations.
+- Alternatives considered: SQLAlchemy Core now (one set of queries for SQLite and PostgreSQL, but columns are
+  typed `Any`). The SQLAlchemy ORM now (best typed, but more to learn for no current gain). SQLModel (still
+  0.0.x, needs type workarounds, and invites joining the domain model to the table). The full comparison is in
+  `docs/tasks/0018-database-library.md`.
+- Decided by: proposed by Claude in task 0018; Jake confirms it by merging that task's pull request, or picks
+  another option first.
+
 ## 2026-11-14: A T3 reason is saved only while T3 asks (task 0006 review)
 
 - Decision: The phone's draft keeps what the worker wrote for T3, but the rated `Hazard`, and so the saved
