@@ -1,9 +1,9 @@
 ---
 id: 0005
 title: Fill in a Take 5, part 2 - the card's questions (spec F2, F3)
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/project-thread-4h589l
 ---
 
 ## Goal
