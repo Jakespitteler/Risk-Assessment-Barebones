@@ -1,5 +1,6 @@
 """The shapes of the API's requests and responses, including its error replies."""
 
+from datetime import datetime
 from typing import ClassVar
 from uuid import UUID
 
@@ -72,6 +73,29 @@ class Take5Response(BaseModel):
     rating: RiskRating
     fixed_by: UUID | None
     offers_fix: bool
+
+
+class Take5Summary(BaseModel):
+    """One line of the saved Take 5 list: enough to find it, not the whole card.
+
+    Attributes:
+        id: The Take 5's ID, to open it.
+        created_at: When it was saved.
+        worker_name: Who did it.
+        job: What the job is.
+        can_start: The verdict it was saved with: True for Good to go, False for
+            Don't start yet.
+        fixed: True when a newer Take 5 fixes this one.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    id: UUID
+    created_at: datetime
+    worker_name: str
+    job: str
+    can_start: bool
+    fixed: bool
 
 
 class ErrorMessage(BaseModel):

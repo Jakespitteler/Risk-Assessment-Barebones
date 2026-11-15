@@ -39,3 +39,22 @@ it("offers to try again when the card can't be loaded", async () => {
   ).toBeTruthy();
   expect(calls).toHaveLength(5);
 });
+
+it("links to the saved Take 5s from the first page", async () => {
+  stubApi({ "GET /api/take5/template": { status: 200, body: SMALL_TEMPLATE } });
+  renderWithApi(<NewTake5Screen {...props} />);
+  expect(
+    (await screen.findByRole("link", { name: "Saved Take 5s" })).getAttribute(
+      "href",
+    ),
+  ).toBe("/take5s");
+});
+
+it("doesn't link away from the later pages of the form", async () => {
+  stubApi({ "GET /api/take5/template": { status: 200, body: SMALL_TEMPLATE } });
+  renderWithApi(<NewTake5Screen {...props} stage={{ page: "think" }} />);
+  expect(
+    await screen.findByRole("heading", { name: "Think it through" }),
+  ).toBeTruthy();
+  expect(screen.queryByRole("link", { name: "Saved Take 5s" })).toBeNull();
+});

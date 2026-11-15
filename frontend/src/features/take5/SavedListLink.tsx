@@ -1,0 +1,11 @@
+/** A link to the list of saved Take 5s, for the top bar. */
+export function SavedListLink() {
+  return (
+    <a
+      href="/take5s"
+      className="flex min-h-12 items-center rounded-lg px-2 font-semibold text-slate-900 underline underline-offset-4 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+    >
+      Saved Take 5s
+    </a>
+  );
+}

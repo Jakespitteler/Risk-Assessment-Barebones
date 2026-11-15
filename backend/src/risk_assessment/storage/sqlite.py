@@ -18,6 +18,13 @@ _INSERT: str = (
     "VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING"
 )
 _SELECT_DOCUMENT: str = "SELECT document FROM take5s WHERE id = ?"
+# The service saves every time in UTC, and ISO text in one time zone sorts by time.
+# A time with no fraction of a second, such as 07:30:00+00:00, still sorts before
+# 07:30:00.000005+00:00, because "+" sorts before ".". The row ID breaks a tie, so
+# the one saved last comes first.
+_SELECT_NEWEST_FIRST: str = (
+    "SELECT document FROM take5s ORDER BY created_at DESC, rowid DESC"
+)
 # A fix points back at the Take 5 it fixes from inside its own document, so the first
 # one is never written to again. The newest fix wins if there is more than one.
 _SELECT_NEWEST_FIX: str = (
@@ -27,7 +34,7 @@ _SELECT_NEWEST_FIX: str = (
 
 
 class SqliteTake5Repository:
-    """Keeps each Take 5 as JSON, with a few columns beside it for a later list."""
+    """Keeps each Take 5 as JSON, with a few columns beside it for sorting."""
 
     def __init__(self, database_path: Path) -> None:
         """Remember where the file is, without opening it yet.
@@ -82,6 +89,18 @@ class SqliteTake5Repository:
         """
         with closing(self._connect()) as connection:
             return _read(connection, take5_id)
+
+    def list_newest_first(self) -> tuple[SavedTake5, ...]:
+        """Get every saved Take 5, the newest first.
+
+        Returns:
+            The saved Take 5s, each with the template and verdict it was saved with.
+        """
+        with closing(self._connect()) as connection:
+            rows: list[tuple[str]] = connection.execute(
+                _SELECT_NEWEST_FIRST,
+            ).fetchall()
+        return tuple(SavedTake5.model_validate_json(document) for (document,) in rows)
 
     def fixed_by(self, take5_id: UUID) -> UUID | None:
         """Find the newest saved Take 5 that fixes this one.

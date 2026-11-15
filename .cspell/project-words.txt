@@ -18,6 +18,7 @@ killpg
 netrc
 oneline
 parametrize
+psycopg
 pushback
 pydantic
 pydocstyle
@@ -26,6 +27,7 @@ pytest
 pythonpath
 reinstalls
 Spitteler
+sqlalchemy
 Starlette
 subagents
 Talison

@@ -118,3 +118,56 @@ def test_a_take5_saved_before_the_card_had_questions_still_opens(
     assert reopened.template.questions == ()
     assert reopened.hazards[0].weak_controls_reason == ""
     assert reopened.verdict == take5.verdict
+
+
+def test_the_list_is_newest_first_whatever_order_they_were_saved_in(
+    tmp_path: Path,
+) -> None:
+    """The list sorts by when each Take 5 was saved, not by the order of the rows."""
+    repository = SqliteTake5Repository(tmp_path / "take5.sqlite3")
+    oldest: SavedTake5 = sample_saved_take5(job="Oldest example job")
+    newest: SavedTake5 = sample_saved_take5(job="Newest example job").model_copy(
+        update={"created_at": oldest.created_at + timedelta(hours=2)},
+    )
+    middle: SavedTake5 = sample_saved_take5(job="Middle example job").model_copy(
+        update={"created_at": oldest.created_at + timedelta(hours=1, microseconds=5)},
+    )
+    for take5 in (middle, oldest, newest):
+        repository.add(take5)
+
+    assert SqliteTake5Repository(tmp_path / "take5.sqlite3").list_newest_first() == (
+        newest,
+        middle,
+        oldest,
+    )
+
+
+def test_a_whole_second_lists_before_a_fraction_of_it(tmp_path: Path) -> None:
+    """07:30:00 is saved without a fraction, yet still sorts before 07:30:00.000005."""
+    repository = SqliteTake5Repository(tmp_path / "take5.sqlite3")
+    on_the_second: SavedTake5 = sample_saved_take5()
+    just_after: SavedTake5 = sample_saved_take5().model_copy(
+        update={"created_at": on_the_second.created_at + timedelta(microseconds=5)},
+    )
+    repository.add(just_after)
+    repository.add(on_the_second)
+
+    assert repository.list_newest_first() == (just_after, on_the_second)
+
+
+def test_two_saved_at_the_same_moment_list_the_last_saved_first(
+    tmp_path: Path,
+) -> None:
+    """A tie on the time keeps a fixed order, so the list never shuffles."""
+    repository = SqliteTake5Repository(tmp_path / "take5.sqlite3")
+    first: SavedTake5 = sample_saved_take5()
+    second: SavedTake5 = sample_saved_take5()
+    repository.add(first)
+    repository.add(second)
+
+    assert repository.list_newest_first() == (second, first)
+
+
+def test_the_list_is_empty_before_anything_is_saved(tmp_path: Path) -> None:
+    """A new database has nothing to list."""
+    assert SqliteTake5Repository(tmp_path / "take5.sqlite3").list_newest_first() == ()

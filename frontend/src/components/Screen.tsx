@@ -1,11 +1,16 @@
 import type { ReactNode } from "react";
 
-/** The page every screen sits on, with the app's name at the top. */
+/**
+ * The page every screen sits on, with the app's name at the top. `aside` goes at the
+ * right of the top bar, for a link away from the screen.
+ */
 export function Screen({
   subtitle,
+  aside,
   children,
 }: {
   subtitle: string;
+  aside?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -24,6 +29,7 @@ export function Screen({
             </span>
             <span className="font-semibold">{subtitle}</span>
           </p>
+          {aside && <div className="ml-auto">{aside}</div>}
         </header>
         {children}
       </main>
