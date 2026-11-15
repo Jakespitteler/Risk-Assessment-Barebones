@@ -1,4 +1,4 @@
-"""Which saved Take 5 a new one may fix (spec F3).
+"""Which saved Take 5 a new one may fix (spec F3), and which have been fixed (spec F5).
 
 Only a Take 5 that said Don't start yet can be fixed. The fix is a new Take 5 that
 points back at it, so the first one is never changed.
@@ -49,15 +49,17 @@ def offers_a_fix(saved: SavedTake5, fixed_by: UUID | None) -> bool:
 
 
 def fixed_ids(take5s: Iterable[SavedTake5]) -> frozenset[UUID]:
-    """Find which of these Take 5s have been fixed by another one among them.
+    """Find the IDs of the Take 5s that these Take 5s fix.
 
-    A fix is always saved after the Take 5 it fixes, so a list that holds every
-    Take 5 newer than the oldest one in it also holds every fix of them.
+    A Take 5 counts as fixed whatever the fix's own verdict, as its result screen
+    says. A fix is always saved after the Take 5 it fixes, so given every saved
+    Take 5 this finds every fixed one. Given only some, it can miss a fix that
+    isn't among them.
 
     Args:
         take5s: Saved Take 5s.
 
     Returns:
-        The IDs of the Take 5s that one of them fixes.
+        The IDs that one of them fixes.
     """
     return frozenset(take5.fixes for take5 in take5s if take5.fixes is not None)

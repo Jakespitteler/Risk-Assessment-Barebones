@@ -123,7 +123,8 @@ frontend/
                            control editor, button, card, field, guidance, notice, warning, undo bar,
                            and the screen with its top bar
         features/take5/    the Take 5's screens: the four parts of the form, the question, the result, and
-                           the list of saved Take 5s (SavedTake5sScreen.tsx).
+                           the list of saved Take 5s (SavedTake5sScreen.tsx). formatDateTime.ts writes
+                           every date the one way the spec sets (D17)
                            stage.ts is which page shows (kept in the URL); useTake5Draft.ts keeps the draft
                            WeakControlsQuestion.tsx draws the server's thinking prompt on the controls page,
                            checking once typing pauses (useSettledValue.ts)

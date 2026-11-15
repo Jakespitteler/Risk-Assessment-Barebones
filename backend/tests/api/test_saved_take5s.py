@@ -98,6 +98,26 @@ def test_a_dont_start_yet_with_a_fix_is_marked_fixed(client: TestClient) -> None
     ]
 
 
+def test_a_fix_that_also_says_dont_start_yet_still_marks_its_original_fixed(
+    client: TestClient,
+) -> None:
+    """Fixed means a newer Take 5 fixes it, whatever that one's verdict (spec D16)."""
+    stopped: dict[str, Any] = _submit(client, sample_uncontrolled_draft())
+    _submit(
+        client,
+        sample_uncontrolled_draft().model_copy(
+            update={"fixes": UUID(stopped["id"])},
+        ),
+    )
+
+    listed: list[dict[str, Any]] = client.get("/api/take5s").json()
+
+    assert [(line["can_start"], line["fixed"]) for line in listed] == [
+        (False, False),
+        (False, True),
+    ]
+
+
 def test_the_list_is_empty_before_anything_is_saved(client: TestClient) -> None:
     """A new app sends an empty list, not an error."""
     response: Response = client.get("/api/take5s")

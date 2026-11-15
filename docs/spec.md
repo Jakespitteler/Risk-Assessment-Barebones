@@ -376,9 +376,10 @@ The first four screens of the core workflow, saved when the worker submits.
 ### F5: Saved Take 5s
 
 - Acceptance: a list of saved Take 5s, newest first, shows the date, worker, job and verdict of each, or "Not
-  finished" for one whose question is unanswered. A Don't start yet that a newer Take 5 fixes is marked "Fixed"
-  (decision D16).
-- Acceptance: every date and time is written as "14 Nov 2026, 6:52 pm" (decision D17).
+  finished" for one whose question is unanswered. A Don't start yet that a newer Take 5 fixes is marked "Fixed",
+  whatever the newer one's verdict, as its result screen says (decision D16).
+- Acceptance: every date and time is written as "14 Nov 2026, 6:52 pm", in the phone's own time zone (decision
+  D17).
 - Acceptance: opening one shows the same result screen the worker saw, with the verdict saved at the time.
 - Acceptance: a finished Take 5 can't be changed.
 

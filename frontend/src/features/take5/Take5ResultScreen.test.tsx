@@ -103,11 +103,17 @@ function showResult(saved: Take5Response, onFix = vi.fn()) {
   );
 }
 
-it("links to the list of saved Take 5s", () => {
+it("links to the list of saved Take 5s, beside the subtitle Your Take 5", () => {
   showResult(SAVED);
+  expect(screen.getByText("Your Take 5")).toBeTruthy();
   expect(
     screen.getByRole("link", { name: "Saved Take 5s" }).getAttribute("href"),
   ).toBe("/take5s");
+});
+
+it("writes when it was finished as the list does", () => {
+  showResult(SAVED);
+  expect(screen.getByText(/^13 Nov 2026, \d{1,2}:30 [ap]m$/)).toBeTruthy();
 });
 
 it("offers to fix a Don't start yet in a new Take 5", () => {
