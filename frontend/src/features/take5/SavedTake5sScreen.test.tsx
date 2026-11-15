@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type { Take5Summary } from "../../api/take5";
 import { quickClient, renderWithApi, stubApi } from "../../test-utils";
@@ -64,6 +64,21 @@ it("keeps showing the list when a refresh fails", async () => {
   await client.refetchQueries({ queryKey: ["take5s"] });
   expect(screen.getByRole("heading", { name: "Saved Take 5s" })).toBeTruthy();
   expect(screen.getByText("Replace conveyor idler")).toBeTruthy();
+});
+
+it("leaves the focus where it was when a refresh fails", async () => {
+  stubApi({ "GET /api/take5s": [{ status: 200, body: LIST }, "offline"] });
+  const client = quickClient();
+  renderWithApi(<SavedTake5sScreen />, client);
+  const link = await screen.findByRole("link", {
+    name: /Replace conveyor idler/,
+  });
+  link.focus();
+  await client.refetchQueries({ queryKey: ["take5s"] });
+  await waitFor(() => {
+    expect(client.getQueryState(["take5s"])?.status).toBe("error");
+  });
+  expect(document.activeElement).toBe(link);
 });
 
 it("opens a saved Take 5's result screen from its card", async () => {

@@ -69,9 +69,12 @@ function SavedTake5Item({ take5 }: { take5: Take5Summary }) {
 export function SavedTake5sScreen() {
   const list = useSavedTake5List();
   const page = useRef<HTMLDivElement>(null);
+  // Only a new heading moves the focus. A failed refresh keeps the list, so the
+  // focus stays where the worker left it.
+  const shown = list.data ? "list" : list.isLoadingError ? "error" : "loading";
   useEffect(() => {
     page.current?.querySelector("h1")?.focus();
-  }, [list.status]);
+  }, [shown]);
 
   return (
     <Screen subtitle="Look back">
