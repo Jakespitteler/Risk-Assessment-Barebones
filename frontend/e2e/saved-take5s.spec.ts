@@ -14,6 +14,9 @@ import {
 // Other tests save Take 5s to the same database, so these two are found by their jobs.
 const GOOD_JOB = "Check the lights on example water cart WC3";
 const STOPPED_JOB = "Swap the screen deck on example crusher CR1";
+const FIXED_JOB = "Grease the example stacker SK2 slew ring";
+// Jake's date format (2026-11-15), such as "14 Nov 2026, 6:52 pm".
+const DATE_TIME = /^\d{1,2}\s[A-Z][a-z]{2}\s\d{4},\s\d{1,2}:\d{2}\s[ap]m$/;
 
 /**
  * Fill in and save a Take 5 for this job, with one hazard. With a control it is Good to
@@ -65,9 +68,8 @@ test("a worker finds saved Take 5s newest first and opens one as it was saved", 
   await expect(good).toContainText("Good to go");
   await expect(good).toContainText("Alex Example");
   await expect(stopped).toContainText("Don’t start yet");
-  await expect(stopped.locator("time")).toHaveText(
-    /^\d{1,2}\s[A-Z][a-z]{2}\s\d{4},\s\d{1,2}:\d{2}\s[ap]m$/,
-  );
+  await expect(stopped.locator("time")).toHaveText(DATE_TIME);
+  await expect(stopped).not.toContainText("Fixed");
   const jobs = await items.allTextContents();
   expect(jobs.findIndex((text) => text.includes(STOPPED_JOB))).toBeLessThan(
     jobs.findIndex((text) => text.includes(GOOD_JOB)),
@@ -78,11 +80,42 @@ test("a worker finds saved Take 5s newest first and opens one as it was saved", 
   await good.getByRole("link").click();
   await expect(heading(page, "Good to go")).toBeVisible();
   expect(page.url()).toBe(goodUrl);
+  await expect(page.locator("time")).toHaveText(DATE_TIME);
   await expect(page.getByText(GOOD_JOB, { exact: true })).toBeVisible();
 
   // The result links back to the list.
   await page.getByRole("link", { name: "Saved Take 5s", exact: true }).click();
   await expect(heading(page, "Saved Take 5s")).toBeVisible();
+});
+
+test("a Don't start yet that has been fixed is marked Fixed in the list", async ({
+  page,
+}) => {
+  await saveTake5(page, FIXED_JOB, false);
+  await page
+    .getByRole("button", { name: "Fix this in a new Take 5", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Add a control", exact: true })
+    .click();
+  await addControl(page);
+  await next(page);
+  await pick(page, "Unlikely", "Minor");
+  await next(page);
+  await finish(page);
+  await expect(heading(page, "Good to go")).toBeVisible();
+
+  await page.getByRole("link", { name: "Saved Take 5s", exact: true }).click();
+  await expect(heading(page, "Saved Take 5s")).toBeVisible();
+  // The fix copies the job, so the two cards are told apart by their verdicts.
+  const sameJob = page.getByRole("listitem").filter({ hasText: FIXED_JOB });
+  await expect(
+    sameJob.filter({ hasText: "Don’t start yet" }).first(),
+  ).toContainText("Fixed");
+  await expect(
+    sameJob.filter({ hasText: "Good to go" }).first(),
+  ).not.toContainText("Fixed");
+  await capture(page, "saved-list-fixed");
 });
 
 test("the list says when nothing has been saved yet", async ({ page }) => {

@@ -4,6 +4,7 @@ Only a Take 5 that said Don't start yet can be fixed. The fix is a new Take 5 th
 points back at it, so the first one is never changed.
 """
 
+from collections.abc import Iterable
 from uuid import UUID
 
 from risk_assessment.domain.take5.draft import FieldError
@@ -45,3 +46,18 @@ def offers_a_fix(saved: SavedTake5, fixed_by: UUID | None) -> bool:
         True when the result should offer a fix.
     """
     return fixes_error(saved) is None and fixed_by is None
+
+
+def fixed_ids(take5s: Iterable[SavedTake5]) -> frozenset[UUID]:
+    """Find which of these Take 5s have been fixed by another one among them.
+
+    A fix is always saved after the Take 5 it fixes, so a list that holds every
+    Take 5 newer than the oldest one in it also holds every fix of them.
+
+    Args:
+        take5s: Saved Take 5s.
+
+    Returns:
+        The IDs of the Take 5s that one of them fixes.
+    """
+    return frozenset(take5.fixes for take5 in take5s if take5.fixes is not None)

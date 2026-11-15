@@ -16,7 +16,7 @@ from risk_assessment.api.schemas import (
 from risk_assessment.domain.controls import ControlKind
 from risk_assessment.domain.questions import Answer
 from risk_assessment.domain.take5.draft import DraftCheck, Take5Draft
-from risk_assessment.domain.take5.fix import offers_a_fix
+from risk_assessment.domain.take5.fix import fixed_ids, offers_a_fix
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.template import Take5Template
 from risk_assessment.services.take5s import SubmissionConflictError, Take5Service
@@ -82,7 +82,9 @@ def create_router(service: Take5Service) -> APIRouter:
     @router.get("/api/take5s")
     def list_take5s() -> tuple[Take5Summary, ...]:
         """Return every saved Take 5, newest first, each with its saved verdict."""
-        return tuple(_summary(saved) for saved in service.list_newest_first())
+        take5s: tuple[SavedTake5, ...] = service.list_newest_first()
+        fixed: frozenset[UUID] = fixed_ids(take5s)
+        return tuple(_summary(saved, saved.id in fixed) for saved in take5s)
 
     @router.get("/api/take5s/{take5_id}", responses=_UNREADABLE | _NOT_FOUND)
     def get(take5_id: UUID) -> Take5Response:
@@ -95,11 +97,12 @@ def create_router(service: Take5Service) -> APIRouter:
     return router
 
 
-def _summary(saved: SavedTake5) -> Take5Summary:
+def _summary(saved: SavedTake5, fixed: bool) -> Take5Summary:
     """Build one line of the list from a saved Take 5.
 
     Args:
         saved: The saved Take 5.
+        fixed: Whether a newer Take 5 fixes it.
 
     Returns:
         Its line in the list.
@@ -110,6 +113,7 @@ def _summary(saved: SavedTake5) -> Take5Summary:
         worker_name=saved.worker_name,
         job=saved.job,
         can_start=saved.verdict.can_start,
+        fixed=fixed,
     )
 
 

@@ -1,7 +1,7 @@
 """Integration tests for the saved Take 5 list (spec F5)."""
 
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from fastapi.testclient import TestClient
 from httpx2 import Response
@@ -53,6 +53,7 @@ def test_the_list_is_newest_first_with_the_date_worker_job_and_verdict(
             "worker_name": "Sam Example",
             "job": "Another example tyre job",
             "can_start": True,
+            "fixed": False,
         },
         {
             "id": stopped["id"],
@@ -60,6 +61,7 @@ def test_the_list_is_newest_first_with_the_date_worker_job_and_verdict(
             "worker_name": "Sam Example",
             "job": "Change tyre on LV12",
             "can_start": False,
+            "fixed": False,
         },
     ]
 
@@ -81,6 +83,19 @@ def test_the_list_sends_the_verdict_saved_not_one_worked_out_again(
     listed: list[dict[str, Any]] = client.get("/api/take5s").json()
 
     assert [line["can_start"] for line in listed] == [False]
+
+
+def test_a_dont_start_yet_with_a_fix_is_marked_fixed(client: TestClient) -> None:
+    """The fixed one says so, so a sorted-out Don't start yet isn't taken as open."""
+    stopped: dict[str, Any] = _submit(client, sample_uncontrolled_draft())
+    _submit(client, sample_draft().model_copy(update={"fixes": UUID(stopped["id"])}))
+
+    listed: list[dict[str, Any]] = client.get("/api/take5s").json()
+
+    assert [(line["can_start"], line["fixed"]) for line in listed] == [
+        (True, False),
+        (False, True),
+    ]
 
 
 def test_the_list_is_empty_before_anything_is_saved(client: TestClient) -> None:

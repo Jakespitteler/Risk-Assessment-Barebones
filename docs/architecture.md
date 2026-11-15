@@ -150,7 +150,7 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 | `POST /api/take5s/check` | Checks a draft and returns what is missing, its warnings (allowed, but they will stop the job) and which thinking rules apply. Saves nothing |
 | `POST /api/take5s` | Checks and saves a Take 5, asks the AI (or the fallback) for its question, and returns both |
 | `POST /api/take5s/{id}/answer` | Saves the answer, works out the verdict, and returns the finished Take 5 |
-| `GET /api/take5s` | The list, newest first. Each line is a `Take5Summary`: the ID, when it was saved, the worker, the job and the verdict (`can_start`), not the whole card |
+| `GET /api/take5s` | The list, newest first. Each line is a `Take5Summary`: the ID, when it was saved, the worker, the job, the verdict (`can_start`) and whether a newer Take 5 fixes it (`fixed`), not the whole card |
 | `GET /api/take5s/{id}` | One Take 5, with `fixed_by` (the newest Take 5 that fixes it, if any) and `offers_fix` (whether its result offers a fix) |
 
 Every error reply is declared in the OpenAPI description, so the front end's generated types know it. A 422 is

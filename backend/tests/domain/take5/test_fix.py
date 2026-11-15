@@ -8,6 +8,7 @@ from risk_assessment.domain.take5.draft import FieldError
 from risk_assessment.domain.take5.fix import (
     NOT_SAVED_MESSAGE,
     NOTHING_TO_FIX_MESSAGE,
+    fixed_ids,
     fixes_error,
     offers_a_fix,
 )
@@ -54,3 +55,12 @@ def test_a_fix_is_offered_only_for_a_dont_start_yet_with_no_fix_yet(
     fixed_by = uuid4() if has_a_fix else None
 
     assert offers_a_fix(sample_saved_take5(verdict), fixed_by) is offered
+
+
+def test_the_take5s_that_others_fix_are_the_fixed_ones() -> None:
+    """A Take 5 is fixed when another one's `fixes` is its ID; the fix itself isn't."""
+    stopped = sample_saved_take5(_STOPPED)
+    not_fixed = sample_saved_take5(_STOPPED)
+    fix = sample_saved_take5().model_copy(update={"fixes": stopped.id})
+
+    assert fixed_ids((fix, not_fixed, stopped)) == {stopped.id}

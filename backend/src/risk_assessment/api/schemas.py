@@ -85,6 +85,7 @@ class Take5Summary(BaseModel):
         job: What the job is.
         can_start: The verdict it was saved with: True for Good to go, False for
             Don't start yet.
+        fixed: True when a newer Take 5 fixes this one.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -94,6 +95,7 @@ class Take5Summary(BaseModel):
     worker_name: str
     job: str
     can_start: bool
+    fixed: bool
 
 
 class ErrorMessage(BaseModel):

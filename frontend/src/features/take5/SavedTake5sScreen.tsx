@@ -4,16 +4,11 @@ import { useSavedTake5List } from "../../api/take5";
 import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
 import { Screen } from "../../components/Screen";
+import { formatDateTime } from "./formatDateTime";
 
 const HEADING = "text-3xl font-extrabold focus:outline-none";
 const NEW_TAKE5_LINK =
   "flex min-h-14 items-center justify-center rounded-xl bg-slate-900 px-5 text-lg font-bold text-white focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-blue-700";
-
-// The phone's own way of writing a date and time, such as "14 Nov 2026, 9:42 am".
-const SAVED_AT = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
 
 /** The verdict as a tag, in the same strong colours as the result screen. */
 function VerdictTag({ canStart }: { canStart: boolean }) {
@@ -28,6 +23,15 @@ function VerdictTag({ canStart }: { canStart: boolean }) {
   );
 }
 
+/** Marks a Don't start yet that a newer Take 5 fixes, so it isn't taken as still open. */
+function FixedTag() {
+  return (
+    <span className="rounded-lg border-2 border-green-800 px-2 py-0.5 text-sm font-bold text-green-800 uppercase">
+      Fixed
+    </span>
+  );
+}
+
 /** One saved Take 5 in the list. The whole card is the link, for a gloved thumb. */
 function SavedTake5Item({ take5 }: { take5: Take5Summary }) {
   return (
@@ -37,7 +41,10 @@ function SavedTake5Item({ take5 }: { take5: Take5Summary }) {
         className="flex flex-col gap-2 rounded-2xl border border-stone-300 bg-white p-4 [overflow-wrap:anywhere] hover:bg-stone-50 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
       >
         <span className="flex items-center justify-between gap-2">
-          <VerdictTag canStart={take5.can_start} />
+          <span className="flex flex-wrap items-center gap-2">
+            <VerdictTag canStart={take5.can_start} />
+            {take5.fixed && <FixedTag />}
+          </span>
           <span aria-hidden="true" className="text-3xl leading-none">
             ›
           </span>
@@ -46,7 +53,7 @@ function SavedTake5Item({ take5 }: { take5: Take5Summary }) {
         <span className="flex flex-col">
           <span>{take5.worker_name}</span>
           <time dateTime={take5.created_at} className="text-slate-700">
-            {SAVED_AT.format(new Date(take5.created_at))}
+            {formatDateTime(take5.created_at)}
           </time>
         </span>
       </a>
@@ -55,8 +62,9 @@ function SavedTake5Item({ take5 }: { take5: Take5Summary }) {
 }
 
 /**
- * Every saved Take 5, newest first, with its date, worker, job and verdict. Opening one
- * shows its result screen, exactly as it was saved.
+ * Every saved Take 5, newest first, with its date, worker, job and verdict, and whether a
+ * Don't start yet has been fixed. Opening one shows its result screen, exactly as it was
+ * saved.
  */
 export function SavedTake5sScreen() {
   const list = useSavedTake5List();

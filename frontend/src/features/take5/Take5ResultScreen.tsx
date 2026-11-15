@@ -7,6 +7,7 @@ import { RiskBadge } from "../../components/RiskBadge";
 import { Screen } from "../../components/Screen";
 import { AnswerSummary } from "./AnswerSummary";
 import { FixPanel } from "./FixPanel";
+import { formatDateTime } from "./formatDateTime";
 import { HazardSummary } from "./HazardSummary";
 import { SavedListLink } from "./SavedListLink";
 import { VerdictPanel } from "./VerdictPanel";
@@ -33,7 +34,7 @@ export function Take5ResultScreen({
 
   if (result.isPending)
     return (
-      <Screen subtitle="Saved Take 5">
+      <Screen subtitle="Your Take 5">
         <h1 className="text-3xl font-extrabold">Opening your Take 5…</h1>
       </Screen>
     );
@@ -41,7 +42,7 @@ export function Take5ResultScreen({
     const missing =
       result.error instanceof ApiError && result.error.status < 500;
     return (
-      <Screen subtitle="Saved Take 5">
+      <Screen subtitle="Your Take 5">
         <h1 className="text-3xl font-extrabold">
           {missing
             ? "This Take 5 couldn’t be found"
@@ -68,7 +69,7 @@ export function Take5ResultScreen({
     { term: "Location", value: take5.location },
   ];
   return (
-    <Screen subtitle="Saved Take 5" aside={<SavedListLink />}>
+    <Screen subtitle="Your Take 5" aside={<SavedListLink />}>
       <div ref={page} className="flex flex-col gap-6">
         <VerdictPanel verdict={take5.verdict} />
         <FixPanel
@@ -93,7 +94,7 @@ export function Take5ResultScreen({
               <dt className="font-bold">Finished</dt>
               <dd>
                 <time dateTime={take5.finished_at}>
-                  {new Date(take5.finished_at).toLocaleString()}
+                  {formatDateTime(take5.finished_at)}
                 </time>
               </dd>
             </div>

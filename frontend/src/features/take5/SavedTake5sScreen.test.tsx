@@ -16,6 +16,7 @@ const LIST: Take5Summary[] = [
     worker_name: "Alex Example",
     job: "Replace conveyor idler",
     can_start: false,
+    fixed: true,
   },
   {
     id: "11111111-1111-4111-8111-111111111111",
@@ -23,6 +24,7 @@ const LIST: Take5Summary[] = [
     worker_name: "Sam Example",
     job: "Change tyre",
     can_start: true,
+    fixed: false,
   },
 ];
 
@@ -41,7 +43,9 @@ it("lists each saved Take 5 in the order sent, with its verdict, job, worker and
   expect(items[0]?.querySelector("time")?.getAttribute("dateTime")).toBe(
     "2026-11-14T01:15:00Z",
   );
+  expect(newest?.getByText("Fixed")).toBeTruthy();
   expect(oldest?.getByText("Good to go")).toBeTruthy();
+  expect(oldest?.queryByText("Fixed")).toBeNull();
   expect(oldest?.getByText("Change tyre")).toBeTruthy();
 });
 

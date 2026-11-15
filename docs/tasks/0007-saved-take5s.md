@@ -54,6 +54,15 @@ What was built (2026-11-14, Claude), and the assumptions made:
   questions for Jake in the pull request.
 - **A failed refresh keeps the list.** The list is asked for again when the phone comes back to the app; if that
   fails, the list already on screen stays.
-- **Found, not fixed here:** the result screen writes its date the browser's default way ("14/11/2026, 6:52:04
-  pm") while the list writes "14 Nov 2026, 6:52 pm". Asked in the pull request. And the draft that "Fix this in a
-  new Take 5" can replace is noted in task 0019.
+- **Found, not fixed here:** the draft that "Fix this in a new Take 5" can replace is noted in task 0019.
+
+Jake's answers (2026-11-15, in chat), now built in this pull request:
+
+1. A Don't start yet that a newer Take 5 fixes shows a "Fixed" tag in the list (`Take5Summary.fixed`, worked out
+   by `fixed_ids()` in `domain/take5/fix.py`). The location stays off the list (spec D16).
+2. Paging waits until the app is hosted for a crew: task 0021 (spec D18). Note for it: `fixed_ids()` only works
+   on the whole list. A fix is newer than what it fixes, so it can sit on an earlier page.
+3. Every date is written "14 Nov 2026, 6:52 pm", whatever the phone's language (`formatDateTime.ts`, spec D17).
+   The result screen used the browser's default ("14/11/2026, 6:52:04 pm") before.
+4. The result screen's subtitle is "Your Take 5", not "Saved Take 5", beside the "Saved Take 5s" link.
+5. "Not finished" moves to task 0008, as above.

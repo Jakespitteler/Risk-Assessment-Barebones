@@ -5,9 +5,9 @@ Newest first. One short entry per non-obvious decision.
 ## 2026-11-14: The saved Take 5 list sends one short line per Take 5 (task 0007)
 
 - Decision: `GET /api/take5s` returns a list of `Take5Summary` (`id`, `created_at`, `worker_name`, `job`,
-  `can_start`), newest first, with no paging. `Take5Repository` gains `list_newest_first()`. The verdict is the one
-  saved with each Take 5, never worked out again. Task 0008 makes `can_start` `bool | None`, None meaning "Not
-  finished".
+  `can_start`, `fixed`), newest first, with no paging until task 0021. `Take5Repository` gains
+  `list_newest_first()`. The verdict is the one saved with each Take 5, never worked out again. Task 0008 makes
+  `can_start` `bool | None`, None meaning "Not finished".
 - Why: The list screen shows only the date, worker, job and verdict (spec F5). Sending the whole card, with its
   template copy, for every Take 5 would be slow on a weak signal. Paging, search and filters are out of scope for
   now.
@@ -15,6 +15,10 @@ Newest first. One short entry per non-obvious decision.
   reasons in each line (the list doesn't show the reasons). Paging now (more code before there are enough Take 5s
   to need it).
 - Decided by: claude, in task 0007; Jake approves by merging its pull request.
+- Added 2026-11-15, Jake's answers in chat (spec D16 to D18): a Don't start yet with a fix is marked "Fixed"; the
+  location stays off the list; every date is written "14 Nov 2026, 6:52 pm"; and once the app is hosted for a crew
+  the list shows the newest 50 with "Show more" (task 0021). `fixed` is worked out from the list itself: while the
+  list holds every Take 5, it holds every fix too. Task 0021's pages will need another way.
 
 ## 2026-11-14: Keep the built-in sqlite3 until storage needs more (task 0018)
 

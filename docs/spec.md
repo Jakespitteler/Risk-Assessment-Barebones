@@ -376,7 +376,9 @@ The first four screens of the core workflow, saved when the worker submits.
 ### F5: Saved Take 5s
 
 - Acceptance: a list of saved Take 5s, newest first, shows the date, worker, job and verdict of each, or "Not
-  finished" for one whose question is unanswered.
+  finished" for one whose question is unanswered. A Don't start yet that a newer Take 5 fixes is marked "Fixed"
+  (decision D16).
+- Acceptance: every date and time is written as "14 Nov 2026, 6:52 pm" (decision D17).
 - Acceptance: opening one shows the same result screen the worker saw, with the verdict saved at the time.
 - Acceptance: a finished Take 5 can't be changed.
 
@@ -437,6 +439,9 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D13 | Where the hazard questions go (2026-11-14) | Their own page after the hazard list, with the list at the top | Under the list on the same page |
 | D14 | What a fix does with the answers (2026-11-14) | Copies them; the review warns on each No with a way to change it | Leave them blank, so all 14 are answered again |
 | D15 | What a Yes shows after a hazard is added from it (2026-11-14) | A tick, "Added to your list", and an "Add another" link | The same reminder without its button; or the reminder and button unchanged |
+| D16 | What each saved Take 5 shows in the list (2026-11-15) | The date, worker, job and verdict, and "Fixed" on a Don't start yet that has been fixed | The location as well |
+| D17 | How dates are written (2026-11-15) | "14 Nov 2026, 6:52 pm" everywhere | Each phone's own format |
+| D18 | How the saved list grows (2026-11-15) | Once hosted for a crew, the newest 50 with "Show more" (task 0021). Until then, all of them | All of them, always |
 
 ## Open questions
 

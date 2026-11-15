@@ -860,6 +860,10 @@
           "can_start": {
             "type": "boolean",
             "title": "Can Start"
+          },
+          "fixed": {
+            "type": "boolean",
+            "title": "Fixed"
           }
         },
         "type": "object",
@@ -868,10 +872,11 @@
           "created_at",
           "worker_name",
           "job",
-          "can_start"
+          "can_start",
+          "fixed"
         ],
         "title": "Take5Summary",
-        "description": "One line of the saved Take 5 list: enough to find it, not the whole card.\n\nAttributes:\n    id: The Take 5's ID, to open it.\n    created_at: When it was saved.\n    worker_name: Who did it.\n    job: What the job is.\n    can_start: The verdict it was saved with: True for Good to go, False for\n        Don't start yet."
+        "description": "One line of the saved Take 5 list: enough to find it, not the whole card.\n\nAttributes:\n    id: The Take 5's ID, to open it.\n    created_at: When it was saved.\n    worker_name: Who did it.\n    job: What the job is.\n    can_start: The verdict it was saved with: True for Good to go, False for\n        Don't start yet.\n    fixed: True when a newer Take 5 fixes this one."
       },
       "Take5Template": {
         "properties": {

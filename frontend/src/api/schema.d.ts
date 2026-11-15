@@ -534,6 +534,7 @@ export interface components {
          *         job: What the job is.
          *         can_start: The verdict it was saved with: True for Good to go, False for
          *             Don't start yet.
+         *         fixed: True when a newer Take 5 fixes this one.
          */
         Take5Summary: {
             /**
@@ -552,6 +553,8 @@ export interface components {
             job: string;
             /** Can Start */
             can_start: boolean;
+            /** Fixed */
+            fixed: boolean;
         };
         /**
          * Take5Template
