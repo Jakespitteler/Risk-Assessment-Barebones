@@ -10,7 +10,7 @@ from collections.abc import Mapping
 from typing import ClassVar
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from risk_assessment.domain.controls import Control, ControlKind
 from risk_assessment.domain.questions import Answer, Question, QuestionRole
@@ -91,6 +91,8 @@ class Take5Draft(BaseModel):
             answer is left out.
         hazards: The hazards, in the order the worker listed them.
         fixes: The ID of the saved Take 5 this one fixes, or None for a fresh one.
+        started_at: When the worker started it, by the phone's clock, or None if the
+            phone didn't say. It must include its time zone.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -101,6 +103,7 @@ class Take5Draft(BaseModel):
     answers: Mapping[str, Answer] = {}
     hazards: tuple[HazardDraft, ...] = ()
     fixes: UUID | None = None
+    started_at: AwareDatetime | None = None
 
 
 class FieldError(BaseModel):

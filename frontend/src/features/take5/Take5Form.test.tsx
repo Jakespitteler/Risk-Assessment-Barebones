@@ -14,12 +14,18 @@ import {
 } from "../../test-utils";
 import type { Stage } from "./stage";
 import { Take5Form } from "./Take5Form";
+import type { StoredDraft } from "./useTake5Draft";
 
 const onSaved = vi.fn<(id: string) => void>();
 // Each page the form moved to, and whether it replaced the page before it.
 let moves: { page: string; replace: boolean }[] = [];
 
 // Stands in for the router: the stage is kept in state instead of the URL.
+const onLeave = vi.fn<(thrownAway: StoredDraft | null) => void>();
+const onStartAfresh = vi.fn<() => void>();
+// A start time a few minutes before the tests run, so a kept draft hasn't run out.
+const STARTED_AT = new Date(Date.now() - 5 * 60_000).toISOString();
+
 function FormAt({ start }: { start: Stage }) {
   const [stage, setStage] = useState(start);
   return (
@@ -32,14 +38,20 @@ function FormAt({ start }: { start: Stage }) {
       }}
       onBack={setStage}
       onSaved={onSaved}
+      onLeave={onLeave}
+      onStartAfresh={onStartAfresh}
     />
   );
 }
 
 function storeDraft(draft = COMPLETE_DRAFT) {
-  sessionStorage.setItem(
+  localStorage.setItem(
     "take5-draft",
-    JSON.stringify({ version: 2, draft, submissionId: SAVED.take5.id }),
+    JSON.stringify({
+      version: 3,
+      draft: { started_at: STARTED_AT, ...draft },
+      submissionId: SAVED.take5.id,
+    }),
   );
 }
 
@@ -55,9 +67,10 @@ async function clickFinish() {
 }
 
 beforeEach(() => {
-  sessionStorage.clear();
   localStorage.clear();
   onSaved.mockReset();
+  onLeave.mockReset();
+  onStartAfresh.mockReset();
   moves = [];
 });
 afterEach(() => {
@@ -83,7 +96,7 @@ it("starts with nothing filled in but the remembered name, and the heading focus
 it("starts afresh instead of loading a draft kept before the card had questions", () => {
   // JSON leaves out an undefined field, so this is the old shape, with no answers.
   const oldDraft = { ...COMPLETE_DRAFT, answers: undefined };
-  sessionStorage.setItem(
+  localStorage.setItem(
     "take5-draft",
     JSON.stringify({
       version: 1,
@@ -171,7 +184,7 @@ it("saves, forgets the draft, remembers the name and opens the result", async ()
   await waitFor(() => {
     expect(onSaved).toHaveBeenCalledWith(SAVED.take5.id);
   });
-  expect(sessionStorage.getItem("take5-draft")).toBeNull();
+  expect(localStorage.getItem("take5-draft")).toBeNull();
   expect(localStorage.getItem("take5-worker-name")).toBe("Sam Example");
 });
 
@@ -262,7 +275,7 @@ it("forgets the draft after a 409, so the next Take 5 in the tab starts afresh",
   renderWithApi(<FormAt start={{ page: "review" }} />);
   await clickFinish();
   await screen.findByRole("link", { name: "Open the saved Take 5" });
-  expect(sessionStorage.getItem("take5-draft")).toBeNull();
+  expect(localStorage.getItem("take5-draft")).toBeNull();
 });
 
 it("returns to the review once a gap is fixed, in place of the fixed page", async () => {
@@ -580,4 +593,144 @@ it("never renders the hazard questions for a direct link with a blank hazard", (
     screen.queryByRole("heading", { name: "Did you miss any?" }),
   ).toBeNull();
   expect(moves).toEqual([{ page: "hazards", replace: true }]);
+});
+
+const RUN_OUT_MESSAGE =
+  "This Take 5 was started more than 2 hours ago. Start a new one at the job.";
+const RUN_OUT_CHECK = {
+  ...PASSING_CHECK,
+  errors: [{ path: "started_at", message: RUN_OUT_MESSAGE }],
+  assessment: null,
+  can_submit: false,
+};
+
+it("links to the saved Take 5s until something is typed, then offers Leave", () => {
+  stubApi({});
+  renderWithApi(<FormAt start={{ page: "job" }} />);
+  expect(screen.getByRole("link", { name: "Saved Take 5s" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Leave" })).toBeNull();
+  expect(localStorage.getItem("take5-draft")).toBeNull();
+
+  fireEvent.change(screen.getByLabelText("What is the job?"), {
+    target: { value: "Change the front left tyre" },
+  });
+
+  expect(screen.getByRole("button", { name: "Leave" })).toBeTruthy();
+  expect(screen.queryByRole("link", { name: "Saved Take 5s" })).toBeNull();
+  const kept = JSON.parse(localStorage.getItem("take5-draft") ?? "{}") as {
+    draft: Take5Draft;
+    stage: Stage;
+  };
+  expect(kept.draft.job).toBe("Change the front left tyre");
+  expect(kept.draft.started_at).toMatch(/^\d{4}-\d\d-\d\dT.*Z$/);
+  expect(kept.stage).toEqual({ page: "job" });
+});
+
+it("asks before leaving, and Keep going goes back to the same page", () => {
+  storeDraft();
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "think" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Leave" }));
+  const heading = screen.getByRole("heading", { name: "Leave this Take 5?" });
+  expect(document.activeElement).toBe(heading);
+
+  fireEvent.click(screen.getByRole("button", { name: "Keep going" }));
+
+  expect(
+    screen.getByRole("heading", { name: "Think it through" }),
+  ).toBeTruthy();
+  expect(onLeave).not.toHaveBeenCalled();
+});
+
+it("keeps the draft on the phone when the worker leaves to finish it later", () => {
+  storeDraft();
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "think" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Leave" }));
+  fireEvent.click(screen.getByRole("button", { name: "Keep it for later" }));
+  expect(onLeave).toHaveBeenCalledWith(null);
+  const kept = JSON.parse(localStorage.getItem("take5-draft") ?? "{}") as {
+    draft: Take5Draft;
+    stage: Stage;
+  };
+  expect(kept.draft.job).toBe(COMPLETE_DRAFT.job);
+  expect(kept.stage).toEqual({ page: "think" });
+});
+
+it("throws the draft away and hands it over, so Undo can keep it again", () => {
+  storeDraft();
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "think" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Leave" }));
+  fireEvent.click(screen.getByRole("button", { name: "Throw it away" }));
+  expect(localStorage.getItem("take5-draft")).toBeNull();
+  const thrownAway = onLeave.mock.calls[0]?.[0];
+  expect(thrownAway?.draft.job).toBe(COMPLETE_DRAFT.job);
+  expect(thrownAway?.submissionId).toBe(SAVED.take5.id);
+  expect(thrownAway?.stage).toEqual({ page: "think" });
+});
+
+it("throws away a kept draft that has run out as it opens, and says why", async () => {
+  storeDraft();
+  stubApi({ "POST /api/take5s/check": { status: 200, body: RUN_OUT_CHECK } });
+  renderWithApi(<FormAt start={{ page: "think" }} />);
+  const heading = await screen.findByRole("heading", {
+    name: "This Take 5 has run out",
+  });
+  await waitFor(() => {
+    expect(document.activeElement).toBe(heading);
+  });
+  expect(screen.getByText(RUN_OUT_MESSAGE)).toBeTruthy();
+  expect(
+    screen.getByText(/^\d{1,2} \w{3} \d{4}, \d{1,2}:\d\d [ap]m$/),
+  ).toBeTruthy();
+  expect(localStorage.getItem("take5-draft")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Leave" })).toBeNull();
+
+  fireEvent.click(screen.getByRole("button", { name: "Start a new Take 5" }));
+
+  expect(onStartAfresh).toHaveBeenCalled();
+  expect(moves.at(-1)).toEqual({ page: "job", replace: true });
+});
+
+it("stops at the run-out screen when Continue finds the draft has run out", async () => {
+  storeDraft();
+  stubApi({
+    "POST /api/take5s/check": [
+      { status: 200, body: PASSING_CHECK },
+      { status: 200, body: RUN_OUT_CHECK },
+    ],
+  });
+  renderWithApi(<FormAt start={{ page: "job" }} />);
+  await waitFor(() => {
+    expect(screen.getByRole("button", { name: "Continue" })).toBeTruthy();
+  });
+  fireEvent.change(screen.getByLabelText("Where will you do it?"), {
+    target: { value: "Workshop bay 2" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+  expect(
+    await screen.findByRole("heading", { name: "This Take 5 has run out" }),
+  ).toBeTruthy();
+  expect(localStorage.getItem("take5-draft")).toBeNull();
+});
+
+it("stops at the run-out screen when Finish is refused for running out", async () => {
+  storeDraft();
+  stubApi({
+    "POST /api/take5s/check": { status: 200, body: PASSING_CHECK },
+    "POST /api/take5s": {
+      status: 422,
+      body: {
+        detail: "Fill in the highlighted fields before you submit.",
+        errors: [{ path: "started_at", message: RUN_OUT_MESSAGE }],
+      },
+    },
+  });
+  renderWithApi(<FormAt start={{ page: "review" }} />);
+  await clickFinish();
+  expect(
+    await screen.findByRole("heading", { name: "This Take 5 has run out" }),
+  ).toBeTruthy();
+  expect(onSaved).not.toHaveBeenCalled();
 });

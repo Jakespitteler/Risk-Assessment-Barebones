@@ -23,6 +23,8 @@ class SavedTake5(Take5):
         verdict: The verdict the worker was shown.
         fixes: The ID of the saved Take 5 this one fixes, or None. It points back
             only, so the first Take 5 is never changed when it is fixed.
+        started_at: When the worker started it, by the phone's clock, or None for a
+            Take 5 saved before task 0019.
     """
 
     id: UUID
@@ -33,3 +35,4 @@ class SavedTake5(Take5):
     finished_at: datetime
     verdict: Verdict
     fixes: UUID | None = None
+    started_at: datetime | None = None

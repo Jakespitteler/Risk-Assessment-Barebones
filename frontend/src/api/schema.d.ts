@@ -380,6 +380,8 @@ export interface components {
          *         verdict: The verdict the worker was shown.
          *         fixes: The ID of the saved Take 5 this one fixes, or None. It points back
          *             only, so the first Take 5 is never changed when it is fixed.
+         *         started_at: When the worker started it, by the phone's clock, or None for a
+         *             Take 5 saved before task 0019.
          */
         SavedTake5: {
             template: components["schemas"]["Take5Template"];
@@ -416,6 +418,8 @@ export interface components {
             verdict: components["schemas"]["Verdict"];
             /** Fixes */
             fixes?: string | null;
+            /** Started At */
+            started_at?: string | null;
         };
         /**
          * SubmissionRequest
@@ -471,6 +475,8 @@ export interface components {
          *             answer is left out.
          *         hazards: The hazards, in the order the worker listed them.
          *         fixes: The ID of the saved Take 5 this one fixes, or None for a fresh one.
+         *         started_at: When the worker started it, by the phone's clock, or None if the
+         *             phone didn't say. It must include its time zone.
          */
         Take5Draft: {
             /**
@@ -502,6 +508,8 @@ export interface components {
             hazards: components["schemas"]["HazardDraft"][];
             /** Fixes */
             fixes?: string | null;
+            /** Started At */
+            started_at?: string | null;
         };
         /**
          * Take5Response
@@ -569,6 +577,9 @@ export interface components {
          *         consequence_guidance: What each consequence means, shown beside the rating.
          *         control_guidance: What makes a control strong or weak, shown beside the
          *             controls.
+         *         draft_time_limit_minutes: How long an unfinished Take 5 lasts, counted from
+         *             when it was started (spec K2), or None for no limit, which turns the
+         *             check off completely.
          */
         Take5Template: {
             /** Name */
@@ -594,6 +605,8 @@ export interface components {
              * @default
              */
             control_guidance: string;
+            /** Draft Time Limit Minutes */
+            draft_time_limit_minutes?: number | null;
         };
         /**
          * TemplateResponse

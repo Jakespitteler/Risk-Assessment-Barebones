@@ -1,6 +1,8 @@
+import { useEffect, useRef, useState } from "react";
 import {
   createBrowserRouter,
   RouterProvider,
+  useLocation,
   useNavigate,
   useParams,
   useSearchParams,
@@ -9,7 +11,12 @@ import { NewTake5Screen } from "./features/take5/NewTake5Screen";
 import { RateRiskScreen } from "./features/take5/RateRiskScreen";
 import { SavedTake5sScreen } from "./features/take5/SavedTake5sScreen";
 import { Take5ResultScreen } from "./features/take5/Take5ResultScreen";
-import { keepFixDraft } from "./features/take5/useTake5Draft";
+import type { StoredDraft } from "./features/take5/useTake5Draft";
+import {
+  keepDraft,
+  keepFixDraft,
+  keptDraft,
+} from "./features/take5/useTake5Draft";
 import type { Stage } from "./features/take5/stage";
 import { stageFromSearch, stageToSearch } from "./features/take5/stage";
 
@@ -25,16 +32,34 @@ function canGoBack(): boolean {
   );
 }
 
-// The form's page is in the URL, so the phone's back gesture steps back a page.
+/** Where to open the form: the page a kept draft was left on, unless the URL names one. */
+function pageToCarryOnFrom(search: URLSearchParams): Stage | null {
+  return search.has("page") ? null : (keptDraft()?.stage ?? null);
+}
+
+// The form's page is in the URL, so the phone's back gesture steps back a page. Opening
+// the app with a kept draft carries on from the page it was left on.
 function NewTake5Route() {
   const navigate = useNavigate();
   const [search, setSearch] = useSearchParams();
+  const [carryOnFrom] = useState(() => pageToCarryOnFrom(search));
   const goTo = (stage: Stage, options?: { replace: boolean }) => {
     setSearch(stageToSearch(stage), options);
   };
+  // Put the page in the URL once, so the back gesture works from there as usual.
+  const carriedOn = useRef(false);
+  useEffect(() => {
+    if (!carryOnFrom || carriedOn.current) return;
+    carriedOn.current = true;
+    setSearch(stageToSearch(carryOnFrom), { replace: true });
+  }, [carryOnFrom, setSearch]);
   return (
     <NewTake5Screen
-      stage={stageFromSearch(search)}
+      stage={
+        search.has("page")
+          ? stageFromSearch(search)
+          : (carryOnFrom ?? stageFromSearch(search))
+      }
       onStageChange={goTo}
       onBack={(fallback) => {
         if (canGoBack()) void navigate(-1);
@@ -42,6 +67,36 @@ function NewTake5Route() {
       }}
       // Replace the form, so going back from the result doesn't reopen the saved answers.
       onSaved={(id) => void navigate(`/take5s/${id}`, { replace: true })}
+      // A thrown-away draft replaces the form, so the back gesture can't reopen it empty.
+      onLeave={(thrownAway) =>
+        void navigate("/take5s", {
+          state: thrownAway && { thrownAway },
+          replace: thrownAway !== null,
+        })
+      }
+    />
+  );
+}
+
+/** The draft just thrown away, if the list was opened by throwing one away. */
+function thrownAwayIn(state: unknown): StoredDraft | null {
+  return typeof state === "object" && state !== null && "thrownAway" in state
+    ? (state.thrownAway as StoredDraft)
+    : null;
+}
+
+// Throwing a draft away opens the list with Undo, which keeps the draft again.
+function SavedTake5sRoute() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  return (
+    <SavedTake5sScreen
+      thrownAway={thrownAwayIn(location.state)}
+      onUndoThrowAway={(draft) => {
+        keepDraft(draft);
+        void navigate("/", { replace: true });
+      }}
+      onDismissUndo={() => void navigate("/take5s", { replace: true })}
     />
   );
 }
@@ -66,7 +121,7 @@ function SavedTake5Route() {
 // Every screen and its URL. The only place React Router is set up.
 const router = createBrowserRouter([
   { path: "/", element: <NewTake5Route /> },
-  { path: "/take5s", element: <SavedTake5sScreen /> },
+  { path: "/take5s", element: <SavedTake5sRoute /> },
   { path: "/take5s/:id", element: <SavedTake5Route /> },
   { path: "/rate-risk", element: <RateRiskScreen /> },
 ]);

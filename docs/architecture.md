@@ -89,13 +89,15 @@ backend/
                 draft.py           Take5Draft (what the phone sends) and check_draft(): every
                                    gap, warning and thinking question by field path       (spec R5, R6, V2, T2 to T4)
                 fix.py             which saved Take 5 a new one may fix                   (spec F3)
+                time_limit.py      when a draft has run out, given the time now           (spec K2)
                 saved.py           SavedTake5: a Take 5 as it was saved, with its verdict
                 verdict.py         verdict(take5) -> Verdict with its reasons            (spec V1 to V3)
                 thinking.py        the pushback rules                                     (spec T2 to T4)
                 challenge.py       what the AI is told, the check on its question,
                                    the fallback question, the check on the answer         (spec C1 to C4)
         services/          what the app does
-            take5s.py          Take5Service: check a draft, submit, answer, get, list
+            take5s.py          Take5Service: check a draft, submit, answer, get, list. It is
+                               given a clock, so tests can set the time
             ports.py           Take5Repository and ChallengeAsker (Protocols): what the
                                service needs from storage and from an AI
         storage/           where things are kept
@@ -125,7 +127,10 @@ frontend/
         features/take5/    the Take 5's screens: the four parts of the form, the question, the result, and
                            the list of saved Take 5s (SavedTake5sScreen.tsx). formatDateTime.ts writes
                            every date the one way the spec sets (D17)
-                           stage.ts is which page shows (kept in the URL); useTake5Draft.ts keeps the draft
+                           stage.ts is which page shows (kept in the URL); useTake5Draft.ts keeps the one
+                           draft on the phone (localStorage), with its start time and the page it was left on.
+                           LeavePanel.tsx asks keep or throw away; RunOutPanel.tsx and runOut.ts show a draft
+                           the back end says has run out; KeptDraftCard.tsx is the draft at the top of the list
                            WeakControlsQuestion.tsx draws the server's thinking prompt on the controls page,
                            checking once typing pauses (useSettledValue.ts)
         test-utils.tsx     the fake card, drafts and API replies the Vitest tests share
@@ -148,7 +153,7 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 | Endpoint | What it does |
 | --- | --- |
 | `GET /api/take5/template` | The template a new Take 5 is filled in on: its questions, its matrix and its guidance, plus the answers a question can have and the control kinds |
-| `POST /api/take5s/check` | Checks a draft and returns what is missing, its warnings (allowed, but they will stop the job) and which thinking rules apply. Saves nothing |
+| `POST /api/take5s/check` | Checks a draft and returns what is missing, its warnings (allowed, but they will stop the job) and which thinking rules apply. A draft that has run out (spec K2) has an error on `started_at`. Saves nothing |
 | `POST /api/take5s` | Checks and saves a Take 5, asks the AI (or the fallback) for its question, and returns both |
 | `POST /api/take5s/{id}/answer` | Saves the answer, works out the verdict, and returns the finished Take 5 |
 | `GET /api/take5s` | The list, newest first. Each line is a `Take5Summary`: the ID, when it was saved, the worker, the job, the verdict (`can_start`) and whether a newer Take 5 fixes it (`fixed`), not the whole card |
@@ -178,6 +183,16 @@ showing "Make sure it's on your list" after a Yes to a hazard question, then "Ad
 has been added from it (spec D15). The back end still decides that the after rating of a hazard with no controls
 is its before rating (R6).
 
+**Drafts (task 0019).** The phone keeps one draft in `localStorage` from the worker's first change, which also
+stamps `Take5Draft.started_at` by the phone's clock (with its time zone; a time without one is a 422). Opening the
+app with no page in the URL carries on from the page the draft was left on. The phone never decides whether a
+draft has run out: it checks the draft once as it opens, and on each Continue and Finish, and acts on an error
+whose path is `started_at`. The back end compares `started_at` with its own clock against the template's
+`draft_time_limit_minutes` (`domain/take5/time_limit.py`, with the time given by the service). The check only
+trusts the phone's clock to be roughly right, which phones that set their time from the network are. Leave and
+Undo, carrying on, and asking before a fix replaces the draft are about what is on the screen, so they live in
+the front end.
+
 While developing, Vite serves the front end and passes `/api` calls on to FastAPI. When hosted, FastAPI serves
 the built front-end files itself, so there is still only one program to run.
 
@@ -186,11 +201,11 @@ the built front-end files itself, so there is still only one program to run.
 | Entity | Key fields | Notes |
 | --- | --- | --- |
 | `Take5` | `id`, `created_at`, `worker_name`, `job`, `location`, `answers` (question ID to answer), `hazards`, `challenge`, `finished_at`, `verdict`, `template` | One filled-in card. `template` is a copy of the template it was filled in on, so it always shows the questions and matrix the worker was given. `finished_at` and `verdict` are empty until the challenge question is answered (spec C6). Never changed once finished |
-| `SavedTake5` (task 0004) | Extends the scoring `Take5` with `id`, `created_at`, `worker_name`, `job`, `location`, `finished_at`, `verdict`, `fixes` | The implemented submitted document. Until task 0008 it is finished immediately. The base `Take5` holds what the verdict needs (the template, `answers` and the hazards); later tasks add the remaining card fields. `answers` (task 0005) has one answer for each of the template's questions, by question ID. A Take 5 saved before task 0005 has none, and its template copy has no questions, so it still opens. `fixes` (task 0010) is the ID of the Don't start yet it fixes, or empty. It points back only, so the first one is never changed; its fix is found by searching for its ID in `fixes` |
+| `SavedTake5` (task 0004) | Extends the scoring `Take5` with `id`, `created_at`, `worker_name`, `job`, `location`, `finished_at`, `verdict`, `fixes` | The implemented submitted document. Until task 0008 it is finished immediately. The base `Take5` holds what the verdict needs (the template, `answers` and the hazards); later tasks add the remaining card fields. `answers` (task 0005) has one answer for each of the template's questions, by question ID. A Take 5 saved before task 0005 has none, and its template copy has no questions, so it still opens. `fixes` (task 0010) is the ID of the Don't start yet it fixes, or empty. It points back only, so the first one is never changed; its fix is found by searching for its ID in `fixes`. `started_at` (task 0019) is when its draft was started, by the phone's clock, or empty for one saved before then (spec K3) |
 | `Hazard` | `description`, `before` (rating), `controls`, `after` (rating), `weak_controls_reason` | Belongs to one Take 5. With no controls `after` is `before` (spec R6). `weak_controls_reason` is the worker's answer to spec T3, when it was asked |
 | `Control` | `description`, `kind` (`ControlKind`) | Belongs to one hazard |
 | `RiskRating` | `likelihood`, `consequence`, and from the matrix: `score`, `band` | A value, not a stored row. Score and band are always worked out, never typed in |
-| `Take5Template` | `name`, `questions` (each an `id`, its `text` and its `role`: `stop` or `hazard`), `matrix`, `likelihood_guidance`, `consequence_guidance` (each a level and its meaning), `control_guidance` | The card as data. The rules never name a question: a *stop* question answered No stops the job, whichever card it is on. The page a question shows on follows from its role, so there are no separate sections |
+| `Take5Template` | `name`, `questions` (each an `id`, its `text` and its `role`: `stop` or `hazard`), `matrix`, `likelihood_guidance`, `consequence_guidance` (each a level and its meaning), `control_guidance`, `draft_time_limit_minutes` | The card as data. The rules never name a question: a *stop* question answered No stops the job, whichever card it is on. The page a question shows on follows from its role, so there are no separate sections. `draft_time_limit_minutes` (task 0019) is how long a draft lasts (spec K2): 120 on the booklet, or none, which turns the check off. It is not sent to the phone |
 | `RiskMatrix` | the likelihood and consequence scales, the score and band of each cell, the score that needs a JHA | The matrix as data. `rate()` is given the matrix, so another company's matrix needs no new code |
 | `Challenge` | `question`, `asked_by` (`ai` or `fallback`), `model`, `instructions_version`, `answer` | Belongs to one Take 5. `answer` is empty until the worker gives one. `model` and `instructions_version` say which AI asked and with which version of its instructions; both are empty for the fallback |
 | `Verdict` | `can_start`, `reasons` | Worked out once by `domain/take5/verdict.py` when the Take 5 is finished, then saved inside it, so a later rule change never rewrites an old verdict |
@@ -223,7 +238,7 @@ api/app.py is the one exception: it also imports storage, ai and settings, to pl
 
 - **`domain`** owns every scoring, verdict, thinking and challenge rule. It uses only the standard library and
   pydantic. It never reads a file, a database, a clock or the network, so each rule is a function of its inputs
-  and can be tested with a one-line example from the spec.
+  and can be tested with a one-line example from the spec. A rule about time, such as K2, is given the time.
 - **`services`** owns the use cases. It depends on the `Take5Repository` and `ChallengeAsker` Protocols, not on
   SQLite or on any AI provider.
 - **`storage`** owns the SQL. It stores and fetches; it makes no decisions.

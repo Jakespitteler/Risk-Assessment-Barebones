@@ -1,9 +1,9 @@
 import { beforeEach, expect, it } from "vitest";
 import { SAVED, STOPPED } from "../../test-utils";
-import { fixDraftOf, keepFixDraft } from "./useTake5Draft";
+import { fixDraftOf, keepFixDraft, keptDraft } from "./useTake5Draft";
 
 beforeEach(() => {
-  sessionStorage.clear();
+  localStorage.clear();
 });
 
 it("copies every answer of a saved Take 5 and says which one it fixes", () => {
@@ -46,29 +46,30 @@ it("copies the weak-controls answer into a correction", () => {
   expect(fixDraftOf(saved).hazards[0]?.weak_controls_reason).toBe(reason);
 });
 
-it("keeps the copy as this tab's draft, with a new submission ID", () => {
+it("keeps the copy as the phone's draft, with a new submission ID and a start time", () => {
   keepFixDraft(STOPPED.take5);
-  const stored = JSON.parse(sessionStorage.getItem("take5-draft") ?? "{}") as {
+  const stored = JSON.parse(localStorage.getItem("take5-draft") ?? "{}") as {
     draft: { fixes: string };
     submissionId: string;
   };
   expect(stored.draft.fixes).toBe(STOPPED.take5.id);
   expect(stored.submissionId).not.toBe(STOPPED.take5.id);
   expect(stored.submissionId).toMatch(/^[0-9a-f-]{36}$/);
+  expect(keptDraft()?.draft.started_at).toMatch(/^\d{4}-\d\d-\d\dT.*Z$/);
 });
 
 it("starts the copy with no hazard question marked as added to the list", () => {
-  sessionStorage.setItem(
+  localStorage.setItem(
     "take5-draft",
     JSON.stringify({
-      version: 2,
-      draft: fixDraftOf(SAVED.take5),
+      version: 3,
+      draft: { ...fixDraftOf(SAVED.take5), started_at: "2026-11-15T12:12:00Z" },
       submissionId: SAVED.take5.id,
       addedFor: ["dogs"],
     }),
   );
   keepFixDraft(STOPPED.take5);
-  const stored = JSON.parse(sessionStorage.getItem("take5-draft") ?? "{}") as {
+  const stored = JSON.parse(localStorage.getItem("take5-draft") ?? "{}") as {
     addedFor?: string[];
   };
   expect(stored.addedFor).toBeUndefined();

@@ -6,7 +6,7 @@ printed beside the scales.
 
 from typing import ClassVar, Self
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, PositiveInt, model_validator
 
 from risk_assessment.domain.questions import Question, QuestionRole
 from risk_assessment.domain.risk import RiskCell, RiskMatrix
@@ -38,6 +38,9 @@ class Take5Template(BaseModel):
         consequence_guidance: What each consequence means, shown beside the rating.
         control_guidance: What makes a control strong or weak, shown beside the
             controls.
+        draft_time_limit_minutes: How long an unfinished Take 5 lasts, counted from
+            when it was started (spec K2), or None for no limit, which turns the
+            check off completely.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -48,6 +51,7 @@ class Take5Template(BaseModel):
     likelihood_guidance: tuple[LevelGuidance, ...] = ()
     consequence_guidance: tuple[LevelGuidance, ...] = ()
     control_guidance: str = ""
+    draft_time_limit_minutes: PositiveInt | None = None
 
     @model_validator(mode="after")
     def _question_ids_are_unique(self) -> Self:
@@ -186,4 +190,7 @@ BOOKLET_TEMPLATE = Take5Template(
     likelihood_guidance=_BOOKLET_LIKELIHOOD_GUIDANCE,
     consequence_guidance=_BOOKLET_CONSEQUENCE_GUIDANCE,
     control_guidance=_BOOKLET_CONTROL_GUIDANCE,
+    # Long enough for a radio call, too short to start at breakfast and finish at
+    # lunch (spec D21). Set it to None to switch the time limit off.
+    draft_time_limit_minutes=120,
 )
