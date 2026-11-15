@@ -121,8 +121,16 @@ export function keptDraft(): StoredDraft | null {
 }
 
 /** Keep this draft as the phone's unfinished Take 5, in place of any other. */
-export function keepDraft(stored: StoredDraft) {
+function keepDraft(stored: StoredDraft) {
   write(() => localStorage, DRAFT_KEY, JSON.stringify(stored));
+}
+
+/**
+ * Keep a thrown-away draft again, for Undo. A draft started since then stays instead,
+ * so Undo can never wipe newer answers.
+ */
+export function putBackDraft(thrownAway: StoredDraft) {
+  if (!keptDraft()) keepDraft(thrownAway);
 }
 
 /** Stop keeping the phone's unfinished Take 5. */

@@ -626,7 +626,7 @@ it("links to the saved Take 5s until something is typed, then offers Leave", () 
   expect(kept.stage).toEqual({ page: "job" });
 });
 
-it("asks before leaving, and Keep going goes back to the same page", () => {
+it("asks before leaving, and Keep going goes back to the same page", async () => {
   storeDraft();
   stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
   renderWithApi(<FormAt start={{ page: "think" }} />);
@@ -636,10 +636,38 @@ it("asks before leaving, and Keep going goes back to the same page", () => {
 
   fireEvent.click(screen.getByRole("button", { name: "Keep going" }));
 
-  expect(
-    screen.getByRole("heading", { name: "Think it through" }),
-  ).toBeTruthy();
+  // The panel's buttons are gone, so the focus goes back to the page's heading.
+  const page = screen.getByRole("heading", { name: "Think it through" });
+  await waitFor(() => {
+    expect(document.activeElement).toBe(page);
+  });
   expect(onLeave).not.toHaveBeenCalled();
+});
+
+it("makes Leave wait while Continue is being checked, as Back does", async () => {
+  storeDraft();
+  // The draft's check as it opens is answered; the Continue's check never is.
+  const unanswered = new Promise<Response>(() => undefined);
+  const fetchStub = vi
+    .fn<() => Promise<Response>>()
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify(PASSING_CHECK), { status: 200 }),
+    )
+    .mockReturnValue(unanswered);
+  vi.stubGlobal("fetch", fetchStub);
+  renderWithApi(<FormAt start={{ page: "job" }} />);
+  const leave = screen.getByRole<HTMLButtonElement>("button", {
+    name: "Leave",
+  });
+  expect(leave.disabled).toBe(false);
+  fireEvent.change(screen.getByLabelText("Where will you do it?"), {
+    target: { value: "Workshop bay 2" },
+  });
+
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+  await screen.findByRole("button", { name: "Checking…" });
+  expect(leave.disabled).toBe(true);
 });
 
 it("keeps the draft on the phone when the worker leaves to finish it later", () => {

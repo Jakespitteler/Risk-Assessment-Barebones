@@ -259,6 +259,14 @@ def test_a_draft_that_has_run_out_cannot_be_submitted() -> None:
     assert service.list_newest_first() == ()
 
 
+def test_example_62_a_draft_with_no_start_time_is_saved_without_one() -> None:
+    """A phone that sends no start time isn't checked, however late it submits (K2)."""
+    service: Take5Service = _service_at([STARTED_AT + timedelta(days=3)])
+
+    assert service.check(sample_draft()).can_submit
+    assert service.submit(sample_draft(), uuid4()).started_at is None
+
+
 def test_example_63_the_start_time_is_saved_with_the_take5() -> None:
     """Submitted 4 minutes after starting, it is saved with when it was started (K3)."""
     service: Take5Service = _service_at([STARTED_AT + timedelta(minutes=4)])

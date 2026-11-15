@@ -13,6 +13,7 @@ import {
 import { SavedTake5sScreen } from "./SavedTake5sScreen";
 
 afterEach(() => {
+  localStorage.clear();
   vi.unstubAllGlobals();
 });
 
@@ -178,7 +179,10 @@ it("throws away an unfinished Take 5 that has run out, and says why", async () =
       name: "Your unfinished Take 5 has run out",
     }),
   ).toBeTruthy();
-  expect(screen.getByText(RUN_OUT_MESSAGE)).toBeTruthy();
+  // It appears after the list has loaded, so it is announced.
+  expect(
+    within(screen.getByRole("status")).getByText(RUN_OUT_MESSAGE),
+  ).toBeTruthy();
   expect(screen.queryByRole("link", { name: "Carry on" })).toBeNull();
   expect(screen.getByRole("link", { name: "Start a new Take 5" })).toBeTruthy();
   expect(localStorage.getItem("take5-draft")).toBeNull();
@@ -206,4 +210,26 @@ it("offers Undo for a Take 5 just thrown away", async () => {
   expect(onUndo).toHaveBeenCalledWith(thrownAway);
   fireEvent.click(screen.getByRole("button", { name: "Close" }));
   expect(onDismiss).toHaveBeenCalled();
+});
+
+it("ends the Undo once another Take 5 has been started, so it can't be replaced", async () => {
+  keepSampleDraft({ ...COMPLETE_DRAFT, job: "Grease the conveyor" });
+  const thrownAway = {
+    version: 3,
+    draft: COMPLETE_DRAFT,
+    submissionId: SAVED.take5.id,
+  };
+  stubApi({
+    "GET /api/take5s": { status: 200, body: LIST },
+    "POST /api/take5s/check": { status: 200, body: PASSING_CHECK },
+  });
+  renderWithApi(
+    <SavedTake5sScreen
+      thrownAway={thrownAway}
+      onUndoThrowAway={vi.fn()}
+      onDismissUndo={vi.fn()}
+    />,
+  );
+  expect(await screen.findByText("Grease the conveyor")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
 });

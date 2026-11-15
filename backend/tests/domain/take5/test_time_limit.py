@@ -28,35 +28,35 @@ RUN_OUT = FieldError(
             timedelta(hours=1, minutes=59),
             BOOKLET_LIMIT_MINUTES,
             None,
-            id="example_57_inside_the_limit",
+            id="test_example_57_inside_the_limit",
         ),
         pytest.param(
             timedelta(hours=2),
             BOOKLET_LIMIT_MINUTES,
             None,
-            id="example_58_exactly_on_the_limit",
+            id="test_example_58_exactly_on_the_limit",
         ),
         pytest.param(
             timedelta(hours=2, seconds=1),
             BOOKLET_LIMIT_MINUTES,
             RUN_OUT,
-            id="example_59_one_second_over",
+            id="test_example_59_one_second_over",
         ),
         pytest.param(
             timedelta(days=3),
             None,
             None,
-            id="example_60_no_time_limit",
+            id="test_example_60_no_time_limit",
         ),
         pytest.param(
             -timedelta(minutes=5),
             BOOKLET_LIMIT_MINUTES,
             None,
-            id="example_61_started_in_the_future",
+            id="test_example_61_started_in_the_future",
         ),
     ],
 )
-def test_examples_57_to_61_when_a_draft_runs_out(
+def test_example_57_to_61_when_a_draft_runs_out(
     started_before_check: timedelta,
     time_limit_minutes: int | None,
     expected: FieldError | None,

@@ -13,9 +13,9 @@ import { SavedTake5sScreen } from "./features/take5/SavedTake5sScreen";
 import { Take5ResultScreen } from "./features/take5/Take5ResultScreen";
 import type { StoredDraft } from "./features/take5/useTake5Draft";
 import {
-  keepDraft,
   keepFixDraft,
   keptDraft,
+  putBackDraft,
 } from "./features/take5/useTake5Draft";
 import type { Stage } from "./features/take5/stage";
 import { stageFromSearch, stageToSearch } from "./features/take5/stage";
@@ -85,7 +85,8 @@ function thrownAwayIn(state: unknown): StoredDraft | null {
     : null;
 }
 
-// Throwing a draft away opens the list with Undo, which keeps the draft again.
+// Throwing a draft away opens the list with Undo, which keeps the draft again and
+// opens it, unless a newer one has been started since.
 function SavedTake5sRoute() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -93,7 +94,7 @@ function SavedTake5sRoute() {
     <SavedTake5sScreen
       thrownAway={thrownAwayIn(location.state)}
       onUndoThrowAway={(draft) => {
-        keepDraft(draft);
+        putBackDraft(draft);
         void navigate("/", { replace: true });
       }}
       onDismissUndo={() => void navigate("/take5s", { replace: true })}
