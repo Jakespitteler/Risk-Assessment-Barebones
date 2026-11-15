@@ -44,8 +44,9 @@ test("a Take 5 is kept to finish later, thrown away, and put back with Undo", as
   await leave(page);
   await button(page, "Keep it for later").click();
   await expect(heading(page, "Saved Take 5s")).toBeVisible();
-  await expect(heading(page, "Your unfinished Take 5")).toBeVisible();
-  await expect(page.getByText(JOB, { exact: true })).toBeVisible();
+  // Saved Take 5s from other tests can have the same job, so look inside the draft's card.
+  const keptCard = heading(page, "Your unfinished Take 5").locator("..");
+  await expect(keptCard.getByText(JOB, { exact: true })).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Start a new Take 5" }),
   ).toHaveCount(0);
