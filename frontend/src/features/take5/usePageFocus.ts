@@ -37,5 +37,9 @@ export function usePageFocus(stage: Stage) {
     focusFieldOn: (on: Stage, field: string) => {
       fieldOn.current = { stage: JSON.stringify(on), field };
     },
+    /** Put the focus back on the heading when the same page is drawn again. */
+    focusHeading: () => {
+      setAttempt((count) => count + 1);
+    },
   };
 }

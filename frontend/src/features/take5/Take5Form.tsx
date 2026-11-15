@@ -61,7 +61,7 @@ export function Take5Form(props: Take5FormProps) {
   const [leaving, setLeaving] = useState(false);
   const [runOut, setRunOut] = useState<string | null>(null);
   const submit = useSubmitTake5();
-  const { heading, container, focusErrorsOn, focusFieldOn } =
+  const { heading, container, focusErrorsOn, focusFieldOn, focusHeading } =
     usePageFocus(stage);
   const [allErrors, setErrors] = useState<FieldError[]>([]);
   const [fixing, setFixing] = useState(false);
@@ -232,17 +232,23 @@ export function Take5Form(props: Take5FormProps) {
           onThrowAway={() => {
             props.onLeave(take5.throwAway());
           }}
+          // The panel's buttons go with it, so the focus goes back to the page.
           onKeepGoing={() => {
             setLeaving(false);
+            focusHeading();
           }}
         />
       </Screen>
     );
   // The first page links to the saved Take 5s until anything is filled in. After that
-  // every page offers Leave instead, so nothing pulls the worker away unasked.
+  // every page offers Leave instead, so nothing pulls the worker away unasked. Leave
+  // waits for a check or a save, as Back does: their answer would otherwise move the
+  // page, or save the Take 5, after the worker had left.
+  const busy = checking || submit.isPending;
   const aside = take5.started ? (
     <Button
       variant="quiet"
+      disabled={busy}
       onClick={() => {
         take5.dismissRemoval();
         setLeaving(true);
@@ -298,7 +304,7 @@ export function Take5Form(props: Take5FormProps) {
         )}
         <FormNav
           stage={stage}
-          busy={checking || submit.isPending}
+          busy={busy}
           // Finish waits until the review has shown the back end's answer.
           canFinish={review.data?.can_submit === true}
           label={

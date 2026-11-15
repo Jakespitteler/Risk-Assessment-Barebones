@@ -237,8 +237,8 @@ keep a draft long enough for a radio call and no longer (decisions D19 to D25).
   unfinished Take 5 for '\<job\>'. Fixing this one throws it away."
 - **K2 A draft runs out.** A draft started more than the template's time limit ago (2 hours on the booklet)
   has run out. The time counts from the worker's first change, not the last, so tapping it now and then can't
-  keep it alive. Exactly on the limit is still in time. The back end checks it as the draft opens, on each
-  Continue and on Finish, and refuses to save it: "This Take 5 was started more than 2 hours ago. Start a new one
+  keep it alive. Exactly on the limit is still in time. The back end checks it as the draft opens, on a
+  Continue with changed answers, and on Finish, and refuses to save it: "This Take 5 was started more than 2 hours ago. Start a new one
   at the job." The phone then throws it away and says so, with when it was started. It is never reopened, even
   with its answers cleared. A template with no time limit turns the check off completely. A retry of a Take 5
   that was saved in time is never refused.

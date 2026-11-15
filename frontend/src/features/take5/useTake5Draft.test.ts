@@ -1,6 +1,11 @@
 import { beforeEach, expect, it } from "vitest";
 import { SAVED, STOPPED } from "../../test-utils";
-import { fixDraftOf, keepFixDraft, keptDraft } from "./useTake5Draft";
+import {
+  fixDraftOf,
+  keepFixDraft,
+  keptDraft,
+  putBackDraft,
+} from "./useTake5Draft";
 
 beforeEach(() => {
   localStorage.clear();
@@ -73,4 +78,23 @@ it("starts the copy with no hazard question marked as added to the list", () => 
     addedFor?: string[];
   };
   expect(stored.addedFor).toBeUndefined();
+});
+
+it("puts a thrown-away draft back for Undo, but never over a newer one", () => {
+  const thrownAway = {
+    version: 3,
+    draft: { ...fixDraftOf(SAVED.take5), started_at: "2026-11-15T09:12:00Z" },
+    submissionId: SAVED.take5.id,
+  };
+  putBackDraft(thrownAway);
+  expect(keptDraft()).toEqual(thrownAway);
+
+  const newer = {
+    ...thrownAway,
+    draft: { ...thrownAway.draft, job: "Grease the conveyor" },
+    submissionId: STOPPED.take5.id,
+  };
+  localStorage.setItem("take5-draft", JSON.stringify(newer));
+  putBackDraft(thrownAway);
+  expect(keptDraft()).toEqual(newer);
 });

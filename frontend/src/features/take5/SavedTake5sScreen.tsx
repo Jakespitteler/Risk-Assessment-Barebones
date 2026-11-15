@@ -70,7 +70,7 @@ function SavedTake5Item({ take5 }: { take5: Take5Summary }) {
  * Don't start yet has been fixed. Opening one shows its result screen, exactly as it was
  * saved. The phone's unfinished Take 5, if it keeps one, is at the top in place of
  * "Start a new Take 5", since there is only ever one. A draft just thrown away can be
- * put back with Undo.
+ * put back with Undo, until another one is started.
  */
 export function SavedTake5sScreen({
   thrownAway = null,
@@ -121,20 +121,24 @@ export function SavedTake5sScreen({
               Saved Take 5s
             </h1>
             <p>Newest first. Everyone using this app can see them.</p>
-            {thrownAway && (
+            {/* Undo would take the place of a draft started since, so it ends. */}
+            {thrownAway && !kept && (
               <UndoBar
                 message="Take 5 thrown away."
                 onUndo={() => onUndoThrowAway?.(thrownAway)}
                 onDismiss={() => onDismissUndo?.()}
               />
             )}
+            {/* It appears once the back end answers, so a screen reader announces it. */}
             {ranOut && (
-              <Card>
-                <h2 className="text-xl font-bold">
-                  Your unfinished Take 5 has run out
-                </h2>
-                <p>{ranOut}</p>
-              </Card>
+              <div role="status">
+                <Card>
+                  <h2 className="text-xl font-bold">
+                    Your unfinished Take 5 has run out
+                  </h2>
+                  <p>{ranOut}</p>
+                </Card>
+              </div>
             )}
             {kept ? (
               <KeptDraftCard draft={kept.draft} onRunOut={throwAwayRunOut} />

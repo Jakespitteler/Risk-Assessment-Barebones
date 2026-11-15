@@ -67,10 +67,22 @@ Assumptions made while building (2026-11-15):
 - A draft with no `started_at` (sent by a phone from before this task) isn't checked (example 62).
 - A draft kept in the old place (`sessionStorage`, in a tab left open across the update) is not carried over.
 - Two tabs on one phone share the one draft; the last change wins.
-- The form only checks the draft for running out as it opens, on Continue and on the review. A worker who sits on
-  one page past the limit finds out at the next Continue.
+- The form only checks the draft for running out as it opens, on a Continue with changed answers, and on the
+  review and Finish. A worker who sits on one page past the limit finds out at the next of those. Finish always
+  asks, so nothing that has run out is ever saved.
+- Undo of a thrown-away draft never replaces a newer draft started since; the newer one stays.
 
-Not done here, noted for later:
+Not done here, noted for later (from the review on 2026-11-15):
+
+- A save whose answer was lost, then reopened after 2 hours, tells the worker the draft ran out, although it was
+  saved (it is in the list). The check doesn't know the submission ID. Fixing it needs an API change.
+- A draft that has run out is drawn until the opening check answers (one 5-second try). With no signal it stays
+  usable until a Continue or Finish gets through; saving is always refused.
+- "Fix this in a new Take 5" swapping to its question, and back, doesn't move the focus.
+- The back gesture while the Leave question is open changes the page underneath it. Back from the list after
+  throwing a draft away on a later page opens an empty form on that page's earlier page.
+- After a 409, Leave still offers "Keep it for later", which keeps nothing.
+- A fix whose own copy is the kept draft asks to throw that copy away, rather than offering to carry on.
 
 - The UI calls a draft "Your unfinished Take 5". Task 0008 plans a "Not finished" tag on the list for a saved Take 5
   whose challenge question is unanswered. Check the two read differently when 0008 is built.
