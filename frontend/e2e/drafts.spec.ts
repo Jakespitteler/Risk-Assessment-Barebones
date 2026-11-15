@@ -85,12 +85,13 @@ test("a Take 5 is kept to finish later, thrown away, and put back with Undo", as
   await expect(page.getByLabel("What is the job?")).toHaveValue("");
 });
 
-test("a kept Take 5 more than 2 hours old is thrown away, with the reason", async ({
-  page,
-}) => {
-  await page.goto("/");
-  await fillJob(page);
-  // Move the draft's start back three hours, as if it was left since breakfast.
+/**
+ * Move the kept draft's start back three hours, as if it was left since breakfast. The
+ * form is closed first, so it can't write the draft again afterwards.
+ */
+async function ageTheDraft(page: Page) {
+  await page.goto("/take5s");
+  await expect(heading(page, "Your unfinished Take 5")).toBeVisible();
   await page.evaluate(() => {
     const stored = JSON.parse(localStorage.getItem("take5-draft") ?? "{}") as {
       draft: { started_at: string };
@@ -100,8 +101,16 @@ test("a kept Take 5 more than 2 hours old is thrown away, with the reason", asyn
     ).toISOString();
     localStorage.setItem("take5-draft", JSON.stringify(stored));
   });
+}
 
-  await page.goto("/take5s");
+test("a kept Take 5 more than 2 hours old is thrown away, with the reason", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await fillJob(page);
+  await ageTheDraft(page);
+
+  await page.reload();
   await expect(
     heading(page, "Your unfinished Take 5 has run out"),
   ).toBeVisible();
@@ -121,15 +130,7 @@ test("opening a Take 5 that has run out shows why, and starts a new one", async 
 }) => {
   await page.goto("/");
   await fillJob(page);
-  await page.evaluate(() => {
-    const stored = JSON.parse(localStorage.getItem("take5-draft") ?? "{}") as {
-      draft: { started_at: string };
-    };
-    stored.draft.started_at = new Date(
-      Date.now() - 3 * 60 * 60 * 1000,
-    ).toISOString();
-    localStorage.setItem("take5-draft", JSON.stringify(stored));
-  });
+  await ageTheDraft(page);
 
   await page.goto("/");
   await expect(heading(page, "This Take 5 has run out")).toBeVisible();
