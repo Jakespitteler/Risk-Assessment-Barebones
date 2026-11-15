@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { Take5Draft } from "../../api/take5";
-import { useDraftCheck } from "../../api/take5";
+import { useOpeningCheck } from "../../api/take5";
 import { Card } from "../../components/Card";
 import { formatDateTime } from "./formatDateTime";
 import { runOutMessage } from "./runOut";
@@ -20,7 +20,7 @@ export function KeptDraftCard({
   draft: Take5Draft;
   onRunOut: (message: string) => void;
 }) {
-  const check = useDraftCheck(draft);
+  const check = useOpeningCheck(draft, true);
   const ranOut = runOutMessage(check.data?.errors);
   useEffect(() => {
     if (ranOut) onRunOut(ranOut);

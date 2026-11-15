@@ -8,6 +8,7 @@ import {
   ApiError,
   useCheckDraft,
   useDraftCheck,
+  useOpeningCheck,
   useSubmitTake5,
 } from "../../api/take5";
 import { Button } from "../../components/Button";
@@ -56,7 +57,7 @@ export function Take5Form(props: Take5FormProps) {
   const review = useDraftCheck(draft, stage.page === "review");
   // A kept draft is checked once as it opens, so one that has run out is never reused.
   const [opened] = useState(() => (draft.started_at ? draft : null));
-  const openedCheck = useDraftCheck(opened ?? draft, opened !== null);
+  const openedCheck = useOpeningCheck(opened ?? draft, opened !== null);
   const [leaving, setLeaving] = useState(false);
   const [runOut, setRunOut] = useState<string | null>(null);
   const submit = useSubmitTake5();
