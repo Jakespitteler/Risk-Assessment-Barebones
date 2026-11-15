@@ -11,7 +11,7 @@ Complete: 0001 to 0007, 0010 to 0012, 0014 to 0018 and 0020. Task 0018 decided t
 now (`docs/decisions.md`, 2026-11-14), so no task to switch storage is in the order below.
 
 1. **0019, back out of a Take 5 and keep drafts.** Jake asked for it on 2026-11-14 and answered its questions on
-   2026-11-15 (spec D19 to D25). Built on 2026-11-15; done when Jake merges its pull request.
+   2026-11-15 (spec D19 to D25). Built on 2026-11-15 and marked done in its pull request; done when Jake merges it.
 2. **0008, the challenge question.** Depends on 0005, which is complete.
 3. **0009, the first AI provider.** Depends on 0008.
 4. **0013, glossary and rule tracing.** Last of these, because its test fails for any spec rule with no test yet, and

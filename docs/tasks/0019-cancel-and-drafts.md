@@ -1,7 +1,7 @@
 ---
 id: 0019
 title: Back out of a Take 5, and keep unfinished drafts
-status: review
+status: done
 owner: claude
 branch: claude/project-thread-frta7h
 ---
