@@ -6,20 +6,25 @@ import type {
   Take5Draft,
 } from "../../api/take5";
 import { newSubmissionId } from "../../api/submissionId";
+import type { Stage } from "./stage";
+import { sameStage } from "./stage";
 
 const WORKER_NAME_KEY = "take5-worker-name";
 const DRAFT_KEY = "take5-draft";
 
-// Bump this when the draft's shape changes, so a tab left open across an update starts
+// Bump this when the draft's shape changes, so a phone left open across an update starts
 // afresh instead of loading answers in the old shape.
-const DRAFT_VERSION = 2;
+const DRAFT_VERSION = 3;
 
-interface StoredDraft {
+/** The one unfinished Take 5 the phone keeps, until it is saved or thrown away. */
+export interface StoredDraft {
   version: number;
   draft: Take5Draft;
   submissionId: string;
   /** The hazard questions a hazard was added from, so their Yes shows it was done. */
   addedFor?: string[];
+  /** The page the worker was on, so carrying on opens where they left it. */
+  stage?: Stage;
 }
 
 export interface Removal {
@@ -90,41 +95,61 @@ function write(storage: () => Storage, key: string, value: string | null) {
   }
 }
 
-function storedDraft(): StoredDraft | null {
+/** The time now, as the phone's clock says, in the form the back end reads. */
+function now(): string {
+  return new Date().toISOString();
+}
+
+/**
+ * The unfinished Take 5 the phone is keeping, or null. A draft only counts once the
+ * worker has changed something, which is when its clock starts.
+ */
+export function keptDraft(): StoredDraft | null {
   try {
     const stored = JSON.parse(
-      read(() => sessionStorage, DRAFT_KEY) ?? "null",
+      read(() => localStorage, DRAFT_KEY) ?? "null",
     ) as Partial<StoredDraft> | null;
     const usable =
       stored?.version === DRAFT_VERSION &&
       typeof stored.submissionId === "string" &&
-      Array.isArray(stored.draft?.hazards);
+      Array.isArray(stored.draft?.hazards) &&
+      typeof stored.draft.started_at === "string";
     return usable ? (stored as StoredDraft) : null;
   } catch {
     return null;
   }
 }
 
-/**
- * Keep a copy of a saved Take 5's answers as this tab's draft, with a new submission ID,
- * so the form opens on it. The saved Take 5 itself is never changed.
- */
-export function keepFixDraft(saved: SavedTake5) {
-  const value: StoredDraft = {
-    version: DRAFT_VERSION,
-    draft: fixDraftOf(saved),
-    submissionId: newSubmissionId(),
-  };
-  write(() => sessionStorage, DRAFT_KEY, JSON.stringify(value));
+/** Keep this draft as the phone's unfinished Take 5, in place of any other. */
+export function keepDraft(stored: StoredDraft) {
+  write(() => localStorage, DRAFT_KEY, JSON.stringify(stored));
+}
+
+/** Stop keeping the phone's unfinished Take 5. */
+export function forgetKeptDraft() {
+  write(() => localStorage, DRAFT_KEY, null);
 }
 
 /**
- * The Take 5 being filled in, kept in this tab's session storage so a reload or a slip
- * of the back gesture loses nothing. Its submission ID is kept with it, so a retry after
- * a lost answer sends the same ID. A removal can be undone until the next edit.
+ * Keep a copy of a saved Take 5's answers as the phone's draft, with a new submission ID,
+ * so the form opens on it. Its clock starts now. The saved Take 5 itself is never changed.
+ */
+export function keepFixDraft(saved: SavedTake5) {
+  keepDraft({
+    version: DRAFT_VERSION,
+    draft: { ...fixDraftOf(saved), started_at: now() },
+    submissionId: newSubmissionId(),
+  });
+}
+
+/**
+ * The Take 5 being filled in. Once the worker changes anything it is kept on the phone,
+ * so a reload, a slip of the back gesture or closing the app loses nothing, until it is
+ * saved or thrown away. Its submission ID is kept with it, so a retry after a lost answer
+ * sends the same ID. A removal can be undone until the next edit.
  */
 export function useTake5Draft() {
-  const [stored] = useState(storedDraft);
+  const [stored] = useState(keptDraft);
   const [draft, setDraft] = useState<Take5Draft>(
     () =>
       stored?.draft ?? {
@@ -141,25 +166,37 @@ export function useTake5Draft() {
   const [addedFor, setAddedFor] = useState<string[]>(
     () => stored?.addedFor ?? [],
   );
+  const [stage, setStage] = useState(stored?.stage);
   const [removal, setRemoval] = useState<Removal | null>(null);
   const [kept, setKept] = useState(true);
 
+  const current = (): StoredDraft => ({
+    version: DRAFT_VERSION,
+    draft,
+    submissionId,
+    addedFor,
+    stage,
+  });
+  const started = draft.started_at != null;
+
   useEffect(() => {
-    if (!kept) return;
-    const value: StoredDraft = {
-      version: DRAFT_VERSION,
-      draft,
-      submissionId,
-      addedFor,
-    };
-    write(() => sessionStorage, DRAFT_KEY, JSON.stringify(value));
-  }, [draft, submissionId, addedFor, kept]);
+    if (!kept || !started) return;
+    keepDraft({ version: DRAFT_VERSION, draft, submissionId, addedFor, stage });
+  }, [draft, submissionId, addedFor, stage, kept, started]);
 
   return {
     draft,
     submissionId,
     removal,
     addedFor,
+    /** True once the worker has changed anything, so there is something to keep. */
+    started,
+    /** Remember the page the worker is on, so carrying on later opens it. */
+    keepStage: (shown: Stage) => {
+      setStage((previous) =>
+        previous && sameStage(previous, shown) ? previous : shown,
+      );
+    },
     /** Remember that a hazard was added from this hazard question. */
     markAdded: (questionId: string) => {
       setAddedFor((current) =>
@@ -167,9 +204,13 @@ export function useTake5Draft() {
       );
     },
     // An edit after a removal ends its undo, so Undo can never wipe newer answers.
+    // The first change starts the draft's clock (spec K2).
     change: (update: (current: Take5Draft) => Take5Draft) => {
       setRemoval(null);
-      setDraft(update);
+      setDraft((previous) => {
+        const changed = update(previous);
+        return changed.started_at ? changed : { ...changed, started_at: now() };
+      });
     },
     // A hazard isn't tied to the question it came from, so removing any hazard forgets
     // every mark: each Yes then reminds the worker again until Undo puts them back.
@@ -192,16 +233,22 @@ export function useTake5Draft() {
     /** Forget the draft once it is saved, and remember the name for next time. */
     saved: (workerName: string) => {
       setKept(false);
-      write(() => sessionStorage, DRAFT_KEY, null);
+      forgetKeptDraft();
       write(() => localStorage, WORKER_NAME_KEY, workerName);
     },
     /**
-     * Stop keeping the draft once its ID belongs to another saved Take 5, so the next
-     * Take 5 in this tab starts afresh with a new ID.
+     * Stop keeping the draft: its ID belongs to another saved Take 5, or it has run out.
+     * The next Take 5 starts afresh with a new ID.
      */
     discard: () => {
       setKept(false);
-      write(() => sessionStorage, DRAFT_KEY, null);
+      forgetKeptDraft();
+    },
+    /** Throw the draft away, and return it so that Undo can keep it again. */
+    throwAway: (): StoredDraft => {
+      setKept(false);
+      forgetKeptDraft();
+      return current();
     },
   };
 }

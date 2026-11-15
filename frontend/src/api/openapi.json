@@ -686,6 +686,18 @@
               }
             ],
             "title": "Fixes"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
           }
         },
         "type": "object",
@@ -701,7 +713,7 @@
           "verdict"
         ],
         "title": "SavedTake5",
-        "description": "A Take 5 as it was saved: what the worker gave, and the verdict they were shown.\n\nIt is never changed once saved, so it always shows the template and verdict the\nworker was given, even after the rules change.\n\nAttributes:\n    id: The ID the phone made when the worker started submitting.\n    created_at: When it was saved.\n    worker_name: Who did the Take 5.\n    job: What the job is.\n    location: Where the job is.\n    finished_at: When it was finished. Until task 0008 this is when it was saved.\n    verdict: The verdict the worker was shown.\n    fixes: The ID of the saved Take 5 this one fixes, or None. It points back\n        only, so the first Take 5 is never changed when it is fixed."
+        "description": "A Take 5 as it was saved: what the worker gave, and the verdict they were shown.\n\nIt is never changed once saved, so it always shows the template and verdict the\nworker was given, even after the rules change.\n\nAttributes:\n    id: The ID the phone made when the worker started submitting.\n    created_at: When it was saved.\n    worker_name: Who did the Take 5.\n    job: What the job is.\n    location: Where the job is.\n    finished_at: When it was finished. Until task 0008 this is when it was saved.\n    verdict: The verdict the worker was shown.\n    fixes: The ID of the saved Take 5 this one fixes, or None. It points back\n        only, so the first Take 5 is never changed when it is fixed.\n    started_at: When the worker started it, by the phone's clock, or None for a\n        Take 5 saved before task 0019."
       },
       "SubmissionRequest": {
         "properties": {
@@ -796,11 +808,23 @@
               }
             ],
             "title": "Fixes"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
           }
         },
         "type": "object",
         "title": "Take5Draft",
-        "description": "A Take 5 that hasn't been saved, as the phone sends it.\n\nAttributes:\n    worker_name: Who is doing the Take 5.\n    job: What the job is.\n    location: Where the job is.\n    answers: The answers picked so far, by question ID. A question with no\n        answer is left out.\n    hazards: The hazards, in the order the worker listed them.\n    fixes: The ID of the saved Take 5 this one fixes, or None for a fresh one."
+        "description": "A Take 5 that hasn't been saved, as the phone sends it.\n\nAttributes:\n    worker_name: Who is doing the Take 5.\n    job: What the job is.\n    location: Where the job is.\n    answers: The answers picked so far, by question ID. A question with no\n        answer is left out.\n    hazards: The hazards, in the order the worker listed them.\n    fixes: The ID of the saved Take 5 this one fixes, or None for a fresh one.\n    started_at: When the worker started it, by the phone's clock, or None if the\n        phone didn't say. It must include its time zone."
       },
       "Take5Response": {
         "properties": {
@@ -915,6 +939,18 @@
             "type": "string",
             "title": "Control Guidance",
             "default": ""
+          },
+          "draft_time_limit_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Time Limit Minutes"
           }
         },
         "type": "object",
@@ -923,7 +959,7 @@
           "matrix"
         ],
         "title": "Take5Template",
-        "description": "The card a Take 5 is filled in on. Each saved Take 5 keeps a copy of it.\n\nAttributes:\n    name: The card's name, such as \"Take 5 booklet\".\n    questions: The card's questions, in the order it prints them. Empty for a\n        Take 5 saved before the app asked them.\n    matrix: The risk matrix the hazards are rated on.\n    likelihood_guidance: What each likelihood means, shown beside the rating.\n    consequence_guidance: What each consequence means, shown beside the rating.\n    control_guidance: What makes a control strong or weak, shown beside the\n        controls."
+        "description": "The card a Take 5 is filled in on. Each saved Take 5 keeps a copy of it.\n\nAttributes:\n    name: The card's name, such as \"Take 5 booklet\".\n    questions: The card's questions, in the order it prints them. Empty for a\n        Take 5 saved before the app asked them.\n    matrix: The risk matrix the hazards are rated on.\n    likelihood_guidance: What each likelihood means, shown beside the rating.\n    consequence_guidance: What each consequence means, shown beside the rating.\n    control_guidance: What makes a control strong or weak, shown beside the\n        controls.\n    draft_time_limit_minutes: How long an unfinished Take 5 lasts, counted from\n        when it was started (spec K2), or None for no limit, which turns the\n        check off completely."
       },
       "TemplateResponse": {
         "properties": {

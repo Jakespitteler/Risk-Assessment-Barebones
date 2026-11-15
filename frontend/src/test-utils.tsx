@@ -159,6 +159,24 @@ export function stubApi(routes: Record<string, Reply | Reply[]>) {
   return calls;
 }
 
+/**
+ * Keep a draft on the phone as the form does, started a few minutes ago so it hasn't
+ * run out, with the sample saved Take 5's ID as its submission ID.
+ */
+export function keepSampleDraft(draft: Take5Draft = COMPLETE_DRAFT) {
+  localStorage.setItem(
+    "take5-draft",
+    JSON.stringify({
+      version: 3,
+      draft: {
+        ...draft,
+        started_at: new Date(Date.now() - 5 * 60_000).toISOString(),
+      },
+      submissionId: SAVED.take5.id,
+    }),
+  );
+}
+
 /** An API cache whose retries don't wait, so tests stay quick. */
 export function quickClient() {
   return new QueryClient({

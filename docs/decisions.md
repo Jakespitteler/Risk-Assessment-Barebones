@@ -2,6 +2,32 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-15: Leave a Take 5, keep one draft on the phone, and a 2-hour limit (task 0019)
+
+- Decision: Every page of the form has Leave, which keeps the Take 5 for later or throws it away (with Undo).
+  One unfinished Take 5 is kept on the phone (`localStorage`) from the first change until it is saved or thrown
+  away. It runs out 2 hours after it was started: the back end refuses it on the check and on submit, the phone
+  throws it away and says why. The limit is `Take5Template.draft_time_limit_minutes`; setting it to `None` turns
+  the check off completely. "Fix this in a new Take 5" asks before it replaces an unfinished Take 5. Each saved
+  Take 5 keeps when it was started (`started_at`). Spec D19 to D25 and K1 to K3.
+- Why: A worker gets called away mid-way, and closing the app lost everything. But a Take 5 is meant to be done
+  at the job, just before starting: a draft started at breakfast and finished at lunch is a Take 5 done without
+  looking. Two hours covers a radio call or lending a hand. Counting from the start, not the last change, means
+  tapping it now and then can't keep it alive. An old draft is thrown away rather than reopened, because reopening
+  it hands back an old hazard list to tick through. One draft keeps the screens simple. On the phone needs no
+  data model change and keeps drafts private while there is no sign-in (D4). The start time lets the three-minute
+  target be measured later.
+- How the time is checked: the phone sends `started_at` by its own clock, with its time zone, and the back end
+  compares it with the server's clock (`domain/take5/time_limit.py`, given the time by `Take5Service`'s
+  injected clock). Phones set their clocks from the network, so the two agree; a phone whose clock is set hours
+  wrong would see drafts run out early or late. A retry of a Take 5 that was saved in time is never refused.
+- Alternatives considered: Throw away only, or keep only. Drafts on the server (a supervisor could see them and
+  they survive a new phone, but a new table and endpoints). 12 hours, or no limit. Reopening an old draft with its
+  answers cleared, or with a "check everything" warning. A list of drafts. Replacing a draft with a fix without
+  asking (as before), or refusing the fix. Not saving the start time.
+- Decided by: human (Jake, 2026-11-15, in chat: "Do all of your recommendations", with no limit switching the
+  timer off completely), on Claude's questions in task 0019's thread.
+
 ## 2026-11-15: Fixed on the saved list, one date format, and paging later (task 0007)
 
 - Decision: A Don't start yet that a newer Take 5 fixes shows "Fixed" in the saved list (`Take5Summary.fixed`),

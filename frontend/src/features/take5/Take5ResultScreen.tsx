@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SavedTake5 } from "../../api/take5";
 import { ApiError, useSavedTake5 } from "../../api/take5";
 import { Button } from "../../components/Button";
@@ -10,6 +10,7 @@ import { FixPanel } from "./FixPanel";
 import { formatDateTime } from "./formatDateTime";
 import { HazardSummary } from "./HazardSummary";
 import { SavedListLink } from "./SavedListLink";
+import { keptDraft } from "./useTake5Draft";
 import { VerdictPanel } from "./VerdictPanel";
 
 const NEW_TAKE5_LINK =
@@ -27,6 +28,7 @@ export function Take5ResultScreen({
   onFix: (take5: SavedTake5) => void;
 }) {
   const result = useSavedTake5(id);
+  const [unfinished] = useState(() => keptDraft()?.draft ?? null);
   const page = useRef<HTMLDivElement>(null);
   useEffect(() => {
     page.current?.querySelector("h1")?.focus();
@@ -76,6 +78,7 @@ export function Take5ResultScreen({
           take5={take5}
           fixedBy={fixed_by}
           offersFix={offers_fix}
+          unfinished={unfinished}
           onFix={() => {
             onFix(take5);
           }}

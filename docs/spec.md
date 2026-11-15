@@ -65,6 +65,9 @@ saved until the worker submits it. Then the app asks its one question, and then 
 Saved Take 5s can be opened again from a list. A finished Take 5 is never changed; if the job changes the worker
 does a new one.
 
+Until it is submitted, a Take 5 is a *draft*. The worker can leave it part-way and carry on later, but only for a
+short time after starting it: see [Drafts](#drafts).
+
 ### The card's questions
 
 The questions below, together with the risk matrix and its JHA threshold, are the **template** a Take 5 is
@@ -221,6 +224,27 @@ The safety rules stay in code. The AI only asks; it never decides whether anyone
   question it was given. It is answered once: a second answer is refused. If a saved Take 5 has no question
   (the app stopped between saving it and asking), opening it gives it the fallback question.
 
+### Drafts
+
+A worker gets called away mid-way, but a Take 5 is meant to be done at the job, just before starting. These rules
+keep a draft long enough for a radio call and no longer (decisions D19 to D25).
+
+- **K1 One draft, on the phone.** From the worker's first change until it is submitted or thrown away, the phone
+  keeps one draft, with the page it was left on. Every page of the form has Leave, which asks: "Keep it for
+  later", "Throw it away" (with Undo) or "Keep going". Either way out goes to the saved list, where a kept draft
+  sits at the top with "Carry on" in place of "Start a new Take 5". Opening the app carries on where it was left.
+  "Fix this in a new Take 5" takes the draft's place, so with a draft kept it asks first: "You have an
+  unfinished Take 5 for '\<job\>'. Fixing this one throws it away."
+- **K2 A draft runs out.** A draft started more than the template's time limit ago (2 hours on the booklet)
+  has run out. The time counts from the worker's first change, not the last, so tapping it now and then can't
+  keep it alive. Exactly on the limit is still in time. The back end checks it as the draft opens, on each
+  Continue and on Finish, and refuses to save it: "This Take 5 was started more than 2 hours ago. Start a new one
+  at the job." The phone then throws it away and says so, with when it was started. It is never reopened, even
+  with its answers cleared. A template with no time limit turns the check off completely. A retry of a Take 5
+  that was saved in time is never refused.
+- **K3 The start time is kept.** A saved Take 5 keeps when its draft was started, so the time a Take 5 takes can
+  be measured.
+
 ### Worked examples
 
 Each example becomes an automated test, named by its number. Add one for every rule and every boundary.
@@ -310,6 +334,20 @@ row says otherwise, the Take 5 is example 18 with the hazard described as "Fall 
 | 55 | Example 52, then a second answer is sent | Refused; the first answer and the verdict are kept | C6: a finished Take 5 is never changed |
 | 56 | A saved Take 5 has no question (the app stopped between saving it and asking) | Opening it gives it the fallback question | C6 |
 
+Drafts (K2, K3). On the booklet's time limit of 2 hours, unless the row says otherwise, checked at 15 Nov 2026,
+8:12 pm.
+
+| # | Situation | Expected | Why |
+| --- | --- | --- | --- |
+| 57 | Started 1 hour 59 minutes before | Can be used | K2: inside the limit |
+| 58 | Started exactly 2 hours before | Can be used | K2: on the limit |
+| 59 | Started 2 hours and 1 second before | Run out: "This Take 5 was started more than 2 hours ago. Start a new one at the job." | K2: one second over |
+| 60 | A template with no time limit; started 3 days before | Can be used | K2: no limit turns the check off |
+| 61 | Started 5 minutes after the check (the phone's clock was changed) | Can be used | K2: a start in the future counts as just started |
+| 62 | No start time is sent (a phone from before drafts were kept) | Not checked; saved with no start time | K2 |
+| 63 | Started at 8:12 pm, submitted at 8:16 pm | Saved with the start time 8:12 pm | K3 |
+| 64 | Saved at 8:16 pm, then the same submission is sent again at 1:12 am | The Take 5 saved at 8:16 pm comes back | K2: a retry of a Take 5 saved in time |
+
 ## Features
 
 ### F1: Rate a risk
@@ -341,6 +379,10 @@ The first four screens of the core workflow, saved when the worker submits.
 - Acceptance: Enter in a one-line box or on a picked rating does what Continue does. Enter in a bigger box, such
   as the job, a hazard or a control, starts a new line. Enter never presses Finish.
 - Acceptance: removing a hazard or a control can be undone.
+- Acceptance: once anything is filled in, every page has Leave in the top bar, to keep the draft for later or
+  throw it away; throwing it away can be undone (K1). Closing the app keeps the draft, and opening it again
+  carries on from the same page.
+- Acceptance: worked examples 57 to 64 pass as tests, and a draft that has run out is never shown again (K2).
 - Acceptance: likelihood, consequence and control choices offer expandable guidance from the back end, using
   the approved card wording. Guidance never supplies a hazard or control answer for the worker.
 
@@ -397,7 +439,8 @@ The first four screens of the core workflow, saved when the worker submits.
   AI verdict. Suggesting hazards in particular would undo "own words first".
 - Sign-in, supervisors, crews and approvals.
 - Scanning a filled-in paper card, photos of the job, PDFs of a Take 5, and admin tools.
-- Working with no signal, and keeping a half-filled Take 5 if the app is closed.
+- Working with no signal.
+- Drafts kept on the server, or more than one draft at a time (decisions D20 and D23).
 - Starting a Take 5 from an earlier one, except to fix a Don't start yet (F3). Copying is the fastest way to stop
   thinking.
 
@@ -443,6 +486,13 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D16 | What each saved Take 5 shows in the list (2026-11-15) | The date, worker, job and verdict, and "Fixed" on a Don't start yet that has been fixed | The location as well |
 | D17 | How dates are written (2026-11-15) | "14 Nov 2026, 6:52 pm" everywhere | Each phone's own format |
 | D18 | How the saved list grows (2026-11-15) | Once hosted for a crew, the newest 50 with "Show more" (task 0021). Until then, all of them | All of them, always |
+| D19 | What backing out of a Take 5 does (2026-11-15) | Both: Leave keeps it for later or throws it away, with Undo (K1) | Throw away only; keep only |
+| D20 | Where a draft is kept (2026-11-15) | On the phone, since there is no sign-in (D4) | On the server, where a supervisor could see it |
+| D21 | How long a draft lasts (2026-11-15) | 2 hours from its start; the template's limit can be set to none, which turns the check off (K2) | 12 hours (a shift); no limit |
+| D22 | What happens to a draft that has run out (2026-11-15) | It is thrown away, and the worker is told why (K2) | Reopened with its answers cleared; reopened with a "check everything" warning |
+| D23 | How many drafts (2026-11-15) | One at a time (K1) | A list |
+| D24 | A fix while a draft is kept (2026-11-15) | Ask first, then throw the draft away (K1) | Replace it without asking; refuse until the draft is dealt with |
+| D25 | Save when a Take 5 was started (2026-11-15) | Yes (K3) | Not now |
 
 ## Open questions
 
