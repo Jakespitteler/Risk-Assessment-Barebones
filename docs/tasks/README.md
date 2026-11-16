@@ -14,7 +14,7 @@ now (`docs/decisions.md`, 2026-11-14), so no task to switch storage is in the or
    2026-11-15 (spec D19 to D25). Built on 2026-11-15 and marked done in its pull request; done when Jake merges it.
 2. **0022, "It's on my list" on the hazard check page.** Jake asked for it on 2026-11-16. Jake answers its
    "Decide first" questions before it starts. Placed before 0008 so that, if the link between a question and a
-   hazard is saved, the challenge question can use it; it is small and doesn't block 0008.
+   hazard is saved, the challenge question can use it. It doesn't block 0008, so Jake can move it later.
 3. **0008, the challenge question.** Depends on 0005, which is complete.
 4. **0009, the first AI provider.** Depends on 0008.
 5. **0013, glossary and rule tracing.** Last of these, because its test fails for any spec rule with no test yet, and
