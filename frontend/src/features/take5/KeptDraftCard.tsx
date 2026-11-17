@@ -43,9 +43,11 @@ export function KeptDraftCard({
         </p>
       )}
       <TimeLeft runsOutAt={check.data?.runs_out_at} />
+      {/* It appears once the check fails, so a screen reader announces it (spec D27). */}
       {check.isError && (
-        <p className="font-semibold">
-          No signal: it couldn’t be checked to see if it’s still in time.
+        <p role="status" className="font-semibold">
+          No signal: it couldn’t be checked to see if it’s still in time. If it
+          has run out, it can’t be saved.
         </p>
       )}
       <a className={CARRY_ON_LINK} href="/">
