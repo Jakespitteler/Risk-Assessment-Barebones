@@ -1,7 +1,7 @@
 ---
 id: 0023
 title: Set up a freshly cloned repo with one command
-status: in-progress
+status: review
 owner: claude
 branch: claude/project-thread-vn8i52
 ---
@@ -15,16 +15,16 @@ everything the app and its checks need, or says plainly what is missing and how 
 
 ## Acceptance criteria
 
-- [ ] `uv run scripts/setup.py`, in the repo root, checks for git and Node.js 22 or newer, then installs Python
+- [x] `uv run scripts/setup.py`, in the repo root, checks for git and Node.js 22 or newer, then installs Python
   3.13 and the back end's packages, the front end's packages and the browser the whole-app tests use.
-- [ ] When git or Node.js is missing or too old, it says which, how to install it, and stops before installing
+- [x] When git or Node.js is missing or too old, it says which, how to install it, and stops before installing
   anything.
-- [ ] When a step fails, it names the step and stops.
-- [ ] It ends by listing what it did and what to do next.
-- [ ] It warns when the repo is inside a OneDrive, Dropbox, Google Drive or iCloud folder.
-- [ ] It is safe to run again.
-- [ ] The README gives the one-line set-up and warns not to clone into a cloud-synced folder, and why.
-- [ ] Tests cover the checks and the order of the steps.
+- [x] When a step fails, it names the step and stops.
+- [x] It ends by listing what it did and what to do next.
+- [x] It warns when the repo is inside a OneDrive, Dropbox, Google Drive or iCloud folder.
+- [x] It is safe to run again.
+- [x] The README gives the one-line set-up and warns not to clone into a cloud-synced folder, and why.
+- [x] Tests cover the checks and the order of the steps.
 
 ## Out of scope
 
@@ -32,4 +32,23 @@ everything the app and its checks need, or says plainly what is missing and how 
 
 ## Notes / assumptions
 
-\<Filled in as the work goes.>
+Jake runs Windows and PowerShell. The script uses only Python's standard library, so `uv run` needs nothing
+installed first except uv, and it works the same on macOS and Linux. On Linux, Playwright's browser may also
+need system libraries (`npx playwright install-deps chromium`, with sudo); the script says so at the end. Tested
+in a Linux container: a full run from an empty `frontend/node_modules`, a second run straight after, and a run
+with Node.js missing from `PATH`. Not run on Windows or macOS by Claude.
+
+Choices made, and recorded in `docs/decisions.md` (2026-11-17):
+
+- It doesn't install git, uv or Node.js. The README lists the three `winget` commands for a new Windows
+  computer. Git is needed to clone anyway, and uv to run the script.
+- `npm ci` runs every time, so a second run takes as long as the first (about a minute) but always matches
+  `package-lock.json`. On Windows it fails if the app is running, because the app holds files open; the failure
+  message says to stop the app first.
+- In a cloud-synced folder it warns at the start and again at the end, but carries on.
+- No git hooks or pre-commit are set up: the repo has none. Claude Code's hooks only need uv and the installs
+  above. `scripts/check.py` downloads markdownlint and cspell through `npx` the first time it runs.
+- The README's install steps moved into a new "Set it up" section with the cloud folder warning.
+
+The same pull request points AGENTS.md's install command, `docs/dev-setup.md` and the structure in
+`docs/architecture.md` at the script.
