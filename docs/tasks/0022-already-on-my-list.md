@@ -21,8 +21,9 @@ looking at their list, which is what the app exists to stop.
 
 ## Decided
 
-Jake put the questions below to himself on 2026-11-18 and asked for the task to be built; he hadn't picked
-otherwise when the build began, so it uses each recommended pick, and his merge confirms them. One change from the
+Jake answered on 2026-11-18: "1. (A) for now but when we implement the ai it should use it for this when it
+has access. All else do the recommended." So the vague check is the word rule for now; once an AI is set up
+(task 0009), it judges vagueness when it can be reached, with the word rule as the fallback. One change from the
 recommendations: question 9's hazard ID wasn't needed. The link is kept on the hazard itself (`covers`, the
 questions it is linked to), so removing a hazard removes its links and nothing else can shift.
 
