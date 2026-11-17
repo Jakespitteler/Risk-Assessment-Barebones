@@ -106,6 +106,7 @@ export function Take5ResultScreen({
         <AnswerSummary
           questions={take5.template.questions}
           answers={take5.answers}
+          hazards={take5.hazards}
         />
         {take5.hazards.map((hazard, index) => (
           <HazardSummary key={index} hazard={hazard} number={index + 1} />

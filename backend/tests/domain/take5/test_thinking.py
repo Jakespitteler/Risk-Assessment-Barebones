@@ -1,15 +1,18 @@
-"""The spec's wording and weak-control examples, independent of HTTP and storage."""
+"""The spec's thinking-rule examples (T2 to T5), independent of HTTP and storage."""
 
 import pytest
 
 from risk_assessment.domain.controls import ControlKind
+from risk_assessment.domain.questions import Answer
 from risk_assessment.domain.risk import RiskMatrix, rate
-from risk_assessment.domain.take5.template import BOOKLET_MATRIX
+from risk_assessment.domain.take5.template import BOOKLET_MATRIX, BOOKLET_TEMPLATE
 from risk_assessment.domain.take5.thinking import (
     control_wording_error,
     job_wording_error,
+    unlinked_yes_answers,
     weak_controls_question,
 )
+from tests.samples import sample_answers
 
 QUESTION: str = (
     "Everything here relies on people getting it right. "
@@ -124,4 +127,50 @@ def test_the_threshold_comes_from_the_given_matrix() -> None:
             matrix,
         )
         == QUESTION
+    )
+
+
+def test_example_65_a_yes_with_no_hazard_linked_is_named() -> None:
+    """T5: the heights question answered Yes needs a hazard on the list."""
+    assert unlinked_yes_answers(
+        BOOKLET_TEMPLATE.questions,
+        sample_answers(heights=Answer.YES),
+        (),
+    ) == ("heights",)
+
+
+def test_example_67_one_hazard_can_cover_two_questions() -> None:
+    """T5: one hazard linked to both the vehicles and hazardous materials questions."""
+    assert (
+        unlinked_yes_answers(
+            BOOKLET_TEMPLATE.questions,
+            sample_answers(vehicles=Answer.YES, hazardous_materials=Answer.YES),
+            ("vehicles", "hazardous_materials"),
+        )
+        == ()
+    )
+
+
+@pytest.mark.parametrize("answer", [Answer.NO, Answer.NOT_APPLICABLE])
+def test_example_68_a_no_or_na_needs_no_hazard(answer: Answer) -> None:
+    """T5 only asks about a Yes."""
+    assert (
+        unlinked_yes_answers(
+            BOOKLET_TEMPLATE.questions,
+            sample_answers(heights=answer),
+            (),
+        )
+        == ()
+    )
+
+
+def test_a_no_to_a_stop_question_never_needs_a_hazard() -> None:
+    """T5 is about hazard questions; a stop question's No is V1's business."""
+    assert (
+        unlinked_yes_answers(
+            BOOKLET_TEMPLATE.questions,
+            sample_answers(permits=Answer.NO),
+            (),
+        )
+        == ()
     )

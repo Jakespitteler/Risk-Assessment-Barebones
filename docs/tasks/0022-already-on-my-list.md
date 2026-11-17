@@ -19,10 +19,20 @@ it only nudges when the hazard really is vague, not on a specific one. No fixed 
 A plain one-tap "It's already there" button was turned down: it lets the worker tap past the question without
 looking at their list, which is what the app exists to stop.
 
+## Decided
+
+Jake put the questions below to himself on 2026-11-18 and asked for the task to be built; he hadn't picked
+otherwise when the build began, so it uses each recommended pick, and his merge confirms them. One change from the
+recommendations: question 9's hazard ID wasn't needed. The link is kept on the hazard itself (`covers`, the
+questions it is linked to), so removing a hazard removes its links and nothing else can shift.
+
+- Part 1 (links and T5): questions 3, 4, 5, 6, 8, 9, 11 and 12. Spec T5, examples 65 to 69, decisions D26 to
+  D29.
+- Part 2 (the vague nudge): questions 1, 2, 7 and 10.
+
 ## Decide first
 
-Workshop these with Jake when the task starts, before any code. Each has Claude's recommended pick. Write his
-answers in `docs/spec.md` (the Decisions made table and the rule wording) and below, under "Decided".
+The questions as they were put to Jake, each with Claude's recommended pick.
 
 1. **How "vague" is judged.** Options:
    - (a) A fixed rule on length: a hazard of fewer than six words is vague, the same way T4 judges the job.
@@ -87,11 +97,11 @@ answers in `docs/spec.md` (the Decisions made table and the rule wording) and be
 
 ## Acceptance criteria
 
-To be finished once the questions above are answered. With the recommended picks:
+Part 1 ticks the boxes it finishes; part 2 ticks the rest.
 
-- [ ] A Yes on a hazard question offers "Add a hazard" and "It's on my list". "It's on my list" asks "Which one?"
-  and shows the worker's hazards as big choices, with no hazard picked to begin with.
-- [ ] Picking one links the question to that hazard, and the Yes shows the linked hazard.
+- [x] A Yes on a hazard question offers "Add a hazard" and "It's on my list". "It's on my list" asks "Which one
+  on your list is it?" and shows the worker's hazards as big choices, with no hazard picked to begin with.
+- [x] Picking one links the question to that hazard, and the Yes shows the linked hazard.
 - [ ] When the picked hazard is vague by the chosen rule, the nudge appears with the question's example. A
   specific hazard shows no nudge.
 - [ ] Rewording from the nudge changes the hazard on the list; the rule then runs again on the new words.
@@ -131,6 +141,13 @@ To be finished once the questions above are answered. With the recommended picks
 - `domain/wording.py` already has `is_vague()` (T2's phrases) and `word_count()` (T4 and C4), so rule (a) or (b)
   can reuse them. `is_vague()` already means T2's phrases, so the new check needs its own name.
 - Written after task 0019 (PR 32), whose drafts and Leave button this page sits inside.
+- Built in two stacked pull requests on `claude/0022-on-my-list`, after PR 35 (task 0023). Jake allowed a branch
+  other than the thread's own on 2026-11-18, because the thread's branch is PR 33's, under PR 35.
+- Part 1 (2026-11-18): `covers` on `HazardDraft` and `Hazard`; T5 in `thinking.py` and `check_draft()`;
+  `HazardLink.tsx` under each Yes; `AnswerSummary` shows the link on the review and result. The phone's draft
+  format changed, so `DRAFT_VERSION` is 4 and a draft kept in the old shape starts afresh.
+- Part 1 assumption: the picker lists every hazard, including one already linked to another question, and says
+  so ("Already on another question"), rather than hiding it.
 - Size: with the recommended picks this is a new rule, a data model and API change, a picker, a nudge, seven
   examples and their tests, likely over the ~400-line guide in AGENTS.md. Consider two stacked PRs: the link and
   T5 first, then the vague nudge.

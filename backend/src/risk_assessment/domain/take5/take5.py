@@ -6,7 +6,7 @@ from typing import ClassVar, Self
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from risk_assessment.domain.controls import Control
-from risk_assessment.domain.questions import Answer
+from risk_assessment.domain.questions import Answer, QuestionRole
 from risk_assessment.domain.risk import RiskRating, rate
 from risk_assessment.domain.take5.template import Take5Template
 
@@ -16,6 +16,8 @@ class Hazard(BaseModel):
 
     Without controls, reuse the before rating as the after rating; no second rating
     is needed. Description, ratings and controls are immutable once constructed.
+    `covers` holds the IDs of the hazard questions answered Yes that the worker linked
+    to this hazard (T5); it is empty for a Take 5 saved before links were kept.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -25,6 +27,7 @@ class Hazard(BaseModel):
     controls: tuple[Control, ...]
     after: RiskRating
     weak_controls_reason: str = ""
+    covers: tuple[str, ...] = ()
 
     @model_validator(mode="after")
     def _controls_cannot_raise_or_invent_a_reduction(self) -> Self:
@@ -64,6 +67,19 @@ class Take5(BaseModel):
         question_ids: set[str] = {question.id for question in self.template.questions}
         if set(self.answers) != question_ids:
             raise ValueError("Every question on the card needs exactly one answer.")
+        return self
+
+    @model_validator(mode="after")
+    def _links_name_hazard_questions(self) -> Self:
+        """Refuse a link to a question that isn't one of the card's hazard questions."""
+        hazard_question_ids: set[str] = {
+            question.id
+            for question in self.template.questions
+            if question.role is QuestionRole.HAZARD
+        }
+        for hazard in self.hazards:
+            if not set(hazard.covers) <= hazard_question_ids:
+                raise ValueError("A hazard can only cover the card's hazard questions.")
         return self
 
     @model_validator(mode="after")

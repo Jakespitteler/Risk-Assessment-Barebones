@@ -93,6 +93,7 @@ export function ReviewPage({
       <AnswerSummary
         questions={assessment.template.questions}
         answers={assessment.answers}
+        hazards={assessment.hazards}
         noteFor={(questionId) =>
           showWarnings(`answers.${questionId}`, "Change answer")
         }

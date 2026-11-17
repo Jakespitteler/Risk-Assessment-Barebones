@@ -217,6 +217,8 @@ export interface components {
          *
          *     Without controls, reuse the before rating as the after rating; no second rating
          *     is needed. Description, ratings and controls are immutable once constructed.
+         *     `covers` holds the IDs of the hazard questions answered Yes that the worker linked
+         *     to this hazard (T5); it is empty for a Take 5 saved before links were kept.
          */
         Hazard: {
             /** Description */
@@ -230,6 +232,11 @@ export interface components {
              * @default
              */
             weak_controls_reason: string;
+            /**
+             * Covers
+             * @default []
+             */
+            covers: string[];
         };
         /**
          * HazardDraft
@@ -240,7 +247,9 @@ export interface components {
          *         before: The rating before controls.
          *         controls: The controls, possibly none.
          *         after: The rating after controls. Ignored when there are no controls (R6).
-         *         weak_controls_reason: Why stronger controls aren't possible, when T3 asks.
+         *             weak_controls_reason: Why stronger controls aren't possible, when T3 asks.
+         *         covers: The IDs of the hazard questions the worker linked to this hazard (T5),
+         *             whether it was added from a Yes or picked from the list.
          */
         HazardDraft: {
             /**
@@ -260,6 +269,11 @@ export interface components {
              * @default
              */
             weak_controls_reason: string;
+            /**
+             * Covers
+             * @default []
+             */
+            covers: string[];
         };
         /**
          * LevelGuidance

@@ -14,15 +14,13 @@ const DRAFT_KEY = "take5-draft";
 
 // Bump this when the draft's shape changes, so a phone left open across an update starts
 // afresh instead of loading answers in the old shape.
-const DRAFT_VERSION = 3;
+const DRAFT_VERSION = 4;
 
 /** The one unfinished Take 5 the phone keeps, until it is saved or thrown away. */
 export interface StoredDraft {
   version: number;
   draft: Take5Draft;
   submissionId: string;
-  /** The hazard questions a hazard was added from, so their Yes shows it was done. */
-  addedFor?: string[];
   /** The page the worker was on, so carrying on opens where they left it. */
   stage?: Stage;
 }
@@ -30,7 +28,6 @@ export interface StoredDraft {
 export interface Removal {
   message: string;
   before: Take5Draft;
-  addedForBefore: string[];
 }
 
 const NOTHING_PICKED = { likelihood: null, consequence: null };
@@ -42,6 +39,7 @@ export function blankHazard(): HazardDraft {
     before: { ...NOTHING_PICKED },
     controls: [],
     after: { ...NOTHING_PICKED },
+    covers: [],
   };
 }
 
@@ -62,6 +60,7 @@ function hazardDraftOf(hazard: Hazard): HazardDraft {
     after: hazard.controls.length
       ? { likelihood, consequence }
       : { ...NOTHING_PICKED },
+    covers: [...hazard.covers],
   };
 }
 
@@ -171,9 +170,6 @@ export function useTake5Draft() {
   const [submissionId] = useState(
     () => stored?.submissionId ?? newSubmissionId(),
   );
-  const [addedFor, setAddedFor] = useState<string[]>(
-    () => stored?.addedFor ?? [],
-  );
   const [stage, setStage] = useState(stored?.stage);
   const [removal, setRemoval] = useState<Removal | null>(null);
   const [kept, setKept] = useState(true);
@@ -182,33 +178,25 @@ export function useTake5Draft() {
     version: DRAFT_VERSION,
     draft,
     submissionId,
-    addedFor,
     stage,
   });
   const started = draft.started_at != null;
 
   useEffect(() => {
     if (!kept || !started) return;
-    keepDraft({ version: DRAFT_VERSION, draft, submissionId, addedFor, stage });
-  }, [draft, submissionId, addedFor, stage, kept, started]);
+    keepDraft({ version: DRAFT_VERSION, draft, submissionId, stage });
+  }, [draft, submissionId, stage, kept, started]);
 
   return {
     draft,
     submissionId,
     removal,
-    addedFor,
     /** True once the worker has changed anything, so there is something to keep. */
     started,
     /** Remember the page the worker is on, so carrying on later opens it. */
     keepStage: (shown: Stage) => {
       setStage((previous) =>
         previous && sameStage(previous, shown) ? previous : shown,
-      );
-    },
-    /** Remember that a hazard was added from this hazard question. */
-    markAdded: (questionId: string) => {
-      setAddedFor((current) =>
-        current.includes(questionId) ? current : [...current, questionId],
       );
     },
     // An edit after a removal ends its undo, so Undo can never wipe newer answers.
@@ -220,19 +208,14 @@ export function useTake5Draft() {
         return changed.started_at ? changed : { ...changed, started_at: now() };
       });
     },
-    // A hazard isn't tied to the question it came from, so removing any hazard forgets
-    // every mark: each Yes then reminds the worker again until Undo puts them back.
+    // A hazard carries the questions it is linked to, so removing it removes its links, and
+    // Undo puts the hazard and its links back together.
     remove: (message: string, update: (current: Take5Draft) => Take5Draft) => {
-      const after = update(draft);
-      setRemoval({ message, before: draft, addedForBefore: addedFor });
-      if (after.hazards.length < draft.hazards.length) setAddedFor([]);
-      setDraft(after);
+      setRemoval({ message, before: draft });
+      setDraft(update(draft));
     },
     undoRemoval: () => {
-      if (removal) {
-        setDraft(removal.before);
-        setAddedFor(removal.addedForBefore);
-      }
+      if (removal) setDraft(removal.before);
       setRemoval(null);
     },
     dismissRemoval: () => {

@@ -2,6 +2,25 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-18: Each Yes to a hazard question is linked to a hazard on the list (task 0022, part 1)
+
+- Decision: A Yes to a hazard question needs a hazard on the worker's list linked to it before Continue (spec
+  T5). The worker picks it with "It's on my list", or adds a new one from that Yes. The link is kept on the
+  hazard, as `covers` (the IDs of the questions it is linked to), on the phone's draft and on the saved hazard,
+  and shown under each Yes on the review and the result. One hazard can cover several questions. The phone-only
+  "Added to your list" mark (D15) is gone; a hazard added from a Yes is simply linked to it.
+- Why: Jake chose "It's on my list" with a pick from the list on 2026-11-16, over a one-tap button that could be
+  passed without looking at the list. Without T5 a Yes could still be tapped past, which is what the app exists
+  to stop. Keeping the link on the hazard, rather than giving each hazard an ID and keeping links beside the
+  hazards, needs no new ID: removing a hazard removes its links, Undo puts both back, and removing an earlier
+  hazard can't point a link at the wrong one. Saving it lets the review and result show what each Yes was about.
+  `covers` is a data model and API change; a Take 5 saved before it reads as linked to nothing.
+- Alternatives considered: A hazard ID made on the phone, with links beside the hazards (the task's first
+  recommendation; more to keep in step for the same result). Keeping links only on the phone (smaller, but the
+  result couldn't show them). A reminder that can be passed by, as before.
+- Decided by: human chose the picker (2026-11-16). The rest are Claude's recommended picks; Jake approves them by
+  merging task 0022's pull request.
+
 ## 2026-11-17: Set-up is a Python script run by uv, and leaves git, uv and Node.js to the person (task 0023)
 
 - Decision: `uv run scripts/setup.py` sets up a freshly cloned repo. It checks for git and Node.js 22.22.2 or

@@ -426,3 +426,29 @@ def test_a_start_time_without_a_time_zone_is_refused(client: TestClient) -> None
 
     assert response.status_code == 422
     assert [error["path"] for error in response.json()["errors"]] == ["started_at"]
+
+
+def test_a_yes_needs_a_linked_hazard_and_the_link_is_saved(client: TestClient) -> None:
+    """T5 through the API: refused without a link, saved and reopened with one."""
+    heights_yes: Take5Draft = sample_draft().model_copy(
+        update={"answers": sample_answers(heights=Answer.YES)},
+    )
+    unlinked = SubmissionRequest(id=uuid4(), draft=heights_yes)
+    refused: Response = client.post(
+        "/api/take5s",
+        json=unlinked.model_dump(mode="json"),
+    )
+    assert refused.status_code == 422
+    assert [error["path"] for error in refused.json()["errors"]] == ["answers.heights"]
+
+    linked_hazard: HazardDraft = heights_yes.hazards[0].model_copy(
+        update={"covers": ("heights",)},
+    )
+    linked = SubmissionRequest(
+        id=uuid4(),
+        draft=heights_yes.model_copy(update={"hazards": (linked_hazard,)}),
+    )
+    saved: Response = client.post("/api/take5s", json=linked.model_dump(mode="json"))
+    assert saved.status_code == 200
+    reopened: Response = client.get(f"/api/take5s/{linked.id}")
+    assert reopened.json()["take5"]["hazards"][0]["covers"] == ["heights"]

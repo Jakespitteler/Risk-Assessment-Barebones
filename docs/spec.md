@@ -44,10 +44,11 @@ saved until the worker submits it. Then the app asks its one question, and then 
    selected to begin with and there is no "all Yes" button. A No means *sort this out first*.
 3. **Spot the hazards.** The worker first writes at least one thing that could hurt them or someone else. Only
    then does the app show the card's seven hazard questions as a cross-check ("did you miss any of these?"), on
-   their own page after the list, with the worker's list at the top (decision D13). A Yes shows "Make sure it's
-   on your list" with a button to add a hazard, which opens the list with a new empty hazard; Continue there
-   comes back to the questions. Once a hazard has been added from that Yes, it shows "Added to your list" with
-   an "Add another" link instead (decision D15). Every Take 5 has at least one hazard: "no hazards" is not an
+   their own page after the list, with the worker's list at the top (decision D13). Each Yes asks "Which hazard
+   on your list is this?", and the worker links it to one (T5, decision D26). "It's on my list" shows the list
+   to pick from, with nothing picked; "Add a hazard" opens the list with a new empty hazard, already linked, and
+   Continue there comes back to the questions. Once linked, the Yes shows "On your list:" and the hazard, with
+   "Not this one" to unlink it and "Add another". Every Take 5 has at least one hazard: "no hazards" is not an
    answer on a mine site.
 4. **Assess the risk and make the changes.** For each hazard the worker:
    1. rates how likely and how bad it is **before** any controls,
@@ -177,8 +178,8 @@ question is answered), and saved with it, so a saved Take 5 always shows the ver
   start. Talk to your supervisor.") The app does not write JHAs.
 
 N/A never stops a job. A Take 5 with anything missing (the name, the job, where it is, an answer to a question,
-a rating, a first hazard, or the weak-controls question in T3 below) can't be submitted at all, so "missing"
-is a form error, not a verdict.
+a rating, a first hazard, the weak-controls question in T3 below, or a hazard linked to each hazard question
+answered Yes in T5) can't be submitted at all, so "missing" is a form error, not a verdict.
 
 ### Thinking rules
 
@@ -194,6 +195,12 @@ the same every time and can be tested exactly.
   right. Could you remove, isolate or barricade it?" The worker must either add a strong control or write why
   none is possible before the Take 5 can be submitted. What they write is saved with the Take 5 and does not
   change the verdict. A hazard with no controls is not asked; V2 already covers it.
+- **T5 Every Yes points to a hazard.** Each hazard question answered Yes needs a hazard on the worker's list
+  linked to it: one picked from the list, or one added from that Yes. Until then the question says "Pick the
+  hazard on your list that this is, or add it." One hazard can be linked to several questions (decision D28).
+  A link to a question that is no longer Yes stays on the phone, so changing the answer back keeps it, but it is
+  not saved. Each saved hazard keeps the questions it is linked to, and the review and the result show the
+  hazard under each Yes (decision D29).
 - **T4 A real job description.** The job must be at least four words. "Change tyre" is not enough; "Change the
   front left tyre on LV12" is.
 
@@ -286,7 +293,7 @@ the hazard".
 | 18 | Nothing | Good to go | No reason applies |
 | 19 | "Do you have the necessary permits?" is No | Don't start yet | V1 |
 | 20 | "Do you have the necessary permits?" is N/A | Good to go | N/A never stops a job |
-| 21 | "Will I be working at heights?" is Yes | Good to go | A hazard question is a prompt, not a verdict rule |
+| 21 | "Will I be working at heights?" is Yes, and the hazard is linked to it | Good to go | A hazard question is a prompt, not a verdict rule |
 | 22 | The hazard has no controls (so it is rated 8) | Don't start yet | V2 |
 | 23 | The hazard is Likely / Minor (12) before and after | Don't start yet | V3: 11 or more |
 | 24 | The hazard is Almost Certain / Low (11) before and after | Don't start yet | V3: exactly 11 |
@@ -310,6 +317,16 @@ Thinking rules (T2, T3, T4). T1 is about what the screen shows, so it is tested 
 | 37 | Job "Change tyre" | Not accepted | T4: two words |
 | 38 | Job "Change the tyre" | Not accepted | T4: three words, one short |
 | 39 | Job "Change tyre on LV12" | Accepted | T4: exactly four words |
+
+Every Yes points to a hazard (T5). Unless the row says otherwise, the Take 5 is example 18.
+
+| # | Input | Expected | Why |
+| --- | --- | --- | --- |
+| 65 | "Will I be working at heights?" is Yes, and no hazard is linked to it | Can't be submitted: "Pick the hazard on your list that this is, or add it." beside the question | T5 |
+| 66 | Example 65, with the hazard "Fall from the tray" linked to it | Can be submitted; the hazard is saved linked to the question | T5 |
+| 67 | "Am I or others at risk from the operation of vehicles or mobile equipment?" and "Does the task involve hazardous materials?" are Yes, and one hazard is linked to both | Can be submitted | T5: one hazard can cover several questions |
+| 68 | "Will I be working at heights?" is No or N/A, and no hazard is linked to it | Can be submitted | T5 only asks about a Yes |
+| 69 | A hazard is linked to "Will I be working at heights?", which is then answered No | Can be submitted; the hazard is saved without the link | T5: only a link to a Yes is saved |
 
 The challenge question (C1 to C6). Tests use a stand-in for the AI that returns whatever the row says. Unless the
 row says otherwise, the Take 5 is example 18 with the hazard described as "Fall from the tray".
@@ -411,7 +428,7 @@ The first four screens of the core workflow, saved when the worker submits.
 
 ### F4: Thinking rules
 
-- Acceptance: worked examples 28 to 39 pass as tests.
+- Acceptance: worked examples 28 to 39 and 65 to 69 pass as tests.
 - Acceptance: the hazard questions can't be seen or answered until one hazard has been written (T1).
 - Acceptance: the answer to a weak-controls question is saved and shown on the result screen.
 
@@ -482,7 +499,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D12 | The front-end libraries | React, TypeScript, Vite, Tailwind CSS, TanStack Query, React Router (see `architecture.md`) | Svelte or Vue |
 | D13 | Where the hazard questions go (2026-11-14) | Their own page after the hazard list, with the list at the top | Under the list on the same page |
 | D14 | What a fix does with the answers (2026-11-14) | Copies them; the review warns on each No with a way to change it | Leave them blank, so all 14 are answered again |
-| D15 | What a Yes shows after a hazard is added from it (2026-11-14) | A tick, "Added to your list", and an "Add another" link | The same reminder without its button; or the reminder and button unchanged |
+| D15 | What a Yes shows after a hazard is added from it (2026-11-14) | A tick, "Added to your list", and an "Add another" link. Replaced by D26 | The same reminder without its button; or the reminder and button unchanged |
 | D16 | What each saved Take 5 shows in the list (2026-11-15) | The date, worker, job and verdict, and "Fixed" on a Don't start yet that has been fixed | The location as well |
 | D17 | How dates are written (2026-11-15) | "14 Nov 2026, 6:52 pm" everywhere | Each phone's own format |
 | D18 | How the saved list grows (2026-11-15) | Once hosted for a crew, the newest 50 with "Show more" (task 0021). Until then, all of them | All of them, always |
@@ -493,6 +510,10 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D23 | How many drafts (2026-11-15) | One at a time (K1) | A list |
 | D24 | A fix while a draft is kept (2026-11-15) | Ask first, then throw the draft away (K1) | Replace it without asking; refuse until the draft is dealt with |
 | D25 | Save when a Take 5 was started (2026-11-15) | Yes (K3) | Not now |
+| D26 | A Yes to a hazard that is already on the list (2026-11-16) | "It's on my list", where the worker picks which hazard it is (T5) | A one-tap "It's already there" button, which can be tapped without looking at the list |
+| D27 | Must every Yes point to a hazard (2026-11-18, Claude's pick; merging task 0022 confirms it) | Yes, before Continue (T5) | A reminder that can be passed by |
+| D28 | Can one hazard cover several questions (2026-11-18, Claude's pick; merging task 0022 confirms it) | Yes; the picker says when a hazard is already on another question | One question per hazard |
+| D29 | Is the link saved (2026-11-18, Claude's pick; merging task 0022 confirms it) | Yes, on each hazard, and shown under each Yes on the review and the result. A fix copies it | Kept only on the phone |
 
 ## Open questions
 

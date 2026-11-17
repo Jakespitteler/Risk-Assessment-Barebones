@@ -222,3 +222,13 @@ def test_a_take5_on_a_card_with_no_questions_has_no_answers() -> None:
     take5 = Take5(template=old_card, hazards=(sample_hazard(),))
 
     assert take5.answers == {}
+
+
+def test_a_hazard_can_only_cover_the_cards_hazard_questions() -> None:
+    """A link to a stop question, or one the card doesn't ask, is refused."""
+    with pytest.raises(ValueError, match="hazard questions"):
+        Take5(
+            template=BOOKLET_TEMPLATE,
+            answers=sample_answers(),
+            hazards=(sample_hazard().model_copy(update={"covers": ("permits",)}),),
+        )
