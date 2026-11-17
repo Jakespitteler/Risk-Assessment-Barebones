@@ -41,6 +41,11 @@ export function KeptDraftCard({
           </time>
         </p>
       )}
+      {check.isError && (
+        <p className="font-semibold">
+          No signal: it couldn’t be checked to see if it’s still in time.
+        </p>
+      )}
       <a className={CARRY_ON_LINK} href="/">
         Carry on
       </a>
