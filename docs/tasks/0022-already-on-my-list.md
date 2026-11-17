@@ -1,9 +1,9 @@
 ---
 id: 0022
 title: An "It's on my list" choice on the hazard check page
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/0022-on-my-list
 ---
 
 ## Goal
