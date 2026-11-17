@@ -77,23 +77,16 @@ export function FormPage({
       }),
     }));
   }
-  /**
-   * The nudge to make a linked hazard specific (T6), under the first Yes it is linked to
-   * in the card's order, so a hazard on two questions is asked about once.
-   */
+  /** The back end's nudge to make a linked hazard specific (T6), if it has one here. */
   function nudgeFor(questionId: string, hazardIndex: number) {
     const hazard = draft.hazards[hazardIndex];
-    const firstYes = template.questions.find(
-      (question) =>
-        hazard?.covers.includes(question.id) &&
-        draft.answers[question.id] === "Yes",
-    );
-    if (!hazard || firstYes?.id !== questionId) return null;
+    if (!hazard) return null;
     return (
       <HazardNudge
-        key={`${String(hazardIndex)}:${hazard.description}`}
+        key={`${questionId}:${String(hazardIndex)}`}
         draft={draft}
         index={hazardIndex}
+        questionId={questionId}
         kept={take5.keptAsIs(hazard.description)}
         onReword={(description) => {
           editHazard(hazardIndex, "description", { description });

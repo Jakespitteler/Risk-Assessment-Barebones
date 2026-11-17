@@ -63,11 +63,12 @@ export function HazardLink({
         {linked.map(({ hazard, index }, position) => {
           const description = hazard.description.trim();
           return (
-            <div key={index} className="flex flex-col gap-2">
+            <div key={index} data-hazard-link className="flex flex-col gap-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p
                   ref={position === 0 ? focusTarget : undefined}
                   tabIndex={-1}
+                  data-hazard-link-text
                   className="font-semibold text-green-800"
                 >
                   <span aria-hidden="true">✓ </span>On your list: {description}

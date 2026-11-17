@@ -303,12 +303,16 @@ export interface components {
          *     Attributes:
          *         path: The answer's dotted field path, such as `hazards.0.description`.
          *         message: The suggestion, in plain words.
+         *         question_id: The question to show it under, such as `vehicles`, so the phone
+         *             needn't work out where it goes.
          */
         Nudge: {
             /** Path */
             path: string;
             /** Message */
             message: string;
+            /** Question Id */
+            question_id: string;
         };
         /**
          * Question

@@ -162,5 +162,10 @@ Part 1 ticked the boxes it finished; part 2 ticked the rest.
   hazard is linked to. "Keep it as it is" is kept in the phone's draft (`keptWording`) for those exact words; it
   is an optional field, so the draft version stays 4. Spec examples 70 to 75, decisions D30 to D33. The rule is a
   plain function, so task 0009 can put an AI in front of it with this as the fallback, as Jake asked.
+- Part 2 review (2026-11-18): the nudge names the question it shows under (`question_id`), so the phone draws it
+  under that question and needs no rule of its own to choose one. The box changes the hazard as the worker
+  types, rather than waiting for a "Save" button, so there is one way to change it; the box stays while they
+  type and goes once they leave it with specific words. "Keep it as it is" sends the focus back to the hazard it
+  was about. The check that decides whether to show the nudge waits for a 400 ms pause in typing.
 - Part 2 assumption: the seven examples in the spec are Claude's wording, made up for the booklet; Jake can
   change any of them.

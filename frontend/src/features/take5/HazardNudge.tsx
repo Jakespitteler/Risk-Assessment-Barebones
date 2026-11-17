@@ -7,72 +7,85 @@ import { FIELD_STYLE } from "../../components/fieldStyle";
 import { Warning } from "../../components/Warning";
 import { useSettledValue } from "./useSettledValue";
 
-// Ask about the wording once the worker pauses, not once per change (as the controls do).
+// Ask about the wording once the worker pauses, not once per key (as the controls do).
 const PAUSE_BEFORE_CHECK_MS = 400;
 
 /**
- * The back end's nudge to make a hazard linked to a Yes specific (spec T6). The worker
- * rewords it here and saves, or keeps it as it is; either way it never blocks Continue.
- * The rewording is kept in this box until saved, so the nudge can't vanish mid-word.
+ * The back end's nudge to make a hazard linked to a Yes specific (spec T6), under the
+ * question the back end names. The worker rewords the hazard in the box, which changes
+ * it on the list as they type, or keeps it as it is. It never blocks Continue. While
+ * the worker is typing the box stays, even once the words are specific enough.
  */
 export function HazardNudge({
   draft,
   index,
+  questionId,
   kept,
   onReword,
   onKeep,
 }: {
   draft: Take5Draft;
   index: number;
+  questionId: string;
   /** True when the worker chose to keep these exact words, so nothing is asked. */
   kept: boolean;
   onReword: (description: string) => void;
   onKeep: () => void;
 }) {
-  const description = draft.hazards[index]?.description ?? "";
-  const [wording, setWording] = useState(description);
+  const [typing, setTyping] = useState(false);
   // A check already made of this exact draft is used at once; otherwise wait a moment.
+  // Kept words are never asked about, so they send no checks.
   const current = useDraftCheck(draft, false);
   const settled = useDraftCheck(
     useSettledValue(draft, PAUSE_BEFORE_CHECK_MS),
-    true,
+    !kept,
     true,
   );
   const check = current.data ? current : settled;
   const path = `hazards.${String(index)}.description`;
-  const nudge = (check.data?.nudges ?? []).find((item) => item.path === path);
-  if (!nudge || kept) return null;
+  const nudge = (check.data?.nudges ?? []).find(
+    (item) => item.path === path && item.question_id === questionId,
+  );
+  if (kept || !(nudge || typing)) return null;
 
+  const description = draft.hazards[index]?.description ?? "";
   const fieldId = `nudge.${path}`;
-  const changed = wording.trim() !== description.trim();
   return (
     <Warning>
-      <p>{nudge.message}</p>
-      <Field name={fieldId} label="Your hazard">
+      {nudge && <p>{nudge.message}</p>}
+      <Field name={fieldId} label={`Hazard ${String(index + 1)}`}>
         <textarea
           id={fieldId}
           className={FIELD_STYLE}
           rows={3}
-          value={wording}
+          value={description}
+          onFocus={() => {
+            setTyping(true);
+          }}
+          onBlur={() => {
+            setTyping(false);
+          }}
           onChange={(event) => {
-            setWording(event.target.value);
+            onReword(event.target.value);
           }}
         />
       </Field>
-      <div className="flex flex-wrap gap-2">
+      {nudge && (
         <Button
-          variant="secondary"
-          disabled={!changed || !wording.trim()}
-          onClick={() => {
-            onReword(wording);
+          variant="quiet"
+          aria-label={`Keep it as it is: hazard ${String(index + 1)}`}
+          onClick={(event) => {
+            // The box goes away, so the focus goes back to the hazard it was about.
+            event.currentTarget
+              .closest("[data-hazard-link]")
+              ?.querySelector<HTMLElement>("[data-hazard-link-text]")
+              ?.focus();
+            onKeep();
           }}
         >
-          Save
-        </Button>
-        <Button variant="quiet" onClick={onKeep}>
           Keep it as it is
         </Button>
-      </div>
+      )}
     </Warning>
   );
 }

@@ -186,11 +186,12 @@ test("a short hazard picked for a Yes is nudged to be specific (T6)", async ({
   await expect(nudge).toBeVisible();
   await capture(page, "nudge-shown");
 
-  await page
-    .getByLabel("Your hazard")
-    .fill("Hit by a haul truck at the workshop crossing");
-  await page.getByRole("button", { name: "Save", exact: true }).click();
+  const box = page.getByLabel("Hazard 2", { exact: true });
+  await box.fill("Hit by a haul truck at the workshop crossing");
   await expect(nudge).toBeHidden();
+  await expect(box).toBeFocused();
+  await box.press("Tab");
+  await expect(box).toBeHidden();
   await expect(
     page.getByText(
       "On your list: Hit by a haul truck at the workshop crossing",
@@ -212,11 +213,12 @@ test("keeping a short hazard as it is stops the nudge and never blocks (T6)", as
     .getByRole("button", { name: "It’s on my list", exact: true })
     .click();
   await page.getByRole("button", { name: "Crusher dust" }).click();
-  await expect(page.getByLabel("Your hazard")).toBeVisible();
+  const box = page.getByLabel("Hazard 1", { exact: true });
+  await expect(box).toBeVisible();
   await page
-    .getByRole("button", { name: "Keep it as it is", exact: true })
+    .getByRole("button", { name: "Keep it as it is: hazard 1" })
     .click();
-  await expect(page.getByLabel("Your hazard")).toBeHidden();
+  await expect(box).toBeHidden();
   await next(page);
   await expect(heading(page, "Before any controls")).toBeVisible();
 });

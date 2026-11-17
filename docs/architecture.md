@@ -154,7 +154,7 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 | Endpoint | What it does |
 | --- | --- |
 | `GET /api/take5/template` | The template a new Take 5 is filled in on: its questions, its matrix and its guidance, plus the answers a question can have and the control kinds |
-| `POST /api/take5s/check` | Checks a draft and returns what is missing, its warnings (allowed, but they will stop the job) and which thinking rules apply. A draft that has run out (spec K2) has an error on `started_at`. Saves nothing |
+| `POST /api/take5s/check` | Checks a draft and returns what is missing, its warnings (allowed, but they will stop the job), which thinking rules apply and its nudges (never blocking). A draft that has run out (spec K2) has an error on `started_at`. Saves nothing |
 | `POST /api/take5s` | Checks and saves a Take 5, asks the AI (or the fallback) for its question, and returns both |
 | `POST /api/take5s/{id}/answer` | Saves the answer, works out the verdict, and returns the finished Take 5 |
 | `GET /api/take5s` | The list, newest first. Each line is a `Take5Summary`: the ID, when it was saved, the worker, the job, the verdict (`can_start`) and whether a newer Take 5 fixes it (`fixed`), not the whole card |
@@ -173,8 +173,9 @@ drafts and documents. The phone's draft keeps the answer even if a later edit ad
 never discards the worker's words, but the rated `Hazard` (and so the saved Take 5) keeps it only while T3 still
 asks. It never changes the verdict. In the same way `HazardDraft.covers` keeps every question the worker linked to the
 hazard, and the rated `Hazard` keeps only those still answered Yes, each once, in the order the worker linked
-them (spec T5). The check also returns `nudges` (task 0022): each has a dotted `path` and a `message`, and none
-ever stops a Take 5 being submitted. For now the only one is T6, on `hazards.<n>.description`. Which nudge the
+them (spec T5). The check also returns `nudges` (task 0022): each has a dotted `path`, a `message` and the
+`question_id` it shows under, and none ever stops a Take 5 being submitted. For now the only one is T6, on
+`hazards.<n>.description`, under the first Yes in card order that the hazard is linked to. Which nudge the
 worker chose to keep is remembered on the phone, not sent, because it is about what is on the screen.
 
 **The front end holds no rules and no card.** It gets the questions and the matrix from

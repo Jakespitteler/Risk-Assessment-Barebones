@@ -160,12 +160,15 @@ class Nudge(BaseModel):
     Attributes:
         path: The answer's dotted field path, such as `hazards.0.description`.
         message: The suggestion, in plain words.
+        question_id: The question to show it under, such as `vehicles`, so the phone
+            needn't work out where it goes.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     path: str
     message: str
+    question_id: str
 
 
 class DraftCheck(BaseModel):
@@ -279,7 +282,13 @@ def _specific_hazard_nudges(
             template.specific_hazard_words,
         )
         if message is not None:
-            nudges.append(Nudge(path=f"hazards.{index}.description", message=message))
+            nudges.append(
+                Nudge(
+                    path=f"hazards.{index}.description",
+                    message=message,
+                    question_id=linked_yes[0].id,
+                ),
+            )
     return tuple(nudges)
 
 

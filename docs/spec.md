@@ -213,8 +213,10 @@ the same every time and can be tested exactly.
   hazard under each Yes (decision D29).
 - **T6 Say what and where.** A hazard linked to a Yes with fewer words than the template's minimum (6 on the
   booklet) gets a nudge under the first such question, in the card's order: "Make it specific: say what could
-  hurt you, and where. For example: "\<that question's example\>"" (decision D30). It shows the hazard in a box
-  to reword, with "Save" and "Keep it as it is". A nudge never stops Continue or Finish (decision D31). Keeping
+  hurt you, and where. For example: "\<that question's example\>"" (decision D30). It shows the hazard in a box,
+  and what the worker types there changes the hazard on the list as they type; the box stays while they type, and
+  goes once they leave it with specific words. "Keep it as it is" leaves the words as they are. A nudge never
+  stops Continue or Finish (decision D31). Keeping
   the words is remembered on the phone for those exact words, so the nudge doesn't come back (decision D33). A
   short hazard can still be specific ("Crusher dust"), which is why it only nudges. A template with no minimum
   never nudges. Once an AI is set up it judges this instead, when it can be reached (see Planned for later).
@@ -546,7 +548,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D28 | Can one hazard cover several questions (2026-11-18) | Yes; the picker says when a hazard is already on another question | One question per hazard |
 | D29 | Is the link saved (2026-11-18) | Yes, on each hazard, and shown under each Yes on the review and the result. A fix copies it | Kept only on the phone |
 | D30 | How a vague hazard is judged (2026-11-18) | Fewer than the template's minimum words (6) for now; the AI once it exists (T6) | A list of category words; an AI now |
-| D31 | Is rewording required (2026-11-18) | No: a nudge with "Save" and "Keep it as it is" | Required before Continue |
+| D31 | Is rewording required (2026-11-18) | No: a nudge to reword in place, or "Keep it as it is" | Required before Continue |
 | D32 | The nudge's example (2026-11-18) | One per hazard question, kept in the template | One example for every question |
 | D33 | Does "Keep it as it is" last (2026-11-18) | Yes, for those exact words, on the phone | Asked again on every visit |
 

@@ -23,8 +23,9 @@ from risk_assessment.domain.take5.draft import (
     check_draft,
 )
 from risk_assessment.domain.take5.take5 import Hazard
-from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
+from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE, Take5Template
 from risk_assessment.domain.take5.thinking import UNLINKED_YES_MESSAGE
+from risk_assessment.domain.take5.verdict import verdict
 from tests.samples import sample_answers, sample_draft, sample_hazard_draft
 
 
@@ -383,6 +384,9 @@ def test_a_link_to_a_question_the_card_does_not_ask_is_not_saved() -> None:
     assert check.assessment.hazards[0].covers == ("heights",)
 
 
+VEHICLES_EXAMPLE: str = "Hit by a haul truck at the crib hut crossing"
+
+
 def _vehicles_yes(*hazards: HazardDraft) -> Take5Draft:
     """Make the sample draft with the vehicles question answered Yes.
 
@@ -412,6 +416,7 @@ def test_example_70_a_short_hazard_linked_to_a_yes_is_nudged() -> None:
                 "Make it specific: say what could hurt you, and where. "
                 'For example: "Hit by a haul truck at the crib hut crossing"'
             ),
+            question_id="vehicles",
         ),
     )
 
@@ -433,11 +438,53 @@ def test_example_75_a_nudged_hazard_can_still_be_submitted() -> None:
         update={"description": "Get hit by a car", "covers": ("vehicles",)},
     )
 
-    check: DraftCheck = check_draft(_vehicles_yes(car), BOOKLET_TEMPLATE)
+    linked: DraftCheck = check_draft(_vehicles_yes(car), BOOKLET_TEMPLATE)
+    specific: DraftCheck = check_draft(
+        _vehicles_yes(car.model_copy(update={"description": VEHICLES_EXAMPLE})),
+        BOOKLET_TEMPLATE,
+    )
 
-    assert check.nudges
-    assert check.errors == ()
-    assert check.can_submit
+    assert linked.nudges
+    assert linked.errors == ()
+    assert linked.can_submit
+    assert linked.assessment is not None and specific.assessment is not None
+    assert verdict(linked.assessment) == verdict(specific.assessment)
+
+
+def test_example_74_a_card_with_no_minimum_never_nudges_a_draft() -> None:
+    """T6: the same short hazard on a template with no minimum gets no nudge."""
+    no_minimum: Take5Template = BOOKLET_TEMPLATE.model_copy(
+        update={"specific_hazard_words": None},
+    )
+    car: HazardDraft = sample_hazard_draft().model_copy(
+        update={"description": "Car", "covers": ("vehicles",)},
+    )
+
+    check: DraftCheck = check_draft(_vehicles_yes(car), no_minimum)
+
+    assert check.nudges == ()
+
+
+@pytest.mark.parametrize(
+    ("covers", "answers"),
+    [
+        (("vehicles",), {"vehicles": Answer.NO}),
+        (("permits",), {"permits": Answer.YES}),
+    ],
+)
+def test_a_link_to_a_no_or_a_stop_question_is_not_nudged(
+    covers: tuple[str, ...],
+    answers: dict[str, Answer],
+) -> None:
+    """T6 only follows a link to a hazard question answered Yes."""
+    car: HazardDraft = sample_hazard_draft().model_copy(
+        update={"description": "Get hit by a car", "covers": covers},
+    )
+    draft: Take5Draft = sample_draft(car).model_copy(
+        update={"answers": sample_answers(**answers)},
+    )
+
+    assert check_draft(draft, BOOKLET_TEMPLATE).nudges == ()
 
 
 def test_a_hazard_on_two_questions_takes_the_first_ones_example() -> None:
@@ -451,7 +498,10 @@ def test_a_hazard_on_two_questions_takes_the_first_ones_example() -> None:
 
     check: DraftCheck = check_draft(draft, BOOKLET_TEMPLATE)
 
-    assert [nudge.message for nudge in check.nudges] == [
-        "Make it specific: say what could hurt you, and where. "
-        'For example: "Hand caught in the conveyor tail pulley with the guard off"',
+    assert [(nudge.question_id, nudge.message) for nudge in check.nudges] == [
+        (
+            "guards",
+            "Make it specific: say what could hurt you, and where. "
+            'For example: "Hand caught in the conveyor tail pulley with the guard off"',
+        ),
     ]

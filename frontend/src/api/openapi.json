@@ -506,15 +506,20 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "question_id": {
+            "type": "string",
+            "title": "Question Id"
           }
         },
         "type": "object",
         "required": [
           "path",
-          "message"
+          "message",
+          "question_id"
         ],
         "title": "Nudge",
-        "description": "A suggestion to look again at an answer. It never stops submitting.\n\nAttributes:\n    path: The answer's dotted field path, such as `hazards.0.description`.\n    message: The suggestion, in plain words."
+        "description": "A suggestion to look again at an answer. It never stops submitting.\n\nAttributes:\n    path: The answer's dotted field path, such as `hazards.0.description`.\n    message: The suggestion, in plain words.\n    question_id: The question to show it under, such as `vehicles`, so the phone\n        needn't work out where it goes."
       },
       "Question": {
         "properties": {

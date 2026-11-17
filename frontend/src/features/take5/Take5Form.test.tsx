@@ -572,7 +572,9 @@ const NUDGE =
   'Make it specific: say what could hurt you, and where. For example: "Bitten by the guard dog at the side gate"';
 const NUDGED_CHECK = {
   ...PASSING_CHECK,
-  nudges: [{ path: "hazards.0.description", message: NUDGE }],
+  nudges: [
+    { path: "hazards.0.description", message: NUDGE, question_id: "dogs" },
+  ],
 };
 const DOG: typeof HAZARD_DRAFT = {
   ...HAZARD_DRAFT,
@@ -589,12 +591,15 @@ it("nudges a short hazard linked to a Yes, and keeping it stops the nudge for go
   stubApi({ "POST /api/take5s/check": { status: 200, body: NUDGED_CHECK } });
   const beforeReload = renderWithApi(<FormAt start={{ page: "check" }} />);
   expect(await screen.findByText(NUDGE)).toBeTruthy();
-  expect(screen.getByLabelText<HTMLTextAreaElement>("Your hazard").value).toBe(
+  expect(screen.getByLabelText<HTMLTextAreaElement>("Hazard 1").value).toBe(
     "Dog",
   );
 
-  fireEvent.click(screen.getByRole("button", { name: "Keep it as it is" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Keep it as it is: hazard 1" }),
+  );
   expect(screen.queryByText(NUDGE)).toBeNull();
+  expect(document.activeElement?.textContent).toContain("On your list: Dog");
   beforeReload.unmount();
 
   renderWithApi(<FormAt start={{ page: "check" }} />);
@@ -603,7 +608,7 @@ it("nudges a short hazard linked to a Yes, and keeping it stops the nudge for go
   expect(screen.queryByText(NUDGE)).toBeNull();
 });
 
-it("saving new words from the nudge changes the hazard on the list", async () => {
+it("rewording in the nudge changes the hazard on the list as the worker types", async () => {
   storeDraft({
     ...COMPLETE_DRAFT,
     answers: { keys: "Yes", dogs: "Yes" },
@@ -611,26 +616,39 @@ it("saving new words from the nudge changes the hazard on the list", async () =>
   });
   stubApi({ "POST /api/take5s/check": { status: 200, body: NUDGED_CHECK } });
   renderWithApi(<FormAt start={{ page: "check" }} />);
-  const box = await screen.findByLabelText("Your hazard");
-  expect(
-    screen.getByRole<HTMLButtonElement>("button", { name: "Save" }).disabled,
-  ).toBe(true);
+  const box = await screen.findByLabelText("Hazard 1");
 
+  fireEvent.focus(box);
   fireEvent.change(box, {
     target: { value: "Bitten by the guard dog at the side gate" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
   const yourList = screen.getByRole("heading", { name: "Your list" });
   expect(
     within(yourList.parentElement ?? document.body).getByRole("listitem")
       .textContent,
   ).toBe("Bitten by the guard dog at the side gate");
-  expect(
-    screen.getByText("On your list: Bitten by the guard dog at the side gate", {
-      exact: false,
-    }),
-  ).toBeTruthy();
+  expect(screen.getByLabelText("Hazard 1")).toBe(box);
+});
+
+it("shows a nudge only under the question the back end names", async () => {
+  storeDraft({
+    ...COMPLETE_DRAFT,
+    answers: { keys: "Yes", dogs: "Yes" },
+    hazards: [DOG],
+  });
+  stubApi({
+    "POST /api/take5s/check": {
+      status: 200,
+      body: {
+        ...NUDGED_CHECK,
+        nudges: [{ ...NUDGED_CHECK.nudges[0], question_id: "other" }],
+      },
+    },
+  });
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  expect(screen.queryByText(NUDGE)).toBeNull();
 });
 
 it("shows no nudge for a hazard the back end doesn't nudge", async () => {
