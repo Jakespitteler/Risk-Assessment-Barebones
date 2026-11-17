@@ -359,6 +359,21 @@ def test_example_67_one_hazard_linked_to_two_yes_answers_is_saved_with_both() ->
     assert check.assessment.hazards[0].covers == ("vehicles", "hazardous_materials")
 
 
+@pytest.mark.parametrize("answer", [Answer.NO, Answer.NOT_APPLICABLE])
+def test_example_68_a_no_or_na_with_no_hazard_linked_can_be_submitted(
+    answer: Answer,
+) -> None:
+    """T5 only asks about a Yes, so a No or N/A needs no link."""
+    draft: Take5Draft = sample_draft().model_copy(
+        update={"answers": sample_answers(heights=answer)},
+    )
+
+    check: DraftCheck = check_draft(draft, BOOKLET_TEMPLATE)
+
+    assert check.errors == ()
+    assert check.can_submit
+
+
 def test_example_69_a_link_to_a_question_now_answered_no_is_not_saved() -> None:
     """T5: the phone keeps the link, but only a link to a Yes is saved."""
     fall: HazardDraft = sample_hazard_draft().model_copy(

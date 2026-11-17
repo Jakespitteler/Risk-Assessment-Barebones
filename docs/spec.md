@@ -216,10 +216,10 @@ the same every time and can be tested exactly.
   hurt you, and where. For example: "\<that question's example\>"" (decision D30). It shows the hazard in a box,
   and what the worker types there changes the hazard on the list as they type; the box stays while they type, and
   goes once they leave it with specific words. "Keep it as it is" leaves the words as they are. A nudge never
-  stops Continue or Finish (decision D31). Keeping
-  the words is remembered on the phone for those exact words, so the nudge doesn't come back (decision D33). A
-  short hazard can still be specific ("Crusher dust"), which is why it only nudges. A template with no minimum
-  never nudges. Once an AI is set up it judges this instead, when it can be reached (see Planned for later).
+  stops Continue or Finish (decision D31). Keeping the words is remembered on the phone for those exact words, so
+  the nudge doesn't come back (decision D33). A short hazard can still be specific ("Crusher dust"), which is why
+  it only nudges. A template with no minimum never nudges. Once an AI is set up it judges this instead, when it
+  can be reached (see Planned for later).
 
 ### The challenge question
 

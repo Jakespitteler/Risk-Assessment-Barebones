@@ -3,7 +3,7 @@ id: 0022
 title: An "It's on my list" choice on the hazard check page
 status: done
 owner: claude
-branch: claude/0022-on-my-list
+branch: claude/0022-on-my-list (part 1), claude/0022-nudge (part 2)
 ---
 
 ## Goal
