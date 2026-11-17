@@ -16,6 +16,7 @@ import { Button } from "../../components/Button";
 import { Notice } from "../../components/Notice";
 import { Screen } from "../../components/Screen";
 import { UndoBar } from "../../components/UndoBar";
+import { TimeLeft } from "./TimeLeft";
 import { UncheckedNotice } from "./UncheckedNotice";
 import { FormHeading } from "./FormHeading";
 import { FormNav } from "./FormNav";
@@ -68,6 +69,10 @@ export function Take5Form(props: Take5FormProps) {
   const openedCheck = useOpeningCheck(opened ?? draft, opened !== null);
   // Whether a later check got through, so a failed opening check no longer matters.
   const [checkedSinceOpening, setCheckedSinceOpening] = useState(false);
+  // When the draft runs out, as the latest Continue's check said.
+  const [continueRunsOutAt, setContinueRunsOutAt] = useState<string | null>(
+    null,
+  );
   const [leaving, setLeaving] = useState(false);
   const [runOut, setRunOut] = useState<RunOut | null>(null);
   const findSaved = useFindSaved();
@@ -173,7 +178,10 @@ export function Take5Form(props: Take5FormProps) {
     // With no signal the worker carries on; the review checks everything again.
     const check = await checkDraft(draft).catch(() => null);
     setChecking(false);
-    if (check) setCheckedSinceOpening(true);
+    if (check) {
+      setCheckedSinceOpening(true);
+      setContinueRunsOutAt(check.runs_out_at ?? null);
+    }
     const ranOut = runOutMessage(check?.errors);
     if (ranOut) {
       void endRunOut(ranOut);
@@ -305,6 +313,13 @@ export function Take5Form(props: Take5FormProps) {
           hazardCount={draft.hazards.length}
           hazardDescription={hazard?.description ?? ""}
           headingRef={heading}
+        />
+        <TimeLeft
+          runsOutAt={
+            review.data?.runs_out_at ??
+            continueRunsOutAt ??
+            openedCheck.data?.runs_out_at
+          }
         />
         {openedCheck.isError && !checkedSinceOpening && !review.data && (
           <UncheckedNotice

@@ -33,6 +33,9 @@ test("a Take 5 is kept to finish later, thrown away, and put back with Undo", as
     "Do you have the necessary permits?": "No",
   });
 
+  // The back end says when it runs out, so the form shows the time left.
+  await expect(page.getByText(/(1 hr 59 min|2 hr) left/)).toBeVisible();
+
   // Leave asks first, and Keep going changes nothing.
   await capture(page, "drafts-leave-button");
   await leave(page);
@@ -47,6 +50,7 @@ test("a Take 5 is kept to finish later, thrown away, and put back with Undo", as
   // Saved Take 5s from other tests can have the same job, so look inside the draft's card.
   const keptCard = heading(page, "Your unfinished Take 5").locator("..");
   await expect(keptCard.getByText(JOB, { exact: true })).toBeVisible();
+  await expect(keptCard.getByText(/(1 hr 59 min|2 hr) left/)).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Start a new Take 5" }),
   ).toHaveCount(0);
@@ -193,9 +197,9 @@ test("a Take 5 saved with its answer lost opens as saved, even after 2 hours", a
   await page.goto("/");
   await expect(heading(page, "Good to go")).toBeVisible();
   await expect(heading(page, "This Take 5 has run out")).toHaveCount(0);
-  expect(await page.evaluate(() => localStorage.getItem("take5-draft"))).toBe(
-    null,
-  );
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("take5-draft")))
+    .toBeNull();
 });
 
 test("a kept Take 5 that can't be checked says so, with when it was started", async ({
