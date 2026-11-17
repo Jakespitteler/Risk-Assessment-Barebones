@@ -93,6 +93,17 @@ Not done here, noted for later (from the review on 2026-11-15):
 - After a 409, Leave still offers "Keep it for later", which keeps nothing.
 - A fix whose own copy is the kept draft asks to throw that copy away, rather than offering to carry on.
 
+Also noted for later (from the reviews of the follow-ups on 2026-11-17):
+
+- Past its time, the time left says "Under 1 min left" until a check gets through. Continue and Finish check
+  again, so nothing run out is saved, but it could say "Run out" instead. That is a wording choice for Jake.
+- The list reuses the opening check from earlier in the same visit, so it can say a draft is in time a few
+  minutes after it ran out. "Carry on" reloads the form, which checks again.
+- A failed look-up for a saved Take 5 counts as not saved, so a draft that ran out is thrown away even if it was
+  saved. The saved copy is still in the list.
+- The "Checking your Take 5…" heading isn't focused or announced, and `Take5Form.tsx` is 372 lines and could be
+  split.
+
 - The UI calls a draft "Your unfinished Take 5". Task 0008 plans a "Not finished" tag on the list for a saved Take 5
   whose challenge question is unanswered. Check the two read differently when 0008 is built.
 - The result screen doesn't show the start time, or how long the Take 5 took. Measuring the three-minute target
