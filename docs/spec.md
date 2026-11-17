@@ -473,6 +473,10 @@ The first four screens of the core workflow, saved when the worker submits.
 Not in version 1, but Jake expects them, so version 1 is built not to block them. How is in `architecture.md`
 under "Ready for later".
 
+- **The AI judges vague hazards.** Jake (2026-11-18): once an AI is set up, it judges whether a hazard linked to
+  a Yes is vague, whenever it can be reached, with task 0022's word rule as the fallback. Task 0009's notes say
+  where it fits.
+
 - **Each company's own Take 5.** Companies use different cards and different matrices. Later the app should
   read a photo, Word file or PDF of a company's blank card and build the matching template, which a person then
   checks and edits before anyone fills it in.
@@ -522,9 +526,9 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D28 | "Start a new Take 5" while a draft is kept (2026-11-16) | "Carry on your Take 5" (K1) | Keep the old label |
 | D29 | Show the time a draft has left (2026-11-16) | Yes, on the form and the list (K2) | Only say when it has run out |
 | D26 | A Yes to a hazard that is already on the list (2026-11-16) | "It's on my list", where the worker picks which hazard it is (T5) | A one-tap "It's already there" button, which can be tapped without looking at the list |
-| D27 | Must every Yes point to a hazard (2026-11-18, Claude's pick; merging task 0022 confirms it) | Yes, before Continue (T5) | A reminder that can be passed by |
-| D28 | Can one hazard cover several questions (2026-11-18, Claude's pick; merging task 0022 confirms it) | Yes; the picker says when a hazard is already on another question | One question per hazard |
-| D29 | Is the link saved (2026-11-18, Claude's pick; merging task 0022 confirms it) | Yes, on each hazard, and shown under each Yes on the review and the result. A fix copies it | Kept only on the phone |
+| D27 | Must every Yes point to a hazard (2026-11-18) | Yes, before Continue (T5) | A reminder that can be passed by |
+| D28 | Can one hazard cover several questions (2026-11-18) | Yes; the picker says when a hazard is already on another question | One question per hazard |
+| D29 | Is the link saved (2026-11-18) | Yes, on each hazard, and shown under each Yes on the review and the result. A fix copies it | Kept only on the phone |
 
 ## Open questions
 

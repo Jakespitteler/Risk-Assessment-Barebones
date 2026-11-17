@@ -32,8 +32,8 @@ Newest first. One short entry per non-obvious decision.
 - Alternatives considered: A hazard ID made on the phone, with links beside the hazards (the task's first
   recommendation; more to keep in step for the same result). Keeping links only on the phone (smaller, but the
   result couldn't show them). A reminder that can be passed by, as before.
-- Decided by: human chose the picker (2026-11-16). The rest are Claude's recommended picks; Jake approves them by
-  merging task 0022's pull request.
+- Decided by: human. Jake chose the picker on 2026-11-16, and Claude's recommended picks for the rest on
+  2026-11-18 ("All else do the recommended").
 
 ## 2026-11-17: Set-up is a Python script run by uv, and leaves git, uv and Node.js to the person (task 0023)
 
