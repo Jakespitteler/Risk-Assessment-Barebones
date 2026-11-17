@@ -26,6 +26,7 @@ it("copies every answer of a saved Take 5 and says which one it fixes", () => {
           { description: "Chock the wheel", kind: "Isolate the hazard" },
         ],
         after: { likelihood: "Seldom", consequence: "Scratch" },
+        covers: [],
       },
     ],
     fixes: SAVED.take5.id,
@@ -37,6 +38,17 @@ it("leaves the after rating unpicked for a hazard that had no controls", () => {
     likelihood: null,
     consequence: null,
   });
+});
+
+it("copies each hazard's links to the card's questions into a correction", () => {
+  const saved = {
+    ...SAVED.take5,
+    hazards: SAVED.take5.hazards.map((hazard) => ({
+      ...hazard,
+      covers: ["dogs"],
+    })),
+  };
+  expect(fixDraftOf(saved).hazards[0]?.covers).toEqual(["dogs"]);
 });
 
 it("copies the weak-controls answer into a correction", () => {
@@ -67,7 +79,7 @@ it("starts the copy with no hazard question marked as added to the list", () => 
   localStorage.setItem(
     "take5-draft",
     JSON.stringify({
-      version: 3,
+      version: 4,
       draft: { ...fixDraftOf(SAVED.take5), started_at: "2026-11-15T12:12:00Z" },
       submissionId: SAVED.take5.id,
       addedFor: ["dogs"],
@@ -82,7 +94,7 @@ it("starts the copy with no hazard question marked as added to the list", () => 
 
 it("puts a thrown-away draft back for Undo, but never over a newer one", () => {
   const thrownAway = {
-    version: 3,
+    version: 4,
     draft: { ...fixDraftOf(SAVED.take5), started_at: "2026-11-15T09:12:00Z" },
     submissionId: SAVED.take5.id,
   };

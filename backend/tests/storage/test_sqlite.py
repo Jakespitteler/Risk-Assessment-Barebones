@@ -93,7 +93,7 @@ def test_the_newest_fix_of_a_take5_is_found(tmp_path: Path) -> None:
 def test_a_take5_saved_before_the_card_had_questions_still_opens(
     tmp_path: Path,
 ) -> None:
-    """A document with no answers, on a template with no questions, reads back."""
+    """A document with no answers or links, on a card with no questions, reads back."""
     database: Path = tmp_path / "take5.sqlite3"
     take5: SavedTake5 = sample_saved_take5()
     old_document: dict[str, Any] = take5.model_dump(mode="json")
@@ -101,6 +101,7 @@ def test_a_take5_saved_before_the_card_had_questions_still_opens(
     del old_document["template"]["questions"]
     for hazard in old_document["hazards"]:
         del hazard["weak_controls_reason"]
+        del hazard["covers"]
     with closing(sqlite3.connect(database)) as connection, connection:
         connection.execute(
             "CREATE TABLE take5s (id TEXT PRIMARY KEY, created_at TEXT, "
@@ -117,6 +118,7 @@ def test_a_take5_saved_before_the_card_had_questions_still_opens(
     assert reopened.answers == {}
     assert reopened.template.questions == ()
     assert reopened.hazards[0].weak_controls_reason == ""
+    assert reopened.hazards[0].covers == ()
     assert reopened.verdict == take5.verdict
 
 

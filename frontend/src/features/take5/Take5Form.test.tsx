@@ -48,7 +48,7 @@ function storeDraft(draft = COMPLETE_DRAFT) {
   localStorage.setItem(
     "take5-draft",
     JSON.stringify({
-      version: 3,
+      version: 4,
       draft: { started_at: STARTED_AT, ...draft },
       submissionId: SAVED.take5.id,
     }),
@@ -454,9 +454,9 @@ it("a Yes to a hazard question adds a hazard, then comes back to the questions",
   stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
   renderWithApi(<FormAt start={{ page: "check" }} />);
   const dogs = screen.getByRole("group", { name: "Are there dogs on site?" });
-  expect(screen.queryByText("Make sure it’s on your list.")).toBeNull();
+  expect(screen.queryByText("Which hazard on your list is this?")).toBeNull();
   fireEvent.click(within(dogs).getByRole("radio", { name: "Yes" }));
-  expect(screen.getByText("Make sure it’s on your list.")).toBeTruthy();
+  expect(screen.getByText("Which hazard on your list is this?")).toBeTruthy();
 
   fireEvent.click(screen.getByRole("button", { name: "Add a hazard" }));
 
@@ -473,7 +473,9 @@ it("a Yes to a hazard question adds a hazard, then comes back to the questions",
     await screen.findByRole("heading", { name: "Did you miss any?" }),
   ).toBeTruthy();
   expect(screen.getByText("Dog near the gate")).toBeTruthy();
-  expect(screen.getByText("Added to your list")).toBeTruthy();
+  expect(
+    screen.getByText("On your list: Dog near the gate", { exact: false }),
+  ).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Add a hazard" })).toBeNull();
   expect(
     within(
@@ -482,7 +484,7 @@ it("a Yes to a hazard question adds a hazard, then comes back to the questions",
   ).toBe(true);
 });
 
-it("still shows a hazard was added from a Yes after a reload", async () => {
+it("still shows the hazard linked to a Yes after a reload", async () => {
   storeDraft({ ...COMPLETE_DRAFT, answers: { keys: "Yes", dogs: "Yes" } });
   stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
   const beforeReload = renderWithApi(<FormAt start={{ page: "check" }} />);
@@ -493,12 +495,14 @@ it("still shows a hazard was added from a Yes after a reload", async () => {
 
   renderWithApi(<FormAt start={{ page: "check" }} />);
   expect(screen.getByText("Dog near the gate")).toBeTruthy();
-  expect(screen.getByText("Added to your list")).toBeTruthy();
+  expect(
+    screen.getByText("On your list: Dog near the gate", { exact: false }),
+  ).toBeTruthy();
   expect(screen.getByRole("button", { name: "Add another" })).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Add a hazard" })).toBeNull();
 });
 
-it("reminds again about a Yes once the hazard added from it is removed", async () => {
+it("asks again about a Yes once the hazard linked to it is removed", async () => {
   storeDraft({ ...COMPLETE_DRAFT, answers: { keys: "Yes", dogs: "Yes" } });
   stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
   renderWithApi(<FormAt start={{ page: "check" }} />);
@@ -511,11 +515,11 @@ it("reminds again about a Yes once the hazard added from it is removed", async (
   expect(
     await screen.findByRole("heading", { name: "Did you miss any?" }),
   ).toBeTruthy();
-  expect(screen.queryByText("Added to your list")).toBeNull();
-  expect(screen.getByText("Make sure it’s on your list.")).toBeTruthy();
+  expect(screen.queryByText("On your list:", { exact: false })).toBeNull();
+  expect(screen.getByText("Which hazard on your list is this?")).toBeTruthy();
 });
 
-it("shows the hazard as added again when its removal is undone", async () => {
+it("links the hazard to its Yes again when its removal is undone", async () => {
   storeDraft({ ...COMPLETE_DRAFT, answers: { keys: "Yes", dogs: "Yes" } });
   stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
   renderWithApi(<FormAt start={{ page: "check" }} />);
@@ -530,7 +534,28 @@ it("shows the hazard as added again when its removal is undone", async () => {
   expect(
     await screen.findByRole("heading", { name: "Did you miss any?" }),
   ).toBeTruthy();
-  expect(screen.getByText("Added to your list")).toBeTruthy();
+  expect(
+    screen.getByText("On your list: Dog near the gate", { exact: false }),
+  ).toBeTruthy();
+});
+
+it("“It’s on my list” links a Yes to the hazard picked, and it stays linked", () => {
+  storeDraft({ ...COMPLETE_DRAFT, answers: { keys: "Yes", dogs: "Yes" } });
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  const beforeReload = renderWithApi(<FormAt start={{ page: "check" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "It’s on my list" }));
+  fireEvent.click(screen.getByRole("radio", { name: "Moving wheel" }));
+  expect(
+    screen.getByText("On your list: Moving wheel", { exact: false }),
+  ).toBeTruthy();
+  beforeReload.unmount();
+
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  expect(
+    screen.getByText("On your list: Moving wheel", { exact: false }),
+  ).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Not this one" }));
+  expect(screen.getByText("Which hazard on your list is this?")).toBeTruthy();
 });
 
 it("sends an unanswered question found at the review to the page for its role", async () => {

@@ -423,6 +423,14 @@
             "type": "string",
             "title": "Weak Controls Reason",
             "default": ""
+          },
+          "covers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Covers",
+            "default": []
           }
         },
         "type": "object",
@@ -433,7 +441,7 @@
           "after"
         ],
         "title": "Hazard",
-        "description": "One hazard rated before and after controls, using ratings from `rate()`.\n\nWithout controls, reuse the before rating as the after rating; no second rating\nis needed. Description, ratings and controls are immutable once constructed."
+        "description": "One hazard rated before and after controls, using ratings from `rate()`.\n\nWithout controls, reuse the before rating as the after rating; no second rating\nis needed. Description, ratings and controls are immutable once constructed.\n`covers` holds the IDs of the hazard questions answered Yes that the worker linked\nto this hazard (T5); it is empty for a Take 5 saved before links were kept."
       },
       "HazardDraft": {
         "properties": {
@@ -460,11 +468,19 @@
             "type": "string",
             "title": "Weak Controls Reason",
             "default": ""
+          },
+          "covers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Covers",
+            "default": []
           }
         },
         "type": "object",
         "title": "HazardDraft",
-        "description": "A hazard while the worker is still rating it and writing its controls.\n\nAttributes:\n    description: The hazard in the worker's own words.\n    before: The rating before controls.\n    controls: The controls, possibly none.\n    after: The rating after controls. Ignored when there are no controls (R6).\n    weak_controls_reason: Why stronger controls aren't possible, when T3 asks."
+        "description": "A hazard while the worker is still rating it and writing its controls.\n\nAttributes:\n    description: The hazard in the worker's own words.\n    before: The rating before controls.\n    controls: The controls, possibly none.\n    after: The rating after controls. Ignored when there are no controls (R6).\n        weak_controls_reason: Why stronger controls aren't possible, when T3 asks.\n    covers: The IDs of the hazard questions the worker linked to this hazard (T5),\n        whether it was added from a Yes or picked from the list."
       },
       "LevelGuidance": {
         "properties": {

@@ -19,8 +19,10 @@ from risk_assessment.domain.risk import RiskMatrix, RiskRating, rate
 from risk_assessment.domain.take5.take5 import Hazard, Take5
 from risk_assessment.domain.take5.template import Take5Template
 from risk_assessment.domain.take5.thinking import (
+    UNLINKED_YES_MESSAGE,
     control_wording_error,
     job_wording_error,
+    unlinked_yes_answers,
     weak_controls_question,
 )
 
@@ -69,7 +71,9 @@ class HazardDraft(BaseModel):
         before: The rating before controls.
         controls: The controls, possibly none.
         after: The rating after controls. Ignored when there are no controls (R6).
-        weak_controls_reason: Why stronger controls aren't possible, when T3 asks.
+            weak_controls_reason: Why stronger controls aren't possible, when T3 asks.
+        covers: The IDs of the hazard questions the worker linked to this hazard (T5),
+            whether it was added from a Yes or picked from the list.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -79,6 +83,7 @@ class HazardDraft(BaseModel):
     controls: tuple[ControlDraft, ...] = ()
     after: RatingChoice = Field(default_factory=RatingChoice)
     weak_controls_reason: str = ""
+    covers: tuple[str, ...] = ()
 
 
 class Take5Draft(BaseModel):
@@ -192,6 +197,8 @@ def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
         _required_text(value, path, errors)
     _job_wording(draft.job, errors)
     answers: dict[str, Answer] = _answers(draft.answers, template.questions, errors)
+    _unlinked_yes_answers(draft, template, errors)
+    covered: frozenset[str] = _covered_by_a_yes(answers, template.questions)
     if not draft.hazards:
         errors.append(FieldError(path="hazards", message=NO_HAZARD_MESSAGE))
     hazards: list[Hazard] = []
@@ -202,6 +209,7 @@ def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
             f"hazards.{index}",
             errors,
             questions,
+            covered,
         )
         if hazard is not None:
             hazards.append(hazard)
@@ -290,12 +298,62 @@ def _answers(
     return answers
 
 
+def _unlinked_yes_answers(
+    draft: Take5Draft,
+    template: Take5Template,
+    errors: list[FieldError],
+) -> None:
+    """Report each hazard question answered Yes that no hazard is linked to (T5).
+
+    Args:
+        draft: The worker's answers so far.
+        template: The template the draft is filled in on.
+        errors: Where to add an error, at `answers.<question ID>`, for each one.
+    """
+    covered: tuple[str, ...] = tuple(
+        question_id for hazard in draft.hazards for question_id in hazard.covers
+    )
+    errors.extend(
+        FieldError(path=f"answers.{question_id}", message=UNLINKED_YES_MESSAGE)
+        for question_id in unlinked_yes_answers(
+            template.questions,
+            draft.answers,
+            covered,
+        )
+    )
+
+
+def _covered_by_a_yes(
+    answers: Mapping[str, Answer],
+    questions: tuple[Question, ...],
+) -> frozenset[str]:
+    """Find the hazard questions answered Yes, the only ones a saved hazard may cover.
+
+    A link to a question since answered No or N/A stays in the phone's draft, so going
+    back to Yes keeps it, but it is not saved.
+
+    Args:
+        answers: The checked answers, by question ID.
+        questions: The card's questions.
+
+    Returns:
+        The IDs of the hazard questions answered Yes.
+    """
+    return frozenset(
+        question.id
+        for question in questions
+        if question.role is QuestionRole.HAZARD
+        and answers.get(question.id) is Answer.YES
+    )
+
+
 def _hazard(
     draft: HazardDraft,
     matrix: RiskMatrix,
     path: str,
     errors: list[FieldError],
     questions: list[ThinkingQuestion],
+    covered: frozenset[str],
 ) -> Hazard | None:
     """Check one hazard and rate it.
 
@@ -310,6 +368,7 @@ def _hazard(
         path: The hazard's dotted path, such as `hazards.0`.
         errors: Where to add any errors found.
         questions: Where to add the thinking question, even when already answered.
+        covered: The hazard questions answered Yes. Only links to these are kept.
 
     Returns:
         The rated hazard, or None if it has any error.
@@ -355,6 +414,7 @@ def _hazard(
         weak_controls_reason=(
             draft.weak_controls_reason.strip() if question is not None else ""
         ),
+        covers=tuple(dict.fromkeys(item for item in draft.covers if item in covered)),
     )
 
 

@@ -46,6 +46,7 @@ export const HAZARD_DRAFT: HazardDraft = {
   before: { likelihood: "Often", consequence: "Serious" },
   controls: [{ description: "Chock the wheel", kind: "Isolate the hazard" }],
   after: { likelihood: "Seldom", consequence: "Scratch" },
+  covers: [],
 };
 
 export const ANSWERS: Take5Draft["answers"] = { keys: "Yes", dogs: "No" };
@@ -60,6 +61,7 @@ export const COMPLETE_DRAFT: Take5Draft = {
 
 export const RATED_HAZARD = {
   weak_controls_reason: "",
+  covers: [] as string[],
   description: "Moving wheel",
   before: {
     likelihood: "Often",
@@ -167,7 +169,7 @@ export function keepSampleDraft(draft: Take5Draft = COMPLETE_DRAFT) {
   localStorage.setItem(
     "take5-draft",
     JSON.stringify({
-      version: 3,
+      version: 4,
       draft: {
         ...draft,
         started_at: new Date(Date.now() - 5 * 60_000).toISOString(),

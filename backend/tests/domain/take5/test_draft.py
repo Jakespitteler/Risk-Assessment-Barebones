@@ -23,6 +23,7 @@ from risk_assessment.domain.take5.draft import (
 )
 from risk_assessment.domain.take5.take5 import Hazard
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
+from risk_assessment.domain.take5.thinking import UNLINKED_YES_MESSAGE
 from tests.samples import sample_answers, sample_draft, sample_hazard_draft
 
 
@@ -293,3 +294,65 @@ def test_answers_are_trimmed() -> None:
 
     assert check.assessment is not None
     assert check.assessment.hazards[0].description == "Dust"
+
+
+def _heights_yes(*hazards: HazardDraft) -> Take5Draft:
+    """Make the sample draft with "Will I be working at heights?" answered Yes.
+
+    Args:
+        *hazards: Its hazards. With none, it has the sample hazard, linked to nothing.
+
+    Returns:
+        The draft.
+    """
+    return sample_draft(*hazards).model_copy(
+        update={"answers": sample_answers(heights=Answer.YES)},
+    )
+
+
+def test_example_65_a_yes_with_no_hazard_linked_cannot_be_submitted() -> None:
+    """T5: the gap is named beside the question, on the hazard check page."""
+    check: DraftCheck = check_draft(_heights_yes(), BOOKLET_TEMPLATE)
+
+    assert check.errors == (
+        FieldError(path="answers.heights", message=UNLINKED_YES_MESSAGE),
+    )
+    assert not check.can_submit
+
+
+def test_example_66_a_yes_with_a_hazard_linked_is_saved_with_the_link() -> None:
+    """T5: picking "Fall from the tray" for the heights question is enough."""
+    fall: HazardDraft = sample_hazard_draft().model_copy(
+        update={"description": "Fall from the tray", "covers": ("heights",)},
+    )
+
+    check: DraftCheck = check_draft(_heights_yes(fall), BOOKLET_TEMPLATE)
+
+    assert check.errors == ()
+    assert check.assessment is not None
+    assert check.assessment.hazards[0].covers == ("heights",)
+
+
+def test_example_69_a_link_to_a_question_now_answered_no_is_not_saved() -> None:
+    """T5: the phone keeps the link, but only a link to a Yes is saved."""
+    fall: HazardDraft = sample_hazard_draft().model_copy(
+        update={"covers": ("heights",)},
+    )
+
+    check: DraftCheck = check_draft(sample_draft(fall), BOOKLET_TEMPLATE)
+
+    assert check.errors == ()
+    assert check.assessment is not None
+    assert check.assessment.hazards[0].covers == ()
+
+
+def test_a_link_to_a_question_the_card_does_not_ask_is_not_saved() -> None:
+    """Only the card's hazard questions answered Yes are kept, each once."""
+    fall: HazardDraft = sample_hazard_draft().model_copy(
+        update={"covers": ("made_up", "heights", "permits", "heights")},
+    )
+
+    check: DraftCheck = check_draft(_heights_yes(fall), BOOKLET_TEMPLATE)
+
+    assert check.assessment is not None
+    assert check.assessment.hazards[0].covers == ("heights",)

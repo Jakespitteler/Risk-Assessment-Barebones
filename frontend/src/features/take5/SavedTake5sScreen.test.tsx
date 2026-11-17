@@ -193,7 +193,7 @@ it("offers Undo for a Take 5 just thrown away", async () => {
   const onUndo = vi.fn();
   const onDismiss = vi.fn();
   const thrownAway = {
-    version: 3,
+    version: 4,
     draft: COMPLETE_DRAFT,
     submissionId: SAVED.take5.id,
   };
@@ -215,7 +215,7 @@ it("offers Undo for a Take 5 just thrown away", async () => {
 it("ends the Undo once another Take 5 has been started, so it can't be replaced", async () => {
   keepSampleDraft({ ...COMPLETE_DRAFT, job: "Grease the conveyor" });
   const thrownAway = {
-    version: 3,
+    version: 4,
     draft: COMPLETE_DRAFT,
     submissionId: SAVED.take5.id,
   };
