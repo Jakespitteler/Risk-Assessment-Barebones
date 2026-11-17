@@ -660,7 +660,11 @@ it("shows no nudge for a hazard the back end doesn't nudge", async () => {
   stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
   renderWithApi(<FormAt start={{ page: "check" }} />);
   await new Promise((resolve) => setTimeout(resolve, 500));
-  expect(screen.queryByLabelText("Your hazard")).toBeNull();
+  expect(screen.getByText("On your list: Dog", { exact: false })).toBeTruthy();
+  expect(screen.queryByLabelText("Hazard 1")).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Keep it as it is: hazard 1" }),
+  ).toBeNull();
 });
 
 it("sends an unanswered question found at the review to the page for its role", async () => {
