@@ -276,3 +276,19 @@ it("says when the unfinished Take 5 couldn't be checked", async () => {
   ).toBeTruthy();
   expect(screen.getByRole("link", { name: "Carry on" })).toBeTruthy();
 });
+
+it("shows how long the unfinished Take 5 has left", async () => {
+  keepSampleDraft();
+  stubApi({
+    "GET /api/take5s": { status: 200, body: LIST },
+    "POST /api/take5s/check": {
+      status: 200,
+      body: {
+        ...PASSING_CHECK,
+        runs_out_at: new Date(Date.now() + 95.5 * 60_000).toISOString(),
+      },
+    },
+  });
+  renderWithApi(<SavedTake5sScreen />);
+  expect(await screen.findByText("1 hr 35 min left")).toBeTruthy();
+});
