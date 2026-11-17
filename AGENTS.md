@@ -14,7 +14,8 @@ SQLite**. The full library list and the reasons are in `docs/architecture.md`.
 Every agent must use exactly these. You need git, [uv](https://docs.astral.sh/uv/) and Node.js 22 or newer.
 Run each from the folder shown.
 
-- Install: in `backend/`, `uv sync`. In `frontend/`, `npm ci` then `npx playwright install chromium`.
+- Install: in the repo root, `uv run scripts/setup.py` (it checks git and Node.js, then does the rest). By hand:
+  in `backend/`, `uv sync`. In `frontend/`, `npm ci` then `npx playwright install chromium`.
 - Run: in the repo root, `uv run scripts/dev.py`, then open <http://localhost:5173>. Ctrl+C stops it.
 - Test: in `backend/`, `uv run pytest`. In `frontend/`, `npm test` and `npm run test:e2e`.
 - Lint/format: in `backend/`, `uv run ruff check .` and `uv run ruff format .`. When the lint finds `COM812`

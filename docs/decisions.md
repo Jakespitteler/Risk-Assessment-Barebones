@@ -2,6 +2,23 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-17: Set-up is a Python script run by uv, and leaves git, uv and Node.js to the person (task 0023)
+
+- Decision: `uv run scripts/setup.py` sets up a freshly cloned repo. It checks for git and Node.js 22 or newer
+  and stops, saying how to install them, if either is missing. Then it runs the install commands from AGENTS.md
+  (`uv sync --locked`, `npm ci`, `npx playwright install chromium`). It warns, but carries on, when the repo is in
+  a cloud-synced folder.
+- Why: uv is already how every script here runs, and it installs Python 3.13 itself, so one Python script works
+  on Windows, macOS and Linux and can be tested like `dev.py`. Installing git or Node.js changes the whole
+  computer, may ask for an administrator, and needs a new terminal before the tools are found, so the script says
+  how instead of doing it. `npm ci` runs every time rather than being skipped when the packages look current: it
+  is slower, but always matches `package-lock.json`.
+- Alternatives considered: A PowerShell script (Windows only, and it can't be tested with pytest). A script that
+  also installs uv and Node.js with winget (fewer steps on a new Windows computer, but it changes the computer
+  without asking and works only on Windows). Stopping, rather than warning, in a cloud-synced folder (safer, but a
+  folder that only looks synced would have no way through).
+- Decided by: proposed by claude; the human approves it by merging task 0023's pull request
+
 ## 2026-11-15: Leave a Take 5, keep one draft on the phone, and a 2-hour limit (task 0019)
 
 - Decision: Every page of the form has Leave, which keeps the Take 5 for later or throws it away (with Undo).

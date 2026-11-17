@@ -9,6 +9,7 @@ describedby
 docstrings
 ENOENT
 envrc
+EPERM
 fastapi
 formatters
 frontmatter
@@ -38,3 +39,4 @@ unstub
 uvicorn
 venv
 vite
+winget

@@ -137,6 +137,7 @@ frontend/
         app.tsx            the routes (the only place React Router is set up)
     e2e/                   Playwright tests and screenshots
 scripts/
+    setup.py               sets up a freshly cloned repo: checks git and Node.js, installs everything else
     dev.py                 starts both halves for development
     check.py               runs every check, as CI does
     agent_review.cjs       decides which PR events may start the CI reviewer
