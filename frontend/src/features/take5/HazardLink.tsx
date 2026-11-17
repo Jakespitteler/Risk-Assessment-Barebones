@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { HazardDraft } from "../../api/take5";
 import { Button } from "../../components/Button";
@@ -28,12 +29,15 @@ export function HazardLink({
   onLink,
   onUnlink,
   onAddHazard,
+  nudgeFor,
 }: {
   questionId: string;
   hazards: HazardDraft[];
   onLink: (hazardIndex: number) => void;
   onUnlink: (hazardIndex: number) => void;
   onAddHazard: () => void;
+  /** Anything to ask about a linked hazard's wording, shown under it (spec T6). */
+  nudgeFor?: (hazardIndex: number) => ReactNode;
 }) {
   const [picking, setPicking] = useState(false);
   // After the worker changes the link, the focus goes to the start of what replaced it.
@@ -59,27 +63,27 @@ export function HazardLink({
         {linked.map(({ hazard, index }, position) => {
           const description = hazard.description.trim();
           return (
-            <div
-              key={index}
-              className="flex flex-wrap items-center justify-between gap-2"
-            >
-              <p
-                ref={position === 0 ? focusTarget : undefined}
-                tabIndex={-1}
-                className="font-semibold text-green-800"
-              >
-                <span aria-hidden="true">✓ </span>On your list: {description}
-              </p>
-              <Button
-                variant="quiet"
-                aria-label={`Not this one: ${description}`}
-                onClick={() => {
-                  moveFocus.current = true;
-                  onUnlink(index);
-                }}
-              >
-                Not this one
-              </Button>
+            <div key={index} className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p
+                  ref={position === 0 ? focusTarget : undefined}
+                  tabIndex={-1}
+                  className="font-semibold text-green-800"
+                >
+                  <span aria-hidden="true">✓ </span>On your list: {description}
+                </p>
+                <Button
+                  variant="quiet"
+                  aria-label={`Not this one: ${description}`}
+                  onClick={() => {
+                    moveFocus.current = true;
+                    onUnlink(index);
+                  }}
+                >
+                  Not this one
+                </Button>
+              </div>
+              {nudgeFor?.(index)}
             </div>
           );
         })}

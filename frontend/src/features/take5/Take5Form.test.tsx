@@ -568,6 +568,83 @@ it("“It’s on my list” links a Yes to the hazard picked, and it stays linke
   );
 });
 
+const NUDGE =
+  'Make it specific: say what could hurt you, and where. For example: "Bitten by the guard dog at the side gate"';
+const NUDGED_CHECK = {
+  ...PASSING_CHECK,
+  nudges: [{ path: "hazards.0.description", message: NUDGE }],
+};
+const DOG: typeof HAZARD_DRAFT = {
+  ...HAZARD_DRAFT,
+  description: "Dog",
+  covers: ["dogs"],
+};
+
+it("nudges a short hazard linked to a Yes, and keeping it stops the nudge for good", async () => {
+  storeDraft({
+    ...COMPLETE_DRAFT,
+    answers: { keys: "Yes", dogs: "Yes" },
+    hazards: [DOG],
+  });
+  stubApi({ "POST /api/take5s/check": { status: 200, body: NUDGED_CHECK } });
+  const beforeReload = renderWithApi(<FormAt start={{ page: "check" }} />);
+  expect(await screen.findByText(NUDGE)).toBeTruthy();
+  expect(screen.getByLabelText<HTMLTextAreaElement>("Your hazard").value).toBe(
+    "Dog",
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Keep it as it is" }));
+  expect(screen.queryByText(NUDGE)).toBeNull();
+  beforeReload.unmount();
+
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  expect(screen.getByText("On your list: Dog", { exact: false })).toBeTruthy();
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  expect(screen.queryByText(NUDGE)).toBeNull();
+});
+
+it("saving new words from the nudge changes the hazard on the list", async () => {
+  storeDraft({
+    ...COMPLETE_DRAFT,
+    answers: { keys: "Yes", dogs: "Yes" },
+    hazards: [DOG],
+  });
+  stubApi({ "POST /api/take5s/check": { status: 200, body: NUDGED_CHECK } });
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  const box = await screen.findByLabelText("Your hazard");
+  expect(
+    screen.getByRole<HTMLButtonElement>("button", { name: "Save" }).disabled,
+  ).toBe(true);
+
+  fireEvent.change(box, {
+    target: { value: "Bitten by the guard dog at the side gate" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+  const yourList = screen.getByRole("heading", { name: "Your list" });
+  expect(
+    within(yourList.parentElement ?? document.body).getByRole("listitem")
+      .textContent,
+  ).toBe("Bitten by the guard dog at the side gate");
+  expect(
+    screen.getByText("On your list: Bitten by the guard dog at the side gate", {
+      exact: false,
+    }),
+  ).toBeTruthy();
+});
+
+it("shows no nudge for a hazard the back end doesn't nudge", async () => {
+  storeDraft({
+    ...COMPLETE_DRAFT,
+    answers: { keys: "Yes", dogs: "Yes" },
+    hazards: [DOG],
+  });
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  expect(screen.queryByLabelText("Your hazard")).toBeNull();
+});
+
 it("sends an unanswered question found at the review to the page for its role", async () => {
   storeDraft({ ...COMPLETE_DRAFT, answers: { keys: "Yes" } });
   stubApi({

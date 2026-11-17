@@ -2,6 +2,22 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-18: Nudge a short hazard picked for a Yes to say what and where (task 0022, part 2)
+
+- Decision: A hazard linked to a Yes with fewer than 6 words (`Take5Template.specific_hazard_words`) is nudged
+  to say what could hurt and where, with an example kept beside that question in the template (spec T6). The
+  worker can reword it in place or keep it; keeping it is remembered on the phone for those exact words. It
+  never blocks. The check returns it in a new `nudges` list, beside errors, warnings and thinking questions.
+- Why: Jake chose the word rule for now (2026-11-18), and an AI once one is set up. A word count is simple and
+  exact to test, but it can't tell a short specific hazard from a vague one, so it only nudges and can be kept.
+  A nudge isn't a warning (that says the job will stop) or a thinking question (that must be answered), so it
+  has its own kind. The examples and the minimum are template data, so another company's card can change them.
+  The minimum and the examples add to the data model and the API.
+- Alternatives considered: A list of category words like "vehicles" (never nags a specific hazard, but misses
+  "Get hit by a car"). An AI now (needs signal and widens D3). Required rewording (would nag a short specific
+  hazard). Keeping "Keep it as it is" on the server (it is about the screen, like Leave and Undo).
+- Decided by: human (Jake, 2026-11-18: "(A) for now ... All else do the recommended").
+
 ## 2026-11-18: Each Yes to a hazard question is linked to a hazard on the list (task 0022, part 1)
 
 - Decision: A Yes to a hazard question needs a hazard on the worker's list linked to it before Continue (spec

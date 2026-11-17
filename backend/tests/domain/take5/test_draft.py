@@ -17,6 +17,7 @@ from risk_assessment.domain.take5.draft import (
     FieldError,
     FieldWarning,
     HazardDraft,
+    Nudge,
     RatingChoice,
     Take5Draft,
     check_draft,
@@ -380,3 +381,77 @@ def test_a_link_to_a_question_the_card_does_not_ask_is_not_saved() -> None:
 
     assert check.assessment is not None
     assert check.assessment.hazards[0].covers == ("heights",)
+
+
+def _vehicles_yes(*hazards: HazardDraft) -> Take5Draft:
+    """Make the sample draft with the vehicles question answered Yes.
+
+    Args:
+        *hazards: Its hazards.
+
+    Returns:
+        The draft.
+    """
+    return sample_draft(*hazards).model_copy(
+        update={"answers": sample_answers(vehicles=Answer.YES)},
+    )
+
+
+def test_example_70_a_short_hazard_linked_to_a_yes_is_nudged() -> None:
+    """T6: "Get hit by a car" on the vehicles Yes gets that question's example."""
+    car: HazardDraft = sample_hazard_draft().model_copy(
+        update={"description": "Get hit by a car", "covers": ("vehicles",)},
+    )
+
+    check: DraftCheck = check_draft(_vehicles_yes(car), BOOKLET_TEMPLATE)
+
+    assert check.nudges == (
+        Nudge(
+            path="hazards.0.description",
+            message=(
+                "Make it specific: say what could hurt you, and where. "
+                'For example: "Hit by a haul truck at the crib hut crossing"'
+            ),
+        ),
+    )
+
+
+def test_example_73_a_short_hazard_linked_to_no_yes_is_not_nudged() -> None:
+    """T6 is about a hazard picked for a Yes, not the whole list."""
+    car: HazardDraft = sample_hazard_draft().model_copy(
+        update={"description": "Get hit by a car"},
+    )
+
+    check: DraftCheck = check_draft(sample_draft(car), BOOKLET_TEMPLATE)
+
+    assert check.nudges == ()
+
+
+def test_example_75_a_nudged_hazard_can_still_be_submitted() -> None:
+    """T6 only nudges: keeping the words is allowed, and the verdict is unchanged."""
+    car: HazardDraft = sample_hazard_draft().model_copy(
+        update={"description": "Get hit by a car", "covers": ("vehicles",)},
+    )
+
+    check: DraftCheck = check_draft(_vehicles_yes(car), BOOKLET_TEMPLATE)
+
+    assert check.nudges
+    assert check.errors == ()
+    assert check.can_submit
+
+
+def test_a_hazard_on_two_questions_takes_the_first_ones_example() -> None:
+    """With the guards and vehicles questions both linked, the guards example shows."""
+    car: HazardDraft = sample_hazard_draft().model_copy(
+        update={"description": "Get hit by a car", "covers": ("vehicles", "guards")},
+    )
+    draft: Take5Draft = sample_draft(car).model_copy(
+        update={"answers": sample_answers(vehicles=Answer.YES, guards=Answer.YES)},
+    )
+
+    check: DraftCheck = check_draft(draft, BOOKLET_TEMPLATE)
+
+    assert [nudge.message for nudge in check.nudges] == [
+        "Make it specific: say what could hurt you, and where. "
+        'For example: "Hand caught in the conveyor tail pulley with the guard off"',
+    ]

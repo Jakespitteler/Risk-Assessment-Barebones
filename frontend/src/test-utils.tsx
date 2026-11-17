@@ -15,8 +15,18 @@ import type {
 export const SMALL_TEMPLATE: TemplateResponse = {
   name: "Example card",
   questions: [
-    { id: "keys", text: "Have you got the gate keys?", role: "stop" },
-    { id: "dogs", text: "Are there dogs on site?", role: "hazard" },
+    {
+      id: "keys",
+      text: "Have you got the gate keys?",
+      role: "stop",
+      example: "",
+    },
+    {
+      id: "dogs",
+      text: "Are there dogs on site?",
+      role: "hazard",
+      example: "Bitten by the guard dog at the side gate",
+    },
   ],
   answer_choices: ["Yes", "No", "N/A"],
   matrix: {
@@ -82,6 +92,7 @@ export const RATED_HAZARD = {
 
 export const PASSING_CHECK: DraftCheck = {
   thinking_questions: [],
+  nudges: [],
   errors: [],
   warnings: [],
   can_submit: true,

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Answer, HazardDraft, Question } from "../../api/take5";
 import { AnswerPicker } from "../../components/AnswerPicker";
 import { Card } from "../../components/Card";
@@ -18,6 +19,7 @@ export function HazardCheckPage({
   onLink,
   onUnlink,
   onAddHazard,
+  nudgeFor,
 }: {
   hazards: HazardDraft[];
   questions: Question[];
@@ -28,6 +30,8 @@ export function HazardCheckPage({
   onLink: (questionId: string, hazardIndex: number) => void;
   onUnlink: (questionId: string, hazardIndex: number) => void;
   onAddHazard: (questionId: string) => void;
+  /** Anything to ask about the wording of a hazard linked to this question (T6). */
+  nudgeFor?: (questionId: string, hazardIndex: number) => ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -70,6 +74,7 @@ export function HazardCheckPage({
                 onAddHazard={() => {
                   onAddHazard(question.id);
                 }}
+                nudgeFor={(hazardIndex) => nudgeFor?.(question.id, hazardIndex)}
               />
             )}
           </Card>

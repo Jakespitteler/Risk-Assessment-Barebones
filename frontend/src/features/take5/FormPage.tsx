@@ -10,6 +10,7 @@ import type {
 import { ControlsPage } from "./ControlsPage";
 import { HazardCheckPage } from "./HazardCheckPage";
 import { HazardListPage } from "./HazardListPage";
+import { HazardNudge } from "./HazardNudge";
 import { JobPage } from "./JobPage";
 import { RatingPage } from "./RatingPage";
 import { ReviewPage } from "./ReviewPage";
@@ -76,6 +77,33 @@ export function FormPage({
       }),
     }));
   }
+  /**
+   * The nudge to make a linked hazard specific (T6), under the first Yes it is linked to
+   * in the card's order, so a hazard on two questions is asked about once.
+   */
+  function nudgeFor(questionId: string, hazardIndex: number) {
+    const hazard = draft.hazards[hazardIndex];
+    const firstYes = template.questions.find(
+      (question) =>
+        hazard?.covers.includes(question.id) &&
+        draft.answers[question.id] === "Yes",
+    );
+    if (!hazard || firstYes?.id !== questionId) return null;
+    return (
+      <HazardNudge
+        key={`${String(hazardIndex)}:${hazard.description}`}
+        draft={draft}
+        index={hazardIndex}
+        kept={take5.keptAsIs(hazard.description)}
+        onReword={(description) => {
+          editHazard(hazardIndex, "description", { description });
+        }}
+        onKeep={() => {
+          take5.keepWording(hazard.description);
+        }}
+      />
+    );
+  }
   const questionsFor = (role: Question["role"]) =>
     template.questions.filter((question) => question.role === role);
   // Removing shifts the numbers of the items after it, so every error is cleared.
@@ -123,6 +151,7 @@ export function FormPage({
           link(questionId, hazardIndex, false);
         }}
         onAddHazard={onAddHazard}
+        nudgeFor={nudgeFor}
       />
     );
   if (stage.page === "hazards")

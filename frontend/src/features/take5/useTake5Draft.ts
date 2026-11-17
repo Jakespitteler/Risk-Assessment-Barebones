@@ -23,6 +23,8 @@ export interface StoredDraft {
   submissionId: string;
   /** The page the worker was on, so carrying on opens where they left it. */
   stage?: Stage;
+  /** Hazard wordings the worker chose to keep, so their nudge isn't asked again. */
+  keptWording?: string[];
 }
 
 export interface Removal {
@@ -171,6 +173,9 @@ export function useTake5Draft() {
     () => stored?.submissionId ?? newSubmissionId(),
   );
   const [stage, setStage] = useState(stored?.stage);
+  const [keptWording, setKeptWording] = useState<string[]>(
+    () => stored?.keptWording ?? [],
+  );
   const [removal, setRemoval] = useState<Removal | null>(null);
   const [kept, setKept] = useState(true);
 
@@ -179,18 +184,34 @@ export function useTake5Draft() {
     draft,
     submissionId,
     stage,
+    keptWording,
   });
   const started = draft.started_at != null;
 
   useEffect(() => {
     if (!kept || !started) return;
-    keepDraft({ version: DRAFT_VERSION, draft, submissionId, stage });
-  }, [draft, submissionId, stage, kept, started]);
+    keepDraft({
+      version: DRAFT_VERSION,
+      draft,
+      submissionId,
+      stage,
+      keptWording,
+    });
+  }, [draft, submissionId, stage, keptWording, kept, started]);
 
   return {
     draft,
     submissionId,
     removal,
+    /** True when the worker chose to keep this hazard wording as it is (spec T6). */
+    keptAsIs: (description: string) => keptWording.includes(description.trim()),
+    /** Remember that the worker chose to keep this wording, so it isn't asked again. */
+    keepWording: (description: string) => {
+      const wording = description.trim();
+      setKeptWording((current) =>
+        current.includes(wording) ? current : [...current, wording],
+      );
+    },
     /** True once the worker has changed anything, so there is something to keep. */
     started,
     /** Remember the page the worker is on, so carrying on later opens it. */

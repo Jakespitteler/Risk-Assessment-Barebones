@@ -98,11 +98,11 @@ test("a Yes to a hazard question offers to add it to the list, linked to it", as
   await expect(heading(page, "What could hurt someone?")).toBeVisible();
   const added = page.getByLabel("Hazard 2", { exact: true });
   await expect(added).toBeFocused();
-  await added.fill("Fall from the trailer deck");
+  await added.fill("Fall from the trailer deck while loading");
   await next(page);
   await expect(heading(page, "Did you miss any?")).toBeVisible();
   await expect(
-    page.getByText("Fall from the trailer deck", { exact: true }),
+    page.getByText("Fall from the trailer deck while loading", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("group", { name: HEIGHTS }).getByRole("radio", {
@@ -110,7 +110,7 @@ test("a Yes to a hazard question offers to add it to the list, linked to it", as
     }),
   ).toBeChecked();
   await expect(
-    page.getByText("On your list: Fall from the trailer deck"),
+    page.getByText("On your list: Fall from the trailer deck while loading"),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "Add a hazard" })).toHaveCount(
     0,
@@ -158,4 +158,65 @@ test("a Yes needs a hazard picked from the list before Continue (T5)", async ({
   await expect(heading(page, "Good to go")).toBeVisible();
   await expect(page.getByText(`On your list: ${HAZARD}`)).toBeVisible();
   await capture(page, "link-result");
+});
+
+const VEHICLES =
+  "Am I or others at risk from the operation of vehicles or mobile equipment?";
+
+test("a short hazard picked for a Yes is nudged to be specific (T6)", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await fillJob(page);
+  await answerThinkThrough(page);
+  await page.getByLabel("Hazard 1", { exact: true }).fill(HAZARD);
+  await page
+    .getByRole("button", { name: "Add another hazard", exact: true })
+    .click();
+  await page.getByLabel("Hazard 2", { exact: true }).fill("Get hit by a car");
+  await next(page);
+  await answerAll(page, CHECK, "No", { [VEHICLES]: "Yes" });
+  await page
+    .getByRole("button", { name: "It’s on my list", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Get hit by a car" }).click();
+  const nudge = page.getByText(
+    'Make it specific: say what could hurt you, and where. For example: "Hit by a haul truck at the crib hut crossing"',
+  );
+  await expect(nudge).toBeVisible();
+  await capture(page, "nudge-shown");
+
+  await page
+    .getByLabel("Your hazard")
+    .fill("Hit by a haul truck at the workshop crossing");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(nudge).toBeHidden();
+  await expect(
+    page.getByText(
+      "On your list: Hit by a haul truck at the workshop crossing",
+    ),
+  ).toBeVisible();
+  await capture(page, "nudge-reworded");
+});
+
+test("keeping a short hazard as it is stops the nudge and never blocks (T6)", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await fillJob(page);
+  await answerThinkThrough(page);
+  await page.getByLabel("Hazard 1", { exact: true }).fill("Crusher dust");
+  await next(page);
+  await answerAll(page, CHECK, "No", { [HEIGHTS]: "Yes" });
+  await page
+    .getByRole("button", { name: "It’s on my list", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Crusher dust" }).click();
+  await expect(page.getByLabel("Your hazard")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Keep it as it is", exact: true })
+    .click();
+  await expect(page.getByLabel("Your hazard")).toBeHidden();
+  await next(page);
+  await expect(heading(page, "Before any controls")).toBeVisible();
 });

@@ -143,6 +143,8 @@ export interface components {
          *         assessment: The rated Take 5, or None while there are errors.
          *         can_submit: True when there are no errors.
          *         thinking_questions: Applicable prompts, including ones already answered.
+         *         nudges: Suggestions to make an answer clearer, in the order of the form. A nudge
+         *             never stops the draft being submitted.
          */
         DraftCheck: {
             /** Errors */
@@ -157,6 +159,11 @@ export interface components {
              * @default []
              */
             thinking_questions: components["schemas"]["ThinkingQuestion"][];
+            /**
+             * Nudges
+             * @default []
+             */
+            nudges: components["schemas"]["Nudge"][];
         };
         /**
          * ErrorMessage
@@ -290,6 +297,20 @@ export interface components {
             meaning: string;
         };
         /**
+         * Nudge
+         * @description A suggestion to look again at an answer. It never stops submitting.
+         *
+         *     Attributes:
+         *         path: The answer's dotted field path, such as `hazards.0.description`.
+         *         message: The suggestion, in plain words.
+         */
+        Nudge: {
+            /** Path */
+            path: string;
+            /** Message */
+            message: string;
+        };
+        /**
          * Question
          * @description One question on a card.
          *
@@ -299,6 +320,8 @@ export interface components {
          *             underscores only, so it is safe in a dotted path like `answers.permits`.
          *         text: The question as the card prints it.
          *         role: What its answer means for the job.
+         *         example: For a hazard question, a specific hazard it could be about, shown when
+         *             the worker's own wording is vague. Empty when the card gives none.
          */
         Question: {
             /** Id */
@@ -306,6 +329,11 @@ export interface components {
             /** Text */
             text: string;
             role: components["schemas"]["QuestionRole"];
+            /**
+             * Example
+             * @default
+             */
+            example: string;
         };
         /**
          * QuestionRole
@@ -594,6 +622,9 @@ export interface components {
          *         draft_time_limit_minutes: How long an unfinished Take 5 lasts, counted from
          *             when it was started (spec K2), or None for no limit, which turns the
          *             check off completely.
+         *         specific_hazard_words: The fewest words a hazard linked to a Yes can have
+         *             before the worker is asked to make it specific (spec T6), or None, which
+         *             turns the nudge off.
          */
         Take5Template: {
             /** Name */
@@ -621,6 +652,8 @@ export interface components {
             control_guidance: string;
             /** Draft Time Limit Minutes */
             draft_time_limit_minutes?: number | null;
+            /** Specific Hazard Words */
+            specific_hazard_words?: number | null;
         };
         /**
          * TemplateResponse

@@ -20,6 +20,7 @@ from risk_assessment.domain.take5.template import Take5Template
 from risk_assessment.domain.take5.thinking import (
     UNLINKED_YES_MESSAGE,
     control_wording_error,
+    hazard_wording_nudge,
     job_wording_error,
     unlinked_yes_answers,
     weak_controls_question,
@@ -153,6 +154,20 @@ class ThinkingQuestion(BaseModel):
     message: str
 
 
+class Nudge(BaseModel):
+    """A suggestion to look again at an answer. It never stops submitting.
+
+    Attributes:
+        path: The answer's dotted field path, such as `hazards.0.description`.
+        message: The suggestion, in plain words.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    path: str
+    message: str
+
+
 class DraftCheck(BaseModel):
     """What checking a draft found.
 
@@ -163,6 +178,8 @@ class DraftCheck(BaseModel):
         assessment: The rated Take 5, or None while there are errors.
         can_submit: True when there are no errors.
         thinking_questions: Applicable prompts, including ones already answered.
+        nudges: Suggestions to make an answer clearer, in the order of the form. A nudge
+            never stops the draft being submitted.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -172,6 +189,7 @@ class DraftCheck(BaseModel):
     assessment: Take5 | None
     can_submit: bool
     thinking_questions: tuple[ThinkingQuestion, ...] = ()
+    nudges: tuple[Nudge, ...] = ()
 
 
 def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
@@ -224,7 +242,45 @@ def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
         assessment=assessment,
         can_submit=not errors,
         thinking_questions=tuple(questions),
+        nudges=_specific_hazard_nudges(draft, template),
     )
+
+
+def _specific_hazard_nudges(
+    draft: Take5Draft,
+    template: Take5Template,
+) -> tuple[Nudge, ...]:
+    """Nudge each short hazard linked to a Yes to say what could hurt and where (T6).
+
+    The example comes from the first question, in the card's order, that the hazard is
+    linked to and is answered Yes. A hazard linked to no Yes isn't nudged.
+
+    Args:
+        draft: The worker's answers so far.
+        template: The template the draft is filled in on.
+
+    Returns:
+        One nudge on each such hazard's `description` path, in the order of the list.
+    """
+    nudges: list[Nudge] = []
+    for index, hazard in enumerate(draft.hazards):
+        linked_yes: list[Question] = [
+            question
+            for question in template.questions
+            if question.role is QuestionRole.HAZARD
+            and question.id in hazard.covers
+            and draft.answers.get(question.id) is Answer.YES
+        ]
+        if not linked_yes:
+            continue
+        message: str | None = hazard_wording_nudge(
+            hazard.description,
+            linked_yes[0].example,
+            template.specific_hazard_words,
+        )
+        if message is not None:
+            nudges.append(Nudge(path=f"hazards.{index}.description", message=message))
+    return tuple(nudges)
 
 
 def _stop_answer_warnings(

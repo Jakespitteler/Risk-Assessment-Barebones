@@ -87,12 +87,12 @@ backend/
                                    Take 5 is filled in on. BOOKLET_TEMPLATE is the only one for now
                 take5.py           Take5, Hazard: the filled-in card                      (spec R4 to R6)
                 draft.py           Take5Draft (what the phone sends) and check_draft(): every
-                                   gap, warning and thinking question by field path       (spec R5, R6, V2, T2 to T5)
+                                   gap, warning, thinking question and nudge by field path (spec R5, R6, V2, T2 to T6)
                 fix.py             which saved Take 5 a new one may fix                   (spec F3)
                 time_limit.py      when a draft has run out, given the time now           (spec K2)
                 saved.py           SavedTake5: a Take 5 as it was saved, with its verdict
                 verdict.py         verdict(take5) -> Verdict with its reasons            (spec V1 to V3)
-                thinking.py        the pushback rules                                     (spec T2 to T5)
+                thinking.py        the pushback rules                                     (spec T2 to T6)
                 challenge.py       what the AI is told, the check on its question,
                                    the fallback question, the check on the answer         (spec C1 to C4)
         services/          what the app does
@@ -173,7 +173,9 @@ drafts and documents. The phone's draft keeps the answer even if a later edit ad
 never discards the worker's words, but the rated `Hazard` (and so the saved Take 5) keeps it only while T3 still
 asks. It never changes the verdict. In the same way `HazardDraft.covers` keeps every question the worker linked to the
 hazard, and the rated `Hazard` keeps only those still answered Yes, each once, in the order the worker linked
-them (spec T5).
+them (spec T5). The check also returns `nudges` (task 0022): each has a dotted `path` and a `message`, and none
+ever stops a Take 5 being submitted. For now the only one is T6, on `hazards.<n>.description`. Which nudge the
+worker chose to keep is remembered on the phone, not sent, because it is about what is on the screen.
 
 **The front end holds no rules and no card.** It gets the questions and the matrix from
 `GET /api/take5/template`, draws whatever it is sent, and shows a score by looking it up in that matrix. It finds
@@ -208,7 +210,7 @@ the built front-end files itself, so there is still only one program to run.
 | `Hazard` | `description`, `before` (rating), `controls`, `after` (rating), `weak_controls_reason`, `covers` | Belongs to one Take 5. With no controls `after` is `before` (spec R6). `weak_controls_reason` is the worker's answer to spec T3, when it was asked. `covers` (task 0022) is the IDs of the hazard questions answered Yes that the worker linked to it (spec T5); it is empty for a Take 5 saved before then. The link lives on the hazard, so removing a hazard removes its links, and nothing else needs an ID |
 | `Control` | `description`, `kind` (`ControlKind`) | Belongs to one hazard |
 | `RiskRating` | `likelihood`, `consequence`, and from the matrix: `score`, `band` | A value, not a stored row. Score and band are always worked out, never typed in |
-| `Take5Template` | `name`, `questions` (each an `id`, its `text` and its `role`: `stop` or `hazard`), `matrix`, `likelihood_guidance`, `consequence_guidance` (each a level and its meaning), `control_guidance`, `draft_time_limit_minutes` | The card as data. The rules never name a question: a *stop* question answered No stops the job, whichever card it is on. The page a question shows on follows from its role, so there are no separate sections. `draft_time_limit_minutes` (task 0019) is how long a draft lasts (spec K2): 120 on the booklet, or none, which turns the check off. `GET /api/take5/template` leaves it out and the phone never reads it, though the copy of the template inside a checked or saved Take 5 carries it |
+| `Take5Template` | `name`, `questions` (each an `id`, its `text`, its `role`: `stop` or `hazard`, and its `example`), `matrix`, `likelihood_guidance`, `consequence_guidance` (each a level and its meaning), `control_guidance`, `draft_time_limit_minutes`, `specific_hazard_words` | The card as data. The rules never name a question: a *stop* question answered No stops the job, whichever card it is on. The page a question shows on follows from its role, so there are no separate sections. `draft_time_limit_minutes` (task 0019) is how long a draft lasts (spec K2): 120 on the booklet, or none, which turns the check off. `GET /api/take5/template` leaves it out and the phone never reads it, though the copy of the template inside a checked or saved Take 5 carries it. `specific_hazard_words` and each hazard question's `example` (task 0022) are spec T6's minimum (6 on the booklet, or none to turn it off) and the example its nudge shows; `GET /api/take5/template` leaves the minimum out too |
 | `RiskMatrix` | the likelihood and consequence scales, the score and band of each cell, the score that needs a JHA | The matrix as data. `rate()` is given the matrix, so another company's matrix needs no new code |
 | `Challenge` | `question`, `asked_by` (`ai` or `fallback`), `model`, `instructions_version`, `answer` | Belongs to one Take 5. `answer` is empty until the worker gives one. `model` and `instructions_version` say which AI asked and with which version of its instructions; both are empty for the fallback |
 | `Verdict` | `can_start`, `reasons` | Worked out once by `domain/take5/verdict.py` when the Take 5 is finished, then saved inside it, so a later rule change never rewrites an old verdict |

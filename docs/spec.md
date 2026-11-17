@@ -48,7 +48,8 @@ saved until the worker submits it. Then the app asks its one question, and then 
    on your list is this?", and the worker links it to one (T5, decision D26). "It's on my list" shows the list
    to pick from, with nothing picked; "Add a hazard" opens the list with a new empty hazard, already linked, and
    Continue there comes back to the questions. Once linked, the Yes shows "On your list:" and the hazard, with
-   "Not this one" to unlink it and "Add another". Every Take 5 has at least one hazard: "no hazards" is not an
+   "Not this one" to unlink it and "Add another". A short hazard picked for a Yes is nudged to say what and where
+   (T6). Every Take 5 has at least one hazard: "no hazards" is not an
    answer on a mine site.
 4. **Assess the risk and make the changes.** For each hazard the worker:
    1. rates how likely and how bad it is **before** any controls,
@@ -96,6 +97,12 @@ Spot the hazards (a **hazard** question: Yes means there is a hazard to list and
 5. Will I be working at heights?
 6. Will I be impacted by other activity in the vicinity?
 7. Other environmental and/or H&S hazards?
+
+Each hazard question has an example of a specific hazard it could be about, shown by T6 below. The examples are
+the app's, not the card's, in the same order: "Hand caught in the conveyor tail pulley with the guard off", "Hit by
+a haul truck at the crib hut crossing", "Battery acid splashed in my eyes while topping up the cells", "Feeder
+starts up while I am clearing the chute", "Fall from the trailer deck while strapping the load", "Struck by rock
+from the excavator loading on the bench above" and "Heat stress from working all afternoon in full sun".
 
 ### Kinds of control
 
@@ -204,6 +211,13 @@ the same every time and can be tested exactly.
   A link to a question that is no longer Yes stays on the phone, so changing the answer back keeps it, but it is
   not saved. Each saved hazard keeps the questions it is linked to, and the review and the result show the
   hazard under each Yes (decision D29).
+- **T6 Say what and where.** A hazard linked to a Yes with fewer words than the template's minimum (6 on the
+  booklet) gets a nudge under the first such question, in the card's order: "Make it specific: say what could
+  hurt you, and where. For example: "\<that question's example\>"" (decision D30). It shows the hazard in a box
+  to reword, with "Save" and "Keep it as it is". A nudge never stops Continue or Finish (decision D31). Keeping
+  the words is remembered on the phone for those exact words, so the nudge doesn't come back (decision D33). A
+  short hazard can still be specific ("Crusher dust"), which is why it only nudges. A template with no minimum
+  never nudges. Once an AI is set up it judges this instead, when it can be reached (see Planned for later).
 
 ### The challenge question
 
@@ -329,6 +343,18 @@ Every Yes points to a hazard (T5). Unless the row says otherwise, the Take 5 is 
 | 68 | "Will I be working at heights?" is No or N/A, and no hazard is linked to it | Can be submitted | T5 only asks about a Yes |
 | 69 | A hazard is linked to "Will I be working at heights?", which is then answered No | Can be submitted; the hazard is saved without the link | T5: only a link to a Yes is saved |
 
+Say what and where (T6). Unless the row says otherwise, the hazard is linked to "Am I or others at risk from the
+operation of vehicles or mobile equipment?", answered Yes, on the booklet's minimum of 6 words.
+
+| # | Input | Expected | Why |
+| --- | --- | --- | --- |
+| 70 | Hazard "Get hit by a car" | Nudged: "Make it specific: say what could hurt you, and where. For example: "Hit by a haul truck at the crib hut crossing"" | T6: five words, one short |
+| 71 | Hazard "Hit by a truck reversing nearby" | Not nudged | T6: exactly six words |
+| 72 | Hazard "Hit by a haul truck at the crib hut crossing" | Not nudged | T6: specific, ten words |
+| 73 | Hazard "Get hit by a car", linked to no question | Not nudged | T6 is about a hazard picked for a Yes |
+| 74 | A template with no minimum; hazard "Car" | Not nudged | T6: no minimum turns it off |
+| 75 | Example 70, kept as it is | Can be submitted, with the same verdict | T6 only nudges |
+
 The challenge question (C1 to C6). Tests use a stand-in for the AI that returns whatever the row says. Unless the
 row says otherwise, the Take 5 is example 18 with the hazard described as "Fall from the tray".
 
@@ -429,7 +455,7 @@ The first four screens of the core workflow, saved when the worker submits.
 
 ### F4: Thinking rules
 
-- Acceptance: worked examples 28 to 39 and 65 to 69 pass as tests.
+- Acceptance: worked examples 28 to 39 and 65 to 75 pass as tests.
 - Acceptance: the hazard questions can't be seen or answered until one hazard has been written (T1).
 - Acceptance: the answer to a weak-controls question is saved and shown on the result screen.
 
@@ -519,6 +545,10 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D27 | Must every Yes point to a hazard (2026-11-18) | Yes, before Continue (T5) | A reminder that can be passed by |
 | D28 | Can one hazard cover several questions (2026-11-18) | Yes; the picker says when a hazard is already on another question | One question per hazard |
 | D29 | Is the link saved (2026-11-18) | Yes, on each hazard, and shown under each Yes on the review and the result. A fix copies it | Kept only on the phone |
+| D30 | How a vague hazard is judged (2026-11-18) | Fewer than the template's minimum words (6) for now; the AI once it exists (T6) | A list of category words; an AI now |
+| D31 | Is rewording required (2026-11-18) | No: a nudge with "Save" and "Keep it as it is" | Required before Continue |
+| D32 | The nudge's example (2026-11-18) | One per hazard question, kept in the template | One example for every question |
+| D33 | Does "Keep it as it is" last (2026-11-18) | Yes, for those exact words, on the phone | Asked again on every visit |
 
 ## Open questions
 

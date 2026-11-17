@@ -1,7 +1,7 @@
 ---
 id: 0022
 title: An "It's on my list" choice on the hazard check page
-status: in-progress
+status: done
 owner: claude
 branch: claude/0022-on-my-list
 ---
@@ -98,26 +98,26 @@ The questions as they were put to Jake, each with Claude's recommended pick.
 
 ## Acceptance criteria
 
-Part 1 ticks the boxes it finishes; part 2 ticks the rest.
+Part 1 ticked the boxes it finished; part 2 ticked the rest.
 
 - [x] A Yes on a hazard question offers "Add a hazard" and "It's on my list". "It's on my list" asks "Which one
   on your list is it?" and shows the worker's hazards as big choices, with no hazard picked to begin with.
 - [x] Picking one links the question to that hazard, and the Yes shows the linked hazard.
-- [ ] When the picked hazard is vague by the chosen rule, the nudge appears with the question's example. A
+- [x] When the picked hazard is vague by the chosen rule, the nudge appears with the question's example. A
   specific hazard shows no nudge.
-- [ ] Rewording from the nudge changes the hazard on the list; the rule then runs again on the new words.
-- [ ] Each new rule is pure, in `domain/` with no web or database code, and the back end reports it through
+- [x] Rewording from the nudge changes the hazard on the list; the rule then runs again on the new words.
+- [x] Each new rule is pure, in `domain/` with no web or database code, and the back end reports it through
   `POST /api/take5s/check`; the front end holds no copy of it.
-- [ ] Each new rule has worked examples in `docs/spec.md`, each with a test named after its number. At least, for
+- [x] Each new rule has worked examples in `docs/spec.md`, each with a test named after its number. At least, for
   rule (a) with six words: "Get hit by a car" (five words) is vague; "Hit by a truck reversing nearby" (exactly
   six) is not; "Hit by a haul truck at the crib hut crossing" is not. For T5: a Yes with no linked hazard can't
   continue; a Yes linked by a pick can; a No or N/A needs no link.
-- [ ] `docs/spec.md` is updated: step 3 of the core workflow, the thinking rules, the list of what counts as
+- [x] `docs/spec.md` is updated: step 3 of the core workflow, the thinking rules, the list of what counts as
   missing under "Verdict rules", worked example 21, F4 and the decisions table. So is `docs/architecture.md`: the
   API section, which lists what this page does on the phone, and the data model for each change to it.
-- [ ] Vitest covers the picker and the nudge; a Playwright test covers linking, rewording and keeping a hazard.
-- [ ] Phone-width (360 px) screenshots of every new or changed screen are attached to the PR.
-- [ ] All checks pass.
+- [x] Vitest covers the picker and the nudge; a Playwright test covers linking, rewording and keeping a hazard.
+- [x] Phone-width (360 px) screenshots of every new or changed screen are attached to the PR.
+- [x] All checks pass.
 
 ## Out of scope
 
@@ -157,3 +157,10 @@ Part 1 ticks the boxes it finishes; part 2 ticks the rest.
 - Size: with the recommended picks this is a new rule, a data model and API change, a picker, a nudge, seven
   examples and their tests, likely over the ~400-line guide in AGENTS.md. Consider two stacked PRs: the link and
   T5 first, then the vague nudge.
+- Part 2 (2026-11-18): `Question.example` and `Take5Template.specific_hazard_words` (6 on the booklet);
+  `hazard_wording_nudge()` in `thinking.py` (T6); `DraftCheck.nudges`; `HazardNudge.tsx` under the first Yes a
+  hazard is linked to. "Keep it as it is" is kept in the phone's draft (`keptWording`) for those exact words; it
+  is an optional field, so the draft version stays 4. Spec examples 70 to 75, decisions D30 to D33. The rule is a
+  plain function, so task 0009 can put an AI in front of it with this as the fallback, as Jake asked.
+- Part 2 assumption: the seven examples in the spec are Claude's wording, made up for the booklet; Jake can
+  change any of them.

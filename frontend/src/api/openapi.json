@@ -302,6 +302,14 @@
             "type": "array",
             "title": "Thinking Questions",
             "default": []
+          },
+          "nudges": {
+            "items": {
+              "$ref": "#/components/schemas/Nudge"
+            },
+            "type": "array",
+            "title": "Nudges",
+            "default": []
           }
         },
         "type": "object",
@@ -312,7 +320,7 @@
           "can_submit"
         ],
         "title": "DraftCheck",
-        "description": "What checking a draft found.\n\nAttributes:\n    errors: Every gap or mistake, in the order of the form.\n    warnings: Everything allowed that will stop the job, in the order of the form.\n        A warning never stops the draft being submitted.\n    assessment: The rated Take 5, or None while there are errors.\n    can_submit: True when there are no errors.\n    thinking_questions: Applicable prompts, including ones already answered."
+        "description": "What checking a draft found.\n\nAttributes:\n    errors: Every gap or mistake, in the order of the form.\n    warnings: Everything allowed that will stop the job, in the order of the form.\n        A warning never stops the draft being submitted.\n    assessment: The rated Take 5, or None while there are errors.\n    can_submit: True when there are no errors.\n    thinking_questions: Applicable prompts, including ones already answered.\n    nudges: Suggestions to make an answer clearer, in the order of the form. A nudge\n        never stops the draft being submitted."
       },
       "ErrorMessage": {
         "properties": {
@@ -489,6 +497,25 @@
         "title": "LevelGuidance",
         "description": "What one level of a scale means, in the card's own words.\n\nAttributes:\n    level: The level, such as \"Rare\".\n    meaning: What it means, such as \"Could happen, but only in rare cases\"."
       },
+      "Nudge": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "message"
+        ],
+        "title": "Nudge",
+        "description": "A suggestion to look again at an answer. It never stops submitting.\n\nAttributes:\n    path: The answer's dotted field path, such as `hazards.0.description`.\n    message: The suggestion, in plain words."
+      },
       "Question": {
         "properties": {
           "id": {
@@ -502,6 +529,11 @@
           },
           "role": {
             "$ref": "#/components/schemas/QuestionRole"
+          },
+          "example": {
+            "type": "string",
+            "title": "Example",
+            "default": ""
           }
         },
         "type": "object",
@@ -511,7 +543,7 @@
           "role"
         ],
         "title": "Question",
-        "description": "One question on a card.\n\nAttributes:\n    id: A short name that stays the same if the wording is tidied, such as\n        `permits`. Answers are kept against it. Lower-case letters, digits and\n        underscores only, so it is safe in a dotted path like `answers.permits`.\n    text: The question as the card prints it.\n    role: What its answer means for the job."
+        "description": "One question on a card.\n\nAttributes:\n    id: A short name that stays the same if the wording is tidied, such as\n        `permits`. Answers are kept against it. Lower-case letters, digits and\n        underscores only, so it is safe in a dotted path like `answers.permits`.\n    text: The question as the card prints it.\n    role: What its answer means for the job.\n    example: For a hazard question, a specific hazard it could be about, shown when\n        the worker's own wording is vague. Empty when the card gives none."
       },
       "QuestionRole": {
         "type": "string",
@@ -967,6 +999,18 @@
               }
             ],
             "title": "Draft Time Limit Minutes"
+          },
+          "specific_hazard_words": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specific Hazard Words"
           }
         },
         "type": "object",
@@ -975,7 +1019,7 @@
           "matrix"
         ],
         "title": "Take5Template",
-        "description": "The card a Take 5 is filled in on. Each saved Take 5 keeps a copy of it.\n\nAttributes:\n    name: The card's name, such as \"Take 5 booklet\".\n    questions: The card's questions, in the order it prints them. Empty for a\n        Take 5 saved before the app asked them.\n    matrix: The risk matrix the hazards are rated on.\n    likelihood_guidance: What each likelihood means, shown beside the rating.\n    consequence_guidance: What each consequence means, shown beside the rating.\n    control_guidance: What makes a control strong or weak, shown beside the\n        controls.\n    draft_time_limit_minutes: How long an unfinished Take 5 lasts, counted from\n        when it was started (spec K2), or None for no limit, which turns the\n        check off completely."
+        "description": "The card a Take 5 is filled in on. Each saved Take 5 keeps a copy of it.\n\nAttributes:\n    name: The card's name, such as \"Take 5 booklet\".\n    questions: The card's questions, in the order it prints them. Empty for a\n        Take 5 saved before the app asked them.\n    matrix: The risk matrix the hazards are rated on.\n    likelihood_guidance: What each likelihood means, shown beside the rating.\n    consequence_guidance: What each consequence means, shown beside the rating.\n    control_guidance: What makes a control strong or weak, shown beside the\n        controls.\n    draft_time_limit_minutes: How long an unfinished Take 5 lasts, counted from\n        when it was started (spec K2), or None for no limit, which turns the\n        check off completely.\n    specific_hazard_words: The fewest words a hazard linked to a Yes can have\n        before the worker is asked to make it specific (spec T6), or None, which\n        turns the nudge off."
       },
       "TemplateResponse": {
         "properties": {
