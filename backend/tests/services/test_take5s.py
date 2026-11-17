@@ -302,3 +302,18 @@ def test_a_template_with_no_time_limit_never_runs_out() -> None:
 
     assert service.check(_started_draft()).can_submit
     assert service.submit(_started_draft(), uuid4()).started_at == STARTED_AT
+
+
+def test_the_check_says_when_the_draft_runs_out() -> None:
+    """The phone shows the time left from this; the timer off sends nothing (K2)."""
+    service: Take5Service = _service_at([STARTED_AT + timedelta(minutes=10)])
+    no_limit = Take5Service(
+        MemoryRepository(),
+        BOOKLET_TEMPLATE.model_copy(update={"draft_time_limit_minutes": None}),
+        lambda: STARTED_AT,
+    )
+
+    assert service.check(_started_draft()).runs_out_at == STARTED_AT + timedelta(
+        hours=2,
+    )
+    assert no_limit.check(_started_draft()).runs_out_at is None

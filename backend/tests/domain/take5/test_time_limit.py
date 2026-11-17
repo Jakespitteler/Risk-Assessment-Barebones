@@ -8,6 +8,7 @@ from risk_assessment.domain.take5.draft import FieldError
 from risk_assessment.domain.take5.time_limit import (
     STARTED_AT_PATH,
     run_out_message,
+    runs_out_at,
     time_limit_error,
 )
 
@@ -90,3 +91,22 @@ def test_the_message_names_the_time_limit_in_plain_words(
         f"This Take 5 was started more than {expected_duration} ago. "
         "Start a new one at the job."
     )
+
+
+def test_a_draft_runs_out_its_time_limit_after_it_was_started() -> None:
+    """The phone is told when the booklet's draft runs out: 2 hours after its start."""
+    assert runs_out_at(CHECKED_AT, BOOKLET_LIMIT_MINUTES) == CHECKED_AT + timedelta(
+        hours=2,
+    )
+
+
+@pytest.mark.parametrize(
+    ("started_at", "time_limit_minutes"),
+    [(None, BOOKLET_LIMIT_MINUTES), (CHECKED_AT, None)],
+)
+def test_a_draft_with_no_start_or_no_limit_never_runs_out(
+    started_at: datetime | None,
+    time_limit_minutes: int | None,
+) -> None:
+    """With nothing to count from, or the timer off, there is no time to show."""
+    assert runs_out_at(started_at, time_limit_minutes) is None

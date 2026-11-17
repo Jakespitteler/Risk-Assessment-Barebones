@@ -233,3 +233,46 @@ it("ends the Undo once another Take 5 has been started, so it can't be replaced"
   expect(await screen.findByText("Grease the conveyor")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
 });
+
+it("points to the saved Take 5 when a draft that ran out had been saved already", async () => {
+  keepSampleDraft();
+  stubApi({
+    "GET /api/take5s": { status: 200, body: LIST },
+    "POST /api/take5s/check": {
+      status: 200,
+      body: {
+        ...PASSING_CHECK,
+        errors: [{ path: "started_at", message: RUN_OUT_MESSAGE }],
+        assessment: null,
+        can_submit: false,
+      },
+    },
+    [`GET /api/take5s/${SAVED.take5.id}`]: { status: 200, body: SAVED },
+  });
+  renderWithApi(<SavedTake5sScreen />);
+  expect(
+    await screen.findByRole("heading", {
+      name: "Your unfinished Take 5 was saved",
+    }),
+  ).toBeTruthy();
+  expect(
+    screen.getByRole("link", { name: "Open it" }).getAttribute("href"),
+  ).toBe(`/take5s/${SAVED.take5.id}`);
+  expect(screen.queryByText(RUN_OUT_MESSAGE)).toBeNull();
+  expect(localStorage.getItem("take5-draft")).toBeNull();
+});
+
+it("says when the unfinished Take 5 couldn't be checked", async () => {
+  keepSampleDraft();
+  stubApi({
+    "GET /api/take5s": { status: 200, body: LIST },
+    "POST /api/take5s/check": "offline",
+  });
+  renderWithApi(<SavedTake5sScreen />);
+  expect(
+    await screen.findByText(
+      "No signal: it couldn’t be checked to see if it’s still in time.",
+    ),
+  ).toBeTruthy();
+  expect(screen.getByRole("link", { name: "Carry on" })).toBeTruthy();
+});
