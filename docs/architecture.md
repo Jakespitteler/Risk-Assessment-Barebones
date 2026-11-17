@@ -130,7 +130,9 @@ frontend/
                            stage.ts is which page shows (kept in the URL); useTake5Draft.ts keeps the one
                            draft on the phone (localStorage), with its start time and the page it was left on.
                            LeavePanel.tsx asks keep or throw away; RunOutPanel.tsx and runOut.ts show a draft
-                           the back end says has run out; KeptDraftCard.tsx is the draft at the top of the list
+                           the back end says has run out; KeptDraftCard.tsx is the draft at the top of the list;
+                           TimeLeft.tsx counts down to the check's runs_out_at; UncheckedNotice.tsx says a kept
+                           draft couldn't be checked
                            WeakControlsQuestion.tsx draws the server's thinking prompt on the controls page,
                            checking once typing pauses (useSettledValue.ts)
         test-utils.tsx     the fake card, drafts and API replies the Vitest tests share
@@ -153,7 +155,7 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 | Endpoint | What it does |
 | --- | --- |
 | `GET /api/take5/template` | The template a new Take 5 is filled in on: its questions, its matrix and its guidance, plus the answers a question can have and the control kinds |
-| `POST /api/take5s/check` | Checks a draft and returns what is missing, its warnings (allowed, but they will stop the job) and which thinking rules apply. A draft that has run out (spec K2) has an error on `started_at`. Saves nothing |
+| `POST /api/take5s/check` | Checks a draft and returns what is missing, its warnings (allowed, but they will stop the job) and which thinking rules apply. A draft that has run out (spec K2) has an error on `started_at`, and `runs_out_at` says when it runs out (empty with no time limit). Saves nothing |
 | `POST /api/take5s` | Checks and saves a Take 5, asks the AI (or the fallback) for its question, and returns both |
 | `POST /api/take5s/{id}/answer` | Saves the answer, works out the verdict, and returns the finished Take 5 |
 | `GET /api/take5s` | The list, newest first. Each line is a `Take5Summary`: the ID, when it was saved, the worker, the job, the verdict (`can_start`) and whether a newer Take 5 fixes it (`fixed`), not the whole card |
@@ -192,7 +194,9 @@ whose path is `started_at`. The back end compares `started_at` with its own cloc
 `draft_time_limit_minutes` (`domain/take5/time_limit.py`, with the time given by the service). The check only
 trusts the phone's clock to be roughly right, which phones that set their time from the network are. Leave and
 Undo, carrying on, and asking before a fix replaces the draft are about what is on the screen, so they live in
-the front end.
+the front end. Before saying a draft has run out, the phone looks its submission ID up with
+`GET /api/take5s/{id}`, and opens the saved result if the save went through and only its answer was lost. The
+time left is counted down from the check's `runs_out_at`, which the back end works out.
 
 While developing, Vite serves the front end and passes `/api` calls on to FastAPI. When hosted, FastAPI serves
 the built front-end files itself, so there is still only one program to run.
