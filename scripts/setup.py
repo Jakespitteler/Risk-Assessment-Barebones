@@ -6,10 +6,10 @@
 Usage, from the repo root: `uv run scripts/setup.py`. It is safe to run again, for
 example after pulling changes that add packages.
 
-First it checks for the tools uv can't install: git and Node.js 22 or newer. If one is
-missing it says how to get it and stops before installing anything. Then it installs
-Python 3.13 and the back end's packages, the front end's packages, and the browser the
-whole-app tests use. It ends with what it did and what to do next.
+First it checks for the tools uv can't install: git and Node.js 22.22.2 or newer. If
+one is missing it says how to get it and stops before installing anything. Then it
+installs Python 3.13 and the back end's packages, the front end's packages, and the
+browser the whole-app tests use. It ends with what it did and what to do next.
 """
 
 import os
