@@ -333,6 +333,30 @@ def test_example_66_a_yes_with_a_hazard_linked_is_saved_with_the_link() -> None:
     assert check.assessment.hazards[0].covers == ("heights",)
 
 
+def test_example_67_one_hazard_linked_to_two_yes_answers_is_saved_with_both() -> None:
+    """T5: the forklift hazard covers the vehicles and hazardous materials questions."""
+    forklift: HazardDraft = sample_hazard_draft().model_copy(
+        update={
+            "description": "Hit by the forklift carrying acid drums",
+            "covers": ("vehicles", "hazardous_materials"),
+        },
+    )
+    draft: Take5Draft = sample_draft(forklift).model_copy(
+        update={
+            "answers": sample_answers(
+                vehicles=Answer.YES,
+                hazardous_materials=Answer.YES,
+            ),
+        },
+    )
+
+    check: DraftCheck = check_draft(draft, BOOKLET_TEMPLATE)
+
+    assert check.errors == ()
+    assert check.assessment is not None
+    assert check.assessment.hazards[0].covers == ("vehicles", "hazardous_materials")
+
+
 def test_example_69_a_link_to_a_question_now_answered_no_is_not_saved() -> None:
     """T5: the phone keeps the link, but only a link to a Yes is saved."""
     fall: HazardDraft = sample_hazard_draft().model_copy(

@@ -149,6 +149,11 @@ Part 1 ticks the boxes it finishes; part 2 ticks the rest.
   format changed, so `DRAFT_VERSION` is 4 and a draft kept in the old shape starts afresh.
 - Part 1 assumption: the picker lists every hazard, including one already linked to another question, and says
   so ("Already on another question"), rather than hiding it.
+- Part 1 review (2026-11-18): the picker's choices are buttons, not radios, because a radio's arrow keys would
+  link a hazard while the worker was only moving through the list. The focus moves to what replaces each part,
+  and a blank hazard is never offered or shown. Noted, not changed: the check lists the answers' gaps (T5
+  included) before the hazard list's, though the list's page comes first. That order was already there for a
+  missing answer, and Continue on the check page already sends an empty hazard back to the list.
 - Size: with the recommended picks this is a new rule, a data model and API change, a picker, a nudge, seven
   examples and their tests, likely over the ~400-line guide in AGENTS.md. Consider two stacked PRs: the link and
   T5 first, then the vague nudge.

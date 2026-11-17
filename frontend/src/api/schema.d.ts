@@ -250,7 +250,7 @@ export interface components {
          *         before: The rating before controls.
          *         controls: The controls, possibly none.
          *         after: The rating after controls. Ignored when there are no controls (R6).
-         *             weak_controls_reason: Why stronger controls aren't possible, when T3 asks.
+         *         weak_controls_reason: Why stronger controls aren't possible, when T3 asks.
          *         covers: The IDs of the hazard questions the worker linked to this hazard (T5),
          *             whether it was added from a Yes or picked from the list.
          */

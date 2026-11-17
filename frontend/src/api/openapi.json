@@ -480,7 +480,7 @@
         },
         "type": "object",
         "title": "HazardDraft",
-        "description": "A hazard while the worker is still rating it and writing its controls.\n\nAttributes:\n    description: The hazard in the worker's own words.\n    before: The rating before controls.\n    controls: The controls, possibly none.\n    after: The rating after controls. Ignored when there are no controls (R6).\n        weak_controls_reason: Why stronger controls aren't possible, when T3 asks.\n    covers: The IDs of the hazard questions the worker linked to this hazard (T5),\n        whether it was added from a Yes or picked from the list."
+        "description": "A hazard while the worker is still rating it and writing its controls.\n\nAttributes:\n    description: The hazard in the worker's own words.\n    before: The rating before controls.\n    controls: The controls, possibly none.\n    after: The rating after controls. Ignored when there are no controls (R6).\n    weak_controls_reason: Why stronger controls aren't possible, when T3 asks.\n    covers: The IDs of the hazard questions the worker linked to this hazard (T5),\n        whether it was added from a Yes or picked from the list."
       },
       "LevelGuidance": {
         "properties": {

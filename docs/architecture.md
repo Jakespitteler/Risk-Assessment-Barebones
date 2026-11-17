@@ -183,10 +183,9 @@ out what is missing or needs another look by asking
 `POST /api/take5s/check`. So there is exactly one copy of every rule, in Python, under test. A few behaviours live
 in the front end, because they are about what is on the screen: spec T1 (hiding the hazard questions until a
 hazard is written), skipping the after-controls page of a hazard with no controls, putting each question on the
-page for its role (stop questions on the think-through page, hazard questions after the hazard list), and
-and, under a Yes to a hazard question, the list to pick a hazard from (spec T5). The back end decides whether
-each Yes has a hazard linked to it. The back end still decides that the after rating of a hazard with no controls
-is its before rating (R6).
+page for its role (stop questions on the think-through page, hazard questions after the hazard list), and, under
+a Yes to a hazard question, the list to pick a hazard from (spec T5). The back end still decides whether each Yes
+has a hazard linked to it (T5), and that the after rating of a hazard with no controls is its before rating (R6).
 
 **Drafts (task 0019).** The phone keeps one draft in `localStorage` from the worker's first change, which also
 stamps `Take5Draft.started_at` by the phone's clock (with its time zone; a time without one is a 422). Opening the
