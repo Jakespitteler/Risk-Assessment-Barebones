@@ -140,19 +140,24 @@ export function SavedTake5sScreen({
                 onDismiss={() => onDismissUndo?.()}
               />
             )}
-            {/* It appears once the back end answers, so a screen reader announces it. */}
+            {/* These appear once the back end answers, so a screen reader announces them. */}
             {savedAlready && (
-              <Card>
-                <h2 className="text-xl font-bold">
-                  Your unfinished Take 5 was saved
-                </h2>
-                <p>
-                  It was saved before the signal dropped, so it’s in the list.
-                </p>
-                <a className={NEW_TAKE5_LINK} href={`/take5s/${savedAlready}`}>
-                  Open it
-                </a>
-              </Card>
+              <div role="status">
+                <Card>
+                  <h2 className="text-xl font-bold">
+                    Your unfinished Take 5 was saved
+                  </h2>
+                  <p>
+                    It was saved before the signal dropped, so it’s in the list.
+                  </p>
+                  <a
+                    className={NEW_TAKE5_LINK}
+                    href={`/take5s/${savedAlready}`}
+                  >
+                    Open it
+                  </a>
+                </Card>
+              </div>
             )}
             {ranOut && (
               <div role="status">

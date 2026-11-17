@@ -132,7 +132,7 @@ frontend/
                            LeavePanel.tsx asks keep or throw away; RunOutPanel.tsx and runOut.ts show a draft
                            the back end says has run out; KeptDraftCard.tsx is the draft at the top of the list;
                            TimeLeft.tsx counts down to the check's runs_out_at; UncheckedNotice.tsx says a kept
-                           draft couldn't be checked
+                           draft couldn't be checked;
                            WeakControlsQuestion.tsx draws the server's thinking prompt on the controls page,
                            checking once typing pauses (useSettledValue.ts)
         test-utils.tsx     the fake card, drafts and API replies the Vitest tests share
