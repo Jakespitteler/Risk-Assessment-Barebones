@@ -13,40 +13,50 @@ without the owner's written permission. See [LICENSE](LICENSE).
 
 ## Set it up
 
-Once per computer, install git, [uv](https://docs.astral.sh/uv/) and Node.js 22 or newer. On Windows, in
-PowerShell:
+Once per computer, install git, [uv](https://docs.astral.sh/uv/) and Node.js 22.22.2 or newer (24.15 or newer
+on version 24). On Windows, in PowerShell:
 
 ```powershell
 winget install --id Git.Git -e
 winget install --id astral-sh.uv -e
-winget install OpenJS.NodeJS.LTS
+winget install --id OpenJS.NodeJS.LTS -e
 ```
 
-Then close the terminal and open a new one, so it finds them. Clone the repo, and in its root folder run:
+On a Mac with [Homebrew](https://brew.sh/): `brew install git uv node`. Then close the terminal and open a new
+one, so it finds them.
+
+Clone the repo into a folder that isn't synced to the cloud (see below), and run the set-up in its root folder:
 
 ```powershell
+mkdir C:\dev
+cd C:\dev
+git clone https://github.com/Jakespitteler/Risk-Assessment-Barebones.git
+cd Risk-Assessment-Barebones
 uv run scripts/setup.py
 ```
 
-It checks for git and Node.js, then installs Python 3.13, the back end's and front end's packages, and the
-browser the whole-app tests use. It ends by saying what it did and what to do next, or what is missing and how to
-get it. It is safe to run again, for example after pulling changes that add packages. Stop the app first, because
-Windows won't let it replace files the app is using. The same command works on macOS and Linux.
+The last line is the set-up. It checks for git and Node.js, then installs Python 3.13, the back end's and front
+end's packages, and the browser the whole-app tests use. It ends by saying what it did and what to do next, or
+what is missing and how to get it. It is safe to run again, for example after pulling changes that add packages.
+Stop the app first, because Windows won't let it replace files the app is using. The same command works on macOS
+and Linux; use a folder such as `~/dev` there.
 
 ### Don't clone into a cloud-synced folder
 
 Keep the repo out of OneDrive, Dropbox, Google Drive and iCloud Drive folders. On Windows, check the path has no
-`OneDrive` in it: OneDrive can take over `Documents` and `Desktop`. A plain folder such as `C:\dev` is safest.
-GitHub already keeps a copy of the code, so syncing adds nothing, and it causes problems:
+`OneDrive` in it: OneDrive can take over `Documents` and `Desktop`. On a Mac, avoid `Desktop` and `Documents` if
+iCloud syncs them. A plain folder such as `C:\dev` is safest. GitHub keeps a copy of everything you push, so
+syncing the folder as well adds little, and it causes problems:
 
-- Set-up writes tens of thousands of small files (`frontend/node_modules` and `backend/.venv`). The sync service
+- Set-up writes about twenty thousand small files (`frontend/node_modules` and `backend/.venv`). The sync service
   tries to upload them all, and again each time they change.
 - It can lock a file while npm, uv or git is writing it, so installs fail with errors such as `EPERM` or "access
   denied".
 - It can make "conflicted copy" files, or bring back old ones, inside `.git`, which can damage the repo.
 - A file kept "online only" isn't really on the disk until it's opened, which slows or breaks the tools.
 
-The set-up script warns you if the repo is in one of these folders.
+The set-up script warns you if it finds the repo in one of these folders. It can't tell when macOS syncs
+`Desktop` or `Documents`, because those paths don't change.
 
 ## Run it
 

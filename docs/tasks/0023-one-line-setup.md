@@ -1,7 +1,7 @@
 ---
 id: 0023
 title: Set up a freshly cloned repo with one command
-status: review
+status: done
 owner: claude
 branch: claude/project-thread-vn8i52
 ---
@@ -15,7 +15,7 @@ everything the app and its checks need, or says plainly what is missing and how 
 
 ## Acceptance criteria
 
-- [x] `uv run scripts/setup.py`, in the repo root, checks for git and Node.js 22 or newer, then installs Python
+- [x] `uv run scripts/setup.py`, in the repo root, checks for git and Node.js 22.22.2 or newer, then installs Python
   3.13 and the back end's packages, the front end's packages and the browser the whole-app tests use.
 - [x] When git or Node.js is missing or too old, it says which, how to install it, and stops before installing
   anything.
@@ -48,6 +48,11 @@ Choices made, and recorded in `docs/decisions.md` (2026-11-17):
 - In a cloud-synced folder it warns at the start and again at the end, but carries on.
 - No git hooks or pre-commit are set up: the repo has none. Claude Code's hooks only need uv and the installs
   above. `scripts/check.py` downloads markdownlint and cspell through `npx` the first time it runs.
+- The locked front-end packages need Node.js 22.22.2 or newer, or 24.15 or newer on version 24 (jsdom; vitest
+  and Vite need 22.12), not the "22 or newer" AGENTS.md and the README said. npm only warned about it, so an older
+  22 installed fine and the tests failed later. The script checks for 22.22.2 and runs `npm ci --engine-strict`,
+  so npm stops on any version a package doesn't accept (such as 23, 24.0 to 24.14, or 25). AGENTS.md and the
+  README now give the real minimum. A Node.js LTS installed today is new enough.
 - The README's install steps moved into a new "Set it up" section with the cloud folder warning.
 
 The same pull request points AGENTS.md's install command, `docs/dev-setup.md` and the structure in

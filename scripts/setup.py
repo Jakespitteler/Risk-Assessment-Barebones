@@ -21,7 +21,12 @@ from pathlib import Path, PurePath
 from typing import NamedTuple
 
 REPO_ROOT: Path = Path(__file__).resolve().parent.parent
-MINIMUM_NODE_VERSION: int = 22
+# The oldest Node.js the locked front-end packages accept (jsdom asks for 22.22.2).
+# npm also refuses any package whose stated Node.js range the version misses.
+MINIMUM_NODE_VERSION: tuple[int, int, int] = (22, 22, 2)
+MINIMUM_NODE_VERSION_TEXT: str = ".".join(
+    str(number) for number in MINIMUM_NODE_VERSION
+)
 # On Windows npm and npx are `.cmd` files, which `shutil.which` finds and a bare name
 # would not.
 NPM: str = shutil.which("npm") or "npm"
@@ -53,9 +58,9 @@ GIT_INSTALL_HELP: str = (
     "(on Windows: winget install --id Git.Git -e)."
 )
 NODE_INSTALL_HELP: str = (
-    f"Install Node.js {MINIMUM_NODE_VERSION} or newer from "
-    "https://nodejs.org/en/download (on Windows: winget install OpenJS.NodeJS.LTS; "
-    "on macOS: brew install node)."
+    f"Install Node.js {MINIMUM_NODE_VERSION_TEXT} or newer from "
+    "https://nodejs.org/en/download (on Windows: winget install --id OpenJS.NodeJS.LTS "
+    "-e; on macOS: brew install node)."
 )
 REOPEN_TERMINAL_HELP: str = (
     "After installing, close this terminal, open a new one (so it finds the new tools) "
@@ -77,7 +82,11 @@ INSTALL_STEPS: list[InstallStep] = [
         ["uv", "sync", "--locked"],
         "backend",
     ),
-    InstallStep("the front end's packages", [NPM, "ci"], "frontend"),
+    InstallStep(
+        "the front end's packages",
+        [NPM, "ci", "--engine-strict"],
+        "frontend",
+    ),
     InstallStep(
         "the browser the whole-app tests use",
         [NPX, "playwright", "install", "chromium"],
@@ -104,14 +113,19 @@ def cloud_sync_service(folder: PurePath) -> str | None:
     return None
 
 
-def node_major_version(version_text: str) -> int | None:
-    """Read the major version from what `node --version` prints, such as "v22.11.0".
+def node_version_numbers(version_text: str) -> tuple[int, ...] | None:
+    """Read the numbers from what `node --version` prints.
+
+    Args:
+        version_text: The printed version, such as "v22.11.0".
 
     Returns:
-        The major version (22), or None when the text is not a version.
+        The numbers, such as (22, 11, 0), or None when the text is not a version.
     """
-    major_version_text: str = version_text.strip().removeprefix("v").split(".")[0]
-    return int(major_version_text) if major_version_text.isdigit() else None
+    number_texts: list[str] = version_text.strip().removeprefix("v").split(".")
+    if not all(number_text.isdigit() for number_text in number_texts):
+        return None
+    return tuple(int(number_text) for number_text in number_texts)
 
 
 def installed_node_version() -> str | None:
@@ -146,8 +160,8 @@ def node_problem(node_version: str | None, npm_found: bool) -> str | None:
     """
     if node_version is None:
         return f"Node.js is not installed. {NODE_INSTALL_HELP}"
-    major_version: int | None = node_major_version(node_version)
-    if major_version is None or major_version < MINIMUM_NODE_VERSION:
+    version_numbers: tuple[int, ...] | None = node_version_numbers(node_version)
+    if version_numbers is None or version_numbers < MINIMUM_NODE_VERSION:
         return f"Node.js {node_version} is too old. {NODE_INSTALL_HELP}"
     if not npm_found:
         return f"npm, which comes with Node.js, is missing. {NODE_INSTALL_HELP}"
@@ -174,10 +188,14 @@ def missing_tools() -> list[str]:
 
 
 def cloud_sync_warning(service_name: str) -> str:
-    """Explain why the repo should not be in a cloud-synced folder."""
+    """Explain why the repo should not be in a cloud-synced folder.
+
+    Args:
+        service_name: The sync service, such as "OneDrive".
+    """
     return (
         f"WARNING: this repo is inside a {service_name} folder. {service_name} will "
-        "try to sync the tens of thousands of files set-up installs, can lock files "
+        "try to sync the twenty thousand or so files set-up installs, can lock files "
         "while they are being written, and can make conflicting copies. Clone the repo "
         "again into a folder that is not synced, such as C:\\dev on Windows or ~/dev "
         "on macOS and Linux."
@@ -186,6 +204,9 @@ def cloud_sync_warning(service_name: str) -> str:
 
 def install(steps: Sequence[InstallStep]) -> int:
     """Run each install step in turn, stopping at the first that fails.
+
+    Args:
+        steps: The steps to run, in order.
 
     Returns:
         0 when every step worked, otherwise the exit code of the step that failed.
@@ -209,7 +230,11 @@ def install(steps: Sequence[InstallStep]) -> int:
 
 
 def print_summary(cloud_service: str | None) -> None:
-    """Say what set-up did and what to do next."""
+    """Say what set-up did and what to do next.
+
+    Args:
+        cloud_service: The sync service whose folder holds the repo, if any.
+    """
     print("\nSet-up is complete. It checked git and Node.js, then installed:")
     for step in INSTALL_STEPS:
         print(f"  - {step.what_it_installs}")
