@@ -55,16 +55,26 @@ it("after a Yes, asks which hazard it is, with a button to add a hazard", () => 
   expect(onAddHazard).toHaveBeenCalledWith("dogs");
 });
 
-it("“It’s on my list” shows the list to pick from, with nothing picked", () => {
+it("“It’s on my list” shows the list to pick from, and moves the focus to it", () => {
   const { onLink } = renderPage("Yes");
   fireEvent.click(screen.getByRole("button", { name: "It’s on my list" }));
   const picker = screen.getByRole("group", {
     name: "Which one on your list is it?",
   });
-  const choices = within(picker).getAllByRole("radio", { checked: false });
-  expect(choices).toHaveLength(2);
+  expect(
+    within(picker)
+      .getAllByRole("button")
+      .map((choice) => choice.textContent),
+  ).toEqual([
+    "Moving wheel",
+    "Bitten by the guard dog",
+    "It’s not there: add a hazard",
+  ]);
+  expect(document.activeElement?.textContent).toBe(
+    "Which one on your list is it?",
+  );
   fireEvent.click(
-    screen.getByRole("radio", { name: "Bitten by the guard dog" }),
+    screen.getByRole("button", { name: "Bitten by the guard dog" }),
   );
   expect(onLink).toHaveBeenCalledWith("dogs", 1);
 });
@@ -73,7 +83,7 @@ it("the picker says when a hazard already answers another question", () => {
   renderPage("Yes", [{ ...BITTEN, covers: ["fences"] }]);
   fireEvent.click(screen.getByRole("button", { name: "It’s on my list" }));
   expect(
-    screen.getByRole("radio", {
+    screen.getByRole("button", {
       name: /^Bitten by the guard dog\s*Already on another question$/,
     }),
   ).toBeTruthy();
@@ -97,7 +107,11 @@ it("once linked, shows the hazard, a way to unlink it and a way to add another",
     screen.getByText("On your list: Bitten by the guard dog", { exact: false }),
   ).toBeTruthy();
   expect(screen.queryByText("Which hazard on your list is this?")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Not this one" }));
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "Not this one: Bitten by the guard dog",
+    }),
+  );
   expect(onUnlink).toHaveBeenCalledWith("dogs", 1);
   fireEvent.click(screen.getByRole("button", { name: "Add another" }));
   expect(onAddHazard).toHaveBeenCalledWith("dogs");
@@ -112,4 +126,15 @@ it("shows the back end's gap beside a Yes with no hazard linked", () => {
   expect(
     screen.getByText("Pick the hazard on your list that this is, or add it."),
   ).toBeTruthy();
+});
+
+it("never offers or shows a hazard with nothing written in it", () => {
+  const blank = { ...HAZARD_DRAFT, description: " ", covers: ["dogs"] };
+  renderPage("Yes", [HAZARD_DRAFT, blank]);
+  expect(screen.queryByText("On your list:", { exact: false })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "It’s on my list" }));
+  const picker = screen.getByRole("group", {
+    name: "Which one on your list is it?",
+  });
+  expect(within(picker).getAllByRole("button")).toHaveLength(2);
 });

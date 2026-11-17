@@ -70,16 +70,19 @@ class Take5(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def _links_name_hazard_questions(self) -> Self:
-        """Refuse a link to a question that isn't one of the card's hazard questions."""
-        hazard_question_ids: set[str] = {
+    def _links_name_hazard_questions_answered_yes(self) -> Self:
+        """Refuse a link to anything but a hazard question answered Yes (T5)."""
+        linkable_ids: set[str] = {
             question.id
             for question in self.template.questions
             if question.role is QuestionRole.HAZARD
+            and self.answers.get(question.id) is Answer.YES
         }
         for hazard in self.hazards:
-            if not set(hazard.covers) <= hazard_question_ids:
-                raise ValueError("A hazard can only cover the card's hazard questions.")
+            if not set(hazard.covers) <= linkable_ids:
+                raise ValueError(
+                    "A hazard can only cover the card's hazard questions answered Yes.",
+                )
         return self
 
     @model_validator(mode="after")

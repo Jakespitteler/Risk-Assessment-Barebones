@@ -544,7 +544,7 @@ it("“It’s on my list” links a Yes to the hazard picked, and it stays linke
   stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
   const beforeReload = renderWithApi(<FormAt start={{ page: "check" }} />);
   fireEvent.click(screen.getByRole("button", { name: "It’s on my list" }));
-  fireEvent.click(screen.getByRole("radio", { name: "Moving wheel" }));
+  fireEvent.click(screen.getByRole("button", { name: "Moving wheel" }));
   expect(
     screen.getByText("On your list: Moving wheel", { exact: false }),
   ).toBeTruthy();
@@ -554,8 +554,18 @@ it("“It’s on my list” links a Yes to the hazard picked, and it stays linke
   expect(
     screen.getByText("On your list: Moving wheel", { exact: false }),
   ).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Not this one" }));
+  fireEvent.click(screen.getByRole("radio", { name: "No" }));
+  fireEvent.click(screen.getByRole("radio", { name: "Yes" }));
+  expect(
+    screen.getByText("On your list: Moving wheel", { exact: false }),
+  ).toBeTruthy();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Not this one: Moving wheel" }),
+  );
   expect(screen.getByText("Which hazard on your list is this?")).toBeTruthy();
+  expect(document.activeElement?.textContent).toBe(
+    "Which hazard on your list is this?",
+  );
 });
 
 it("sends an unanswered question found at the review to the page for its role", async () => {

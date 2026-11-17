@@ -195,14 +195,15 @@ the same every time and can be tested exactly.
   right. Could you remove, isolate or barricade it?" The worker must either add a strong control or write why
   none is possible before the Take 5 can be submitted. What they write is saved with the Take 5 and does not
   change the verdict. A hazard with no controls is not asked; V2 already covers it.
+- **T4 A real job description.** The job must be at least four words. "Change tyre" is not enough; "Change the
+  front left tyre on LV12" is.
 - **T5 Every Yes points to a hazard.** Each hazard question answered Yes needs a hazard on the worker's list
-  linked to it: one picked from the list, or one added from that Yes. Until then the question says "Pick the
-  hazard on your list that this is, or add it." One hazard can be linked to several questions (decision D28).
+  linked to it: one picked from the list, or one added from that Yes. Until then the Yes asks "Which hazard on
+  your list is this?", and Continue stops with "Pick the hazard on your list that this is, or add it." beside the
+  question. One hazard can be linked to several questions (decision D28).
   A link to a question that is no longer Yes stays on the phone, so changing the answer back keeps it, but it is
   not saved. Each saved hazard keeps the questions it is linked to, and the review and the result show the
   hazard under each Yes (decision D29).
-- **T4 A real job description.** The job must be at least four words. "Change tyre" is not enough; "Change the
-  front left tyre on LV12" is.
 
 ### The challenge question
 
