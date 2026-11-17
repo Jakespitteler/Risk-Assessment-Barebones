@@ -11,8 +11,8 @@ SQLite**. The full library list and the reasons are in `docs/architecture.md`.
 
 ## Commands
 
-Every agent must use exactly these. You need git, [uv](https://docs.astral.sh/uv/) and Node.js 22 or newer.
-Run each from the folder shown.
+Every agent must use exactly these. You need git, [uv](https://docs.astral.sh/uv/) and Node.js 22.22.2 or
+newer (24.15 or newer on version 24). Run each from the folder shown.
 
 - Install: in the repo root, `uv run scripts/setup.py` (it checks git and Node.js, then does the rest). By hand:
   in `backend/`, `uv sync`. In `frontend/`, `npm ci` then `npx playwright install chromium`.

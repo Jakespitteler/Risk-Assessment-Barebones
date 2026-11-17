@@ -12,21 +12,24 @@ from scripts import setup
 @pytest.mark.parametrize(
     ("folder", "service_name"),
     [
-        (PureWindowsPath(r"C:\Users\jake\OneDrive\GitHub\repo"), "OneDrive"),
-        (PureWindowsPath(r"C:\Users\jake\OneDrive - Talison\repo"), "OneDrive"),
-        (PureWindowsPath(r"C:\Users\jake\Dropbox (Personal)\repo"), "Dropbox"),
-        (PureWindowsPath(r"G:\My Drive\repo"), "Google Drive"),
-        (PureWindowsPath(r"C:\Users\jake\iCloudDrive\repo"), "iCloud Drive"),
+        (PureWindowsPath(r"C:\Users\example\OneDrive\GitHub\repo"), "OneDrive"),
         (
-            PurePosixPath("/Users/jake/Library/CloudStorage/OneDrive-Personal/repo"),
+            PureWindowsPath(r"C:\Users\example\OneDrive - Example Company\repo"),
+            "OneDrive",
+        ),
+        (PureWindowsPath(r"C:\Users\example\Dropbox (Personal)\repo"), "Dropbox"),
+        (PureWindowsPath(r"G:\My Drive\repo"), "Google Drive"),
+        (PureWindowsPath(r"C:\Users\example\iCloudDrive\repo"), "iCloud Drive"),
+        (
+            PurePosixPath("/Users/example/Library/CloudStorage/OneDrive-Personal/repo"),
             "OneDrive",
         ),
         (
-            PurePosixPath("/Users/jake/Library/CloudStorage/GoogleDrive-a@b.c/repo"),
+            PurePosixPath("/Users/example/Library/CloudStorage/GoogleDrive-a@b.c/repo"),
             "Google Drive",
         ),
         (
-            PurePosixPath("/Users/jake/Library/Mobile Documents/com~apple~CloudDocs"),
+            PurePosixPath("/Users/example/Library/Mobile Documents/iCloud"),
             "iCloud Drive",
         ),
     ],
@@ -42,9 +45,9 @@ def test_repo_in_a_synced_folder_names_the_service(
 @pytest.mark.parametrize(
     "folder",
     [
-        PureWindowsPath(r"C:\Users\jake\Documents\GitHub\Risk-Assessment-Barebones"),
+        PureWindowsPath(r"C:\Users\example\Documents\GitHub\Risk-Assessment-Barebones"),
         PureWindowsPath(r"C:\dev\Risk-Assessment-Barebones"),
-        PurePosixPath("/home/jake/dev/Risk-Assessment-Barebones"),
+        PurePosixPath("/home/example/dev/Risk-Assessment-Barebones"),
     ],
 )
 def test_repo_in_a_plain_folder_has_no_service(folder: PurePath) -> None:
@@ -53,20 +56,25 @@ def test_repo_in_a_plain_folder_has_no_service(folder: PurePath) -> None:
 
 
 @pytest.mark.parametrize(
-    ("version_text", "major_version"),
-    [("v22.11.0\n", 22), ("v24.0.1", 24), ("v8.17.0", 8), ("not a version", None)],
+    ("version_text", "version_numbers"),
+    [
+        ("v22.11.0\n", (22, 11, 0)),
+        ("v24.15.1", (24, 15, 1)),
+        ("not a version", None),
+    ],
 )
-def test_node_major_version_reads_what_node_prints(
+def test_node_version_numbers_reads_what_node_prints(
     version_text: str,
-    major_version: int | None,
+    version_numbers: tuple[int, ...] | None,
 ) -> None:
-    """The major version is read from `node --version`, and nonsense gives None."""
-    assert setup.node_major_version(version_text) == major_version
+    """The numbers are read from `node --version`, and nonsense gives None."""
+    assert setup.node_version_numbers(version_text) == version_numbers
 
 
-def test_ready_node_has_no_problem() -> None:
-    """Node.js 22 or newer with npm needs nothing done."""
-    assert setup.node_problem("v22.0.0", npm_found=True) is None
+@pytest.mark.parametrize("node_version", ["v22.22.2", "v22.23.4", "v24.15.0"])
+def test_ready_node_has_no_problem(node_version: str) -> None:
+    """Node.js 22.22.2 or newer, with npm, needs nothing done."""
+    assert setup.node_problem(node_version, npm_found=True) is None
 
 
 @pytest.mark.parametrize(
@@ -74,7 +82,8 @@ def test_ready_node_has_no_problem() -> None:
     [
         (None, True, "Node.js is not installed."),
         ("v20.11.1", True, "Node.js v20.11.1 is too old."),
-        ("v22.0.0", False, "npm, which comes with Node.js, is missing."),
+        ("v22.11.0", True, "Node.js v22.11.0 is too old."),
+        ("v22.22.2", False, "npm, which comes with Node.js, is missing."),
     ],
 )
 def test_node_problem_says_what_is_wrong_and_how_to_install(
@@ -155,6 +164,30 @@ def test_failed_install_stops_and_passes_on_its_exit_code() -> None:
 
     assert exit_code == 3
     run.assert_called_once()
+
+
+def test_synced_folder_warns_at_start_and_end_and_carries_on(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """In a OneDrive folder set-up still installs, warns twice and lists what it did."""
+    with (
+        patch.object(setup, "cloud_sync_service", return_value="OneDrive"),
+        patch.object(setup, "missing_tools", return_value=[]),
+        patch.object(
+            setup.subprocess,
+            "run",
+            return_value=subprocess.CompletedProcess([], 0),
+        ),
+    ):
+        exit_code: int = setup.set_up()
+
+    output: str = capsys.readouterr().out
+    assert exit_code == 0
+    assert output.count(setup.cloud_sync_warning("OneDrive")) == 2
+    assert output.startswith("WARNING")
+    for step in setup.INSTALL_STEPS:
+        assert f"  - {step.what_it_installs}" in output
+    assert "uv run scripts/dev.py" in output
 
 
 def test_installs_run_without_the_scripts_own_virtual_environment() -> None:

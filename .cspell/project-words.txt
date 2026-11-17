@@ -15,6 +15,7 @@ formatters
 frontmatter
 httpx
 isort
+jsdom
 killpg
 netrc
 oneline
