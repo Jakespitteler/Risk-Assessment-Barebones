@@ -229,6 +229,27 @@ def sample_texts() -> list[tuple[str, str]]:
     return texts
 
 
+def cost_in_cents(counter: TokenCounter, prices: tuple[float, float] | None) -> str:
+    """Work out what one reply cost, from its tokens and the model's prices.
+
+    Args:
+        counter: The reply's input and output tokens.
+        prices: US dollars per million input and output tokens, or None when the
+            model isn't in `PRICES_PER_MILLION_TOKENS`.
+
+    Returns:
+        The cost in US cents, or "price unknown", so a missing price never shows
+        as a cost of nothing.
+    """
+    if prices is None:
+        return "price unknown"
+    input_price, output_price = prices
+    cents: float = (
+        counter.input_tokens * input_price + counter.output_tokens * output_price
+    ) / 10_000
+    return f"{cents:.2f}c"
+
+
 def measure(model_name: str, api_key: str, counter: TokenCounter) -> list[str]:
     """Ask one model about every sample, and write a table row for each.
 
@@ -241,7 +262,7 @@ def measure(model_name: str, api_key: str, counter: TokenCounter) -> list[str]:
         The table's rows for this model.
     """
     asker = AiChallengeAsker(ClaudeModel(api_key, model_name))
-    input_price, output_price = PRICES_PER_MILLION_TOKENS.get(model_name, (0, 0))
+    prices: tuple[float, float] | None = PRICES_PER_MILLION_TOKENS.get(model_name)
     rows: list[str] = []
     for job, text in sample_texts():
         counter.input_tokens = counter.output_tokens = 0
@@ -251,14 +272,12 @@ def measure(model_name: str, api_key: str, counter: TokenCounter) -> list[str]:
         except Exception as error:  # Show every failure in the table.
             question = f"(failed: {type(error).__name__})"
         seconds: float = time.perf_counter() - started
-        cost_cents: float = (
-            counter.input_tokens * input_price + counter.output_tokens * output_price
-        ) / 10_000
+        cost: str = cost_in_cents(counter, prices)
         passes: str = "yes" if checked_question(question) else "no"
         rows.append(
             f"| {model_name} | {job} | {question.strip()} | {passes} "
             f"| {seconds:.1f} s | {counter.input_tokens} / {counter.output_tokens} "
-            f"| {cost_cents:.2f}c |",
+            f"| {cost} |",
         )
     return rows
 
