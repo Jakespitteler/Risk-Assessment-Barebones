@@ -35,6 +35,7 @@ newer (24.15 or newer on version 24). Run each from the folder shown.
 - `docs/architecture.md` — structure, data model, module boundaries.
 - `docs/decisions.md` — dated log of non-obvious choices and why.
 - `docs/tasks/` — one file per unit of work, with status and owner.
+- `docs/ideas.md` — Jake's ideas to discuss later. Not tasks or decisions: don't build from it.
 - Read `docs/spec.md` and `docs/architecture.md` before any change.
 - If the code and the spec disagree, stop and ask the human. Don't silently pick one.
 
