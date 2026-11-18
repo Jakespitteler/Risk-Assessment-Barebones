@@ -32,8 +32,8 @@ touches what is already built or decided. It only points at things; it decides n
     discussion, or a voice conversation, where the AI asks the right questions to get the Take 5 filled out
     well.
   - Relates to: the challenge question (C1 to C6) is the only place the AI talks to the worker today. D11 says
-    the AI doesn't judge the answer, and the spec lists follow-up questions as out of scope, so a conversation,
-    or rewarding quality, would revisit both. Voice may also suit the field (gloves, bright sun).
+    the AI doesn't judge the answer, and the spec lists marking the answer and follow-up questions as out of
+    scope, so a conversation, or rewarding quality, would revisit those.
 
 ### AI help
 
@@ -70,7 +70,8 @@ touches what is already built or decided. It only points at things; it decides n
     earlier one is out of scope (copying stops thinking), which is different from comparing with one.
 - **Some Take 5s matter more than others.** Some Take 5s will be more important than others. We might want to be
   able to filter them.
-  - Relates to: the saved list (F5, D16) and showing it 50 at a time (task 0021).
+  - Relates to: the saved list (F5, D16) and showing it 50 at a time (task 0021, which leaves search and filters
+    out of scope).
 
 ### Supervisors and scanning
 
@@ -78,7 +79,8 @@ touches what is already built or decided. It only points at things; it decides n
   paper-based Take 5s. This should be a fast workflow, as this app could end up being supervisors scanning many
   Take 5s.
   - Relates to: scanning a filled-in paper card, and supervisors, are out of scope for now. Planned for later
-    reads a photo of a *blank* card to build a template, which is a different job from scanning filled-in ones.
+    reads a photo, Word file or PDF of a *blank* card to build a template, which is a different job from scanning
+    filled-in ones.
 - **If only supervisors use it, raise only the glaring issues.** If it does end up being just the supervisors that
   use the app, then it is probably best that only the glaring issues get raised.
   - Relates to: the "turn things off" principle above, and the thinking rules (T1 to T6).
@@ -95,11 +97,12 @@ touches what is already built or decided. It only points at things; it decides n
 
 - **Traffic, breaks and stop-offs.** If we ever add journey plans to this app, it should look at your route and
   tell you if there is a build-up of traffic, a crash and so on. Since it should require the driver to have a
-  break if the drive is longer than a given time, the app could suggest fun things to stop at, or good places to
+  break if the drive is longer than a given time, the app should suggest fun things to stop at, or good places to
   stop for food, even if it is a slightly different route. It could also suggest more scenic routes. The ETA
   should assume a break.
   - Relates to: journey plans are in the spec's Planned for later ("may or may not be added"). Traffic and maps
-    would come from a third party, so they would sit behind a swappable connection like the AI does.
+    would come from an outside service; the architecture's aim is that no single tool is hard to replace, as with
+    the AI provider (F6).
 - **Stop-off suggestions.** Unclear: Jake noted this one but isn't sure what it means. It may be the journey plan
   stop-offs above.
 
@@ -108,4 +111,5 @@ touches what is already built or decided. It only points at things; it decides n
 - **If the app isn't worth using on its own.** If the app is proved not to be worth using, could it be better as
   a scanner that connects to existing systems, like isystain and beaken? (Product names as Jake wrote them; to be
   confirmed.)
-  - Relates to: the rule that every third-party connection is general enough to swap for another system.
+  - Relates to: scanning a filled-in paper card is out of scope for now (see above). Nothing connects to another
+    company's system today; the architecture's aim is only that no single tool is hard to replace.
