@@ -5,6 +5,7 @@ charliermarsh
 conftest
 creationflags
 delenv
+Deque
 describedby
 docstrings
 ENOENT
@@ -40,4 +41,5 @@ unstub
 uvicorn
 venv
 vite
+WCAG
 winget
