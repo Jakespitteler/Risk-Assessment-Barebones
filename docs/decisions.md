@@ -66,7 +66,7 @@ Newest first. One short entry per non-obvious decision.
   also installs uv and Node.js with winget (fewer steps on a new Windows computer, but it changes the computer
   without asking and works only on Windows). Stopping, rather than warning, in a cloud-synced folder (safer, but a
   folder that only looks synced would have no way through).
-- Decided by: proposed by claude; the human approves it by merging task 0023's pull request
+- Decided by: proposed by claude; the human approves it by merging task 0023's pull request.
 
 ## 2026-11-16: What a kept draft tells the worker (task 0019)
 
