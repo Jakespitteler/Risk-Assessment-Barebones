@@ -2,20 +2,6 @@
 
 Newest first. One short entry per non-obvious decision.
 
-## 2026-11-16: What a kept draft tells the worker (task 0019)
-
-- Decision: A draft the back end says has run out is first looked up by its submission ID; if it was saved and
-  only the answer was lost, its result opens instead of "run out". When a kept draft can't be checked as it
-  opens, the form and the list say so, with when it was started. While a draft is kept, a result screen says
-  "Carry on your Take 5". Each check returns `runs_out_at`, and the form and the list count down the time left.
-  Spec D26 to D29.
-- Why: Jake asked for each, on Claude's follow-up questions from the review: "fix it", "do whatever makes it
-  most clear what is actually going on to the user", and "It should say somewhere how long the take 5 has
-  left". The look-up uses the existing `GET /api/take5s/{id}`, so no new endpoint was needed. The back end
-  works out `runs_out_at`, so the phone only counts down to a time it is given and holds no time rule.
-- Alternatives considered: Sending the submission ID with the check (a request shape change). Sending the
-  time limit in the template, for the phone to add to `started_at` (a rule copied into TypeScript).
-- Decided by: human (Jake, 2026-11-16, in chat).
 ## 2026-11-17: Set-up is a Python script run by uv, and leaves git, uv and Node.js to the person (task 0023)
 
 - Decision: `uv run scripts/setup.py` sets up a freshly cloned repo. It checks for git and Node.js 22.22.2 or
@@ -33,7 +19,22 @@ Newest first. One short entry per non-obvious decision.
   also installs uv and Node.js with winget (fewer steps on a new Windows computer, but it changes the computer
   without asking and works only on Windows). Stopping, rather than warning, in a cloud-synced folder (safer, but a
   folder that only looks synced would have no way through).
-- Decided by: proposed by claude; the human approves it by merging task 0023's pull request
+- Decided by: proposed by claude; the human approves it by merging task 0023's pull request.
+
+## 2026-11-16: What a kept draft tells the worker (task 0019)
+
+- Decision: A draft the back end says has run out is first looked up by its submission ID; if it was saved and
+  only the answer was lost, its result opens instead of "run out". When a kept draft can't be checked as it
+  opens, the form and the list say so, with when it was started. While a draft is kept, a result screen says
+  "Carry on your Take 5". Each check returns `runs_out_at`, and the form and the list count down the time left.
+  Spec D26 to D29.
+- Why: Jake asked for each, on Claude's follow-up questions from the review: "fix it", "do whatever makes it
+  most clear what is actually going on to the user", and "It should say somewhere how long the take 5 has
+  left". The look-up uses the existing `GET /api/take5s/{id}`, so no new endpoint was needed. The back end
+  works out `runs_out_at`, so the phone only counts down to a time it is given and holds no time rule.
+- Alternatives considered: Sending the submission ID with the check (a request shape change). Sending the
+  time limit in the template, for the phone to add to `started_at` (a rule copied into TypeScript).
+- Decided by: human (Jake, 2026-11-16, in chat).
 
 ## 2026-11-15: Leave a Take 5, keep one draft on the phone, and a 2-hour limit (task 0019)
 
