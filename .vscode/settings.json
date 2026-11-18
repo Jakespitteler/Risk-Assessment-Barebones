@@ -21,5 +21,8 @@
     "files.associations": {
         ".prettierignore": "ignore",
         ".npmrc": "ini"
+    },
+    "workbench.editorAssociations": {
+        "*.md": "vscode.markdown.preview.editor"
     }
 }
