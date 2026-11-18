@@ -1,7 +1,7 @@
 ---
 id: 0026
 title: Tap the step bar to move around a Take 5
-status: review
+status: done
 owner: claude
 branch: claude/project-thread-g9d8uh
 ---
