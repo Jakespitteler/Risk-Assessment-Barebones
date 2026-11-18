@@ -66,12 +66,28 @@ The set-up script warns you if it finds the repo in one of these folders. It can
 
 Press Ctrl+C to stop. Both halves restart by themselves when their code changes.
 
-The home page runs a Take 5: the job, the hazards, a rating before and after controls for each, a review, then
-the saved result at `/take5s/<id>`. The phone remembers only the worker's name. The first screen from task 0002
-is at `/rate-risk`. The card's questions and the AI's challenge question come in later tasks.
+The home page runs a Take 5: the job, the think-through questions, the hazards and the hazard check, a rating
+before and after controls for each hazard, a review, the challenge question, then the saved result at
+`/take5s/<id>`. The phone remembers only the worker's name. The first screen from task 0002 is at `/rate-risk`.
 
 Saved Take 5s are kept in `backend/.data/take5.sqlite3`, which git ignores. Set `TAKE5_DATABASE_PATH` to use
 another file.
+
+### Turn on the AI's question
+
+Without a key the app works, and asks the fixed challenge question every time. To have Claude write the question:
+
+1. Sign in at <https://console.anthropic.com>, add some credit, and set a monthly spend limit under Billing, so a
+   mistake can't run up a bill.
+2. Make an API key under API keys. Copy it: it is only shown once.
+3. In the `backend` folder, make a file called `.env` holding one line: `TAKE5_AI_KEY=` followed by the key.
+   Git ignores `.env`, so the key never goes to GitHub. Never put a key anywhere else in the repo.
+4. Restart `uv run scripts/dev.py`. The back end's log says which model asks the question.
+
+To use another model, add a line such as `TAKE5_AI_MODEL=claude-sonnet-5-5`. To try the AI on five made-up Take
+5s and see what each question costs and how long it takes, run `uv run scripts/try_challenge.py` in the repo
+root (name models after it to compare them). `cd backend` then `uv run pytest -m real_ai` runs the one test that
+calls the real AI. Each of these costs a little money; the normal tests and CI never call it.
 
 Using VS Code? See [docs/dev-setup.md](docs/dev-setup.md) for the editor set-up and fixes for common problems.
 

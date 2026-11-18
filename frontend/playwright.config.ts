@@ -22,6 +22,9 @@ export default defineConfig({
       url: "http://127.0.0.1:8000/api/take5/template",
       reuseExistingServer: false,
       env: {
+        // No AI in the whole-app tests, even with a key in backend/.env: the
+        // fixed question is asked every time, so the tests know what to expect.
+        TAKE5_AI_KEY: "",
         TAKE5_DATABASE_PATH: join(
           tmpdir(),
           `take5-e2e-${String(process.pid)}.sqlite3`,

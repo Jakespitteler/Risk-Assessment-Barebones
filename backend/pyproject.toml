@@ -5,6 +5,7 @@ description = "The Take 5 app's back end: every rule and all the data."
 requires-python = ">=3.13"
 license = "LicenseRef-Proprietary"
 dependencies = [
+    "anthropic>=2.10",
     "fastapi>=0.162",
     "pydantic>=2.14",
     "pydantic-settings>=2.12",
@@ -30,3 +31,8 @@ convention = "google"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = [".."]
+# The real AI costs money, so its test runs only when asked: `uv run pytest -m real_ai`.
+addopts = "-m 'not real_ai'"
+markers = [
+    "real_ai: calls the real AI provider, so it is skipped unless TAKE5_AI_KEY is set",
+]
