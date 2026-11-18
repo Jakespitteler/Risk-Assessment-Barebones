@@ -128,7 +128,8 @@ frontend/
                            the list of saved Take 5s (SavedTake5sScreen.tsx). formatDateTime.ts writes
                            every date the one way the spec sets (D17)
                            stage.ts is which page shows (kept in the URL); useTake5Draft.ts keeps the one
-                           draft on the phone (localStorage), with its start time and the page it was left on.
+                           draft on the phone (localStorage), with its start time, the page it was left on and
+                           the furthest step reached, which StepBar.tsx lets the worker tap back to
                            LeavePanel.tsx asks keep or throw away; RunOutPanel.tsx and runOut.ts show a draft
                            the back end says has run out; KeptDraftCard.tsx is the draft at the top of the list
                            WeakControlsQuestion.tsx draws the server's thinking prompt on the controls page,

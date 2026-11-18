@@ -981,9 +981,29 @@ it("opens the assess step on the first hazard's before rating", async () => {
   expect(screen.getByText("Step 4 of 5 · Hazard 1 of 1")).toBeTruthy();
 });
 
-it("remembers how far a kept draft got, even one kept before the step bar", () => {
+it("counts the page a draft kept before the step bar was left on as reached", () => {
   storeDraftThatReached(undefined, { page: "review" });
   stubApi({});
   renderWithApi(<FormAt start={{ page: "job" }} />);
   expect(screen.getByRole("button", { name: "Review" })).toBeTruthy();
+});
+
+it("opens a kept draft with the steps it reached, not only the page it was left on", () => {
+  storeDraftThatReached(4, { page: "job" });
+  stubApi({});
+  renderWithApi(<FormAt start={{ page: "job" }} />);
+  expect(screen.getByRole("button", { name: "Assess" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Review" })).toBeNull();
+});
+
+it("keeps how far the worker got with the draft on the phone", async () => {
+  storeDraftThatReached(2, { page: "think" });
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "review" }} />);
+  await waitFor(() => {
+    const kept = JSON.parse(localStorage.getItem("take5-draft") ?? "{}") as {
+      furthestStep?: number;
+    };
+    expect(kept.furthestStep).toBe(5);
+  });
 });
