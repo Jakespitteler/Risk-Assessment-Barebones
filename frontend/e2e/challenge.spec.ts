@@ -22,7 +22,7 @@ test("Submit asks one question, a short answer is refused, and the answer shows 
 }) => {
   await controlledDraft(page);
   // The whole-app tests run with no AI, so nothing says one is sent anything.
-  await expect(page.getByText(AI_NOTICE)).toHaveCount(0);
+  await expect(page.getByText(/\bAI\b/)).toHaveCount(0);
   await capture(page, "challenge-review-submit");
   await submit(page);
 
