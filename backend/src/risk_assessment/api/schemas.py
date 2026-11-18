@@ -27,6 +27,8 @@ class TemplateResponse(BaseModel):
         likelihood_guidance: What each likelihood means, in the card's words.
         consequence_guidance: What each consequence means, in the card's words.
         control_guidance: The card's advice on choosing controls.
+        ai_notice: What Submit sends to the AI, to show above Submit, or None when
+            no AI is set up, so nothing is sent (decision D52).
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -39,6 +41,7 @@ class TemplateResponse(BaseModel):
     likelihood_guidance: tuple[LevelGuidance, ...]
     consequence_guidance: tuple[LevelGuidance, ...]
     control_guidance: str
+    ai_notice: str | None = None
 
 
 class SubmissionRequest(BaseModel):

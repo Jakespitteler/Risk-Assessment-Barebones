@@ -4,16 +4,16 @@ Task numbers are IDs, not the order to do them in. Do the `todo` tasks in this o
 otherwise. Each task file's frontmatter holds its status; this page holds only the order and why.
 
 Recommended by Claude on 2026-11-13, agreed by Jake the same day. Tasks 0015 to 0020 added by Claude on
-2026-11-14, 0021 on 2026-11-15, 0022 on 2026-11-16, 0023 on 2026-11-17, and 0024 to 0026 on 2026-11-18; Jake
-can move them. Last brought up to date on 2026-11-18, after Jake merged the pull requests for 0019, 0022, 0023,
-0025 and 0026.
+2026-11-14, 0021 on 2026-11-15, 0022 on 2026-11-16, 0023 on 2026-11-17, and 0024 to 0027 on 2026-11-18; Jake
+can move them. Last brought up to date on 2026-11-18, after Jake merged the pull request for 0008.
 
-Complete: 0001 to 0007, 0010 to 0012, 0014 to 0020, 0022, 0023, 0025 and 0026. Task 0018 decided to keep the
+Complete: 0001 to 0008, 0010 to 0012, 0014 to 0020, 0022, 0023, 0025 and 0026. Task 0018 decided to keep the
 built-in `sqlite3` for now (`docs/decisions.md`, 2026-11-14), so no task to switch storage is in the order below.
 
-1. **0008, the challenge question.** Depends on 0005, which is complete. Jake answered its questions on 2026-11-18
-   (spec D44 to D51). Built the same day and marked done in its pull request; done when Jake merges it.
-2. **0009, the first AI provider.** Depends on 0008.
+1. **0009, the first AI provider.** Depends on 0008, which is complete. Jake answered its questions on 2026-11-18
+   (spec D52 to D55).
+2. **0027, the AI judges vague hazards.** Jake chose on 2026-11-18 to do it straight after 0009 (spec D55). Its
+   questions are answered when it starts.
 3. **0013, glossary and rule tracing.** Last of these, because its test fails for any spec rule with no test yet, and
    most of those rules arrive in 0005 to 0008.
 4. **0024, dark mode.** Jake asked for it on 2026-11-18. It depends on no other task and makes no one think

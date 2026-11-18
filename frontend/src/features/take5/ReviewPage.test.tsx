@@ -152,3 +152,32 @@ it("shows each answer, and a No's warning with a button to change it", async () 
   fireEvent.click(screen.getByRole("button", { name: "Change answer" }));
   expect(onOpenWarning).toHaveBeenCalledWith(warning);
 });
+
+it("says what Submit sends to the AI, when the back end says one is set up", async () => {
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(
+    <ReviewPage
+      draft={COMPLETE_DRAFT}
+      aiNotice="Submit sends the job, not your name, to an AI."
+      onGaps={vi.fn()}
+      onOpenWarning={vi.fn()}
+    />,
+  );
+  expect(
+    await screen.findByText("Submit sends the job, not your name, to an AI."),
+  ).toBeTruthy();
+});
+
+it("says nothing about an AI when none is set up", async () => {
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(
+    <ReviewPage
+      draft={COMPLETE_DRAFT}
+      aiNotice={null}
+      onGaps={vi.fn()}
+      onOpenWarning={vi.fn()}
+    />,
+  );
+  expect(await screen.findByText("Minimal")).toBeTruthy();
+  expect(screen.queryByText(/\bAI\b/)).toBeNull();
+});

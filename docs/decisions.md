@@ -2,6 +2,34 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-18: Claude Opus 5.5 writes the challenge question, and the review says what it is sent (task 0009)
+
+- Decision: The challenge question is written by Claude Opus 5.5 (`claude-opus-5-5`) on low effort, through
+  Anthropic's own `anthropic` library, behind the `LanguageModel` Protocol. The provider, model and key are
+  settings (`TAKE5_AI_PROVIDER`, `TAKE5_AI_MODEL`, `TAKE5_AI_KEY`), read from the environment or `backend/.env`.
+  With no key the fallback question is always asked. The adapter gives up after 11 seconds and never retries.
+  The question may be about a hazard the job plainly has that isn't on the list. When an AI is set up, one line
+  above Submit says what goes to it, and the question itself is still not labelled. The AI judging vague hazards
+  is its own task, 0027 (spec D52 to D55).
+- Why: Jake took every recommended answer. The question is the one part of the Take 5 a worker can't see coming,
+  so its quality matters more than its cost: about 1.5 to 2 cents a question, estimated, measured in the PR. Low
+  effort keeps it well inside the service's 10-second wait. A missed hazard is often the weakest point, and by
+  then the worker has already listed hazards in their own words, so T1 still holds. Telling workers what is sent
+  answers the open question about names typed into the job; labelling the question would make the fallback look
+  second-best. Judging vague hazards runs while the worker types, which raises its own questions (how often to
+  call, cost, no signal), and would have doubled this PR.
+- How: a retry inside the adapter would run past the service's 10 seconds, so `max_retries` is 0, and the network
+  limit is 11 seconds so a call the service gave up on ends soon after. A refusal or a reply with no text raises
+  `LanguageModelError`, and the service asks the fallback. The adapter logs the tokens each reply used, never any
+  text. Every test hides the key (`tests/conftest.py`), the whole-app tests run with an empty key, and the one
+  test that calls the real AI runs only with `pytest -m real_ai`. `ai_notice` on `GET /api/take5/template` comes
+  from the back end, so the line shows only when an AI is really plugged in. `ai/` may import `domain`, as
+  `storage/` may, because `AiQuestion` lives there.
+- Not chosen: Sonnet 5.5 or Haiku 5.5 (one setting away); Anthropic's server-side refusal fallbacks (a refusal
+  already falls back to the fixed question); the key in the cloud environment's secrets (it stays on Jake's
+  computer); a fixed sentence in the front end (it would claim an AI is asked when none is set up).
+- Decided by: human (the four product choices), agent (how).
+
 ## 2026-11-18: The challenge question is asked after Submit, and only that phone answers it (task 0008)
 
 - Decision: The review's button is Submit. It saves the Take 5 unfinished, and the challenge question follows on

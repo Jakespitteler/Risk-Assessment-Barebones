@@ -21,6 +21,12 @@ ANSWER_PATH: str = "answer"
 QUESTION_MAX_CHARACTERS: int = 300
 ANSWER_MIN_WORDS: int = 4
 AI_TIME_LIMIT_SECONDS: float = 10
+# Shown above Submit when an AI is set up (decision D52). It names what
+# `challenge_text()` sends, so the two must change together.
+AI_NOTICE: str = (
+    "Submit saves this Take 5 and sends the job, location, answers and hazards (not "
+    "your name) to an AI that writes one question for you."
+)
 SHORT_ANSWER_MESSAGE: str = (
     "Answer in at least four words: say what you'll check or do."
 )

@@ -16,6 +16,7 @@ from risk_assessment.api.schemas import (
 )
 from risk_assessment.domain.controls import ControlKind
 from risk_assessment.domain.questions import Answer
+from risk_assessment.domain.take5.challenge import AI_NOTICE
 from risk_assessment.domain.take5.draft import DraftCheck, Take5Draft
 from risk_assessment.domain.take5.fix import fixed_ids, offers_a_fix
 from risk_assessment.domain.take5.saved import SavedTake5
@@ -68,6 +69,7 @@ def create_router(service: Take5Service) -> APIRouter:
             likelihood_guidance=template.likelihood_guidance,
             consequence_guidance=template.consequence_guidance,
             control_guidance=template.control_guidance,
+            ai_notice=AI_NOTICE if service.asks_ai else None,
         )
 
     @router.post("/api/take5s/check", responses=_UNREADABLE)
