@@ -31,6 +31,19 @@ toggle off completely if I change it to no limit"). They are spec decisions D19 
    Fixing this one throws it away." (D24)
 7. **Each saved Take 5 keeps when it was started** (`SavedTake5.started_at`), a data model change. (D25)
 
+Jake's answers to the review's follow-up questions, on 2026-11-16 (D26 to D29):
+
+1. **A save whose answer was lost, reopened after 2 hours, opens the saved result**, not "run out" ("fix it").
+   The phone looks the submission ID up with `GET /api/take5s/{id}` before saying a draft ran out. (D26)
+2. **With no signal to check a kept draft, say so** ("do whatever makes it most clear what is actually going on
+   to the user"): an amber notice with when it was started, that it can't be saved if it has run out, and Try
+   again. A run-out draft is still drawn until a check gets through, but never saved. (D27)
+3. **"Carry on your Take 5"** replaces "Start a new Take 5" on a result screen while a draft is kept. Jake's
+   answer was "carry on", read as yes to this label. (D28)
+4. **The time left shows on the form and the list** ("It should say somewhere how long the take 5 has left"):
+   "1 hr 42 min left to finish, until 16 Nov 2026, 8:52 pm", counted down from the check's `runs_out_at`. A
+   brand-new draft shows it from its first Continue, the first time the back end is asked. (D29)
+
 ## Acceptance criteria
 
 - [x] The form has a way to back out on every page, usable one-handed at 360 px with gloves.
@@ -74,19 +87,24 @@ Assumptions made while building (2026-11-15):
 
 Not done here, noted for later (from the review on 2026-11-15):
 
-- A save whose answer was lost, then reopened after 2 hours, tells the worker the draft ran out, although it was
-  saved (it is in the list). The check doesn't know the submission ID. Fixing it needs an API change.
-- A draft that has run out is drawn until the opening check answers (one 5-second try). With no signal it stays
-  usable until a Continue or Finish gets through; saving is always refused.
 - "Fix this in a new Take 5" swapping to its question, and back, doesn't move the focus.
 - The back gesture while the Leave question is open changes the page underneath it. Back from the list after
   throwing a draft away on a later page opens an empty form on that page's earlier page.
 - After a 409, Leave still offers "Keep it for later", which keeps nothing.
 - A fix whose own copy is the kept draft asks to throw that copy away, rather than offering to carry on.
 
+Also noted for later (from the reviews of the follow-ups on 2026-11-17):
+
+- Past its time, the time left says "Under 1 min left" until a check gets through. Continue and Finish check
+  again, so nothing run out is saved, but it could say "Run out" instead. That is a wording choice for Jake.
+- The list reuses the opening check from earlier in the same visit, so it can say a draft is in time a few
+  minutes after it ran out. "Carry on" reloads the form, which checks again.
+- A failed look-up for a saved Take 5 counts as not saved, so a draft that ran out is thrown away even if it was
+  saved. The saved copy is still in the list.
+- The "Checking your Take 5…" heading isn't focused or announced, and `Take5Form.tsx` is 372 lines and could be
+  split.
+
 - The UI calls a draft "Your unfinished Take 5". Task 0008 plans a "Not finished" tag on the list for a saved Take 5
   whose challenge question is unanswered. Check the two read differently when 0008 is built.
-- With a draft kept, "Start a new Take 5" on a result screen opens the draft, since there is only one. A label
-  such as "Carry on your Take 5" there may read better.
 - The result screen doesn't show the start time, or how long the Take 5 took. Measuring the three-minute target
   (spec Open questions) is now possible from `started_at` and `created_at`.

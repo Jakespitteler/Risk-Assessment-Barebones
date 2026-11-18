@@ -8,6 +8,7 @@ import {
   ApiError,
   useCheckDraft,
   useDraftCheck,
+  useFindSaved,
   useOpeningCheck,
   useSubmitTake5,
 } from "../../api/take5";
@@ -15,6 +16,8 @@ import { Button } from "../../components/Button";
 import { Notice } from "../../components/Notice";
 import { Screen } from "../../components/Screen";
 import { UndoBar } from "../../components/UndoBar";
+import { TimeLeft } from "./TimeLeft";
+import { UncheckedNotice } from "./UncheckedNotice";
 import { FormHeading } from "./FormHeading";
 import { FormNav } from "./FormNav";
 import { FormPage } from "./FormPage";
@@ -29,6 +32,12 @@ import * as stages from "./stage";
 import { usePageFocus } from "./usePageFocus";
 import type { StoredDraft } from "./useTake5Draft";
 import { blankHazard, useTake5Draft } from "./useTake5Draft";
+
+/** A draft the back end says has run out, and whether it was found to be saved already. */
+interface RunOut {
+  message: string;
+  lookedForSave: boolean;
+}
 
 export interface Take5FormProps {
   template: TemplateResponse;
@@ -58,8 +67,15 @@ export function Take5Form(props: Take5FormProps) {
   // A kept draft is checked once as it opens, so one that has run out is never reused.
   const [opened] = useState(() => (draft.started_at ? draft : null));
   const openedCheck = useOpeningCheck(opened ?? draft, opened !== null);
+  // Whether a later check got through, so a failed opening check no longer matters.
+  const [checkedSinceOpening, setCheckedSinceOpening] = useState(false);
+  // When the draft runs out, as the latest Continue's check said.
+  const [continueRunsOutAt, setContinueRunsOutAt] = useState<string | null>(
+    null,
+  );
   const [leaving, setLeaving] = useState(false);
-  const [runOut, setRunOut] = useState<string | null>(null);
+  const [runOut, setRunOut] = useState<RunOut | null>(null);
+  const findSaved = useFindSaved();
   const submit = useSubmitTake5();
   const { heading, container, focusErrorsOn, focusFieldOn, focusHeading } =
     usePageFocus(stage);
@@ -84,14 +100,25 @@ export function Take5Form(props: Take5FormProps) {
     runOutMessage(openedCheck.data?.errors) ??
     runOutMessage(review.data?.errors);
   useEffect(() => {
-    if (runOutFound && runOut === null) endRunOut(runOutFound);
+    if (runOutFound && runOut === null) void endRunOut(runOutFound);
   });
 
-  /** Throw away a draft the back end says has run out, and say why (spec K2). */
-  function endRunOut(message: string) {
-    take5.discard();
+  /**
+   * Throw away a draft the back end says has run out, and say why (spec K2). If it was
+   * saved already, and only the answer was lost on its way back, open what was saved
+   * instead, so the worker isn't told to start again for nothing.
+   */
+  async function endRunOut(message: string) {
     take5.dismissRemoval();
-    setRunOut(message);
+    setRunOut({ message, lookedForSave: false });
+    const saved = await findSaved(take5.submissionId);
+    if (saved) {
+      take5.saved(saved.take5.worker_name);
+      onSaved(saved.take5.id);
+      return;
+    }
+    take5.discard();
+    setRunOut({ message, lookedForSave: true });
   }
 
   /** Open the first page that has a gap, with that page's errors marked. */
@@ -151,9 +178,13 @@ export function Take5Form(props: Take5FormProps) {
     // With no signal the worker carries on; the review checks everything again.
     const check = await checkDraft(draft).catch(() => null);
     setChecking(false);
+    if (check) {
+      setCheckedSinceOpening(true);
+      setContinueRunsOutAt(check.runs_out_at ?? null);
+    }
     const ranOut = runOutMessage(check?.errors);
     if (ranOut) {
-      endRunOut(ranOut);
+      void endRunOut(ranOut);
       return;
     }
     if (check?.errors.some(isHere)) {
@@ -197,7 +228,7 @@ export function Take5Form(props: Take5FormProps) {
           const status = error instanceof ApiError ? error.status : 0;
           const ranOut =
             error instanceof ApiError ? runOutMessage(error.fieldErrors) : null;
-          if (ranOut) endRunOut(ranOut);
+          if (ranOut) void endRunOut(ranOut);
           else if (status === 422 && error instanceof ApiError)
             showGaps(error.fieldErrors);
           else if (status === 409) {
@@ -209,11 +240,17 @@ export function Take5Form(props: Take5FormProps) {
     );
   }
 
+  if (runOut && !runOut.lookedForSave)
+    return (
+      <Screen subtitle="Before you start">
+        <h1 className="text-3xl font-extrabold">Checking your Take 5…</h1>
+      </Screen>
+    );
   if (runOut)
     return (
       <Screen subtitle="Before you start">
         <RunOutPanel
-          message={runOut}
+          message={runOut.message}
           startedAt={draft.started_at}
           onStartAfresh={() => {
             onStageChange(stages.FIRST_STAGE, { replace: true });
@@ -277,6 +314,20 @@ export function Take5Form(props: Take5FormProps) {
           hazardDescription={hazard?.description ?? ""}
           headingRef={heading}
         />
+        <TimeLeft
+          runsOutAt={
+            review.data?.runs_out_at ??
+            continueRunsOutAt ??
+            openedCheck.data?.runs_out_at
+          }
+        />
+        {openedCheck.isError && !checkedSinceOpening && !review.data && (
+          <UncheckedNotice
+            startedAt={draft.started_at}
+            checking={openedCheck.isFetching}
+            onTryAgain={() => void openedCheck.refetch()}
+          />
+        )}
         {errors.length > 0 && (
           <Notice>
             <p>Fill in the highlighted answers to carry on.</p>

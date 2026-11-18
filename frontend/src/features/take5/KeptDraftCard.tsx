@@ -4,6 +4,7 @@ import { useOpeningCheck } from "../../api/take5";
 import { Card } from "../../components/Card";
 import { formatDateTime } from "./formatDateTime";
 import { runOutMessage } from "./runOut";
+import { TimeLeft } from "./TimeLeft";
 
 const CARRY_ON_LINK =
   "flex min-h-14 items-center justify-center rounded-xl bg-slate-900 px-5 text-lg font-bold text-white focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-blue-700";
@@ -39,6 +40,14 @@ export function KeptDraftCard({
           <time dateTime={draft.started_at}>
             {formatDateTime(draft.started_at)}
           </time>
+        </p>
+      )}
+      <TimeLeft runsOutAt={check.data?.runs_out_at} />
+      {/* It appears once the check fails, so a screen reader announces it (spec D27). */}
+      {check.isError && (
+        <p role="status" className="font-semibold">
+          No signal: it couldn’t be checked to see if it’s still in time. If it
+          has run out, it can’t be saved.
         </p>
       )}
       <a className={CARRY_ON_LINK} href="/">

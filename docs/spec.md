@@ -227,13 +227,14 @@ The safety rules stay in code. The AI only asks; it never decides whether anyone
 ### Drafts
 
 A worker gets called away mid-way, but a Take 5 is meant to be done at the job, just before starting. These rules
-keep a draft long enough for a radio call and no longer (decisions D19 to D25).
+keep a draft long enough for a radio call and no longer (decisions D19 to D29).
 
 - **K1 One draft, on the phone.** From the worker's first change until it is submitted or thrown away, the phone
   keeps one draft, with the page it was left on. Every page of the form has Leave, which asks: "Keep it for
   later", "Throw it away" (with Undo) or "Keep going". Either way out goes to the saved list, where a kept draft
   sits at the top with "Carry on" in place of "Start a new Take 5". Opening the app carries on where it was left.
-  "Fix this in a new Take 5" takes the draft's place, so with a draft kept it asks first: "You have an
+  While a draft is kept, a result screen says "Carry on your Take 5" in place of "Start a new Take 5" (decision
+  D28). "Fix this in a new Take 5" takes the draft's place, so with a draft kept it asks first: "You have an
   unfinished Take 5 for '\<job\>'. Fixing this one throws it away."
 - **K2 A draft runs out.** A draft started more than the template's time limit ago (2 hours on the booklet)
   has run out. The time counts from the worker's first change, not the last, so tapping it now and then can't
@@ -242,6 +243,12 @@ keep a draft long enough for a radio call and no longer (decisions D19 to D25).
   hours ago. Start a new one at the job." The phone then throws it away and says so, with when it was started.
   It is never reopened, even with its answers cleared. A template with no time limit turns the check off
   completely. A retry of a Take 5 that was saved in time is never refused.
+  - Each check also says when the draft runs out, and the form and the list show the time left, such as "1 hr 42
+    min left to finish, until 16 Nov 2026, 8:52 pm" (decision D29). Nothing shows with no time limit.
+  - A draft that has run out may have been saved already, with the answer lost on its way back to the phone.
+    The phone looks for it by its submission ID first, and opens the saved result instead (decision D26).
+  - When the check as a kept draft opens can't get through, the form and the list say so, with when it was
+    started, and that it can't be saved if it has run out (decision D27).
 - **K3 The start time is kept.** A saved Take 5 keeps when its draft was started, so the time a Take 5 takes can
   be measured.
 
@@ -493,6 +500,10 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D23 | How many drafts (2026-11-15) | One at a time (K1) | A list |
 | D24 | A fix while a draft is kept (2026-11-15) | Ask first, then throw the draft away (K1) | Replace it without asking; refuse until the draft is dealt with |
 | D25 | Save when a Take 5 was started (2026-11-15) | Yes (K3) | Not now |
+| D26 | A lost save answer, then the draft runs out (2026-11-16) | Open the saved result (K2) | Tell the worker it ran out |
+| D27 | No signal to check a kept draft (2026-11-16) | Say so, with when it was started (K2) | Show nothing until a check gets through |
+| D28 | "Start a new Take 5" while a draft is kept (2026-11-16) | "Carry on your Take 5" (K1) | Keep the old label |
+| D29 | Show the time a draft has left (2026-11-16) | Yes, on the form and the list (K2) | Only say when it has run out |
 
 ## Open questions
 
