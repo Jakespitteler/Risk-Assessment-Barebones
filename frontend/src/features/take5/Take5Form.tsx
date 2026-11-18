@@ -145,7 +145,21 @@ export function Take5Form(props: Take5FormProps) {
     onStageChange(hazards);
   }
 
-  async function next() {
+  /**
+   * A tap on a step in the bar opens that step's first page. Going back needs no check, as
+   * Back needs none. Going forward checks this page first, as Continue does (spec F2).
+   */
+  function goToStep(step: number) {
+    const target = stages.firstStageOf(step);
+    if (step > stages.stepOf(stage)) void next(target);
+    else onStageChange(target);
+  }
+
+  /**
+   * Check this page with the back end, and move on when it has no gaps: to `jumpTarget`
+   * when a step in the bar was tapped, otherwise to the next page.
+   */
+  async function next(jumpTarget?: Stage) {
     setProblem(null);
     take5.dismissRemoval();
     setChecking(true);
@@ -177,7 +191,8 @@ export function Take5Form(props: Take5FormProps) {
       return;
     }
     setErrors([]);
-    if (fixing && check && !check.can_submit) nextGap(check.errors);
+    if (jumpTarget) onStageChange(jumpTarget);
+    else if (fixing && check && !check.can_submit) nextGap(check.errors);
     else if (fixing && check) {
       // Replace the page that was fixed, so Back from the review steps back one page.
       setFixing(false);
@@ -277,6 +292,9 @@ export function Take5Form(props: Take5FormProps) {
           hazardCount={draft.hazards.length}
           hazardDescription={hazard?.description ?? ""}
           headingRef={heading}
+          furthestStep={take5.furthestStep}
+          busy={busy}
+          onPickStep={goToStep}
         />
         {errors.length > 0 && (
           <Notice>

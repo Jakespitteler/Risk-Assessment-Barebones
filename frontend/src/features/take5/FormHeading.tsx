@@ -1,8 +1,7 @@
 import type { Ref } from "react";
 import type { Stage } from "./stage";
-import { stepOf } from "./stage";
-
-const STEPS = ["Job", "Think", "Hazards", "Assess", "Review"];
+import { STEP_COUNT, stepOf } from "./stage";
+import { StepBar } from "./StepBar";
 
 const TITLES: Record<Stage["page"], string> = {
   job: "The job in front of you",
@@ -15,34 +14,38 @@ const TITLES: Record<Stage["page"], string> = {
   review: "One last look",
 };
 
-/** Where the worker is in the form, and the page's heading, which takes the focus. */
+/**
+ * Where the worker is in the form, with the step bar to move around it, and the page's
+ * heading, which takes the focus.
+ */
 export function FormHeading({
   stage,
   hazardCount,
   hazardDescription,
   headingRef,
+  furthestStep,
+  busy,
+  onPickStep,
 }: {
   stage: Stage;
   hazardCount: number;
   hazardDescription: string;
   headingRef: Ref<HTMLHeadingElement>;
+  furthestStep: number;
+  busy: boolean;
+  onPickStep: (step: number) => void;
 }) {
   const step = stepOf(stage);
   return (
     <header className="flex flex-col gap-3">
-      <ol aria-label="Take 5 progress" className="grid grid-cols-5 gap-2">
-        {STEPS.map((name, index) => (
-          <li
-            key={name}
-            aria-current={step === index + 1 ? "step" : undefined}
-            className="border-t-4 border-stone-300 pt-2 text-sm text-slate-700 aria-[current=step]:border-slate-900 aria-[current=step]:font-bold aria-[current=step]:text-slate-900"
-          >
-            {name}
-          </li>
-        ))}
-      </ol>
+      <StepBar
+        stage={stage}
+        furthestStep={furthestStep}
+        busy={busy}
+        onPickStep={onPickStep}
+      />
       <p className="text-sm font-bold tracking-wide text-slate-700 uppercase">
-        Step {step} of {STEPS.length}
+        Step {step} of {STEP_COUNT}
         {"hazard" in stage &&
           ` · Hazard ${String(stage.hazard + 1)} of ${String(hazardCount)}`}
       </p>

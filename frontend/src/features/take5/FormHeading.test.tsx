@@ -11,6 +11,9 @@ it("shows the step, the hazard and a focusable heading", () => {
       hazardCount={3}
       hazardDescription="Dust"
       headingRef={heading}
+      furthestStep={4}
+      busy={false}
+      onPickStep={() => undefined}
     />,
   );
   expect(screen.getByText("Step 4 of 5 · Hazard 2 of 3")).toBeTruthy();
@@ -19,5 +22,7 @@ it("shows the step, the hazard and a focusable heading", () => {
   );
   expect(heading.current?.tabIndex).toBe(-1);
   expect(screen.getByText("Dust")).toBeTruthy();
-  expect(screen.getByText("Assess").getAttribute("aria-current")).toBe("step");
+  expect(
+    screen.getByRole("button", { name: "Assess" }).getAttribute("aria-current"),
+  ).toBe("step");
 });

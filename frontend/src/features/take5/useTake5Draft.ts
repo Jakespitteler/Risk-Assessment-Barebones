@@ -7,7 +7,7 @@ import type {
 } from "../../api/take5";
 import { newSubmissionId } from "../../api/submissionId";
 import type { Stage } from "./stage";
-import { sameStage } from "./stage";
+import { FIRST_STAGE, sameStage, stepOf } from "./stage";
 
 const WORKER_NAME_KEY = "take5-worker-name";
 const DRAFT_KEY = "take5-draft";
@@ -23,6 +23,8 @@ export interface StoredDraft {
   submissionId: string;
   /** The page the worker was on, so carrying on opens where they left it. */
   stage?: Stage;
+  /** The furthest of the five steps reached, so the step bar lets the worker jump back to it. */
+  furthestStep?: number;
   /** Hazard wordings the worker chose to keep, so their nudge isn't asked again. */
   keptWording?: string[];
 }
@@ -173,6 +175,10 @@ export function useTake5Draft() {
     () => stored?.submissionId ?? newSubmissionId(),
   );
   const [stage, setStage] = useState(stored?.stage);
+  // A draft kept before the step bar could be tapped has reached at least its own page.
+  const [furthestStep, setFurthestStep] = useState(
+    () => stored?.furthestStep ?? stepOf(stored?.stage ?? FIRST_STAGE),
+  );
   const [keptWording, setKeptWording] = useState<string[]>(
     () => stored?.keptWording ?? [],
   );
@@ -184,6 +190,7 @@ export function useTake5Draft() {
     draft,
     submissionId,
     stage,
+    furthestStep,
     keptWording,
   });
   const started = draft.started_at != null;
@@ -195,9 +202,10 @@ export function useTake5Draft() {
       draft,
       submissionId,
       stage,
+      furthestStep,
       keptWording,
     });
-  }, [draft, submissionId, stage, keptWording, kept, started]);
+  }, [draft, submissionId, stage, furthestStep, keptWording, kept, started]);
 
   return {
     draft,
@@ -214,11 +222,17 @@ export function useTake5Draft() {
     },
     /** True once the worker has changed anything, so there is something to keep. */
     started,
-    /** Remember the page the worker is on, so carrying on later opens it. */
+    /** The furthest of the five steps this Take 5 has reached, counting from 1. */
+    furthestStep,
+    /**
+     * Remember the page the worker is on, so carrying on later opens it, and how far
+     * they have got, so the step bar lets them jump back there.
+     */
     keepStage: (shown: Stage) => {
       setStage((previous) =>
         previous && sameStage(previous, shown) ? previous : shown,
       );
+      setFurthestStep((previous) => Math.max(previous, stepOf(shown)));
     },
     // An edit after a removal ends its undo, so Undo can never wipe newer answers.
     // The first change starts the draft's clock (spec K2).

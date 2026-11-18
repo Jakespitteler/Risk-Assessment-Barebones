@@ -3,12 +3,14 @@ import type { Take5Draft } from "../../api/take5";
 import { COMPLETE_DRAFT, HAZARD_DRAFT, SMALL_TEMPLATE } from "../../test-utils";
 import type { Stage } from "./stage";
 import {
+  firstStageOf,
   nextStage,
   previousStage,
   shownStage,
   stageFromSearch,
   stageOfError,
   stageToSearch,
+  stepOf,
 } from "./stage";
 
 const NO_CONTROLS: Take5Draft = {
@@ -138,4 +140,19 @@ it("sends a weak-controls answer error to that hazard's controls page", () => {
   expect(
     stageOfError("hazards.1.weak_controls_reason", SMALL_TEMPLATE.questions),
   ).toEqual({ page: "controls", hazard: 1 });
+});
+
+it("opens each step of the bar on its first page", () => {
+  expect([1, 2, 3, 4, 5].map(firstStageOf)).toEqual([
+    { page: "job" },
+    { page: "think" },
+    { page: "hazards" },
+    { page: "before", hazard: 0 },
+    { page: "review" },
+  ]);
+});
+
+it("puts each step's first page back in that step", () => {
+  for (const step of [1, 2, 3, 4, 5])
+    expect(stepOf(firstStageOf(step))).toBe(step);
 });

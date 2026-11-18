@@ -896,3 +896,94 @@ it("stops at the run-out screen when Finish is refused for running out", async (
   ).toBeTruthy();
   expect(onSaved).not.toHaveBeenCalled();
 });
+
+/** Keep a complete draft on the phone that has already reached the given step. */
+function storeDraftThatReached(furthestStep: number | undefined, stage: Stage) {
+  localStorage.setItem(
+    "take5-draft",
+    JSON.stringify({
+      version: 4,
+      draft: { started_at: STARTED_AT, ...COMPLETE_DRAFT },
+      submissionId: SAVED.take5.id,
+      stage,
+      furthestStep,
+    }),
+  );
+}
+
+it("lets a new Take 5 tap no step it hasn't reached", () => {
+  stubApi({});
+  renderWithApi(<FormAt start={{ page: "job" }} />);
+  const steps = screen.getByRole("navigation", { name: "Take 5 steps" });
+  expect(within(steps).queryAllByRole("button")).toHaveLength(0);
+});
+
+it("goes back to an earlier step with no check, as Back does", async () => {
+  storeDraftThatReached(5, { page: "review" });
+  const calls = stubApi({
+    "POST /api/take5s/check": { status: 200, body: PASSING_CHECK },
+  });
+  renderWithApi(<FormAt start={{ page: "think" }} />);
+  await waitFor(() => {
+    expect(calls).toContain("POST /api/take5s/check");
+  });
+  const checksBefore = calls.length;
+  fireEvent.click(screen.getByRole("button", { name: "Job" }));
+  expect(
+    await screen.findByRole("heading", { name: "The job in front of you" }),
+  ).toBeTruthy();
+  expect(calls).toHaveLength(checksBefore);
+  expect(moves.at(-1)).toEqual({ page: "job", replace: false });
+});
+
+it("checks this page before jumping forward, and keeps the worker on a gap", async () => {
+  storeDraftThatReached(5, { page: "review" });
+  stubApi({
+    "POST /api/take5s/check": {
+      status: 200,
+      body: {
+        errors: [{ path: "job", message: "Fill in this field." }],
+        assessment: null,
+        can_submit: false,
+      },
+    },
+  });
+  renderWithApi(<FormAt start={{ page: "job" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Review" }));
+  const job = screen.getByLabelText("What is the job?");
+  await waitFor(() => {
+    expect(document.activeElement).toBe(job);
+  });
+  expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+    "The job in front of you",
+  );
+});
+
+it("jumps forward to a step already reached when this page has no gaps", async () => {
+  storeDraftThatReached(5, { page: "review" });
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "job" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Review" }));
+  expect(
+    await screen.findByRole("heading", { name: "One last look" }),
+  ).toBeTruthy();
+  expect(moves.at(-1)).toEqual({ page: "review", replace: false });
+});
+
+it("opens the assess step on the first hazard's before rating", async () => {
+  storeDraftThatReached(5, { page: "review" });
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "review" }} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Assess" }));
+  expect(
+    await screen.findByRole("heading", { name: "Before any controls" }),
+  ).toBeTruthy();
+  expect(screen.getByText("Step 4 of 5 · Hazard 1 of 1")).toBeTruthy();
+});
+
+it("remembers how far a kept draft got, even one kept before the step bar", () => {
+  storeDraftThatReached(undefined, { page: "review" });
+  stubApi({});
+  renderWithApi(<FormAt start={{ page: "job" }} />);
+  expect(screen.getByRole("button", { name: "Review" })).toBeTruthy();
+});

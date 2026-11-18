@@ -67,6 +67,11 @@ saved until the worker submits it. Then the app asks its one question, and then 
 Saved Take 5s can be opened again from a list. A finished Take 5 is never changed; if the job changes the worker
 does a new one.
 
+Across the top of the form, a step bar shows the five steps: Job, Think, Hazards, Assess and Review. The worker can
+tap any step they have already reached in this Take 5 to open its first page. Going back is not checked, as Back
+isn't. Going forward checks the page they are on first, as Continue does, and a gap keeps them there. A step not
+reached yet can't be tapped, so the only way to it is Continue (decisions D34 to D39).
+
 Until it is submitted, a Take 5 is a *draft*. The worker can leave it part-way and carry on later, but only for a
 short time after starting it: see [Drafts](#drafts).
 
@@ -422,6 +427,9 @@ The first four screens of the core workflow, saved when the worker submits.
   unsaved answers.
 - Acceptance: Continue asks the back end about that page and names its gaps there, before moving on. A gap found
   at the review sends the worker to it, and back to the review once it is filled in.
+- Acceptance: each step in the bar the worker has reached opens that step's first page; a step not reached yet
+  can't be tapped. A tap forward checks the page the worker is on first and stays on a gap; a tap back sends no
+  check. How far they got is kept with the draft, and the back gesture undoes a tap.
 - Acceptance: Enter in a one-line box or on a picked rating does what Continue does. Enter in a bigger box, such
   as the job, a hazard or a control, starts a new line. Enter never presses Finish.
 - Acceptance: removing a hazard or a control can be undone.
@@ -551,6 +559,12 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D31 | Is rewording required (2026-11-18) | No: a nudge to reword in place, or "Keep it as it is" | Required before Continue |
 | D32 | The nudge's example (2026-11-18) | One per hazard question, kept in the template | One example for every question |
 | D33 | Does "Keep it as it is" last (2026-11-18) | Yes, for those exact words, on the phone | Asked again on every visit |
+| D34 | Which steps in the bar can be tapped (2026-11-18) | Any step already reached in this Take 5 | Back only; every step at any time |
+| D35 | Is a tap forward in the bar checked (2026-11-18) | Yes, the page being left is checked as Continue checks it; a tap back is not | No check, leaving it to the review |
+| D36 | Where a tap on a step lands (2026-11-18) | The step's first page | The last page the worker was on in that step |
+| D37 | Do later steps lock again after an earlier change (2026-11-18) | No; the review sends the worker to any new gap | Yes, until Continue reaches them again |
+| D38 | How the step bar looks (2026-11-18) | Reached steps dark and underlined, the current one bold, the rest grey; no ticks | A tick on each step passed |
+| D39 | Does the back gesture undo a tap on the bar (2026-11-18) | Yes, as it undoes Continue | No, a tap replaces the page |
 
 ## Open questions
 

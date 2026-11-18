@@ -2,6 +2,18 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-18: The step bar can be tapped, but only to steps already reached (task 0026)
+
+- Decision: The five steps at the top of the form can be tapped to open a step's first page, but only steps
+  already reached in this Take 5. A tap forward checks the page being left, as Continue does; a tap back doesn't.
+  How far the worker got is kept with the draft on the phone (spec D34 to D39).
+- Why: Jake asked for the steps to work as a navigation bar. A bar that opens any step would let a worker skip
+  every page Continue checks, which is what the app exists to stop. Going back to fix something is the useful
+  part, and it is also where a tap saves the most taps.
+- Alternatives considered: Back only (a fix from the review would then need Continue through every page again);
+  every step at any time (skips the thinking, and leaves the checks to the review alone).
+- Decided by: human, from Claude's recommended picks
+
 ## 2026-11-18: Nudge a short hazard picked for a Yes to say what and where (task 0022, part 2)
 
 - Decision: A hazard linked to a Yes with fewer than 6 words (`Take5Template.specific_hazard_words`) is nudged
