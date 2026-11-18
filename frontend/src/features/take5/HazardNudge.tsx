@@ -43,10 +43,14 @@ export function HazardNudge({
   );
   const check = current.data ? current : settled;
   const path = `hazards.${String(index)}.description`;
-  const nudge = (check.data?.nudges ?? []).find(
-    (item) => item.path === path && item.question_id === questionId,
-  );
-  if (kept || !(nudge || typing)) return null;
+  // Kept words are never asked about, but the box stays while the worker is in it, even
+  // if what they type matches words they kept before.
+  const nudge = kept
+    ? undefined
+    : (check.data?.nudges ?? []).find(
+        (item) => item.path === path && item.question_id === questionId,
+      );
+  if (!(nudge || typing)) return null;
 
   const description = draft.hazards[index]?.description ?? "";
   const fieldId = `nudge.${path}`;
