@@ -82,7 +82,9 @@ Without a key the app works, and asks the fixed challenge question every time. T
    mistake can't run up a bill.
 2. Make an API key under API keys. Copy it: it is only shown once.
 3. In the `backend` folder, make a file called `.env` holding one line: `TAKE5_AI_KEY=` followed by the key.
-   Git ignores `.env`, so the key never goes to GitHub. Never put a key anywhere else in the repo.
+   Make it in VS Code (File, New Text File, then save it as `backend/.env`), not with PowerShell's `>`, which
+   saves it in a form the app can't read. Git ignores `.env`, so the key never goes to GitHub. Never put a key
+   anywhere else in the repo.
 4. Restart `uv run scripts/dev.py`. The back end's log says which model asks the question.
 
 To use another model, add a line such as `TAKE5_AI_MODEL=claude-sonnet-5-5`. To try the AI on five made-up Take

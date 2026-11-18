@@ -43,6 +43,7 @@ def create_app(
     Returns:
         The FastAPI app.
     """
+    _show_app_logs()
     app_settings: Settings = settings or Settings()
     storage: Take5Repository = (
         repository
@@ -54,10 +55,29 @@ def create_app(
     service = Take5Service(
         storage,
         BOOKLET_TEMPLATE,
-        challenge_asker=challenge_asker or build_challenge_asker(app_settings),
+        challenge_asker=(
+            challenge_asker
+            if challenge_asker is not None
+            else build_challenge_asker(app_settings)
+        ),
     )
     app.include_router(create_router(service))
     return app
+
+
+def _show_app_logs() -> None:
+    """Show the app's own info lines in the server's log, beside uvicorn's.
+
+    Uvicorn sets up only its own loggers, so without this Python shows the app's
+    warnings and nothing less, and lines such as which model asks would be lost.
+    """
+    app_logger: logging.Logger = logging.getLogger("risk_assessment")
+    if app_logger.handlers:
+        return
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(levelname)s:     %(name)s: %(message)s"))
+    app_logger.addHandler(handler)
+    app_logger.setLevel(logging.INFO)
 
 
 def build_challenge_asker(settings: Settings) -> ChallengeAsker | None:

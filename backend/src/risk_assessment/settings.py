@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
         env_prefix="TAKE5_",
         env_file=_LOCAL_SETTINGS_FILE,
+        # Also reads a file saved as UTF-8 with a byte order mark, as Windows can.
+        env_file_encoding="utf-8-sig",
         extra="ignore",
         frozen=True,
     )

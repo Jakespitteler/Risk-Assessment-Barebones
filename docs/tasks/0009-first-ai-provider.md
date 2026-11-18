@@ -75,3 +75,13 @@ Jake took every recommended answer (spec D52 to D55):
   `domain/take5/challenge.py`, which is what decides what is sent.
 - `ai/` may import `domain` (as `storage/` may), because `AiQuestion` lives in `domain/take5/challenge.py`.
 - The adapter logs the tokens each reply used, never any text, so cost can be followed in the back end's log.
+
+### Found in review
+
+- The app's own info lines (which model asks, and the tokens each reply used) were dropped, because uvicorn sets
+  up only its own loggers. `create_app()` now shows the `risk_assessment` logger's info lines.
+- A `.env` saved by PowerShell 5.1's `>` is UTF-16 and is read as no key, without an error. The README says to
+  make it in VS Code; a UTF-8 file with a byte order mark is read too.
+- Not checked on Windows: the whole-app tests set `TAKE5_AI_KEY` to empty so a key in `backend/.env` isn't used.
+  Windows keeps an empty variable when Node starts a program, so it should hold. If the fallback-question tests
+  fail on Windows with a key in `.env`, this is why.
