@@ -56,6 +56,7 @@ test.describe("on a computer", () => {
     ).toHaveCount(0);
     await capture(page, "type-control-1-open");
     await page.keyboard.type(CONTROL);
+    await expect(page.getByLabel("What will you do?")).toHaveValue(CONTROL);
     await page.getByLabel("Kind of control").selectOption("Isolate the hazard");
     await page
       .getByRole("button", { name: "Add a control", exact: true })

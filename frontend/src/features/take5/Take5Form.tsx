@@ -61,7 +61,7 @@ export function Take5Form(props: Take5FormProps) {
   const [leaving, setLeaving] = useState(false);
   const [runOut, setRunOut] = useState<string | null>(null);
   const submit = useSubmitTake5();
-  const { heading, container, focusErrorsOn, focusFieldOn, focusHeading } =
+  const { heading, container, focusErrorsOn, focusFieldOn, focusPageAgain } =
     usePageFocus(stage);
   const [allErrors, setErrors] = useState<FieldError[]>([]);
   const [fixing, setFixing] = useState(false);
@@ -236,7 +236,7 @@ export function Take5Form(props: Take5FormProps) {
           // The panel's buttons go with it, so the focus goes back to the page.
           onKeepGoing={() => {
             setLeaving(false);
-            focusHeading();
+            focusPageAgain();
           }}
         />
       </Screen>

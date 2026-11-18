@@ -42,7 +42,7 @@ export function usePageFocus(stage: Stage) {
       fieldOn.current = { stage: JSON.stringify(on), field };
     },
     /** Move the focus as if the page had just opened, when it is drawn again. */
-    focusHeading: () => {
+    focusPageAgain: () => {
       setAttempt((count) => count + 1);
     },
   };

@@ -53,6 +53,37 @@ it("adds control 1 when its kind is picked first", () => {
   expect(onAdd).toHaveBeenCalledWith({ description: "", kind: "Wear PPE" });
 });
 
+it("keeps the cursor in control 1 as the first letter typed adds it", () => {
+  function ControlsInState() {
+    const [controls, setControls] = useState<ControlDraft[]>([]);
+    return (
+      <ControlsPage
+        path="hazards.0"
+        controls={controls}
+        template={SMALL_TEMPLATE}
+        errorFor={() => undefined}
+        onChange={(index, control) => {
+          setControls(
+            controls.map((item, at) => (at === index ? control : item)),
+          );
+        }}
+        onAdd={(control) => {
+          setControls([...controls, control]);
+        }}
+        onRemove={vi.fn()}
+      />
+    );
+  }
+  render(<ControlsInState />);
+  const box = screen.getByLabelText("What will you do?");
+  box.focus();
+  fireEvent.change(box, { target: { value: "C" } });
+  // The same box stays on the page, now with a Remove button, so no typing is lost.
+  expect(screen.getByLabelText("What will you do?")).toBe(box);
+  expect(document.activeElement).toBe(box);
+  expect(screen.getByRole("button", { name: "Remove control 1" })).toBeTruthy();
+});
+
 it("puts the cursor in a control added with Add a control", () => {
   function ControlsInState() {
     const [controls, setControls] = useState<ControlDraft[]>([

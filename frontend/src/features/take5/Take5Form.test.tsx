@@ -117,6 +117,22 @@ it("on a computer, opens control 1 with the cursor in it", () => {
   );
 });
 
+it("leaves control 1 open and empty when the only control is removed, and Undo puts it back", () => {
+  storeDraft();
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "controls", hazard: 0 }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Remove control 1" }));
+  expect(
+    screen.getByLabelText<HTMLTextAreaElement>("What will you do?").value,
+  ).toBe("");
+  expect(screen.queryByRole("button", { name: "Remove control 1" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+  expect(
+    screen.getByLabelText<HTMLTextAreaElement>("What will you do?").value,
+  ).toBe("Chock the wheel");
+  expect(screen.getByRole("button", { name: "Remove control 1" })).toBeTruthy();
+});
+
 it("on a computer, focuses the heading when every box is filled in", () => {
   stubPointer("fine");
   storeDraft();
