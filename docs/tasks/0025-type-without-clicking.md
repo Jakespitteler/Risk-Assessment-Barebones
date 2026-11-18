@@ -1,7 +1,7 @@
 ---
 id: 0025
 title: Control 1 is open, and typing goes straight into the text box
-status: in-progress
+status: done
 owner: claude
 branch: claude/project-thread-axb1g9
 ---
@@ -15,19 +15,19 @@ their own words, without the app writing anything for them.
 
 ## Acceptance criteria
 
-- [ ] A hazard with no controls opens its controls page with control 1 already open and empty. Nothing is added
+- [x] A hazard with no controls opens its controls page with control 1 already open and empty. Nothing is added
   to the draft until the worker types in it or picks its kind, so a hazard can still have no controls.
-- [ ] While control 1 is that empty box, not yet added, it has no Remove button and "Add a control" is hidden, as
+- [x] While control 1 is that empty box, not yet added, it has no Remove button and "Add a control" is hidden, as
   pressing it would only add the box already showing.
-- [ ] On a computer, a page that opens with an empty text box puts the cursor in the first one, so typing goes
+- [x] On a computer, a page that opens with an empty text box puts the cursor in the first one, so typing goes
   straight in: the job page (your name, or the job when the name is remembered), the hazard list and the
   controls page. A page with no empty box, or only answers to pick, focuses the heading as before.
-- [ ] On a phone, pages open with the heading focused as before, so the keyboard doesn't cover the page unasked
+- [x] On a phone, pages open with the heading focused as before, so the keyboard doesn't cover the page unasked
   (Jake's decision, below).
-- [ ] "Add a control" and "Add another hazard" put the cursor in the new box, on a phone too.
-- [ ] Opening a page to fix a gap still focuses the first gap; "Add a hazard" on the hazard check still focuses
+- [x] "Add a control" and "Add another hazard" put the cursor in the new box, on a phone too.
+- [x] Opening a page to fix a gap still focuses the first gap; "Add a hazard" on the hazard check still focuses
   the new hazard.
-- [ ] Tests cover each of these. Checked in the running app at 360 px wide, with screenshots.
+- [x] Tests cover each of these. Checked in the running app at 360 px wide, with screenshots.
 
 ## Out of scope
 
@@ -49,5 +49,11 @@ isn't moved by a tap, so phones would behave differently from each other. Jake c
   a keyboard but no mouse counts as a phone.
 - When the cursor goes into a box, a screen reader reads that box's label instead of the page heading.
 - Removing the only control leaves an empty control 1 open, not yet added, with Undo, as removing any control does.
+- Leave, then "Keep going", opens the page again as if it had just opened, so on a computer the cursor goes into
+  its first empty box.
+- From the review, a hazard's controls page whose weak-controls question is already showing an empty reason box
+  puts the cursor in that box, as it is the first empty box on the page.
+- Typing in control 1 and then deleting it all leaves a real, empty control 1, with Remove, as after "Add a
+  control".
 - The branch is `claude/project-thread-axb1g9`, the name the cloud thread is given. It is stacked on task 0024's
   pull request (#38).
