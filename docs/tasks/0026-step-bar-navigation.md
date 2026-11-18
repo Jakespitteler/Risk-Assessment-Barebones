@@ -18,22 +18,22 @@ checks. So the bar only goes where the worker has already been, and going forwar
 
 ## Decided
 
-Jake answered on 2026-11-18: "all your picks" (spec D34 to D39).
+Jake answered on 2026-11-18: "all your picks" (spec D38 to D43).
 
 1. **Which steps can be tapped?** Any step already reached in this Take 5. Steps not reached yet are grey and
-   can't be tapped (D34). Not chosen: back only; every step at any time.
+   can't be tapped (D38). Not chosen: back only; every step at any time.
 2. **Jumping forward to a step reached before.** This page is checked first, as Continue checks it. A gap keeps
    the worker here, marked; otherwise they jump. The review still checks everything. Going back is never checked,
-   as Back isn't (D35).
+   as Back isn't (D39).
 3. **Where a tap lands.** The step's first page: Hazards opens the list, Assess opens the first hazard's before
-   rating (D36). Not chosen: the last page the worker was on in that step.
+   rating (D40). Not chosen: the last page the worker was on in that step.
 4. **After going back and adding a hazard.** The bar still remembers how far the worker got, so Review can be
-   tapped; the review then sends them to the new hazard's empty ratings (D37). Not chosen: lock the later steps
+   tapped; the review then sends them to the new hazard's empty ratings (D41). Not chosen: lock the later steps
    again until Continue reaches them.
 5. **The look.** A reached step's bar is filled dark like a progress bar and its name is underlined, as a link
    is. The current step is bold. A step not reached yet stays light grey. Each step is a 48 px tall tap target.
-   No ticks, because a tick would say "done" when the step may still have a gap (D38).
-6. **The phone's back gesture** undoes a tap, as it undoes Continue (D39).
+   No ticks, because a tick would say "done" when the step may still have a gap (D42).
+6. **The phone's back gesture** undoes a tap, as it undoes Continue (D43).
 
 ## Acceptance criteria
 
@@ -46,7 +46,7 @@ Jake answered on 2026-11-18: "all your picks" (spec D34 to D39).
 - [x] The phone's back gesture undoes a tap.
 - [x] Each step is at least 48 px high, and the bar fits a 360 px wide phone (screenshots below).
 - [x] Tests: `stage.test.ts`, `StepBar.test.tsx`, `Take5Form.test.tsx` and `e2e/step-bar.spec.ts`.
-- [x] `docs/spec.md` (core workflow, F2 and decisions D34 to D39) says what the bar does.
+- [x] `docs/spec.md` (core workflow, F2 and decisions D38 to D43) says what the bar does.
 
 ## Out of scope
 

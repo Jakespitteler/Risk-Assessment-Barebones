@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   Hazard,
   HazardDraft,
@@ -176,14 +176,25 @@ export function useTake5Draft() {
   );
   const [stage, setStage] = useState(stored?.stage);
   // A draft kept before the step bar could be tapped has reached at least its own page.
-  const [furthestStep, setFurthestStep] = useState(
-    () => stored?.furthestStep ?? stepOf(stored?.stage ?? FIRST_STAGE),
+  const [furthestStep, setFurthestStep] = useState(() =>
+    typeof stored?.furthestStep === "number"
+      ? stored.furthestStep
+      : stepOf(stored?.stage ?? FIRST_STAGE),
   );
   const [keptWording, setKeptWording] = useState<string[]>(
     () => stored?.keptWording ?? [],
   );
   const [removal, setRemoval] = useState<Removal | null>(null);
   const [kept, setKept] = useState(true);
+  // Set at once when the draft is saved or thrown away. The state above only changes on
+  // the next render, so an effect from a render before then could keep the draft again.
+  const forgotten = useRef(false);
+
+  const forget = () => {
+    forgotten.current = true;
+    setKept(false);
+    forgetKeptDraft();
+  };
 
   const current = (): StoredDraft => ({
     version: DRAFT_VERSION,
@@ -196,7 +207,7 @@ export function useTake5Draft() {
   const started = draft.started_at != null;
 
   useEffect(() => {
-    if (!kept || !started) return;
+    if (!kept || !started || forgotten.current) return;
     keepDraft({
       version: DRAFT_VERSION,
       draft,
@@ -258,8 +269,7 @@ export function useTake5Draft() {
     },
     /** Forget the draft once it is saved, and remember the name for next time. */
     saved: (workerName: string) => {
-      setKept(false);
-      forgetKeptDraft();
+      forget();
       write(() => localStorage, WORKER_NAME_KEY, workerName);
     },
     /**
@@ -267,13 +277,11 @@ export function useTake5Draft() {
      * The next Take 5 starts afresh with a new ID.
      */
     discard: () => {
-      setKept(false);
-      forgetKeptDraft();
+      forget();
     },
     /** Throw the draft away, and return it so that Undo can keep it again. */
     throwAway: (): StoredDraft => {
-      setKept(false);
-      forgetKeptDraft();
+      forget();
       return current();
     },
   };

@@ -7,6 +7,7 @@ the draft being submitted, but they say what will stop the job.
 """
 
 from collections.abc import Mapping
+from datetime import datetime
 from typing import ClassVar
 from uuid import UUID
 
@@ -181,6 +182,7 @@ class DraftCheck(BaseModel):
         assessment: The rated Take 5, or None while there are errors.
         can_submit: True when there are no errors.
         thinking_questions: Applicable prompts, including ones already answered.
+        runs_out_at: When the draft runs out (spec K2), or None when it never does.
         nudges: Suggestions to make an answer clearer, in the order of the form. A nudge
             never stops the draft being submitted.
     """
@@ -192,6 +194,7 @@ class DraftCheck(BaseModel):
     assessment: Take5 | None
     can_submit: bool
     thinking_questions: tuple[ThinkingQuestion, ...] = ()
+    runs_out_at: datetime | None = None
     nudges: tuple[Nudge, ...] = ()
 
 

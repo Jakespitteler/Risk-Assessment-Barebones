@@ -27,8 +27,8 @@ has access. All else do the recommended." So the vague check is the word rule fo
 recommendations: question 9's hazard ID wasn't needed. The link is kept on the hazard itself (`covers`, the
 questions it is linked to), so removing a hazard removes its links and nothing else can shift.
 
-- Part 1 (links and T5): questions 3, 4, 5, 6, 8, 9, 11 and 12. Spec T5, examples 65 to 69, decisions D26 to
-  D29.
+- Part 1 (links and T5): questions 3, 4, 5, 6, 8, 9, 11 and 12. Spec T5, examples 65 to 69, decisions D30 to
+  D33.
 - Part 2 (the vague nudge): questions 1, 2, 7 and 10.
 
 ## Decide first
@@ -160,7 +160,7 @@ Part 1 ticked the boxes it finished; part 2 ticked the rest.
 - Part 2 (2026-11-18): `Question.example` and `Take5Template.specific_hazard_words` (6 on the booklet);
   `hazard_wording_nudge()` in `thinking.py` (T6); `DraftCheck.nudges`; `HazardNudge.tsx` under the first Yes a
   hazard is linked to. "Keep it as it is" is kept in the phone's draft (`keptWording`) for those exact words; it
-  is an optional field, so the draft version stays 4. Spec examples 70 to 75, decisions D30 to D33. The rule is a
+  is an optional field, so the draft version stays 4. Spec examples 70 to 75, decisions D34 to D37. The rule is a
   plain function, so task 0009 can put an AI in front of it with this as the fallback, as Jake asked.
 - Part 2 review (2026-11-18): the nudge names the question it shows under (`question_id`), so the phone draws it
   under that question and needs no rule of its own to choose one. The box changes the hazard as the worker
