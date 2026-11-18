@@ -10,6 +10,7 @@ without the owner's written permission. See [LICENSE](LICENSE).
 - What the app does: [docs/spec.md](docs/spec.md)
 - How it's built: [docs/architecture.md](docs/architecture.md)
 - Current work: [docs/tasks/](docs/tasks/), done in the order in [docs/tasks/README.md](docs/tasks/README.md)
+- Ideas for later, not yet tasks: [docs/ideas.md](docs/ideas.md)
 
 ## Set it up
 

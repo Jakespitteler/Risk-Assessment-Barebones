@@ -12,12 +12,15 @@ ENOENT
 envrc
 EPERM
 fastapi
+Flesch
 formatters
 frontmatter
 httpx
 isort
 jsdom
 killpg
+Kincaid
+multiclass
 netrc
 oneline
 parametrize
