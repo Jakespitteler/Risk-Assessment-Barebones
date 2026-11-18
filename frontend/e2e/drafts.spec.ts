@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import {
+  answerQuestion,
+  submit,
   THINK,
   answerAll,
   capture,
@@ -187,7 +189,7 @@ test("a Take 5 saved with its answer lost opens as saved, even after 2 hours", a
     await route.fetch();
     await route.fulfill({ status: 503, body: "{}" });
   });
-  await finish(page);
+  await submit(page);
   await expect(
     page.getByText(/couldn’t confirm your Take 5 was saved/),
   ).toBeVisible();
@@ -195,6 +197,7 @@ test("a Take 5 saved with its answer lost opens as saved, even after 2 hours", a
   await ageTheDraft(page);
 
   await page.goto("/");
+  await answerQuestion(page);
   await expect(heading(page, "Good to go")).toBeVisible();
   await expect(heading(page, "This Take 5 has run out")).toHaveCount(0);
   await expect

@@ -3,13 +3,13 @@ import { expect, it, vi } from "vitest";
 import type { Stage } from "./stage";
 import { FormNav } from "./FormNav";
 
-function nav(stage: Stage, busy = false, canFinish = true, label?: string) {
-  const handlers = { onBack: vi.fn(), onFinish: vi.fn() };
+function nav(stage: Stage, busy = false, canSubmit = true, label?: string) {
+  const handlers = { onBack: vi.fn(), onSubmit: vi.fn() };
   const view = render(
     <FormNav
       stage={stage}
       busy={busy}
-      canFinish={canFinish}
+      canSubmit={canSubmit}
       label={label}
       {...handlers}
     />,
@@ -29,15 +29,15 @@ it("submits the form with Continue, so Enter in a box presses it", () => {
   ).toBe("submit");
 });
 
-it("finishes on the review", () => {
-  const { onFinish } = nav({ page: "review" });
-  const finish = screen.getByRole<HTMLButtonElement>("button", {
-    name: "Finish Take 5",
+it("submits the Take 5 on the review", () => {
+  const { onSubmit } = nav({ page: "review" });
+  const submit = screen.getByRole<HTMLButtonElement>("button", {
+    name: "Submit Take 5",
   });
-  fireEvent.click(finish);
-  expect(onFinish).toHaveBeenCalledOnce();
-  // Saving can't be taken back, so Enter never presses Finish.
-  expect(finish.type).toBe("button");
+  fireEvent.click(submit);
+  expect(onSubmit).toHaveBeenCalledOnce();
+  // Saving can't be taken back, so Enter never presses Submit.
+  expect(submit.type).toBe("button");
 });
 
 it("is disabled while busy, with what it is doing", () => {
@@ -50,10 +50,10 @@ it("is disabled while busy, with what it is doing", () => {
   ).toBe(true);
 });
 
-it("keeps Finish disabled until the review has been checked", () => {
+it("keeps Submit disabled until the review has been checked", () => {
   nav({ page: "review" }, false, false);
   expect(
-    screen.getByRole<HTMLButtonElement>("button", { name: "Finish Take 5" })
+    screen.getByRole<HTMLButtonElement>("button", { name: "Submit Take 5" })
       .disabled,
   ).toBe(true);
 });

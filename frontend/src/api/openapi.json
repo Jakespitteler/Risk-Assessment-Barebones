@@ -99,7 +99,7 @@
           "take5"
         ],
         "summary": "Submit",
-        "description": "Check and save a Take 5 once, and return it with its verdict.\n\nA draft with gaps raises `InvalidDraftError`, which `api/errors.py` turns into\na 422.",
+        "description": "Check and save a Take 5 once, and return it, unfinished, with its question.\n\nA draft with gaps raises `InvalidDraftError`, which `api/errors.py` turns into\na 422.",
         "operationId": "submit_api_take5s_post",
         "requestBody": {
           "content": {
@@ -145,13 +145,87 @@
         }
       }
     },
+    "/api/take5s/{take5_id}/answer": {
+      "post": {
+        "tags": [
+          "take5"
+        ],
+        "summary": "Answer",
+        "description": "Save the answer to a Take 5's question, and return it finished.\n\nAn answer that is too short raises `InvalidAnswerError`, which\n`api/errors.py` turns into a 422.",
+        "operationId": "answer_api_take5s__take5_id__answer_post",
+        "parameters": [
+          {
+            "name": "take5_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Take5 Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Take5Response"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Something is missing or wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormErrors"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No Take 5 has this ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMessage"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It was already answered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/take5s/{take5_id}": {
       "get": {
         "tags": [
           "take5"
         ],
         "summary": "Get",
-        "description": "Return a saved Take 5 with the verdict the worker was given.",
+        "description": "Return a saved Take 5 with its verdict, or its question if unfinished.",
         "operationId": "get_api_take5s__take5_id__get",
         "parameters": [
           {
@@ -211,6 +285,80 @@
         ],
         "title": "Answer",
         "description": "The three answers a question can have. Nothing is picked to begin with."
+      },
+      "AnswerRequest": {
+        "properties": {
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "answer"
+        ],
+        "title": "AnswerRequest",
+        "description": "The worker's answer to a Take 5's challenge question.\n\nAttributes:\n    answer: What the worker wrote."
+      },
+      "AskedBy": {
+        "type": "string",
+        "enum": [
+          "ai",
+          "fallback"
+        ],
+        "title": "AskedBy",
+        "description": "Who wrote the question the worker was asked."
+      },
+      "Challenge": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "asked_by": {
+            "$ref": "#/components/schemas/AskedBy"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "instructions_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions Version"
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question",
+          "asked_by"
+        ],
+        "title": "Challenge",
+        "description": "The question a Take 5 was asked, who asked it, and the worker's answer.\n\nAttributes:\n    question: The question the worker was shown.\n    asked_by: Whether the AI or the fallback asked it.\n    model: For an AI question, which model asked it. None for the fallback.\n    instructions_version: For an AI question, which version of its instructions\n        it had. None for the fallback.\n    answer: The worker's answer, or None until they give one."
       },
       "Control": {
         "properties": {
@@ -733,12 +881,26 @@
             "title": "Location"
           },
           "finished_at": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Finished At"
           },
           "verdict": {
-            "$ref": "#/components/schemas/Verdict"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Verdict"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "fixes": {
             "anyOf": [
@@ -763,6 +925,16 @@
               }
             ],
             "title": "Started At"
+          },
+          "challenge": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Challenge"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -773,12 +945,10 @@
           "created_at",
           "worker_name",
           "job",
-          "location",
-          "finished_at",
-          "verdict"
+          "location"
         ],
         "title": "SavedTake5",
-        "description": "A Take 5 as it was saved: what the worker gave, and the verdict they were shown.\n\nIt is never changed once saved, so it always shows the template and verdict the\nworker was given, even after the rules change.\n\nAttributes:\n    id: The ID the phone made when the worker started submitting.\n    created_at: When it was saved.\n    worker_name: Who did the Take 5.\n    job: What the job is.\n    location: Where the job is.\n    finished_at: When it was finished. Until task 0008 this is when it was saved.\n    verdict: The verdict the worker was shown.\n    fixes: The ID of the saved Take 5 this one fixes, or None. It points back\n        only, so the first Take 5 is never changed when it is fixed.\n    started_at: When the worker started it, by the phone's clock, or None for a\n        Take 5 saved before task 0019."
+        "description": "A Take 5 as it was saved: what the worker gave, and the verdict they were shown.\n\nIt is saved unfinished, before the challenge question is asked (spec C6). The\nquestion is added once, then the answer and the verdict once, and from then on it\nis never changed, so it always shows the template and verdict the worker was\ngiven, even after the rules change.\n\nAttributes:\n    id: The ID the phone made when the worker started submitting.\n    created_at: When it was saved.\n    worker_name: Who did the Take 5.\n    job: What the job is.\n    location: Where the job is.\n    finished_at: When the challenge question was answered, or None while it is\n        unfinished. A Take 5 saved before task 0008 was finished when it was saved.\n    verdict: The verdict the worker was shown, or None while it is unfinished.\n    fixes: The ID of the saved Take 5 this one fixes, or None. It points back\n        only, so the first Take 5 is never changed when it is fixed.\n    started_at: When the worker started it, by the phone's clock, or None for a\n        Take 5 saved before task 0019.\n    challenge: The question it was asked and the worker's answer, or None until\n        it is asked. A Take 5 finished before task 0008 has none."
       },
       "SubmissionRequest": {
         "properties": {
@@ -924,7 +1094,7 @@
           "offers_fix"
         ],
         "title": "Take5Response",
-        "description": "A saved Take 5, with the overall rating the back end worked out for it.\n\nAttributes:\n    take5: The saved Take 5, with its verdict and a copy of its template.\n    rating: The Take 5's rating (spec R4 and R5).\n    fixed_by: The ID of the newest Take 5 that fixes this one, or None. It is\n        found when the Take 5 is opened, because the saved one never changes.\n    offers_fix: True when the result should offer to fix this Take 5 in a new\n        one: it said Don't start yet and has no fix yet."
+        "description": "A saved Take 5, with the overall rating the back end worked out for it.\n\nAttributes:\n    take5: The saved Take 5, with its question and a copy of its template. Its\n        verdict is empty until the question is answered.\n    rating: The Take 5's rating (spec R4 and R5).\n    fixed_by: The ID of the newest Take 5 that fixes this one, or None. It is\n        found when the Take 5 is opened, because the saved one never changes.\n    offers_fix: True when the result should offer to fix this Take 5 in a new\n        one: it said Don't start yet and has no fix yet."
       },
       "Take5Summary": {
         "properties": {
@@ -947,7 +1117,14 @@
             "title": "Job"
           },
           "can_start": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Can Start"
           },
           "fixed": {
@@ -965,7 +1142,7 @@
           "fixed"
         ],
         "title": "Take5Summary",
-        "description": "One line of the saved Take 5 list: enough to find it, not the whole card.\n\nAttributes:\n    id: The Take 5's ID, to open it.\n    created_at: When it was saved.\n    worker_name: Who did it.\n    job: What the job is.\n    can_start: The verdict it was saved with: True for Good to go, False for\n        Don't start yet.\n    fixed: True when a newer Take 5 fixes this one."
+        "description": "One line of the saved Take 5 list: enough to find it, not the whole card.\n\nAttributes:\n    id: The Take 5's ID, to open it.\n    created_at: When it was saved.\n    worker_name: Who did it.\n    job: What the job is.\n    can_start: The verdict it was saved with: True for Good to go, False for\n        Don't start yet, or None while its question is unanswered.\n    fixed: True when a newer Take 5 fixes this one."
       },
       "Take5Template": {
         "properties": {

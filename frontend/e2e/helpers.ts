@@ -8,10 +8,29 @@ export async function next(page: Page) {
   await page.getByRole("button", { name: "Continue", exact: true }).click();
 }
 
-export async function finish(page: Page) {
+export const QUESTION_HEADING = "One question before you start";
+export const ANSWER = "Wheels chocked both sides";
+
+/** Press Submit on the review, which saves the Take 5 and asks its question. */
+export async function submit(page: Page) {
+  await page
+    .getByRole("button", { name: "Submit Take 5", exact: true })
+    .click();
+}
+
+/** Answer the question asked before the result, and press Finish (spec C4). */
+export async function answerQuestion(page: Page, answer = ANSWER) {
+  await expect(heading(page, QUESTION_HEADING)).toBeVisible();
+  await page.getByRole("textbox").fill(answer);
   await page
     .getByRole("button", { name: "Finish Take 5", exact: true })
     .click();
+}
+
+/** Submit the Take 5 and answer its question, to reach the result. */
+export async function finish(page: Page) {
+  await submit(page);
+  await answerQuestion(page);
 }
 
 export async function back(page: Page) {

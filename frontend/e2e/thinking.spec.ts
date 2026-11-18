@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import {
+  finish,
   addControl,
   answerThinkThrough,
   capture,
@@ -89,7 +90,7 @@ test("T3: a required answer survives reload, review, saving and reopening withou
   await expect(heading(page, "One last look")).toBeVisible();
   await expect(page.getByText(REASON, { exact: true })).toBeVisible();
   await capture(page, "thinking-review");
-  await page.getByRole("button", { name: "Finish Take 5" }).click();
+  await finish(page);
   await expect(heading(page, "Good to go")).toBeVisible();
   await expect(page.getByText(REASON, { exact: true })).toBeVisible();
   await page.reload();

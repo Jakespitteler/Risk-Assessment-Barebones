@@ -1,11 +1,7 @@
-import type { Take5Response } from "../../api/take5";
+import type { Verdict } from "../../api/take5";
 
 /** The verdict, in colours as strong as the risk badge, so it reads in bright sun. */
-export function VerdictPanel({
-  verdict,
-}: {
-  verdict: Take5Response["take5"]["verdict"];
-}) {
+export function VerdictPanel({ verdict }: { verdict: Verdict }) {
   return (
     <section
       className={`flex flex-col gap-3 rounded-2xl p-5 text-white ${

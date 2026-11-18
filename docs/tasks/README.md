@@ -11,8 +11,8 @@ can move them. Last brought up to date on 2026-11-18, after Jake merged the pull
 Complete: 0001 to 0007, 0010 to 0012, 0014 to 0020, 0022, 0023, 0025 and 0026. Task 0018 decided to keep the
 built-in `sqlite3` for now (`docs/decisions.md`, 2026-11-14), so no task to switch storage is in the order below.
 
-1. **0008, the challenge question.** Depends on 0005, which is complete. Task 0022's saved links can feed the
-   question.
+1. **0008, the challenge question.** Depends on 0005, which is complete. Jake answered its questions on 2026-11-18
+   (spec D44 to D51). Built the same day and marked done in its pull request; done when Jake merges it.
 2. **0009, the first AI provider.** Depends on 0008.
 3. **0013, glossary and rule tracing.** Last of these, because its test fails for any spec rule with no test yet, and
    most of those rules arrive in 0005 to 0008.

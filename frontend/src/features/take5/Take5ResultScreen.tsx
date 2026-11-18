@@ -6,10 +6,13 @@ import { Card } from "../../components/Card";
 import { RiskBadge } from "../../components/RiskBadge";
 import { Screen } from "../../components/Screen";
 import { AnswerSummary } from "./AnswerSummary";
+import { ChallengeScreen } from "./ChallengeScreen";
+import { ChallengeSummary } from "./ChallengeSummary";
 import { FixPanel } from "./FixPanel";
 import { formatDateTime } from "./formatDateTime";
 import { HazardSummary } from "./HazardSummary";
 import { SavedListLink } from "./SavedListLink";
+import { answersHere, forgetUnanswered } from "./unanswered";
 import { keptDraft } from "./useTake5Draft";
 import { VerdictPanel } from "./VerdictPanel";
 
@@ -18,7 +21,8 @@ const NEW_TAKE5_LINK =
 
 /**
  * A saved Take 5 exactly as it was saved: the verdict, the ratings and the controls,
- * and its link to the Take 5 that fixes it or that it fixes.
+ * the challenge question with its answer, and its link to the Take 5 that fixes it or
+ * that it fixes. An unfinished one shows its question instead (spec C6).
  */
 export function Take5ResultScreen({
   id,
@@ -37,6 +41,13 @@ export function Take5ResultScreen({
   useEffect(() => {
     page.current?.querySelector("h1")?.focus();
   }, [result.status]);
+  // A Take 5 that is finished, or was never saved, has no question left to go back to.
+  const finishedOrMissing =
+    (result.data?.take5.verdict ?? null) !== null ||
+    (result.error instanceof ApiError && result.error.status === 404);
+  useEffect(() => {
+    if (finishedOrMissing) forgetUnanswered(id);
+  }, [finishedOrMissing, id]);
 
   if (result.isPending)
     return (
@@ -69,6 +80,15 @@ export function Take5ResultScreen({
     );
   }
   const { take5, rating, fixed_by, offers_fix } = result.data;
+  if (!take5.verdict || !take5.finished_at)
+    return (
+      <ChallengeScreen
+        key={take5.id}
+        take5={take5}
+        canAnswer={answersHere(take5.id)}
+        onAlreadyFinished={() => void result.refetch()}
+      />
+    );
   const details = [
     { term: "Worker", value: take5.worker_name },
     { term: "Job", value: take5.job },
@@ -107,6 +127,7 @@ export function Take5ResultScreen({
             </div>
           </dl>
         </Card>
+        {take5.challenge && <ChallengeSummary challenge={take5.challenge} />}
         <AnswerSummary
           questions={take5.template.questions}
           answers={take5.answers}

@@ -93,7 +93,8 @@ backend/
                 saved.py           SavedTake5: a Take 5 as it was saved, with its verdict
                 verdict.py         verdict(take5) -> Verdict with its reasons            (spec V1 to V3)
                 thinking.py        the pushback rules                                     (spec T2 to T6)
-                challenge.py       what the AI is told, the check on its question,
+                challenge.py       what the AI is told (the Take 5 as JSON, without the
+                                   worker's name), the check on its question,
                                    the fallback question, the check on the answer         (spec C1 to C4)
         services/          what the app does
             take5s.py          Take5Service: check a draft, submit, answer, get, list. It is
@@ -136,6 +137,9 @@ frontend/
                            draft couldn't be checked;
                            WeakControlsQuestion.tsx draws the server's thinking prompt on the controls page,
                            checking once typing pauses (useSettledValue.ts)
+                           ChallengeScreen.tsx asks the challenge question; ChallengeSummary.tsx shows it with
+                           its answer on the result; unanswered.ts remembers which unanswered Take 5s this
+                           phone submitted, so only it answers them and opening the app goes back to one
         test-utils.tsx     the fake card, drafts and API replies the Vitest tests share
         app.tsx            the routes (the only place React Router is set up)
     e2e/                   Playwright tests and screenshots
@@ -158,9 +162,9 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 | --- | --- |
 | `GET /api/take5/template` | The template a new Take 5 is filled in on: its questions, its matrix and its guidance, plus the answers a question can have and the control kinds |
 | `POST /api/take5s/check` | Checks a draft and returns what is missing, its warnings (allowed, but they will stop the job), which thinking rules apply and its nudges (never blocking). A draft that has run out (spec K2) has an error on `started_at`, and `runs_out_at` says when it runs out (empty with no time limit). Saves nothing |
-| `POST /api/take5s` | Checks and saves a Take 5, asks the AI (or the fallback) for its question, and returns both |
-| `POST /api/take5s/{id}/answer` | Saves the answer, works out the verdict, and returns the finished Take 5 |
-| `GET /api/take5s` | The list, newest first. Each line is a `Take5Summary`: the ID, when it was saved, the worker, the job, the verdict (`can_start`) and whether a newer Take 5 fixes it (`fixed`), not the whole card |
+| `POST /api/take5s` | Checks and saves a Take 5, unfinished, then asks the AI (or the fallback) for its question, and returns it with the question. A retry returns what was saved, with the same question |
+| `POST /api/take5s/{id}/answer` | Saves the answer, works out the verdict, and returns the finished Take 5 (task 0008). A short answer is a 422 on `answer`; a different answer to a finished one is a 409; the same answer again returns the finished Take 5 |
+| `GET /api/take5s` | The list, newest first. Each line is a `Take5Summary`: the ID, when it was saved, the worker, the job, the verdict (`can_start`, empty while the question is unanswered) and whether a newer Take 5 fixes it (`fixed`), not the whole card |
 | `GET /api/take5s/{id}` | One Take 5, with `fixed_by` (the newest Take 5 that fixes it, if any) and `offers_fix` (whether its result offers a fix) |
 
 Every error reply is declared in the OpenAPI description, so the front end's generated types know it. A 422 is
@@ -195,7 +199,7 @@ has a hazard linked to it (T5), and that the after rating of a hazard with no co
 stamps `Take5Draft.started_at` by the phone's clock (with its time zone; a time without one is a 422). Opening the
 app with no page in the URL carries on from the page the draft was left on. The phone never decides whether a
 draft has run out: it checks the draft once as it opens, on a Continue with changed answers (an unchanged one reuses the
-last answer), and on Finish, and acts on an error
+last answer), and on Submit, and acts on an error
 whose path is `started_at`. The back end compares `started_at` with its own clock against the template's
 `draft_time_limit_minutes` (`domain/take5/time_limit.py`, with the time given by the service). The check only
 trusts the phone's clock to be roughly right, which phones that set their time from the network are. Leave and
@@ -212,13 +216,13 @@ the built front-end files itself, so there is still only one program to run.
 | Entity | Key fields | Notes |
 | --- | --- | --- |
 | `Take5` | `id`, `created_at`, `worker_name`, `job`, `location`, `answers` (question ID to answer), `hazards`, `challenge`, `finished_at`, `verdict`, `template` | One filled-in card. `template` is a copy of the template it was filled in on, so it always shows the questions and matrix the worker was given. `finished_at` and `verdict` are empty until the challenge question is answered (spec C6). Never changed once finished |
-| `SavedTake5` (task 0004) | Extends the scoring `Take5` with `id`, `created_at`, `worker_name`, `job`, `location`, `finished_at`, `verdict`, `fixes`, `started_at` | The implemented submitted document. Until task 0008 it is finished immediately. The base `Take5` holds what the verdict needs (the template, `answers` and the hazards); later tasks add the remaining card fields. `answers` (task 0005) has one answer for each of the template's questions, by question ID. A Take 5 saved before task 0005 has none, and its template copy has no questions, so it still opens. `fixes` (task 0010) is the ID of the Don't start yet it fixes, or empty. It points back only, so the first one is never changed; its fix is found by searching for its ID in `fixes`. `started_at` (task 0019) is when its draft was started, by the phone's clock, or empty for one saved before then (spec K3) |
+| `SavedTake5` (task 0004) | Extends the scoring `Take5` with `id`, `created_at`, `worker_name`, `job`, `location`, `finished_at`, `verdict`, `fixes`, `started_at`, `challenge` | The implemented submitted document. The base `Take5` holds what the verdict needs (the template, `answers` and the hazards); later tasks add the remaining card fields. `answers` (task 0005) has one answer for each of the template's questions, by question ID. A Take 5 saved before task 0005 has none, and its template copy has no questions, so it still opens. `fixes` (task 0010) is the ID of the Don't start yet it fixes, or empty. It points back only, so the first one is never changed; its fix is found by searching for its ID in `fixes`. `started_at` (task 0019) is when its draft was started, by the phone's clock, or empty for one saved before then (spec K3). From task 0008 it is saved unfinished, with `finished_at` and `verdict` empty; `challenge` is added once, then the answer, `verdict` and `finished_at` once (`Take5Repository.save_question` and `finish`, each of which only changes a row that is still unfinished). One finished before task 0008 has a verdict and no `challenge` |
 | `Hazard` | `description`, `before` (rating), `controls`, `after` (rating), `weak_controls_reason`, `covers` | Belongs to one Take 5. With no controls `after` is `before` (spec R6). `weak_controls_reason` is the worker's answer to spec T3, when it was asked. `covers` (task 0022) is the IDs of the hazard questions answered Yes that the worker linked to it (spec T5); it is empty for a Take 5 saved before then. The link lives on the hazard, so removing a hazard removes its links, and nothing else needs an ID |
 | `Control` | `description`, `kind` (`ControlKind`) | Belongs to one hazard |
 | `RiskRating` | `likelihood`, `consequence`, and from the matrix: `score`, `band` | A value, not a stored row. Score and band are always worked out, never typed in |
 | `Take5Template` | `name`, `questions` (each an `id`, its `text`, its `role`: `stop` or `hazard`, and its `example`), `matrix`, `likelihood_guidance`, `consequence_guidance` (each a level and its meaning), `control_guidance`, `draft_time_limit_minutes`, `specific_hazard_words` | The card as data. The rules never name a question: a *stop* question answered No stops the job, whichever card it is on. The page a question shows on follows from its role, so there are no separate sections. `draft_time_limit_minutes` (task 0019) is how long a draft lasts (spec K2): 120 on the booklet, or none, which turns the check off. `GET /api/take5/template` leaves it out and the phone never reads it, though the copy of the template inside a checked or saved Take 5 carries it. `specific_hazard_words` and each hazard question's `example` (task 0022) are spec T6's minimum (6 on the booklet, or none to turn it off) and the example its nudge shows; `GET /api/take5/template` leaves the minimum out too |
 | `RiskMatrix` | the likelihood and consequence scales, the score and band of each cell, the score that needs a JHA | The matrix as data. `rate()` is given the matrix, so another company's matrix needs no new code |
-| `Challenge` | `question`, `asked_by` (`ai` or `fallback`), `model`, `instructions_version`, `answer` | Belongs to one Take 5. `answer` is empty until the worker gives one. `model` and `instructions_version` say which AI asked and with which version of its instructions; both are empty for the fallback |
+| `Challenge` | `question`, `asked_by` (`ai` or `fallback`), `model`, `instructions_version`, `answer` | Belongs to one Take 5. `answer` is empty until the worker gives one. `model` and `instructions_version` say which AI asked and with which version of its instructions; both are empty for the fallback. Kept inside its `SavedTake5` (task 0008) |
 | `Verdict` | `can_start`, `reasons` | Worked out once by `domain/take5/verdict.py` when the Take 5 is finished, then saved inside it, so a later rule change never rewrites an old verdict |
 
 Storage is one table. The whole Take 5 is saved as one JSON document, with a few columns beside it for finding

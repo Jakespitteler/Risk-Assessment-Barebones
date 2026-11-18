@@ -25,7 +25,7 @@ export function SaveProblem({
       ) : (
         <p>
           Your answers are still here, but we couldn’t confirm your Take 5 was
-          saved. Check your signal and press Finish again.
+          saved. Check your signal and press Submit again.
         </p>
       )}
     </Notice>

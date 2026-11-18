@@ -21,6 +21,7 @@ from risk_assessment.domain.take5.draft import (
 )
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
 from risk_assessment.storage.sqlite import SqliteTake5Repository
+from tests.api.take5_requests import answer, finish
 from tests.samples import sample_answers, sample_draft, sample_uncontrolled_draft
 
 
@@ -34,14 +35,15 @@ def test_submit_and_reopen_preserve_the_original_document(tmp_path: Path) -> Non
         json=request.model_dump(mode="json"),
     )
     assert response.status_code == 200
-    saved: Take5Response = Take5Response.model_validate(response.json())
-    assert saved.take5.verdict.can_start
+    finished: Response = answer(client, str(request.id))
+    saved: Take5Response = Take5Response.model_validate(finished.json())
+    assert saved.take5.verdict is not None and saved.take5.verdict.can_start
     assert saved.rating.score == 5 and saved.rating.band == "Low"
     assert saved.take5.template.matrix.jha_threshold == 11
     reopened: Response = TestClient(create_app(SqliteTake5Repository(database))).get(
         f"/api/take5s/{request.id}",
     )
-    assert reopened.json() == response.json()
+    assert reopened.json() == finished.json()
     assert client.post(f"/api/take5s/{request.id}", json={}).status_code == 405
 
 
@@ -124,13 +126,10 @@ def test_without_controls_after_is_derived_and_the_verdict_stops_the_job(
     client: TestClient,
 ) -> None:
     """A hazard without controls can be submitted but must stop the job."""
-    request = SubmissionRequest(id=uuid4(), draft=sample_uncontrolled_draft())
-    response: Response = client.post(
-        "/api/take5s",
-        json=request.model_dump(mode="json"),
+    saved: Take5Response = Take5Response.model_validate(
+        finish(client, sample_uncontrolled_draft()),
     )
-    saved: Take5Response = Take5Response.model_validate(response.json())
-    assert not saved.take5.verdict.can_start
+    assert saved.take5.verdict is not None and not saved.take5.verdict.can_start
     assert saved.take5.hazards[0].after == saved.take5.hazards[0].before
     assert saved.rating.score == 8
 
@@ -280,10 +279,7 @@ def test_example_22_a_draft_with_a_warning_can_still_be_submitted(
     draft: Take5Draft = sample_uncontrolled_draft()
 
     check: Response = client.post("/api/take5s/check", json=draft.model_dump())
-    saved: Response = client.post(
-        "/api/take5s",
-        json=SubmissionRequest(id=uuid4(), draft=draft).model_dump(mode="json"),
-    )
+    saved: dict[str, Any] = finish(client, draft)
 
     assert check.json()["can_submit"] is True
     assert check.json()["warnings"] == [
@@ -292,8 +288,7 @@ def test_example_22_a_draft_with_a_warning_can_still_be_submitted(
             "message": "No controls: you'll be told not to start.",
         },
     ]
-    assert saved.status_code == 200
-    assert saved.json()["take5"]["verdict"] == {
+    assert saved["take5"]["verdict"] == {
         "can_start": False,
         "reasons": ["Say how you will control: Moving wheel"],
     }
@@ -301,20 +296,17 @@ def test_example_22_a_draft_with_a_warning_can_still_be_submitted(
 
 def test_a_fix_and_the_take5_it_fixes_link_to_each_other(client: TestClient) -> None:
     """Each links to the other, and the first is kept exactly as it was saved."""
-    first = SubmissionRequest(id=uuid4(), draft=sample_uncontrolled_draft())
-    first_saved: dict[str, Any] = client.post(
-        "/api/take5s",
-        json=first.model_dump(mode="json"),
-    ).json()
+    first_saved: dict[str, Any] = finish(client, sample_uncontrolled_draft())
+    first_id: UUID = UUID(first_saved["take5"]["id"])
     fix = SubmissionRequest(
         id=uuid4(),
-        draft=sample_draft().model_copy(update={"fixes": first.id}),
+        draft=sample_draft().model_copy(update={"fixes": first_id}),
     )
 
     fix_saved: Response = client.post("/api/take5s", json=fix.model_dump(mode="json"))
-    reopened: dict[str, Any] = client.get(f"/api/take5s/{first.id}").json()
+    reopened: dict[str, Any] = client.get(f"/api/take5s/{first_id}").json()
 
-    assert fix_saved.json()["take5"]["fixes"] == str(first.id)
+    assert fix_saved.json()["take5"]["fixes"] == str(first_id)
     assert fix_saved.json()["fixed_by"] is None
     assert fix_saved.json()["offers_fix"] is False
     assert first_saved["fixed_by"] is None
@@ -352,15 +344,11 @@ def test_example_19_a_no_to_a_stop_question_is_saved_and_stops_the_job(
     """The answers are saved with the Take 5, and a No gives the V1 reason."""
     answers: dict[str, Answer] = sample_answers(permits=Answer.NO)
     draft: Take5Draft = sample_draft().model_copy(update={"answers": answers})
-    request = SubmissionRequest(id=uuid4(), draft=draft)
 
-    response: Response = client.post(
-        "/api/take5s",
-        json=request.model_dump(mode="json"),
-    )
+    saved: Take5Response = Take5Response.model_validate(finish(client, draft))
 
-    saved: Take5Response = Take5Response.model_validate(response.json())
     assert saved.take5.answers == answers
+    assert saved.take5.verdict is not None
     assert not saved.take5.verdict.can_start
     assert saved.take5.verdict.reasons == (
         "You answered No to: Do you have the necessary permits? Sort this out first.",

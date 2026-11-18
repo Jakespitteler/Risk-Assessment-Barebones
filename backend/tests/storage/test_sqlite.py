@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from risk_assessment.domain.take5.challenge import AskedBy, Challenge
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.storage.sqlite import SqliteTake5Repository
 from tests.samples import sample_saved_take5
@@ -173,3 +174,51 @@ def test_two_saved_at_the_same_moment_list_the_last_saved_first(
 def test_the_list_is_empty_before_anything_is_saved(tmp_path: Path) -> None:
     """A new database has nothing to list."""
     assert SqliteTake5Repository(tmp_path / "take5.sqlite3").list_newest_first() == ()
+
+
+def _unfinished(take5: SavedTake5) -> SavedTake5:
+    """Make a saved Take 5 unfinished, as one is before its question is answered.
+
+    Args:
+        take5: A finished Take 5.
+
+    Returns:
+        The same Take 5 with no verdict, no finish time and no question.
+    """
+    return take5.model_copy(
+        update={"verdict": None, "finished_at": None, "challenge": None},
+    )
+
+
+ASKED: Challenge = Challenge(question="What holds the tray up?", asked_by=AskedBy.AI)
+OTHER_QUESTION: Challenge = ASKED.model_copy(update={"question": "Who checked it?"})
+
+
+def test_a_question_is_saved_once_on_an_unfinished_take5(tmp_path: Path) -> None:
+    """The first question stays; a second one is ignored (spec C6)."""
+    repository = SqliteTake5Repository(tmp_path / "take5.sqlite3")
+    unfinished: SavedTake5 = repository.add(_unfinished(sample_saved_take5()))
+    asked: SavedTake5 = unfinished.model_copy(update={"challenge": ASKED})
+
+    assert repository.save_question(asked) == asked
+    assert (
+        repository.save_question(
+            unfinished.model_copy(update={"challenge": OTHER_QUESTION}),
+        )
+        == asked
+    )
+    assert repository.get(unfinished.id) == asked
+
+
+def test_a_take5_is_finished_once_and_then_never_changed(tmp_path: Path) -> None:
+    """The first finish wins; neither a second finish nor a question changes it."""
+    repository = SqliteTake5Repository(tmp_path / "take5.sqlite3")
+    finished: SavedTake5 = sample_saved_take5().model_copy(
+        update={"challenge": ASKED.model_copy(update={"answer": "Two props, checked"})},
+    )
+    unfinished: SavedTake5 = repository.add(_unfinished(finished))
+
+    assert repository.finish(finished) == finished
+    assert repository.finish(unfinished) == finished
+    assert repository.save_question(unfinished) == finished
+    assert repository.get(finished.id) == finished

@@ -2,6 +2,28 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-18: The challenge question is asked after Submit, and only that phone answers it (task 0008)
+
+- Decision: The review's button is Submit. It saves the Take 5 unfinished, and the challenge question follows on
+  its own screen with no way back to the form; Finish there saves the answer and the verdict. Only the phone that
+  submitted a Take 5 answers its question, opening the app again goes back to an unanswered one, and there is no
+  time limit on answering. A saved fix marks its original Fixed even before it is answered. The worker isn't told
+  whether the AI or the fallback asked, and C4 stays at four words (spec D44 to D51). `Take5Repository` gains
+  `save_question` and `finish`, each of which only changes a Take 5 that is still unfinished. The AI is given the
+  Take 5 as JSON, and the service waits for it in a thread for at most 10 seconds.
+- Why: Jake took every recommended answer. The Take 5 is saved before the question so a slow AI never loses it,
+  and so it can't be changed after: going back would let a worker keep asking until the question is easy. Once
+  saved, the answers and the verdict are fixed, so a time limit on answering would only strand a record as Not
+  finished. Storage had no way to change a saved Take 5; the two guarded updates keep "a finished Take 5 is never
+  changed" true in the database itself, so two answers at once can't both win. JSON puts everything the worker
+  typed inside quoted values, so a job that says "ignore your instructions" stays a job (spec example 76). The
+  phone remembers the submission ID before it sends it, so a Take 5 saved with its reply lost can still be
+  answered on that phone; a link to an unknown or finished Take 5 forgets it again.
+- Alternatives considered: Keeping Finish on the review; a Back button from the question; the saved list on
+  reopening; anyone answering; the draft's 2-hour limit on answering; marking Fixed only once a fix is answered;
+  replacing the whole document with one generic update (it couldn't refuse a second answer on its own).
+- Decided by: human (Jake, 2026-11-18, in chat), from Claude's recommended picks
+
 ## 2026-11-18: The step bar can be tapped, but only to steps already reached (task 0026)
 
 - Decision: The five steps at the top of the form can be tapped to open a step's first page, but only steps

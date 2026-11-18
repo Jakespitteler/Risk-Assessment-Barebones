@@ -17,6 +17,7 @@ import {
   keptDraft,
   putBackDraft,
 } from "./features/take5/useTake5Draft";
+import { unansweredToOpen } from "./features/take5/unanswered";
 import type { Stage } from "./features/take5/stage";
 import { stageFromSearch, stageToSearch } from "./features/take5/stage";
 
@@ -37,12 +38,26 @@ function pageToCarryOnFrom(search: URLSearchParams): Stage | null {
   return search.has("page") ? null : (keptDraft()?.stage ?? null);
 }
 
+/**
+ * The Take 5 whose question to go back to as the app opens: the newest one this phone
+ * submitted and hasn't answered, unless a draft is kept or the URL names a page.
+ */
+function questionToGoBackTo(search: URLSearchParams): string | null {
+  return search.has("page") || keptDraft() ? null : unansweredToOpen();
+}
+
 // The form's page is in the URL, so the phone's back gesture steps back a page. Opening
-// the app with a kept draft carries on from the page it was left on.
+// the app with a kept draft carries on from the page it was left on, and with an
+// unanswered question goes back to it (spec C6).
 function NewTake5Route() {
   const navigate = useNavigate();
   const [search, setSearch] = useSearchParams();
   const [carryOnFrom] = useState(() => pageToCarryOnFrom(search));
+  const [unansweredId] = useState(() => questionToGoBackTo(search));
+  useEffect(() => {
+    if (unansweredId)
+      void navigate(`/take5s/${unansweredId}`, { replace: true });
+  }, [unansweredId, navigate]);
   const goTo = (stage: Stage, options?: { replace: boolean }) => {
     setSearch(stageToSearch(stage), options);
   };
@@ -53,6 +68,7 @@ function NewTake5Route() {
     carriedOn.current = true;
     setSearch(stageToSearch(carryOnFrom), { replace: true });
   }, [carryOnFrom, setSearch]);
+  if (unansweredId) return null;
   return (
     <NewTake5Screen
       stage={

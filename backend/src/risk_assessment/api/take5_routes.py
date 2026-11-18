@@ -6,6 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException
 
 from risk_assessment.api.schemas import (
+    AnswerRequest,
     ErrorMessage,
     FormErrors,
     SubmissionRequest,
@@ -19,7 +20,12 @@ from risk_assessment.domain.take5.draft import DraftCheck, Take5Draft
 from risk_assessment.domain.take5.fix import fixed_ids, offers_a_fix
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.template import Take5Template
-from risk_assessment.services.take5s import SubmissionConflictError, Take5Service
+from risk_assessment.services.take5s import (
+    AlreadyAnsweredError,
+    SubmissionConflictError,
+    Take5NotFoundError,
+    Take5Service,
+)
 
 _NOT_FOUND_MESSAGE: str = "This Take 5 could not be found."
 
@@ -32,6 +38,9 @@ _NOT_FOUND: dict[int | str, dict[str, Any]] = {
 }
 _CONFLICT: dict[int | str, dict[str, Any]] = {
     409: {"model": ErrorMessage, "description": "This ID was used for other answers"},
+}
+_ANSWERED: dict[int | str, dict[str, Any]] = {
+    409: {"model": ErrorMessage, "description": "It was already answered"},
 }
 
 
@@ -68,7 +77,7 @@ def create_router(service: Take5Service) -> APIRouter:
 
     @router.post("/api/take5s", responses=_UNREADABLE | _CONFLICT)
     def submit(request: SubmissionRequest) -> Take5Response:
-        """Check and save a Take 5 once, and return it with its verdict.
+        """Check and save a Take 5 once, and return it, unfinished, with its question.
 
         A draft with gaps raises `InvalidDraftError`, which `api/errors.py` turns into
         a 422.
@@ -79,6 +88,24 @@ def create_router(service: Take5Service) -> APIRouter:
             raise HTTPException(status_code=409, detail=str(error)) from error
         return _response(saved, service)
 
+    @router.post(
+        "/api/take5s/{take5_id}/answer",
+        responses=_UNREADABLE | _NOT_FOUND | _ANSWERED,
+    )
+    def answer(take5_id: UUID, request: AnswerRequest) -> Take5Response:
+        """Save the answer to a Take 5's question, and return it finished.
+
+        An answer that is too short raises `InvalidAnswerError`, which
+        `api/errors.py` turns into a 422.
+        """
+        try:
+            finished: SavedTake5 = service.answer(take5_id, request.answer)
+        except Take5NotFoundError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        except AlreadyAnsweredError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        return _response(finished, service)
+
     @router.get("/api/take5s")
     def list_take5s() -> tuple[Take5Summary, ...]:
         """Return every saved Take 5, newest first, each with its saved verdict."""
@@ -88,7 +115,7 @@ def create_router(service: Take5Service) -> APIRouter:
 
     @router.get("/api/take5s/{take5_id}", responses=_UNREADABLE | _NOT_FOUND)
     def get(take5_id: UUID) -> Take5Response:
-        """Return a saved Take 5 with the verdict the worker was given."""
+        """Return a saved Take 5 with its verdict, or its question if unfinished."""
         saved: SavedTake5 | None = service.get(take5_id)
         if saved is None:
             raise HTTPException(status_code=404, detail=_NOT_FOUND_MESSAGE)
@@ -112,7 +139,7 @@ def _summary(saved: SavedTake5, fixed: bool) -> Take5Summary:
         created_at=saved.created_at,
         worker_name=saved.worker_name,
         job=saved.job,
-        can_start=saved.verdict.can_start,
+        can_start=saved.verdict.can_start if saved.verdict is not None else None,
         fixed=fixed,
     )
 

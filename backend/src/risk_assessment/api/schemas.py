@@ -55,11 +55,24 @@ class SubmissionRequest(BaseModel):
     draft: Take5Draft
 
 
+class AnswerRequest(BaseModel):
+    """The worker's answer to a Take 5's challenge question.
+
+    Attributes:
+        answer: What the worker wrote.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    answer: str
+
+
 class Take5Response(BaseModel):
     """A saved Take 5, with the overall rating the back end worked out for it.
 
     Attributes:
-        take5: The saved Take 5, with its verdict and a copy of its template.
+        take5: The saved Take 5, with its question and a copy of its template. Its
+            verdict is empty until the question is answered.
         rating: The Take 5's rating (spec R4 and R5).
         fixed_by: The ID of the newest Take 5 that fixes this one, or None. It is
             found when the Take 5 is opened, because the saved one never changes.
@@ -84,7 +97,7 @@ class Take5Summary(BaseModel):
         worker_name: Who did it.
         job: What the job is.
         can_start: The verdict it was saved with: True for Good to go, False for
-            Don't start yet.
+            Don't start yet, or None while its question is unanswered.
         fixed: True when a newer Take 5 fixes this one.
     """
 
@@ -94,7 +107,7 @@ class Take5Summary(BaseModel):
     created_at: datetime
     worker_name: str
     job: str
-    can_start: bool
+    can_start: bool | None
     fixed: bool
 
 
