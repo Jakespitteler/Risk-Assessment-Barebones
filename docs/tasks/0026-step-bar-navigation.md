@@ -30,10 +30,10 @@ Jake answered on 2026-11-18: "all your picks" (spec D38 to D43).
 4. **After going back and adding a hazard.** The bar still remembers how far the worker got, so Review can be
    tapped; the review then sends them to the new hazard's empty ratings (D41). Not chosen: lock the later steps
    again until Continue reaches them.
-5. **The look.** A reached step's bar is filled dark like a progress bar and its name is underlined, as a link
-   is. The current step is bold, and its bar is the amber of the app's "5" badge (Jake added this on
-   2026-11-18, after seeing the screenshots). A step not reached yet stays light grey. Each step is a 48 px tall
-   tap target. No ticks, because a tick would say "done" when the step may still have a gap (D42).
+5. **The look.** A reached step's bar is filled dark like a progress bar. The current step is bold, and its bar
+   is the amber of the app's "5" badge. A step not reached yet stays light grey. Each step is a 48 px tall tap
+   target. No ticks, because a tick would say "done" when the step may still have a gap (D42). After seeing the
+   screenshots on 2026-11-18, Jake asked for the amber bar and for no underline on the step names.
 6. **The phone's back gesture** undoes a tap, as it undoes Continue (D43).
 
 ## Acceptance criteria

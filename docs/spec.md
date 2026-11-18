@@ -580,7 +580,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D39 | Is a tap forward in the bar checked (2026-11-18) | Yes, the page being left is checked as Continue checks it; a tap back is not | No check, leaving it to the review |
 | D40 | Where a tap on a step lands (2026-11-18) | The step's first page | The last page the worker was on in that step |
 | D41 | Do later steps lock again after an earlier change (2026-11-18) | No; the review sends the worker to any new gap | Yes, until Continue reaches them again |
-| D42 | How the step bar looks (2026-11-18) | Reached steps dark and underlined, the current one bold with an amber bar, the rest grey; no ticks | A tick on each step passed |
+| D42 | How the step bar looks (2026-11-18) | Reached steps dark, the current one bold with an amber bar, the rest grey; no ticks | A tick on each step passed |
 | D43 | Does the back gesture undo a tap on the bar (2026-11-18) | Yes, as it undoes Continue | No, a tap replaces the page |
 
 ## Open questions
