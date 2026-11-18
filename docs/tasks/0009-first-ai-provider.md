@@ -1,9 +1,9 @@
 ---
 id: 0009
 title: The first AI provider (spec F6)
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/project-thread-tsquwa
 ---
 
 ## Goal
