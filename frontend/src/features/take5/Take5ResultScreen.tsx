@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SavedTake5 } from "../../api/take5";
 import { ApiError, useSavedTake5 } from "../../api/take5";
 import { Button } from "../../components/Button";
@@ -10,6 +10,7 @@ import { FixPanel } from "./FixPanel";
 import { formatDateTime } from "./formatDateTime";
 import { HazardSummary } from "./HazardSummary";
 import { SavedListLink } from "./SavedListLink";
+import { keptDraft } from "./useTake5Draft";
 import { VerdictPanel } from "./VerdictPanel";
 
 const NEW_TAKE5_LINK =
@@ -27,6 +28,11 @@ export function Take5ResultScreen({
   onFix: (take5: SavedTake5) => void;
 }) {
   const result = useSavedTake5(id);
+  const [unfinished] = useState(() => keptDraft()?.draft ?? null);
+  // The phone keeps one draft, which the form opens, so say so rather than "new".
+  const newTake5Label = unfinished
+    ? "Carry on your Take 5"
+    : "Start a new Take 5";
   const page = useRef<HTMLDivElement>(null);
   useEffect(() => {
     page.current?.querySelector("h1")?.focus();
@@ -57,7 +63,7 @@ export function Take5ResultScreen({
           <Button onClick={() => void result.refetch()}>Try again</Button>
         )}
         <a className={NEW_TAKE5_LINK} href="/">
-          Start a new Take 5
+          {newTake5Label}
         </a>
       </Screen>
     );
@@ -76,6 +82,7 @@ export function Take5ResultScreen({
           take5={take5}
           fixedBy={fixed_by}
           offersFix={offers_fix}
+          unfinished={unfinished}
           onFix={() => {
             onFix(take5);
           }}
@@ -103,6 +110,7 @@ export function Take5ResultScreen({
         <AnswerSummary
           questions={take5.template.questions}
           answers={take5.answers}
+          hazards={take5.hazards}
         />
         {take5.hazards.map((hazard, index) => (
           <HazardSummary key={index} hazard={hazard} number={index + 1} />
@@ -111,7 +119,7 @@ export function Take5ResultScreen({
           Filled in on the {take5.template.name}. It is kept as it was saved.
         </p>
         <a className={NEW_TAKE5_LINK} href="/">
-          Start a new Take 5
+          {newTake5Label}
         </a>
       </div>
     </Screen>

@@ -76,8 +76,18 @@ def test_example_20_na_to_a_think_through_question_is_good_to_go() -> None:
 
 
 def test_example_21_yes_to_a_hazard_question_is_good_to_go() -> None:
-    """A hazard question is a prompt to list the hazard, not a verdict rule."""
-    result: Verdict = verdict(_take5(answers=sample_answers(heights=Answer.YES)))
+    """A hazard question is a prompt to list the hazard, not a verdict rule.
+
+    The hazard is linked to the Yes, as T5 needs before it can be submitted.
+    """
+    take5: Take5 = _take5(answers=sample_answers(heights=Answer.YES))
+    linked: Take5 = take5.model_copy(
+        update={
+            "hazards": (take5.hazards[0].model_copy(update={"covers": ("heights",)}),),
+        },
+    )
+
+    result: Verdict = verdict(linked)
 
     assert result == Verdict(can_start=True, reasons=())
 

@@ -12,6 +12,7 @@ const props = {
   onStageChange: vi.fn(),
   onBack: vi.fn(),
   onSaved: vi.fn(),
+  onLeave: vi.fn(),
 };
 
 it("shows the form once the card has loaded", async () => {

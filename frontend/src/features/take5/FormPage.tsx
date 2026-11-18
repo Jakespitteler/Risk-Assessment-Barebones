@@ -10,6 +10,7 @@ import type {
 import { ControlsPage } from "./ControlsPage";
 import { HazardCheckPage } from "./HazardCheckPage";
 import { HazardListPage } from "./HazardListPage";
+import { HazardNudge } from "./HazardNudge";
 import { JobPage } from "./JobPage";
 import { RatingPage } from "./RatingPage";
 import { ReviewPage } from "./ReviewPage";
@@ -65,6 +66,37 @@ export function FormPage({
       answers: { ...current.answers, [questionId]: picked },
     }));
   }
+  /** Link a hazard question's Yes to one hazard on the list, or unlink it (T5). */
+  function link(questionId: string, hazardIndex: number, linked: boolean) {
+    edit(`answers.${questionId}`, (current) => ({
+      ...current,
+      hazards: current.hazards.map((hazard, position) => {
+        if (position !== hazardIndex) return hazard;
+        const others = hazard.covers.filter((id) => id !== questionId);
+        return { ...hazard, covers: linked ? [...others, questionId] : others };
+      }),
+    }));
+  }
+  /** The back end's nudge to make a linked hazard specific (T6), if it has one here. */
+  function nudgeFor(questionId: string, hazardIndex: number) {
+    const hazard = draft.hazards[hazardIndex];
+    if (!hazard) return null;
+    return (
+      <HazardNudge
+        key={`${questionId}:${String(hazardIndex)}`}
+        draft={draft}
+        index={hazardIndex}
+        questionId={questionId}
+        kept={take5.keptAsIs(hazard.description)}
+        onReword={(description) => {
+          editHazard(hazardIndex, "description", { description });
+        }}
+        onKeep={() => {
+          take5.keepWording(hazard.description);
+        }}
+      />
+    );
+  }
   const questionsFor = (role: Question["role"]) =>
     template.questions.filter((question) => question.role === role);
   // Removing shifts the numbers of the items after it, so every error is cleared.
@@ -103,10 +135,16 @@ export function FormPage({
         questions={questionsFor("hazard")}
         choices={template.answer_choices}
         answers={draft.answers}
-        addedFor={take5.addedFor}
         errorFor={errorFor}
         onAnswer={answer}
+        onLink={(questionId, hazardIndex) => {
+          link(questionId, hazardIndex, true);
+        }}
+        onUnlink={(questionId, hazardIndex) => {
+          link(questionId, hazardIndex, false);
+        }}
         onAddHazard={onAddHazard}
+        nudgeFor={nudgeFor}
       />
     );
   if (stage.page === "hazards")
@@ -156,9 +194,9 @@ export function FormPage({
             ),
           });
         }}
-        onAdd={() => {
+        onAdd={(control) => {
           editHazard(index, "controls", {
-            controls: [...hazard.controls, { description: "", kind: null }],
+            controls: [...hazard.controls, control],
           });
         }}
         onRemove={(position) => {

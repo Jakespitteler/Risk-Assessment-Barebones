@@ -5,7 +5,7 @@ pytest from `backend/` and use Ruff to format and sort imports.
 
 ## First time
 
-1. In `backend/`, run `uv sync --locked`.
+1. In the repo root, run `uv run scripts/setup.py` (see the [README](../README.md#set-it-up)).
 2. Run **Python: Select Interpreter** and pick the executable itself, not the `.venv` folder:
    `backend/.venv/Scripts/python.exe` on Windows, `backend/.venv/bin/python` on Linux or macOS.
    VS Code keeps this choice on your computer; it is not in the repo.

@@ -143,6 +143,9 @@ export interface components {
          *         assessment: The rated Take 5, or None while there are errors.
          *         can_submit: True when there are no errors.
          *         thinking_questions: Applicable prompts, including ones already answered.
+         *         runs_out_at: When the draft runs out (spec K2), or None when it never does.
+         *         nudges: Suggestions to make an answer clearer, in the order of the form. A nudge
+         *             never stops the draft being submitted.
          */
         DraftCheck: {
             /** Errors */
@@ -157,6 +160,13 @@ export interface components {
              * @default []
              */
             thinking_questions: components["schemas"]["ThinkingQuestion"][];
+            /** Runs Out At */
+            runs_out_at?: string | null;
+            /**
+             * Nudges
+             * @default []
+             */
+            nudges: components["schemas"]["Nudge"][];
         };
         /**
          * ErrorMessage
@@ -217,6 +227,8 @@ export interface components {
          *
          *     Without controls, reuse the before rating as the after rating; no second rating
          *     is needed. Description, ratings and controls are immutable once constructed.
+         *     `covers` holds the IDs of the hazard questions answered Yes that the worker linked
+         *     to this hazard (T5); it is empty for a Take 5 saved before links were kept.
          */
         Hazard: {
             /** Description */
@@ -230,6 +242,11 @@ export interface components {
              * @default
              */
             weak_controls_reason: string;
+            /**
+             * Covers
+             * @default []
+             */
+            covers: string[];
         };
         /**
          * HazardDraft
@@ -241,6 +258,8 @@ export interface components {
          *         controls: The controls, possibly none.
          *         after: The rating after controls. Ignored when there are no controls (R6).
          *         weak_controls_reason: Why stronger controls aren't possible, when T3 asks.
+         *         covers: The IDs of the hazard questions the worker linked to this hazard (T5),
+         *             whether it was added from a Yes or picked from the list.
          */
         HazardDraft: {
             /**
@@ -260,6 +279,11 @@ export interface components {
              * @default
              */
             weak_controls_reason: string;
+            /**
+             * Covers
+             * @default []
+             */
+            covers: string[];
         };
         /**
          * LevelGuidance
@@ -276,6 +300,24 @@ export interface components {
             meaning: string;
         };
         /**
+         * Nudge
+         * @description A suggestion to look again at an answer. It never stops submitting.
+         *
+         *     Attributes:
+         *         path: The answer's dotted field path, such as `hazards.0.description`.
+         *         message: The suggestion, in plain words.
+         *         question_id: The question to show it under, such as `vehicles`, so the phone
+         *             needn't work out where it goes.
+         */
+        Nudge: {
+            /** Path */
+            path: string;
+            /** Message */
+            message: string;
+            /** Question Id */
+            question_id: string;
+        };
+        /**
          * Question
          * @description One question on a card.
          *
@@ -285,6 +327,8 @@ export interface components {
          *             underscores only, so it is safe in a dotted path like `answers.permits`.
          *         text: The question as the card prints it.
          *         role: What its answer means for the job.
+         *         example: For a hazard question, a specific hazard it could be about, shown when
+         *             the worker's own wording is vague. Empty when the card gives none.
          */
         Question: {
             /** Id */
@@ -292,6 +336,11 @@ export interface components {
             /** Text */
             text: string;
             role: components["schemas"]["QuestionRole"];
+            /**
+             * Example
+             * @default
+             */
+            example: string;
         };
         /**
          * QuestionRole
@@ -380,6 +429,8 @@ export interface components {
          *         verdict: The verdict the worker was shown.
          *         fixes: The ID of the saved Take 5 this one fixes, or None. It points back
          *             only, so the first Take 5 is never changed when it is fixed.
+         *         started_at: When the worker started it, by the phone's clock, or None for a
+         *             Take 5 saved before task 0019.
          */
         SavedTake5: {
             template: components["schemas"]["Take5Template"];
@@ -416,6 +467,8 @@ export interface components {
             verdict: components["schemas"]["Verdict"];
             /** Fixes */
             fixes?: string | null;
+            /** Started At */
+            started_at?: string | null;
         };
         /**
          * SubmissionRequest
@@ -471,6 +524,8 @@ export interface components {
          *             answer is left out.
          *         hazards: The hazards, in the order the worker listed them.
          *         fixes: The ID of the saved Take 5 this one fixes, or None for a fresh one.
+         *         started_at: When the worker started it, by the phone's clock, or None if the
+         *             phone didn't say. It must include its time zone.
          */
         Take5Draft: {
             /**
@@ -502,6 +557,8 @@ export interface components {
             hazards: components["schemas"]["HazardDraft"][];
             /** Fixes */
             fixes?: string | null;
+            /** Started At */
+            started_at?: string | null;
         };
         /**
          * Take5Response
@@ -569,6 +626,12 @@ export interface components {
          *         consequence_guidance: What each consequence means, shown beside the rating.
          *         control_guidance: What makes a control strong or weak, shown beside the
          *             controls.
+         *         draft_time_limit_minutes: How long an unfinished Take 5 lasts, counted from
+         *             when it was started (spec K2), or None for no limit, which turns the
+         *             check off completely.
+         *         specific_hazard_words: The fewest words a hazard linked to a Yes can have
+         *             before the worker is asked to make it specific (spec T6), or None, which
+         *             turns the nudge off.
          */
         Take5Template: {
             /** Name */
@@ -594,6 +657,10 @@ export interface components {
              * @default
              */
             control_guidance: string;
+            /** Draft Time Limit Minutes */
+            draft_time_limit_minutes?: number | null;
+            /** Specific Hazard Words */
+            specific_hazard_words?: number | null;
         };
         /**
          * TemplateResponse

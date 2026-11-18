@@ -1,10 +1,19 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type { Take5Summary } from "../../api/take5";
-import { quickClient, renderWithApi, stubApi } from "../../test-utils";
+import {
+  COMPLETE_DRAFT,
+  PASSING_CHECK,
+  SAVED,
+  keepSampleDraft,
+  quickClient,
+  renderWithApi,
+  stubApi,
+} from "../../test-utils";
 import { SavedTake5sScreen } from "./SavedTake5sScreen";
 
 afterEach(() => {
+  localStorage.clear();
   vi.unstubAllGlobals();
 });
 
@@ -121,4 +130,164 @@ it("offers to try again when the list can't be loaded", async () => {
     await screen.findByRole("heading", { name: "Saved Take 5s" }),
   ).toBeTruthy();
   expect(calls).toHaveLength(4);
+});
+
+const RUN_OUT_MESSAGE =
+  "This Take 5 was started more than 2 hours ago. Start a new one at the job.";
+
+it("shows the phone's unfinished Take 5 at the top, in place of Start a new Take 5", async () => {
+  localStorage.clear();
+  keepSampleDraft();
+  stubApi({
+    "GET /api/take5s": { status: 200, body: LIST },
+    "POST /api/take5s/check": { status: 200, body: PASSING_CHECK },
+  });
+  renderWithApi(<SavedTake5sScreen />);
+  const card = within(
+    (await screen.findByRole("heading", { name: "Your unfinished Take 5" }))
+      .parentElement as HTMLElement,
+  );
+  expect(card.getByText("Change tyre")).toBeTruthy();
+  expect(
+    card.getByText(/^\d{1,2} \w{3} \d{4}, \d{1,2}:\d\d [ap]m$/),
+  ).toBeTruthy();
+  expect(
+    card.getByRole("link", { name: "Carry on" }).getAttribute("href"),
+  ).toBe("/");
+  expect(screen.queryByRole("link", { name: "Start a new Take 5" })).toBeNull();
+  localStorage.clear();
+});
+
+it("throws away an unfinished Take 5 that has run out, and says why", async () => {
+  localStorage.clear();
+  keepSampleDraft();
+  stubApi({
+    "GET /api/take5s": { status: 200, body: LIST },
+    "POST /api/take5s/check": {
+      status: 200,
+      body: {
+        ...PASSING_CHECK,
+        errors: [{ path: "started_at", message: RUN_OUT_MESSAGE }],
+        assessment: null,
+        can_submit: false,
+      },
+    },
+  });
+  renderWithApi(<SavedTake5sScreen />);
+  expect(
+    await screen.findByRole("heading", {
+      name: "Your unfinished Take 5 has run out",
+    }),
+  ).toBeTruthy();
+  // It appears after the list has loaded, so it is announced.
+  expect(
+    within(screen.getByRole("status")).getByText(RUN_OUT_MESSAGE),
+  ).toBeTruthy();
+  expect(screen.queryByRole("link", { name: "Carry on" })).toBeNull();
+  expect(screen.getByRole("link", { name: "Start a new Take 5" })).toBeTruthy();
+  expect(localStorage.getItem("take5-draft")).toBeNull();
+});
+
+it("offers Undo for a Take 5 just thrown away", async () => {
+  localStorage.clear();
+  const onUndo = vi.fn();
+  const onDismiss = vi.fn();
+  const thrownAway = {
+    version: 4,
+    draft: COMPLETE_DRAFT,
+    submissionId: SAVED.take5.id,
+  };
+  stubApi({ "GET /api/take5s": { status: 200, body: LIST } });
+  renderWithApi(
+    <SavedTake5sScreen
+      thrownAway={thrownAway}
+      onUndoThrowAway={onUndo}
+      onDismissUndo={onDismiss}
+    />,
+  );
+  expect(await screen.findByText("Take 5 thrown away.")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+  expect(onUndo).toHaveBeenCalledWith(thrownAway);
+  fireEvent.click(screen.getByRole("button", { name: "Close" }));
+  expect(onDismiss).toHaveBeenCalled();
+});
+
+it("ends the Undo once another Take 5 has been started, so it can't be replaced", async () => {
+  keepSampleDraft({ ...COMPLETE_DRAFT, job: "Grease the conveyor" });
+  const thrownAway = {
+    version: 4,
+    draft: COMPLETE_DRAFT,
+    submissionId: SAVED.take5.id,
+  };
+  stubApi({
+    "GET /api/take5s": { status: 200, body: LIST },
+    "POST /api/take5s/check": { status: 200, body: PASSING_CHECK },
+  });
+  renderWithApi(
+    <SavedTake5sScreen
+      thrownAway={thrownAway}
+      onUndoThrowAway={vi.fn()}
+      onDismissUndo={vi.fn()}
+    />,
+  );
+  expect(await screen.findByText("Grease the conveyor")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
+});
+
+it("points to the saved Take 5 when a draft that ran out had been saved already", async () => {
+  keepSampleDraft();
+  stubApi({
+    "GET /api/take5s": { status: 200, body: LIST },
+    "POST /api/take5s/check": {
+      status: 200,
+      body: {
+        ...PASSING_CHECK,
+        errors: [{ path: "started_at", message: RUN_OUT_MESSAGE }],
+        assessment: null,
+        can_submit: false,
+      },
+    },
+    [`GET /api/take5s/${SAVED.take5.id}`]: { status: 200, body: SAVED },
+  });
+  renderWithApi(<SavedTake5sScreen />);
+  expect(
+    await screen.findByRole("heading", {
+      name: "Your unfinished Take 5 was saved",
+    }),
+  ).toBeTruthy();
+  const notice = screen.getByRole("status");
+  expect(
+    within(notice).getByRole("link", { name: "Open it" }).getAttribute("href"),
+  ).toBe(`/take5s/${SAVED.take5.id}`);
+  expect(screen.queryByText(RUN_OUT_MESSAGE)).toBeNull();
+  expect(localStorage.getItem("take5-draft")).toBeNull();
+});
+
+it("says when the unfinished Take 5 couldn't be checked", async () => {
+  keepSampleDraft();
+  stubApi({
+    "GET /api/take5s": { status: 200, body: LIST },
+    "POST /api/take5s/check": "offline",
+  });
+  renderWithApi(<SavedTake5sScreen />);
+  expect((await screen.findByRole("status")).textContent).toBe(
+    "No signal: it couldn’t be checked to see if it’s still in time. If it has run out, it can’t be saved.",
+  );
+  expect(screen.getByRole("link", { name: "Carry on" })).toBeTruthy();
+});
+
+it("shows how long the unfinished Take 5 has left", async () => {
+  keepSampleDraft();
+  stubApi({
+    "GET /api/take5s": { status: 200, body: LIST },
+    "POST /api/take5s/check": {
+      status: 200,
+      body: {
+        ...PASSING_CHECK,
+        runs_out_at: new Date(Date.now() + 95.5 * 60_000).toISOString(),
+      },
+    },
+  });
+  renderWithApi(<SavedTake5sScreen />);
+  expect(await screen.findByText("1 hr 35 min left")).toBeTruthy();
 });

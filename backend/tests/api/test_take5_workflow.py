@@ -1,5 +1,6 @@
 """Integration tests for checking, submitting, retrying and reopening a Take 5."""
 
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
@@ -378,3 +379,76 @@ def test_an_answer_that_is_not_yes_no_or_na_is_a_field_error(
     assert response.status_code == 422
     paths: list[str] = [error["path"] for error in response.json()["errors"]]
     assert paths == ["answers.permits"]
+
+
+def test_a_draft_older_than_two_hours_is_named_as_run_out(client: TestClient) -> None:
+    """The check and the submission both refuse a draft past the booklet's limit."""
+    started_at: datetime = datetime.now(UTC) - timedelta(hours=2, minutes=1)
+    draft: Take5Draft = sample_draft().model_copy(update={"started_at": started_at})
+
+    checked: Response = client.post(
+        "/api/take5s/check",
+        json=draft.model_dump(mode="json"),
+    )
+    submitted: Response = client.post(
+        "/api/take5s",
+        json=SubmissionRequest(id=uuid4(), draft=draft).model_dump(mode="json"),
+    )
+
+    assert checked.status_code == 200
+    assert [error["path"] for error in checked.json()["errors"]] == ["started_at"]
+    assert submitted.status_code == 422
+    assert [error["path"] for error in submitted.json()["errors"]] == ["started_at"]
+
+
+def test_the_start_time_comes_back_with_the_saved_take5(client: TestClient) -> None:
+    """A Take 5 started a few minutes ago is saved with its start time (K3)."""
+    started_at: datetime = datetime.now(UTC) - timedelta(minutes=3)
+    draft: Take5Draft = sample_draft().model_copy(update={"started_at": started_at})
+
+    response: Response = client.post(
+        "/api/take5s",
+        json=SubmissionRequest(id=uuid4(), draft=draft).model_dump(mode="json"),
+    )
+
+    saved: Take5Response = Take5Response.model_validate(response.json())
+    assert saved.take5.started_at == started_at
+
+
+def test_a_start_time_without_a_time_zone_is_refused(client: TestClient) -> None:
+    """A time with no zone can't be compared with the server's clock, so it is a 422."""
+    draft: dict[str, Any] = sample_draft().model_dump(mode="json")
+
+    response: Response = client.post(
+        "/api/take5s/check",
+        json={**draft, "started_at": "2026-11-15T20:12:00"},
+    )
+
+    assert response.status_code == 422
+    assert [error["path"] for error in response.json()["errors"]] == ["started_at"]
+
+
+def test_a_yes_needs_a_linked_hazard_and_the_link_is_saved(client: TestClient) -> None:
+    """T5 through the API: refused without a link, saved and reopened with one."""
+    heights_yes: Take5Draft = sample_draft().model_copy(
+        update={"answers": sample_answers(heights=Answer.YES)},
+    )
+    unlinked = SubmissionRequest(id=uuid4(), draft=heights_yes)
+    refused: Response = client.post(
+        "/api/take5s",
+        json=unlinked.model_dump(mode="json"),
+    )
+    assert refused.status_code == 422
+    assert [error["path"] for error in refused.json()["errors"]] == ["answers.heights"]
+
+    linked_hazard: HazardDraft = heights_yes.hazards[0].model_copy(
+        update={"covers": ("heights",)},
+    )
+    linked = SubmissionRequest(
+        id=uuid4(),
+        draft=heights_yes.model_copy(update={"hazards": (linked_hazard,)}),
+    )
+    saved: Response = client.post("/api/take5s", json=linked.model_dump(mode="json"))
+    assert saved.status_code == 200
+    reopened: Response = client.get(f"/api/take5s/{linked.id}")
+    assert reopened.json()["take5"]["hazards"][0]["covers"] == ["heights"]

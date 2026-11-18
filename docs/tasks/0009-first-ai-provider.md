@@ -38,3 +38,8 @@ means adding one file and changing one setting.
 
 Don't start until the spec is approved (task 0001 is `done`). Depends on 0008. The new dependency is the provider's
 own Python library; record it in `docs/decisions.md`.
+
+Jake, 2026-11-18 (task 0022): once an AI is set up, it should also judge whether a hazard linked to a Yes on the
+hazard check is vague, whenever it can be reached, with task 0022's word rule as the fallback. That widens the
+AI's use beyond the challenge question (spec D3 and "Out of scope"), so change the spec in the same PR, or give
+it its own task after this one.

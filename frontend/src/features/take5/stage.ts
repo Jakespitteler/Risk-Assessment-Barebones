@@ -138,10 +138,24 @@ export function stageOfError(path: string, questions: Question[]): Stage {
   return { page: "hazards" };
 }
 
+/** How many steps the form has: the job, think, hazards, assess and review. */
+export const STEP_COUNT = 5;
+
 /** Which of the five steps a stage is part of, counting from 1. */
 export function stepOf(stage: Stage): number {
   if (stage.page === "job") return 1;
   if (stage.page === "think") return 2;
   if (stage.page === "hazards" || stage.page === "check") return 3;
   return stage.page === "review" ? 5 : 4;
+}
+
+/**
+ * The page a tap on one of the five steps opens: the step's first page. Assess opens the
+ * first hazard's before rating; with no hazards, `shownStage` sends that to the list.
+ */
+export function firstStageOf(step: number): Stage {
+  if (step <= 1) return FIRST_STAGE;
+  if (step === 2) return { page: "think" };
+  if (step === 3) return { page: "hazards" };
+  return step === 4 ? { page: "before", hazard: 0 } : { page: "review" };
 }

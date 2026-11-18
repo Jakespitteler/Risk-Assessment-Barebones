@@ -8,6 +8,7 @@ from httpx2 import Response
 
 from risk_assessment.api.schemas import SubmissionRequest
 from risk_assessment.domain.controls import ControlKind
+from risk_assessment.domain.questions import Answer
 from risk_assessment.domain.take5.draft import (
     ControlDraft,
     HazardDraft,
@@ -16,7 +17,12 @@ from risk_assessment.domain.take5.draft import (
 )
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.storage.sqlite import SqliteTake5Repository
-from tests.samples import BARRICADE_DRAFT, sample_draft, sample_hazard_draft
+from tests.samples import (
+    BARRICADE_DRAFT,
+    sample_answers,
+    sample_draft,
+    sample_hazard_draft,
+)
 
 QUESTION: str = (
     "Everything here relies on people getting it right. "
@@ -231,3 +237,35 @@ def test_a_reason_is_not_saved_once_the_question_no_longer_applies(
     saved: SavedTake5 | None = repository.get(request.id)
     assert saved is not None
     assert saved.hazards[0].weak_controls_reason == ""
+
+
+def test_the_check_nudges_a_short_hazard_linked_to_a_yes(client: TestClient) -> None:
+    """T6 through the API: a nudge comes back beside the hazard, and nothing blocks."""
+    car: HazardDraft = sample_hazard_draft().model_copy(
+        update={"description": "Get hit by a car", "covers": ("vehicles",)},
+    )
+    draft: Take5Draft = sample_draft(car).model_copy(
+        update={"answers": sample_answers(vehicles=Answer.YES)},
+    )
+
+    check: Response = client.post(
+        "/api/take5s/check",
+        json=draft.model_dump(mode="json"),
+    )
+
+    assert check.json()["can_submit"]
+    assert [nudge["path"] for nudge in check.json()["nudges"]] == [
+        "hazards.0.description",
+    ]
+
+
+def test_the_template_sends_each_hazard_questions_example(client: TestClient) -> None:
+    """The phone can show the example beside the question it belongs to."""
+    questions: list[dict[str, str]] = client.get("/api/take5/template").json()[
+        "questions"
+    ]
+
+    vehicles: dict[str, str] = next(
+        question for question in questions if question["id"] == "vehicles"
+    )
+    assert vehicles["example"] == "Hit by a haul truck at the crib hut crossing"

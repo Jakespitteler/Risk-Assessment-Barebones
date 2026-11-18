@@ -8,6 +8,7 @@ from risk_assessment.domain.take5.template import (
     BOOKLET_TEMPLATE,
     Take5Template,
 )
+from risk_assessment.domain.take5.thinking import hazard_wording_nudge
 
 SPEC_STOP_QUESTIONS: tuple[str, ...] = (
     "Do you understand the task scope?",
@@ -64,3 +65,33 @@ def test_a_question_id_cannot_hold_a_full_stop() -> None:
     """An ID goes in a dotted path, `answers.<id>`, so a full stop would split it."""
     with pytest.raises(ValueError, match="pattern"):
         Question(id="gate.keys", text="Is the gate shut?", role=QuestionRole.STOP)
+
+
+SPEC_HAZARD_EXAMPLES: tuple[str, ...] = (
+    "Hand caught in the conveyor tail pulley with the guard off",
+    "Hit by a haul truck at the crib hut crossing",
+    "Battery acid splashed in my eyes while topping up the cells",
+    "Feeder starts up while I am clearing the chute",
+    "Fall from the trailer deck while strapping the load",
+    "Struck by rock from the excavator loading on the bench above",
+    "Heat stress from working all afternoon in full sun",
+)
+
+
+def test_each_hazard_question_has_the_specs_example() -> None:
+    """The nudge's examples are the ones the spec lists, in the card's order (T6)."""
+    hazard_questions: tuple[Question, ...] = BOOKLET_TEMPLATE.questions[7:]
+
+    assert (
+        tuple(question.example for question in hazard_questions) == SPEC_HAZARD_EXAMPLES
+    )
+
+
+def test_no_example_would_itself_be_nudged() -> None:
+    """Every example has at least as many words as a hazard needs (T6)."""
+    assert BOOKLET_TEMPLATE.specific_hazard_words == 6
+    assert all(
+        hazard_wording_nudge(example, "", BOOKLET_TEMPLATE.specific_hazard_words)
+        is None
+        for example in SPEC_HAZARD_EXAMPLES
+    )

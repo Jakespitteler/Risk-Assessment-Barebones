@@ -15,8 +15,18 @@ import type {
 export const SMALL_TEMPLATE: TemplateResponse = {
   name: "Example card",
   questions: [
-    { id: "keys", text: "Have you got the gate keys?", role: "stop" },
-    { id: "dogs", text: "Are there dogs on site?", role: "hazard" },
+    {
+      id: "keys",
+      text: "Have you got the gate keys?",
+      role: "stop",
+      example: "",
+    },
+    {
+      id: "dogs",
+      text: "Are there dogs on site?",
+      role: "hazard",
+      example: "Bitten by the guard dog at the side gate",
+    },
   ],
   answer_choices: ["Yes", "No", "N/A"],
   matrix: {
@@ -46,6 +56,7 @@ export const HAZARD_DRAFT: HazardDraft = {
   before: { likelihood: "Often", consequence: "Serious" },
   controls: [{ description: "Chock the wheel", kind: "Isolate the hazard" }],
   after: { likelihood: "Seldom", consequence: "Scratch" },
+  covers: [],
 };
 
 export const ANSWERS: Take5Draft["answers"] = { keys: "Yes", dogs: "No" };
@@ -60,6 +71,7 @@ export const COMPLETE_DRAFT: Take5Draft = {
 
 export const RATED_HAZARD = {
   weak_controls_reason: "",
+  covers: [] as string[],
   description: "Moving wheel",
   before: {
     likelihood: "Often",
@@ -80,6 +92,7 @@ export const RATED_HAZARD = {
 
 export const PASSING_CHECK: DraftCheck = {
   thinking_questions: [],
+  nudges: [],
   errors: [],
   warnings: [],
   can_submit: true,
@@ -159,6 +172,24 @@ export function stubApi(routes: Record<string, Reply | Reply[]>) {
   return calls;
 }
 
+/**
+ * Keep a draft on the phone as the form does, started a few minutes ago so it hasn't
+ * run out, with the sample saved Take 5's ID as its submission ID.
+ */
+export function keepSampleDraft(draft: Take5Draft = COMPLETE_DRAFT) {
+  localStorage.setItem(
+    "take5-draft",
+    JSON.stringify({
+      version: 4,
+      draft: {
+        ...draft,
+        started_at: new Date(Date.now() - 5 * 60_000).toISOString(),
+      },
+      submissionId: SAVED.take5.id,
+    }),
+  );
+}
+
 /** An API cache whose retries don't wait, so tests stay quick. */
 export function quickClient() {
   return new QueryClient({
@@ -175,4 +206,11 @@ export function renderWithApi(ui: ReactNode, client = quickClient()) {
     client,
     ...render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>),
   };
+}
+
+/** Pretend the main pointer is a mouse (a computer) or a finger (a phone). */
+export function stubPointer(pointer: "fine" | "coarse") {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query === `(pointer: ${pointer})`,
+  }));
 }

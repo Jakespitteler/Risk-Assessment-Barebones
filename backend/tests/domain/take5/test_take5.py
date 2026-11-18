@@ -222,3 +222,14 @@ def test_a_take5_on_a_card_with_no_questions_has_no_answers() -> None:
     take5 = Take5(template=old_card, hazards=(sample_hazard(),))
 
     assert take5.answers == {}
+
+
+@pytest.mark.parametrize("linked", ["permits", "made_up", "heights"])
+def test_a_hazard_can_only_cover_hazard_questions_answered_yes(linked: str) -> None:
+    """A link to a stop question, one the card doesn't ask, or a No is refused (T5)."""
+    with pytest.raises(ValueError, match="answered Yes"):
+        Take5(
+            template=BOOKLET_TEMPLATE,
+            answers=sample_answers(permits=Answer.YES),
+            hazards=(sample_hazard().model_copy(update={"covers": (linked,)}),),
+        )

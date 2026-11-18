@@ -2,6 +2,113 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-18: The step bar can be tapped, but only to steps already reached (task 0026)
+
+- Decision: The five steps at the top of the form can be tapped to open a step's first page, but only steps
+  already reached in this Take 5. A tap forward checks the page being left, as Continue does; a tap back doesn't.
+  How far the worker got is kept with the draft on the phone (spec D38 to D43).
+- Why: Jake asked for the steps to work as a navigation bar. A bar that opens any step would let a worker skip
+  every page Continue checks, which is what the app exists to stop. Going back to fix something is the useful
+  part, and it is also where a tap saves the most taps.
+- Alternatives considered: Back only (a fix from the review would then need Continue through every page again);
+  every step at any time (skips the thinking, and leaves the checks to the review alone).
+- Decided by: human, from Claude's recommended picks
+
+## 2026-11-18: Nudge a short hazard picked for a Yes to say what and where (task 0022, part 2)
+
+- Decision: A hazard linked to a Yes with fewer than 6 words (`Take5Template.specific_hazard_words`) is nudged
+  to say what could hurt and where, with an example kept beside that question in the template (spec T6). The
+  worker can reword it in place or keep it; keeping it is remembered on the phone for those exact words. It
+  never blocks. The check returns it in a new `nudges` list, beside errors, warnings and thinking questions.
+- Why: Jake chose the word rule for now (2026-11-18), and an AI once one is set up. A word count is simple and
+  exact to test, but it can't tell a short specific hazard from a vague one, so it only nudges and can be kept.
+  A nudge isn't a warning (that says the job will stop) or a thinking question (that must be answered), so it
+  has its own kind. The examples and the minimum are template data, so another company's card can change them.
+  The minimum and the examples add to the data model and the API.
+- Alternatives considered: A list of category words like "vehicles" (never nags a specific hazard, but misses
+  "Get hit by a car"). An AI now (needs signal and widens D3). Required rewording (would nag a short specific
+  hazard). Keeping "Keep it as it is" on the server (it is about the screen, like Leave and Undo).
+- Decided by: human (Jake, 2026-11-18: "(A) for now ... All else do the recommended").
+
+## 2026-11-18: Each Yes to a hazard question is linked to a hazard on the list (task 0022, part 1)
+
+- Decision: A Yes to a hazard question needs a hazard on the worker's list linked to it before Continue (spec
+  T5). The worker picks it with "It's on my list", or adds a new one from that Yes. The link is kept on the
+  hazard, as `covers` (the IDs of the questions it is linked to), on the phone's draft and on the saved hazard,
+  and shown under each Yes on the review and the result. One hazard can cover several questions. The phone-only
+  "Added to your list" mark (D15) is gone; a hazard added from a Yes is simply linked to it.
+- Why: Jake chose "It's on my list" with a pick from the list on 2026-11-16, over a one-tap button that could be
+  passed without looking at the list. Without T5 a Yes could still be tapped past, which is what the app exists
+  to stop. Keeping the link on the hazard, rather than giving each hazard an ID and keeping links beside the
+  hazards, needs no new ID: removing a hazard removes its links, Undo puts both back, and removing an earlier
+  hazard can't point a link at the wrong one. Saving it lets the review and result show what each Yes was about.
+  `covers` is a data model and API change; a Take 5 saved before it reads as linked to nothing.
+- Alternatives considered: A hazard ID made on the phone, with links beside the hazards (the task's first
+  recommendation; more to keep in step for the same result). Keeping links only on the phone (smaller, but the
+  result couldn't show them). A reminder that can be passed by, as before.
+- Decided by: human. Jake chose the picker on 2026-11-16, and Claude's recommended picks for the rest on
+  2026-11-18 ("All else do the recommended").
+
+## 2026-11-17: Set-up is a Python script run by uv, and leaves git, uv and Node.js to the person (task 0023)
+
+- Decision: `uv run scripts/setup.py` sets up a freshly cloned repo. It checks for git and Node.js 22.22.2 or
+  newer and stops, saying how to install them, if either is missing. Then it installs what AGENTS.md lists
+  (`uv sync --locked`, `npm ci --engine-strict`, `npx playwright install chromium`). It warns, but carries on,
+  when the repo is in a cloud-synced folder.
+- Why: uv is already how every script here runs, and it installs Python 3.13 itself, so one Python script works
+  on Windows, macOS and Linux and can be tested like `dev.py`. Installing git or Node.js changes the whole
+  computer, may ask for an administrator, and needs a new terminal before the tools are found, so the script says
+  how instead of doing it. The locked front-end packages need Node.js 22.22.2 or newer (jsdom), or 24.15 or newer
+  on version 24. That is stricter than the "22 or newer" the docs said, and npm only warns about it, so
+  `--engine-strict` makes npm stop instead. `npm ci` runs every time rather than being skipped when the packages
+  look current: it is slower, but always matches `package-lock.json`.
+- Alternatives considered: A PowerShell script (Windows only, and it can't be tested with pytest). A script that
+  also installs uv and Node.js with winget (fewer steps on a new Windows computer, but it changes the computer
+  without asking and works only on Windows). Stopping, rather than warning, in a cloud-synced folder (safer, but a
+  folder that only looks synced would have no way through).
+- Decided by: proposed by claude; the human approves it by merging task 0023's pull request.
+
+## 2026-11-16: What a kept draft tells the worker (task 0019)
+
+- Decision: A draft the back end says has run out is first looked up by its submission ID; if it was saved and
+  only the answer was lost, its result opens instead of "run out". When a kept draft can't be checked as it
+  opens, the form and the list say so, with when it was started. While a draft is kept, a result screen says
+  "Carry on your Take 5". Each check returns `runs_out_at`, and the form and the list count down the time left.
+  Spec D26 to D29.
+- Why: Jake asked for each, on Claude's follow-up questions from the review: "fix it", "do whatever makes it
+  most clear what is actually going on to the user", and "It should say somewhere how long the take 5 has
+  left". The look-up uses the existing `GET /api/take5s/{id}`, so no new endpoint was needed. The back end
+  works out `runs_out_at`, so the phone only counts down to a time it is given and holds no time rule.
+- Alternatives considered: Sending the submission ID with the check (a request shape change). Sending the
+  time limit in the template, for the phone to add to `started_at` (a rule copied into TypeScript).
+- Decided by: human (Jake, 2026-11-16, in chat).
+
+## 2026-11-15: Leave a Take 5, keep one draft on the phone, and a 2-hour limit (task 0019)
+
+- Decision: Every page of the form has Leave, which keeps the Take 5 for later or throws it away (with Undo).
+  One unfinished Take 5 is kept on the phone (`localStorage`) from the first change until it is saved or thrown
+  away. It runs out 2 hours after it was started: the back end refuses it on the check and on submit, the phone
+  throws it away and says why. The limit is `Take5Template.draft_time_limit_minutes`; setting it to `None` turns
+  the check off completely. "Fix this in a new Take 5" asks before it replaces an unfinished Take 5. Each saved
+  Take 5 keeps when it was started (`started_at`). Spec D19 to D25 and K1 to K3.
+- Why: A worker gets called away mid-way, and closing the app lost everything. But a Take 5 is meant to be done
+  at the job, just before starting: a draft started at breakfast and finished at lunch is a Take 5 done without
+  looking. Two hours covers a radio call or lending a hand. Counting from the start, not the last change, means
+  tapping it now and then can't keep it alive. An old draft is thrown away rather than reopened, because reopening
+  it hands back an old hazard list to tick through. One draft keeps the screens simple. On the phone needs no
+  data model change and keeps drafts private while there is no sign-in (D4). The start time lets the three-minute
+  target be measured later.
+- How the time is checked: the phone sends `started_at` by its own clock, with its time zone, and the back end
+  compares it with the server's clock (`domain/take5/time_limit.py`, given the time by `Take5Service`'s
+  injected clock). Phones set their clocks from the network, so the two agree; a phone whose clock is set hours
+  wrong would see drafts run out early or late. A retry of a Take 5 that was saved in time is never refused.
+- Alternatives considered: Throw away only, or keep only. Drafts on the server (a supervisor could see them and
+  they survive a new phone, but a new table and endpoints). 12 hours, or no limit. Reopening an old draft with its
+  answers cleared, or with a "check everything" warning. A list of drafts. Replacing a draft with a fix without
+  asking (as before), or refusing the fix. Not saving the start time.
+- Decided by: human (Jake, 2026-11-15, in chat: "Do all of your recommendations", with no limit switching the
+  timer off completely), on Claude's questions in task 0019's thread.
+
 ## 2026-11-15: Fixed on the saved list, one date format, and paging later (task 0007)
 
 - Decision: A Don't start yet that a newer Take 5 fixes shows "Fixed" in the saved list (`Take5Summary.fixed`),

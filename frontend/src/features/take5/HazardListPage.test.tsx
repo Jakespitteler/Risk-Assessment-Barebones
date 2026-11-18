@@ -1,6 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { expect, it, vi } from "vitest";
-import { COMPLETE_DRAFT } from "../../test-utils";
+import type { HazardDraft } from "../../api/take5";
+import { COMPLETE_DRAFT, HAZARD_DRAFT } from "../../test-utils";
+import { blankHazard } from "./useTake5Draft";
 import { HazardListPage } from "./HazardListPage";
 
 it("lists, adds and removes hazards by number", () => {
@@ -41,4 +44,24 @@ it("shows the error for having no hazards", () => {
   expect(
     screen.getByText("List at least one hazard.").getAttribute("aria-invalid"),
   ).toBe("true");
+});
+
+it("puts the cursor in a hazard added with Add another hazard", () => {
+  function HazardsInState() {
+    const [hazards, setHazards] = useState<HazardDraft[]>([HAZARD_DRAFT]);
+    return (
+      <HazardListPage
+        hazards={hazards}
+        errorFor={() => undefined}
+        onDescribe={vi.fn()}
+        onAdd={() => {
+          setHazards([...hazards, blankHazard()]);
+        }}
+        onRemove={vi.fn()}
+      />
+    );
+  }
+  render(<HazardsInState />);
+  fireEvent.click(screen.getByRole("button", { name: "Add another hazard" }));
+  expect(document.activeElement).toBe(screen.getByLabelText("Hazard 2"));
 });

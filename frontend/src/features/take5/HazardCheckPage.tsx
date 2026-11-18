@@ -1,32 +1,37 @@
+import type { ReactNode } from "react";
 import type { Answer, HazardDraft, Question } from "../../api/take5";
 import { AnswerPicker } from "../../components/AnswerPicker";
-import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
-import { Warning } from "../../components/Warning";
+import { HazardLink } from "./HazardLink";
 
 /**
  * Step 3, after the list: the card's hazard questions, as a check on what the worker
- * wrote. Their list is shown first, so a Yes can be checked against it. Once a hazard
- * has been added from a Yes, the reminder becomes a tick, with a way to add another.
+ * wrote. Their list is shown first, so a Yes can be checked against it. Each Yes then
+ * needs a hazard linked to it: one picked from the list, or a new one (spec T5).
  */
 export function HazardCheckPage({
   hazards,
   questions,
   choices,
   answers,
-  addedFor,
   errorFor,
   onAnswer,
+  onLink,
+  onUnlink,
   onAddHazard,
+  nudgeFor,
 }: {
   hazards: HazardDraft[];
   questions: Question[];
   choices: Answer[];
   answers: Partial<Record<string, Answer>>;
-  addedFor: string[];
   errorFor: (path: string) => string | undefined;
   onAnswer: (questionId: string, answer: Answer) => void;
+  onLink: (questionId: string, hazardIndex: number) => void;
+  onUnlink: (questionId: string, hazardIndex: number) => void;
   onAddHazard: (questionId: string) => void;
+  /** Anything to ask about the wording of a hazard linked to this question (T6). */
+  nudgeFor?: (questionId: string, hazardIndex: number) => ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -38,7 +43,10 @@ export function HazardCheckPage({
           ))}
         </ol>
       </Card>
-      <p>Did you miss any of these? A Yes means it belongs on your list.</p>
+      <p>
+        Did you miss any of these? For each Yes, say which hazard on your list
+        it is, or add it.
+      </p>
       {questions.map((question) => {
         const path = `answers.${question.id}`;
         return (
@@ -53,34 +61,22 @@ export function HazardCheckPage({
                 onAnswer(question.id, answer);
               }}
             />
-            {answers[question.id] === "Yes" &&
-              (addedFor.includes(question.id) ? (
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-semibold text-green-800">
-                    <span aria-hidden="true">✓ </span>Added to your list
-                  </p>
-                  <Button
-                    variant="quiet"
-                    onClick={() => {
-                      onAddHazard(question.id);
-                    }}
-                  >
-                    Add another
-                  </Button>
-                </div>
-              ) : (
-                <Warning>
-                  <p>Make sure it’s on your list.</p>
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      onAddHazard(question.id);
-                    }}
-                  >
-                    Add a hazard
-                  </Button>
-                </Warning>
-              ))}
+            {answers[question.id] === "Yes" && (
+              <HazardLink
+                questionId={question.id}
+                hazards={hazards}
+                onLink={(hazardIndex) => {
+                  onLink(question.id, hazardIndex);
+                }}
+                onUnlink={(hazardIndex) => {
+                  onUnlink(question.id, hazardIndex);
+                }}
+                onAddHazard={() => {
+                  onAddHazard(question.id);
+                }}
+                nudgeFor={(hazardIndex) => nudgeFor?.(question.id, hazardIndex)}
+              />
+            )}
           </Card>
         );
       })}

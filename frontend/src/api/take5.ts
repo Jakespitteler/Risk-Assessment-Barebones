@@ -116,6 +116,47 @@ export function useDraftCheck(
 }
 
 /**
+ * Check a kept draft once as it opens, to find out whether it has run out (spec K2).
+ * One short try with its own cache entry, so it never holds up a Continue that checks the
+ * same answers; if it can't get through, the next Continue or the review checks again.
+ */
+export function useOpeningCheck(draft: Take5Draft, enabled: boolean) {
+  return useQuery({
+    queryKey: ["take5-opening-check", draft],
+    queryFn: () =>
+      request<DraftCheck>("/api/take5s/check", draft, CONTINUE_TIMEOUT_MS),
+    staleTime: Infinity,
+    retry: false,
+    networkMode: NETWORK_MODE,
+    enabled,
+  });
+}
+
+/**
+ * Look up a saved Take 5 by ID, with one short try: the Take 5, or null when none is
+ * saved with that ID or the back end can't be reached. A draft that has run out may
+ * have been saved already, with the answer lost on its way back to the phone.
+ */
+export function useFindSaved() {
+  const queryClient = useQueryClient();
+  return (id: string) =>
+    queryClient
+      .query({
+        queryKey: ["take5", id],
+        queryFn: () =>
+          request<Take5Response>(
+            `/api/take5s/${encodeURIComponent(id)}`,
+            undefined,
+            CONTINUE_TIMEOUT_MS,
+          ),
+        staleTime: Infinity,
+        retry: false,
+        networkMode: NETWORK_MODE,
+      })
+      .catch(() => null);
+}
+
+/**
  * Check a draft now, for a Continue button: one short try, with no retry. The answer is
  * kept for `useDraftCheck`.
  */

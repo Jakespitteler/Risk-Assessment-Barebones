@@ -4,6 +4,7 @@ import type { Take5Response } from "../../api/take5";
 import {
   SAVED,
   STOPPED,
+  keepSampleDraft,
   quickClient,
   renderWithApi,
   stubApi,
@@ -163,4 +164,49 @@ it("links a fix back to the Take 5 it fixes", () => {
       .getByRole("link", { name: "Open the Take 5 it fixes" })
       .getAttribute("href"),
   ).toBe(`/take5s/${STOPPED.take5.id}`);
+});
+
+it("asks before a fix takes the place of the phone's unfinished Take 5", () => {
+  localStorage.clear();
+  keepSampleDraft();
+  const onFix = vi.fn();
+  showResult(STOPPED, onFix);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Fix this in a new Take 5" }),
+  );
+  expect(onFix).not.toHaveBeenCalled();
+  expect(
+    screen.getByText(
+      "You have an unfinished Take 5 for “Change tyre”. Fixing this one throws it away.",
+    ),
+  ).toBeTruthy();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: "Keep my unfinished Take 5" }),
+  );
+  expect(
+    screen.getByRole("button", { name: "Fix this in a new Take 5" }),
+  ).toBeTruthy();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: "Fix this in a new Take 5" }),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Throw it away and fix this" }),
+  );
+  expect(onFix).toHaveBeenCalledWith(STOPPED.take5);
+  localStorage.clear();
+});
+
+it("says Carry on your Take 5 when the phone keeps an unfinished one", () => {
+  localStorage.clear();
+  keepSampleDraft();
+  showResult(SAVED);
+  expect(
+    screen
+      .getByRole("link", { name: "Carry on your Take 5" })
+      .getAttribute("href"),
+  ).toBe("/");
+  expect(screen.queryByRole("link", { name: "Start a new Take 5" })).toBeNull();
+  localStorage.clear();
 });

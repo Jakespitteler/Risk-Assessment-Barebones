@@ -6,7 +6,7 @@ printed beside the scales.
 
 from typing import ClassVar, Self
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, PositiveInt, model_validator
 
 from risk_assessment.domain.questions import Question, QuestionRole
 from risk_assessment.domain.risk import RiskCell, RiskMatrix
@@ -38,6 +38,12 @@ class Take5Template(BaseModel):
         consequence_guidance: What each consequence means, shown beside the rating.
         control_guidance: What makes a control strong or weak, shown beside the
             controls.
+        draft_time_limit_minutes: How long an unfinished Take 5 lasts, counted from
+            when it was started (spec K2), or None for no limit, which turns the
+            check off completely.
+        specific_hazard_words: The fewest words a hazard linked to a Yes can have
+            before the worker is asked to make it specific (spec T6), or None, which
+            turns the nudge off.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -48,6 +54,8 @@ class Take5Template(BaseModel):
     likelihood_guidance: tuple[LevelGuidance, ...] = ()
     consequence_guidance: tuple[LevelGuidance, ...] = ()
     control_guidance: str = ""
+    draft_time_limit_minutes: PositiveInt | None = None
+    specific_hazard_words: PositiveInt | None = None
 
     @model_validator(mode="after")
     def _question_ids_are_unique(self) -> Self:
@@ -119,20 +127,44 @@ _BOOKLET_STOP_QUESTIONS: tuple[tuple[str, str], ...] = (
     ("permits", "Do you have the necessary permits?"),
     ("plan", "Have you got a clear plan in mind?"),
 )
-_BOOKLET_HAZARD_QUESTIONS: tuple[tuple[str, str], ...] = (
-    ("guards", "Will I be operating equipment with the guards removed?"),
+# Each hazard question with an example of a specific hazard it could be about: what
+# could hurt someone, and where. The examples are the app's, not the card's.
+_BOOKLET_HAZARD_QUESTIONS: tuple[tuple[str, str, str], ...] = (
+    (
+        "guards",
+        "Will I be operating equipment with the guards removed?",
+        "Hand caught in the conveyor tail pulley with the guard off",
+    ),
     (
         "vehicles",
         "Am I or others at risk from the operation of vehicles or mobile equipment?",
+        "Hit by a haul truck at the crib hut crossing",
     ),
-    ("hazardous_materials", "Does the task involve hazardous materials?"),
+    (
+        "hazardous_materials",
+        "Does the task involve hazardous materials?",
+        "Battery acid splashed in my eyes while topping up the cells",
+    ),
     (
         "isolation",
         "Will I be performing a task without a specific isolation procedure?",
+        "Feeder starts up while I am clearing the chute",
     ),
-    ("heights", "Will I be working at heights?"),
-    ("nearby_activity", "Will I be impacted by other activity in the vicinity?"),
-    ("other", "Other environmental and/or H&S hazards?"),
+    (
+        "heights",
+        "Will I be working at heights?",
+        "Fall from the trailer deck while strapping the load",
+    ),
+    (
+        "nearby_activity",
+        "Will I be impacted by other activity in the vicinity?",
+        "Struck by rock from the excavator loading on the bench above",
+    ),
+    (
+        "other",
+        "Other environmental and/or H&S hazards?",
+        "Heat stress from working all afternoon in full sun",
+    ),
 )
 _BOOKLET_QUESTIONS: tuple[Question, ...] = (
     *(
@@ -140,8 +172,13 @@ _BOOKLET_QUESTIONS: tuple[Question, ...] = (
         for question_id, text in _BOOKLET_STOP_QUESTIONS
     ),
     *(
-        Question(id=question_id, text=text, role=QuestionRole.HAZARD)
-        for question_id, text in _BOOKLET_HAZARD_QUESTIONS
+        Question(
+            id=question_id,
+            text=text,
+            role=QuestionRole.HAZARD,
+            example=example,
+        )
+        for question_id, text, example in _BOOKLET_HAZARD_QUESTIONS
     ),
 )
 
@@ -186,4 +223,10 @@ BOOKLET_TEMPLATE = Take5Template(
     likelihood_guidance=_BOOKLET_LIKELIHOOD_GUIDANCE,
     consequence_guidance=_BOOKLET_CONSEQUENCE_GUIDANCE,
     control_guidance=_BOOKLET_CONTROL_GUIDANCE,
+    # Long enough for a radio call, too short to start at breakfast and finish at
+    # lunch (spec D21). Set it to None to switch the time limit off.
+    draft_time_limit_minutes=120,
+    # A hazard needs room to say what could hurt someone and where: "Get hit by a car"
+    # (five words) is asked to be specific; "Hit by a truck reversing nearby" is not.
+    specific_hazard_words=6,
 )

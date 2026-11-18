@@ -37,6 +37,8 @@ class Question(BaseModel):
             underscores only, so it is safe in a dotted path like `answers.permits`.
         text: The question as the card prints it.
         role: What its answer means for the job.
+        example: For a hazard question, a specific hazard it could be about, shown when
+            the worker's own wording is vague. Empty when the card gives none.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -44,3 +46,4 @@ class Question(BaseModel):
     id: str = Field(pattern=r"^[a-z0-9_]+$")
     text: str
     role: QuestionRole
+    example: str = ""

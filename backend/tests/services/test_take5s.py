@@ -1,18 +1,25 @@
 """The submitted verdict and template survive retries and later template changes."""
 
 from concurrent.futures import Future, ThreadPoolExecutor
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import UUID, uuid4
 
 import pytest
 
 from risk_assessment.domain.take5.draft import (
+    DraftCheck,
     FieldError,
     Take5Draft,
 )
 from risk_assessment.domain.take5.fix import NOT_SAVED_MESSAGE, NOTHING_TO_FIX_MESSAGE
 from risk_assessment.domain.take5.saved import SavedTake5
-from risk_assessment.domain.take5.template import BOOKLET_MATRIX, Take5Template
+from risk_assessment.domain.take5.template import (
+    BOOKLET_MATRIX,
+    BOOKLET_TEMPLATE,
+    Take5Template,
+)
+from risk_assessment.domain.take5.time_limit import STARTED_AT_PATH, run_out_message
 from risk_assessment.services.take5s import InvalidDraftError, Take5Service
 from risk_assessment.storage.sqlite import SqliteTake5Repository
 from tests.samples import (
@@ -205,3 +212,108 @@ def test_the_list_is_newest_first_with_each_verdict_as_it_was_saved() -> None:
 def test_the_list_is_empty_before_anything_is_saved() -> None:
     """A new app has nothing to list."""
     assert _service().list_newest_first() == ()
+
+
+STARTED_AT = datetime(2026, 11, 15, 20, 12, tzinfo=UTC)
+
+
+def _service_at(clock_reading: list[datetime]) -> Take5Service:
+    """A booklet service with nothing saved, whose clock reads the list's only item.
+
+    Args:
+        clock_reading: A one-item list. A test changes the item to move the clock on.
+
+    Returns:
+        The service.
+    """
+    return Take5Service(MemoryRepository(), BOOKLET_TEMPLATE, lambda: clock_reading[0])
+
+
+def _started_draft() -> Take5Draft:
+    """The sample draft, started at `STARTED_AT`."""
+    return sample_draft().model_copy(update={"started_at": STARTED_AT})
+
+
+def test_the_check_says_when_a_draft_has_run_out() -> None:
+    """Checking a draft past the booklet's 2 hours gives the run-out error (K2)."""
+    service: Take5Service = _service_at([STARTED_AT + timedelta(hours=2, seconds=1)])
+
+    check: DraftCheck = service.check(_started_draft())
+
+    assert check.errors == (
+        FieldError(path=STARTED_AT_PATH, message=run_out_message(120)),
+    )
+    assert not check.can_submit
+    assert check.assessment is None
+
+
+def test_a_draft_that_has_run_out_cannot_be_submitted() -> None:
+    """Submitting past the time limit is refused, and nothing is saved (K2)."""
+    clock_reading: list[datetime] = [STARTED_AT + timedelta(hours=3)]
+    service: Take5Service = _service_at(clock_reading)
+
+    with pytest.raises(InvalidDraftError) as refusal:
+        service.submit(_started_draft(), uuid4())
+
+    assert [error.path for error in refusal.value.check.errors] == [STARTED_AT_PATH]
+    assert service.list_newest_first() == ()
+
+
+def test_example_62_a_draft_with_no_start_time_is_saved_without_one() -> None:
+    """A phone that sends no start time isn't checked, however late it submits (K2)."""
+    service: Take5Service = _service_at([STARTED_AT + timedelta(days=3)])
+
+    assert service.check(sample_draft()).can_submit
+    assert service.submit(sample_draft(), uuid4()).started_at is None
+
+
+def test_example_63_the_start_time_is_saved_with_the_take5() -> None:
+    """Submitted 4 minutes after starting, it is saved with when it was started (K3)."""
+    service: Take5Service = _service_at([STARTED_AT + timedelta(minutes=4)])
+
+    saved: SavedTake5 = service.submit(_started_draft(), uuid4())
+
+    assert saved.started_at == STARTED_AT
+    assert saved.created_at == STARTED_AT + timedelta(minutes=4)
+
+
+def test_example_64_a_retry_after_the_limit_returns_what_was_saved_in_time() -> None:
+    """A lost answer retried after the limit gets the Take 5 saved in time (K2)."""
+    clock_reading: list[datetime] = [STARTED_AT + timedelta(minutes=4)]
+    service: Take5Service = _service_at(clock_reading)
+    submission_id: UUID = uuid4()
+    saved: SavedTake5 = service.submit(_started_draft(), submission_id)
+
+    clock_reading[0] = STARTED_AT + timedelta(hours=5)
+
+    assert service.submit(_started_draft(), submission_id) == saved
+
+
+def test_a_template_with_no_time_limit_never_runs_out() -> None:
+    """With the limit switched off, a draft started days ago can still be submitted."""
+    template: Take5Template = BOOKLET_TEMPLATE.model_copy(
+        update={"draft_time_limit_minutes": None},
+    )
+    service = Take5Service(
+        MemoryRepository(),
+        template,
+        lambda: STARTED_AT + timedelta(days=3),
+    )
+
+    assert service.check(_started_draft()).can_submit
+    assert service.submit(_started_draft(), uuid4()).started_at == STARTED_AT
+
+
+def test_the_check_says_when_the_draft_runs_out() -> None:
+    """The phone shows the time left from this; the timer off sends nothing (K2)."""
+    service: Take5Service = _service_at([STARTED_AT + timedelta(minutes=10)])
+    no_limit = Take5Service(
+        MemoryRepository(),
+        BOOKLET_TEMPLATE.model_copy(update={"draft_time_limit_minutes": None}),
+        lambda: STARTED_AT,
+    )
+
+    assert service.check(_started_draft()).runs_out_at == STARTED_AT + timedelta(
+        hours=2,
+    )
+    assert no_limit.check(_started_draft()).runs_out_at is None

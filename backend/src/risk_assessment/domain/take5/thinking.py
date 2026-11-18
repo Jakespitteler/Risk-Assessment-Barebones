@@ -1,11 +1,16 @@
-"""Pure checks that ask the worker to think about the real job (T2 to T4)."""
+"""Pure checks that ask the worker to think about the real job (T2 to T6)."""
+
+from collections.abc import Iterable, Mapping
 
 from risk_assessment.domain.controls import ControlKind
+from risk_assessment.domain.questions import Answer, Question, QuestionRole
 from risk_assessment.domain.risk import RiskMatrix, RiskRating
 from risk_assessment.domain.wording import is_vague, word_count
 
 VAGUE_CONTROL_MESSAGE: str = "Say what you'll actually do."
 SHORT_JOB_MESSAGE: str = "Describe the job in at least four words."
+UNLINKED_YES_MESSAGE: str = "Pick the hazard on your list that this is, or add it."
+SPECIFIC_HAZARD_NUDGE: str = "Make it specific: say what could hurt you, and where."
 WEAK_CONTROLS_QUESTION: str = (
     "Everything here relies on people getting it right. "
     "Could you remove, isolate or barricade it?"
@@ -58,3 +63,58 @@ def weak_controls_question(
         and all(not kind.is_strong for kind in kinds)
     )
     return WEAK_CONTROLS_QUESTION if applies else None
+
+
+def unlinked_yes_answers(
+    questions: Iterable[Question],
+    answers: Mapping[str, Answer],
+    covered: Iterable[str],
+) -> tuple[str, ...]:
+    """Find each hazard question answered Yes that no hazard on the list covers (T5).
+
+    Args:
+        questions: The card's questions, in its order.
+        answers: The worker's answers, by question ID.
+        covered: The IDs of the questions the worker's hazards cover.
+
+    Returns:
+        The IDs of the hazard questions answered Yes with no hazard linked to them, in
+        the card's order.
+    """
+    covered_ids: frozenset[str] = frozenset(covered)
+    return tuple(
+        question.id
+        for question in questions
+        if question.role is QuestionRole.HAZARD
+        and answers.get(question.id) is Answer.YES
+        and question.id not in covered_ids
+    )
+
+
+def hazard_wording_nudge(
+    description: str,
+    example: str,
+    specific_hazard_words: int | None,
+) -> str | None:
+    """Ask the worker to make a short hazard specific (T6). It never blocks anything.
+
+    A short hazard rarely says both what could hurt someone and where, so word count
+    stands in for vagueness. It can nudge a short specific hazard, which costs the
+    worker one tap to keep.
+
+    Args:
+        description: The hazard in the worker's own words.
+        example: A specific hazard to show, or an empty string for none.
+        specific_hazard_words: The fewest words that aren't nudged, or None to never
+            nudge.
+
+    Returns:
+        The nudge, with the example when there is one, or None when the hazard is long
+        enough, blank, or the nudge is turned off.
+    """
+    words: int = word_count(description)
+    if specific_hazard_words is None or words == 0 or words >= specific_hazard_words:
+        return None
+    if not example:
+        return SPECIFIC_HAZARD_NUDGE
+    return f'{SPECIFIC_HAZARD_NUDGE} For example: "{example}"'

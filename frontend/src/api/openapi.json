@@ -302,6 +302,26 @@
             "type": "array",
             "title": "Thinking Questions",
             "default": []
+          },
+          "runs_out_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runs Out At"
+          },
+          "nudges": {
+            "items": {
+              "$ref": "#/components/schemas/Nudge"
+            },
+            "type": "array",
+            "title": "Nudges",
+            "default": []
           }
         },
         "type": "object",
@@ -312,7 +332,7 @@
           "can_submit"
         ],
         "title": "DraftCheck",
-        "description": "What checking a draft found.\n\nAttributes:\n    errors: Every gap or mistake, in the order of the form.\n    warnings: Everything allowed that will stop the job, in the order of the form.\n        A warning never stops the draft being submitted.\n    assessment: The rated Take 5, or None while there are errors.\n    can_submit: True when there are no errors.\n    thinking_questions: Applicable prompts, including ones already answered."
+        "description": "What checking a draft found.\n\nAttributes:\n    errors: Every gap or mistake, in the order of the form.\n    warnings: Everything allowed that will stop the job, in the order of the form.\n        A warning never stops the draft being submitted.\n    assessment: The rated Take 5, or None while there are errors.\n    can_submit: True when there are no errors.\n    thinking_questions: Applicable prompts, including ones already answered.\n    runs_out_at: When the draft runs out (spec K2), or None when it never does.\n    nudges: Suggestions to make an answer clearer, in the order of the form. A nudge\n        never stops the draft being submitted."
       },
       "ErrorMessage": {
         "properties": {
@@ -411,6 +431,14 @@
             "type": "string",
             "title": "Weak Controls Reason",
             "default": ""
+          },
+          "covers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Covers",
+            "default": []
           }
         },
         "type": "object",
@@ -421,7 +449,7 @@
           "after"
         ],
         "title": "Hazard",
-        "description": "One hazard rated before and after controls, using ratings from `rate()`.\n\nWithout controls, reuse the before rating as the after rating; no second rating\nis needed. Description, ratings and controls are immutable once constructed."
+        "description": "One hazard rated before and after controls, using ratings from `rate()`.\n\nWithout controls, reuse the before rating as the after rating; no second rating\nis needed. Description, ratings and controls are immutable once constructed.\n`covers` holds the IDs of the hazard questions answered Yes that the worker linked\nto this hazard (T5); it is empty for a Take 5 saved before links were kept."
       },
       "HazardDraft": {
         "properties": {
@@ -448,11 +476,19 @@
             "type": "string",
             "title": "Weak Controls Reason",
             "default": ""
+          },
+          "covers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Covers",
+            "default": []
           }
         },
         "type": "object",
         "title": "HazardDraft",
-        "description": "A hazard while the worker is still rating it and writing its controls.\n\nAttributes:\n    description: The hazard in the worker's own words.\n    before: The rating before controls.\n    controls: The controls, possibly none.\n    after: The rating after controls. Ignored when there are no controls (R6).\n    weak_controls_reason: Why stronger controls aren't possible, when T3 asks."
+        "description": "A hazard while the worker is still rating it and writing its controls.\n\nAttributes:\n    description: The hazard in the worker's own words.\n    before: The rating before controls.\n    controls: The controls, possibly none.\n    after: The rating after controls. Ignored when there are no controls (R6).\n    weak_controls_reason: Why stronger controls aren't possible, when T3 asks.\n    covers: The IDs of the hazard questions the worker linked to this hazard (T5),\n        whether it was added from a Yes or picked from the list."
       },
       "LevelGuidance": {
         "properties": {
@@ -473,6 +509,30 @@
         "title": "LevelGuidance",
         "description": "What one level of a scale means, in the card's own words.\n\nAttributes:\n    level: The level, such as \"Rare\".\n    meaning: What it means, such as \"Could happen, but only in rare cases\"."
       },
+      "Nudge": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "question_id": {
+            "type": "string",
+            "title": "Question Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "message",
+          "question_id"
+        ],
+        "title": "Nudge",
+        "description": "A suggestion to look again at an answer. It never stops submitting.\n\nAttributes:\n    path: The answer's dotted field path, such as `hazards.0.description`.\n    message: The suggestion, in plain words.\n    question_id: The question to show it under, such as `vehicles`, so the phone\n        needn't work out where it goes."
+      },
       "Question": {
         "properties": {
           "id": {
@@ -486,6 +546,11 @@
           },
           "role": {
             "$ref": "#/components/schemas/QuestionRole"
+          },
+          "example": {
+            "type": "string",
+            "title": "Example",
+            "default": ""
           }
         },
         "type": "object",
@@ -495,7 +560,7 @@
           "role"
         ],
         "title": "Question",
-        "description": "One question on a card.\n\nAttributes:\n    id: A short name that stays the same if the wording is tidied, such as\n        `permits`. Answers are kept against it. Lower-case letters, digits and\n        underscores only, so it is safe in a dotted path like `answers.permits`.\n    text: The question as the card prints it.\n    role: What its answer means for the job."
+        "description": "One question on a card.\n\nAttributes:\n    id: A short name that stays the same if the wording is tidied, such as\n        `permits`. Answers are kept against it. Lower-case letters, digits and\n        underscores only, so it is safe in a dotted path like `answers.permits`.\n    text: The question as the card prints it.\n    role: What its answer means for the job.\n    example: For a hazard question, a specific hazard it could be about, shown when\n        the worker's own wording is vague. Empty when the card gives none."
       },
       "QuestionRole": {
         "type": "string",
@@ -686,6 +751,18 @@
               }
             ],
             "title": "Fixes"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
           }
         },
         "type": "object",
@@ -701,7 +778,7 @@
           "verdict"
         ],
         "title": "SavedTake5",
-        "description": "A Take 5 as it was saved: what the worker gave, and the verdict they were shown.\n\nIt is never changed once saved, so it always shows the template and verdict the\nworker was given, even after the rules change.\n\nAttributes:\n    id: The ID the phone made when the worker started submitting.\n    created_at: When it was saved.\n    worker_name: Who did the Take 5.\n    job: What the job is.\n    location: Where the job is.\n    finished_at: When it was finished. Until task 0008 this is when it was saved.\n    verdict: The verdict the worker was shown.\n    fixes: The ID of the saved Take 5 this one fixes, or None. It points back\n        only, so the first Take 5 is never changed when it is fixed."
+        "description": "A Take 5 as it was saved: what the worker gave, and the verdict they were shown.\n\nIt is never changed once saved, so it always shows the template and verdict the\nworker was given, even after the rules change.\n\nAttributes:\n    id: The ID the phone made when the worker started submitting.\n    created_at: When it was saved.\n    worker_name: Who did the Take 5.\n    job: What the job is.\n    location: Where the job is.\n    finished_at: When it was finished. Until task 0008 this is when it was saved.\n    verdict: The verdict the worker was shown.\n    fixes: The ID of the saved Take 5 this one fixes, or None. It points back\n        only, so the first Take 5 is never changed when it is fixed.\n    started_at: When the worker started it, by the phone's clock, or None for a\n        Take 5 saved before task 0019."
       },
       "SubmissionRequest": {
         "properties": {
@@ -796,11 +873,23 @@
               }
             ],
             "title": "Fixes"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
           }
         },
         "type": "object",
         "title": "Take5Draft",
-        "description": "A Take 5 that hasn't been saved, as the phone sends it.\n\nAttributes:\n    worker_name: Who is doing the Take 5.\n    job: What the job is.\n    location: Where the job is.\n    answers: The answers picked so far, by question ID. A question with no\n        answer is left out.\n    hazards: The hazards, in the order the worker listed them.\n    fixes: The ID of the saved Take 5 this one fixes, or None for a fresh one."
+        "description": "A Take 5 that hasn't been saved, as the phone sends it.\n\nAttributes:\n    worker_name: Who is doing the Take 5.\n    job: What the job is.\n    location: Where the job is.\n    answers: The answers picked so far, by question ID. A question with no\n        answer is left out.\n    hazards: The hazards, in the order the worker listed them.\n    fixes: The ID of the saved Take 5 this one fixes, or None for a fresh one.\n    started_at: When the worker started it, by the phone's clock, or None if the\n        phone didn't say. It must include its time zone."
       },
       "Take5Response": {
         "properties": {
@@ -915,6 +1004,30 @@
             "type": "string",
             "title": "Control Guidance",
             "default": ""
+          },
+          "draft_time_limit_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Time Limit Minutes"
+          },
+          "specific_hazard_words": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specific Hazard Words"
           }
         },
         "type": "object",
@@ -923,7 +1036,7 @@
           "matrix"
         ],
         "title": "Take5Template",
-        "description": "The card a Take 5 is filled in on. Each saved Take 5 keeps a copy of it.\n\nAttributes:\n    name: The card's name, such as \"Take 5 booklet\".\n    questions: The card's questions, in the order it prints them. Empty for a\n        Take 5 saved before the app asked them.\n    matrix: The risk matrix the hazards are rated on.\n    likelihood_guidance: What each likelihood means, shown beside the rating.\n    consequence_guidance: What each consequence means, shown beside the rating.\n    control_guidance: What makes a control strong or weak, shown beside the\n        controls."
+        "description": "The card a Take 5 is filled in on. Each saved Take 5 keeps a copy of it.\n\nAttributes:\n    name: The card's name, such as \"Take 5 booklet\".\n    questions: The card's questions, in the order it prints them. Empty for a\n        Take 5 saved before the app asked them.\n    matrix: The risk matrix the hazards are rated on.\n    likelihood_guidance: What each likelihood means, shown beside the rating.\n    consequence_guidance: What each consequence means, shown beside the rating.\n    control_guidance: What makes a control strong or weak, shown beside the\n        controls.\n    draft_time_limit_minutes: How long an unfinished Take 5 lasts, counted from\n        when it was started (spec K2), or None for no limit, which turns the\n        check off completely.\n    specific_hazard_words: The fewest words a hazard linked to a Yes can have\n        before the worker is asked to make it specific (spec T6), or None, which\n        turns the nudge off."
       },
       "TemplateResponse": {
         "properties": {

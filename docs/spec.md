@@ -44,10 +44,12 @@ saved until the worker submits it. Then the app asks its one question, and then 
    selected to begin with and there is no "all Yes" button. A No means *sort this out first*.
 3. **Spot the hazards.** The worker first writes at least one thing that could hurt them or someone else. Only
    then does the app show the card's seven hazard questions as a cross-check ("did you miss any of these?"), on
-   their own page after the list, with the worker's list at the top (decision D13). A Yes shows "Make sure it's
-   on your list" with a button to add a hazard, which opens the list with a new empty hazard; Continue there
-   comes back to the questions. Once a hazard has been added from that Yes, it shows "Added to your list" with
-   an "Add another" link instead (decision D15). Every Take 5 has at least one hazard: "no hazards" is not an
+   their own page after the list, with the worker's list at the top (decision D13). Each Yes asks "Which hazard
+   on your list is this?", and the worker links it to one (T5, decision D30). "It's on my list" shows the list
+   to pick from, with nothing picked; "Add a hazard" opens the list with a new empty hazard, already linked, and
+   Continue there comes back to the questions. Once linked, the Yes shows "On your list:" and the hazard, with
+   "Not this one" to unlink it and "Add another". A short hazard picked for a Yes is nudged to say what and where
+   (T6). Every Take 5 has at least one hazard: "no hazards" is not an
    answer on a mine site.
 4. **Assess the risk and make the changes.** For each hazard the worker:
    1. rates how likely and how bad it is **before** any controls,
@@ -64,6 +66,14 @@ saved until the worker submits it. Then the app asks its one question, and then 
 
 Saved Take 5s can be opened again from a list. A finished Take 5 is never changed; if the job changes the worker
 does a new one.
+
+Across the top of the form, a step bar shows the five steps: Job, Think, Hazards, Assess and Review. The worker can
+tap any step they have already reached in this Take 5 to open its first page. Going back is not checked, as Back
+isn't. Going forward checks the page they are on first, as Continue does, and a gap keeps them there. A step not
+reached yet can't be tapped, so the only way to it is Continue (decisions D38 to D43).
+
+Until it is submitted, a Take 5 is a *draft*. The worker can leave it part-way and carry on later, but only for a
+short time after starting it: see [Drafts](#drafts).
 
 ### The card's questions
 
@@ -92,6 +102,12 @@ Spot the hazards (a **hazard** question: Yes means there is a hazard to list and
 5. Will I be working at heights?
 6. Will I be impacted by other activity in the vicinity?
 7. Other environmental and/or H&S hazards?
+
+Each hazard question has an example of a specific hazard it could be about, shown by T6 below. The examples are
+the app's, not the card's, in the same order: "Hand caught in the conveyor tail pulley with the guard off", "Hit by
+a haul truck at the crib hut crossing", "Battery acid splashed in my eyes while topping up the cells", "Feeder
+starts up while I am clearing the chute", "Fall from the trailer deck while strapping the load", "Struck by rock
+from the excavator loading on the bench above" and "Heat stress from working all afternoon in full sun".
 
 ### Kinds of control
 
@@ -174,8 +190,8 @@ question is answered), and saved with it, so a saved Take 5 always shows the ver
   start. Talk to your supervisor.") The app does not write JHAs.
 
 N/A never stops a job. A Take 5 with anything missing (the name, the job, where it is, an answer to a question,
-a rating, a first hazard, or the weak-controls question in T3 below) can't be submitted at all, so "missing"
-is a form error, not a verdict.
+a rating, a first hazard, the weak-controls question in T3 below, or a hazard linked to each hazard question
+answered Yes in T5) can't be submitted at all, so "missing" is a form error, not a verdict.
 
 ### Thinking rules
 
@@ -193,6 +209,22 @@ the same every time and can be tested exactly.
   change the verdict. A hazard with no controls is not asked; V2 already covers it.
 - **T4 A real job description.** The job must be at least four words. "Change tyre" is not enough; "Change the
   front left tyre on LV12" is.
+- **T5 Every Yes points to a hazard.** Each hazard question answered Yes needs a hazard on the worker's list
+  linked to it: one picked from the list, or one added from that Yes. Until then the Yes asks "Which hazard on
+  your list is this?", and Continue stops with "Pick the hazard on your list that this is, or add it." beside the
+  question. One hazard can be linked to several questions (decision D32).
+  A link to a question that is no longer Yes stays on the phone, so changing the answer back keeps it, but it is
+  not saved. Each saved hazard keeps the questions it is linked to, and the review and the result show the
+  hazard under each Yes (decision D33).
+- **T6 Say what and where.** A hazard linked to a Yes with fewer words than the template's minimum (6 on the
+  booklet) gets a nudge under the first such question, in the card's order: "Make it specific: say what could
+  hurt you, and where. For example: "\<that question's example\>"" (decision D34). It shows the hazard in a box,
+  and what the worker types there changes the hazard on the list as they type; the box stays while they type, and
+  goes once they leave it with specific words. "Keep it as it is" leaves the words as they are. A nudge never
+  stops Continue or Finish (decision D35). Keeping the words is remembered on the phone for those exact words, so
+  the nudge doesn't come back (decision D37). A short hazard can still be specific ("Crusher dust"), which is why
+  it only nudges. A template with no minimum never nudges. Once an AI is set up it judges this instead, when it
+  can be reached (see Planned for later).
 
 ### The challenge question
 
@@ -220,6 +252,34 @@ The safety rules stay in code. The AI only asks; it never decides whether anyone
   no verdict, and opening it shows the question. The question is asked once; an unfinished Take 5 keeps the
   question it was given. It is answered once: a second answer is refused. If a saved Take 5 has no question
   (the app stopped between saving it and asking), opening it gives it the fallback question.
+
+### Drafts
+
+A worker gets called away mid-way, but a Take 5 is meant to be done at the job, just before starting. These rules
+keep a draft long enough for a radio call and no longer (decisions D19 to D29).
+
+- **K1 One draft, on the phone.** From the worker's first change until it is submitted or thrown away, the phone
+  keeps one draft, with the page it was left on. Every page of the form has Leave, which asks: "Keep it for
+  later", "Throw it away" (with Undo) or "Keep going". Either way out goes to the saved list, where a kept draft
+  sits at the top with "Carry on" in place of "Start a new Take 5". Opening the app carries on where it was left.
+  While a draft is kept, a result screen says "Carry on your Take 5" in place of "Start a new Take 5" (decision
+  D28). "Fix this in a new Take 5" takes the draft's place, so with a draft kept it asks first: "You have an
+  unfinished Take 5 for '\<job\>'. Fixing this one throws it away."
+- **K2 A draft runs out.** A draft started more than the template's time limit ago (2 hours on the booklet)
+  has run out. The time counts from the worker's first change, not the last, so tapping it now and then can't
+  keep it alive. Exactly on the limit is still in time. The back end checks it as the draft opens, on a
+  Continue with changed answers, and on Finish, and refuses to save it: "This Take 5 was started more than 2
+  hours ago. Start a new one at the job." The phone then throws it away and says so, with when it was started.
+  It is never reopened, even with its answers cleared. A template with no time limit turns the check off
+  completely. A retry of a Take 5 that was saved in time is never refused.
+  - Each check also says when the draft runs out, and the form and the list show the time left, such as "1 hr 42
+    min left to finish, until 16 Nov 2026, 8:52 pm" (decision D29). Nothing shows with no time limit.
+  - A draft that has run out may have been saved already, with the answer lost on its way back to the phone.
+    The phone looks for it by its submission ID first, and opens the saved result instead (decision D26).
+  - When the check as a kept draft opens can't get through, the form and the list say so, with when it was
+    started, and that it can't be saved if it has run out (decision D27).
+- **K3 The start time is kept.** A saved Take 5 keeps when its draft was started, so the time a Take 5 takes can
+  be measured.
 
 ### Worked examples
 
@@ -262,7 +322,7 @@ the hazard".
 | 18 | Nothing | Good to go | No reason applies |
 | 19 | "Do you have the necessary permits?" is No | Don't start yet | V1 |
 | 20 | "Do you have the necessary permits?" is N/A | Good to go | N/A never stops a job |
-| 21 | "Will I be working at heights?" is Yes | Good to go | A hazard question is a prompt, not a verdict rule |
+| 21 | "Will I be working at heights?" is Yes, and the hazard is linked to it | Good to go | A hazard question is a prompt, not a verdict rule |
 | 22 | The hazard has no controls (so it is rated 8) | Don't start yet | V2 |
 | 23 | The hazard is Likely / Minor (12) before and after | Don't start yet | V3: 11 or more |
 | 24 | The hazard is Almost Certain / Low (11) before and after | Don't start yet | V3: exactly 11 |
@@ -287,6 +347,28 @@ Thinking rules (T2, T3, T4). T1 is about what the screen shows, so it is tested 
 | 38 | Job "Change the tyre" | Not accepted | T4: three words, one short |
 | 39 | Job "Change tyre on LV12" | Accepted | T4: exactly four words |
 
+Every Yes points to a hazard (T5). Unless the row says otherwise, the Take 5 is example 18.
+
+| # | Input | Expected | Why |
+| --- | --- | --- | --- |
+| 65 | "Will I be working at heights?" is Yes, and no hazard is linked to it | Can't be submitted: "Pick the hazard on your list that this is, or add it." beside the question | T5 |
+| 66 | Example 65, with the hazard "Fall from the tray" linked to it | Can be submitted; the hazard is saved linked to the question | T5 |
+| 67 | "Am I or others at risk from the operation of vehicles or mobile equipment?" and "Does the task involve hazardous materials?" are Yes, and one hazard is linked to both | Can be submitted | T5: one hazard can cover several questions |
+| 68 | "Will I be working at heights?" is No or N/A, and no hazard is linked to it | Can be submitted | T5 only asks about a Yes |
+| 69 | A hazard is linked to "Will I be working at heights?", which is then answered No | Can be submitted; the hazard is saved without the link | T5: only a link to a Yes is saved |
+
+Say what and where (T6). Unless the row says otherwise, the hazard is linked to "Am I or others at risk from the
+operation of vehicles or mobile equipment?", answered Yes, on the booklet's minimum of 6 words.
+
+| # | Input | Expected | Why |
+| --- | --- | --- | --- |
+| 70 | Hazard "Get hit by a car" | Nudged: "Make it specific: say what could hurt you, and where. For example: "Hit by a haul truck at the crib hut crossing"" | T6: five words, one short |
+| 71 | Hazard "Hit by a truck reversing nearby" | Not nudged | T6: exactly six words |
+| 72 | Hazard "Hit by a haul truck at the crib hut crossing" | Not nudged | T6: specific, ten words |
+| 73 | Hazard "Get hit by a car", linked to no question | Not nudged | T6 is about a hazard picked for a Yes |
+| 74 | A template with no minimum; hazard "Car" | Not nudged | T6: no minimum turns it off |
+| 75 | Example 70, kept as it is | Can be submitted, with the same verdict | T6 only nudges |
+
 The challenge question (C1 to C6). Tests use a stand-in for the AI that returns whatever the row says. Unless the
 row says otherwise, the Take 5 is example 18 with the hazard described as "Fall from the tray".
 
@@ -309,6 +391,20 @@ row says otherwise, the Take 5 is example 18 with the hazard described as "Fall 
 | 54 | The Take 5 is submitted and the question is not answered | Unfinished: no verdict, and opening it shows the same question | C6 |
 | 55 | Example 52, then a second answer is sent | Refused; the first answer and the verdict are kept | C6: a finished Take 5 is never changed |
 | 56 | A saved Take 5 has no question (the app stopped between saving it and asking) | Opening it gives it the fallback question | C6 |
+
+Drafts (K2, K3). On the booklet's time limit of 2 hours, unless the row says otherwise, checked at 15 Nov 2026,
+8:12 pm.
+
+| # | Situation | Expected | Why |
+| --- | --- | --- | --- |
+| 57 | Started 1 hour 59 minutes before | Can be used | K2: inside the limit |
+| 58 | Started exactly 2 hours before | Can be used | K2: on the limit |
+| 59 | Started 2 hours and 1 second before | Run out: "This Take 5 was started more than 2 hours ago. Start a new one at the job." | K2: one second over |
+| 60 | A template with no time limit; started 3 days before | Can be used | K2: no limit turns the check off |
+| 61 | Started 5 minutes after the check (the phone's clock was changed) | Can be used | K2: a start in the future counts as just started |
+| 62 | No start time is sent (a phone from before drafts were kept) | Not checked; saved with no start time | K2 |
+| 63 | Started at 8:12 pm, submitted at 8:16 pm | Saved with the start time 8:12 pm | K3 |
+| 64 | Saved at 8:16 pm, then the same submission is sent again at 1:12 am | The Take 5 saved at 8:16 pm comes back | K2: a retry of a Take 5 saved in time |
 
 ## Features
 
@@ -338,9 +434,22 @@ The first four screens of the core workflow, saved when the worker submits.
   unsaved answers.
 - Acceptance: Continue asks the back end about that page and names its gaps there, before moving on. A gap found
   at the review sends the worker to it, and back to the review once it is filled in.
+- Acceptance: each step in the bar the worker has reached opens that step's first page; a step not reached yet
+  can't be tapped. A tap forward checks the page the worker is on first and stays on a gap; a tap back sends no
+  check. How far they got is kept with the draft, and the back gesture undoes a tap.
 - Acceptance: Enter in a one-line box or on a picked rating does what Continue does. Enter in a bigger box, such
   as the job, a hazard or a control, starts a new line. Enter never presses Finish.
+- Acceptance: a hazard with no controls opens its controls page with control 1 already open and empty; it joins
+  the list once anything is typed or picked in it, so a hazard can still have no controls. Adding a hazard or a
+  control puts the cursor in its box.
+- Acceptance: on a computer (a mouse or trackpad), a page that opens with an empty text box puts the cursor in the
+  first one, so typing goes straight in. On a phone the page opens on its heading, so the keyboard doesn't cover it
+  until the worker taps a box (Jake, 2026-11-18).
 - Acceptance: removing a hazard or a control can be undone.
+- Acceptance: once anything is filled in, every page has Leave in the top bar, to keep the draft for later or
+  throw it away; throwing it away can be undone (K1). Closing the app keeps the draft, and opening it again
+  carries on from the same page.
+- Acceptance: worked examples 57 to 64 pass as tests, and a draft that has run out is never shown again (K2).
 - Acceptance: likelihood, consequence and control choices offer expandable guidance from the back end, using
   the approved card wording. Guidance never supplies a hazard or control answer for the worker.
 
@@ -369,7 +478,7 @@ The first four screens of the core workflow, saved when the worker submits.
 
 ### F4: Thinking rules
 
-- Acceptance: worked examples 28 to 39 pass as tests.
+- Acceptance: worked examples 28 to 39 and 65 to 75 pass as tests.
 - Acceptance: the hazard questions can't be seen or answered until one hazard has been written (T1).
 - Acceptance: the answer to a weak-controls question is saved and shown on the result screen.
 
@@ -397,7 +506,8 @@ The first four screens of the core workflow, saved when the worker submits.
   AI verdict. Suggesting hazards in particular would undo "own words first".
 - Sign-in, supervisors, crews and approvals.
 - Scanning a filled-in paper card, photos of the job, PDFs of a Take 5, and admin tools.
-- Working with no signal, and keeping a half-filled Take 5 if the app is closed.
+- Working with no signal.
+- Drafts kept on the server, or more than one draft at a time (decisions D20 and D23).
 - Starting a Take 5 from an earlier one, except to fix a Don't start yet (F3). Copying is the fastest way to stop
   thinking.
 
@@ -405,6 +515,10 @@ The first four screens of the core workflow, saved when the worker submits.
 
 Not in version 1, but Jake expects them, so version 1 is built not to block them. How is in `architecture.md`
 under "Ready for later".
+
+- **The AI judges vague hazards.** Jake (2026-11-18): once an AI is set up, it judges whether a hazard linked to
+  a Yes is vague, whenever it can be reached, with task 0022's word rule as the fallback. Task 0009's notes say
+  where it fits.
 
 - **Each company's own Take 5.** Companies use different cards and different matrices. Later the app should
   read a photo, Word file or PDF of a company's blank card and build the matching template, which a person then
@@ -439,10 +553,35 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D12 | The front-end libraries | React, TypeScript, Vite, Tailwind CSS, TanStack Query, React Router (see `architecture.md`) | Svelte or Vue |
 | D13 | Where the hazard questions go (2026-11-14) | Their own page after the hazard list, with the list at the top | Under the list on the same page |
 | D14 | What a fix does with the answers (2026-11-14) | Copies them; the review warns on each No with a way to change it | Leave them blank, so all 14 are answered again |
-| D15 | What a Yes shows after a hazard is added from it (2026-11-14) | A tick, "Added to your list", and an "Add another" link | The same reminder without its button; or the reminder and button unchanged |
+| D15 | What a Yes shows after a hazard is added from it (2026-11-14) | A tick, "Added to your list", and an "Add another" link. Replaced by D30 | The same reminder without its button; or the reminder and button unchanged |
 | D16 | What each saved Take 5 shows in the list (2026-11-15) | The date, worker, job and verdict, and "Fixed" on a Don't start yet that has been fixed | The location as well |
 | D17 | How dates are written (2026-11-15) | "14 Nov 2026, 6:52 pm" everywhere | Each phone's own format |
 | D18 | How the saved list grows (2026-11-15) | Once hosted for a crew, the newest 50 with "Show more" (task 0021). Until then, all of them | All of them, always |
+| D19 | What backing out of a Take 5 does (2026-11-15) | Both: Leave keeps it for later or throws it away, with Undo (K1) | Throw away only; keep only |
+| D20 | Where a draft is kept (2026-11-15) | On the phone, since there is no sign-in (D4) | On the server, where a supervisor could see it |
+| D21 | How long a draft lasts (2026-11-15) | 2 hours from its start; the template's limit can be set to none, which turns the check off (K2) | 12 hours (a shift); no limit |
+| D22 | What happens to a draft that has run out (2026-11-15) | It is thrown away, and the worker is told why (K2) | Reopened with its answers cleared; reopened with a "check everything" warning |
+| D23 | How many drafts (2026-11-15) | One at a time (K1) | A list |
+| D24 | A fix while a draft is kept (2026-11-15) | Ask first, then throw the draft away (K1) | Replace it without asking; refuse until the draft is dealt with |
+| D25 | Save when a Take 5 was started (2026-11-15) | Yes (K3) | Not now |
+| D26 | A lost save answer, then the draft runs out (2026-11-16) | Open the saved result (K2) | Tell the worker it ran out |
+| D27 | No signal to check a kept draft (2026-11-16) | Say so, with when it was started (K2) | Show nothing until a check gets through |
+| D28 | "Start a new Take 5" while a draft is kept (2026-11-16) | "Carry on your Take 5" (K1) | Keep the old label |
+| D29 | Show the time a draft has left (2026-11-16) | Yes, on the form and the list (K2) | Only say when it has run out |
+| D30 | A Yes to a hazard that is already on the list (2026-11-16) | "It's on my list", where the worker picks which hazard it is (T5) | A one-tap "It's already there" button, which can be tapped without looking at the list |
+| D31 | Must every Yes point to a hazard (2026-11-18) | Yes, before Continue (T5) | A reminder that can be passed by |
+| D32 | Can one hazard cover several questions (2026-11-18) | Yes; the picker says when a hazard is already on another question | One question per hazard |
+| D33 | Is the link saved (2026-11-18) | Yes, on each hazard, and shown under each Yes on the review and the result. A fix copies it | Kept only on the phone |
+| D34 | How a vague hazard is judged (2026-11-18) | Fewer than the template's minimum words (6) for now; the AI once it exists (T6) | A list of category words; an AI now |
+| D35 | Is rewording required (2026-11-18) | No: a nudge to reword in place, or "Keep it as it is" | Required before Continue |
+| D36 | The nudge's example (2026-11-18) | One per hazard question, kept in the template | One example for every question |
+| D37 | Does "Keep it as it is" last (2026-11-18) | Yes, for those exact words, on the phone | Asked again on every visit |
+| D38 | Which steps in the bar can be tapped (2026-11-18) | Any step already reached in this Take 5 | Back only; every step at any time |
+| D39 | Is a tap forward in the bar checked (2026-11-18) | Yes, the page being left is checked as Continue checks it; a tap back is not | No check, leaving it to the review |
+| D40 | Where a tap on a step lands (2026-11-18) | The step's first page | The last page the worker was on in that step |
+| D41 | Do later steps lock again after an earlier change (2026-11-18) | No; the review sends the worker to any new gap | Yes, until Continue reaches them again |
+| D42 | How the step bar looks (2026-11-18) | Reached steps dark, the current one bold with an amber bar, the rest grey; no ticks | A tick on each step passed |
+| D43 | Does the back gesture undo a tap on the bar (2026-11-18) | Yes, as it undoes Continue | No, a tap replaces the page |
 
 ## Open questions
 

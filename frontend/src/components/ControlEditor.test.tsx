@@ -65,3 +65,17 @@ it("names the control it removes", () => {
   fireEvent.click(screen.getByRole("button", { name: "Remove control 2" }));
   expect(onRemove).toHaveBeenCalledOnce();
 });
+
+it("has no Remove button for a control not yet on the list", () => {
+  render(
+    <ControlEditor
+      control={{ description: "", kind: null }}
+      number={1}
+      kinds={["Wear PPE"]}
+      path="hazards.0.controls.0"
+      errorFor={() => undefined}
+      onChange={vi.fn()}
+    />,
+  );
+  expect(screen.queryByRole("button", { name: "Remove control 1" })).toBeNull();
+});

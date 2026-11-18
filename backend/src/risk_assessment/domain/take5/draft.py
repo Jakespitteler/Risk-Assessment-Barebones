@@ -7,10 +7,11 @@ the draft being submitted, but they say what will stop the job.
 """
 
 from collections.abc import Mapping
+from datetime import datetime
 from typing import ClassVar
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from risk_assessment.domain.controls import Control, ControlKind
 from risk_assessment.domain.questions import Answer, Question, QuestionRole
@@ -18,8 +19,11 @@ from risk_assessment.domain.risk import RiskMatrix, RiskRating, rate
 from risk_assessment.domain.take5.take5 import Hazard, Take5
 from risk_assessment.domain.take5.template import Take5Template
 from risk_assessment.domain.take5.thinking import (
+    UNLINKED_YES_MESSAGE,
     control_wording_error,
+    hazard_wording_nudge,
     job_wording_error,
+    unlinked_yes_answers,
     weak_controls_question,
 )
 
@@ -69,6 +73,8 @@ class HazardDraft(BaseModel):
         controls: The controls, possibly none.
         after: The rating after controls. Ignored when there are no controls (R6).
         weak_controls_reason: Why stronger controls aren't possible, when T3 asks.
+        covers: The IDs of the hazard questions the worker linked to this hazard (T5),
+            whether it was added from a Yes or picked from the list.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -78,6 +84,7 @@ class HazardDraft(BaseModel):
     controls: tuple[ControlDraft, ...] = ()
     after: RatingChoice = Field(default_factory=RatingChoice)
     weak_controls_reason: str = ""
+    covers: tuple[str, ...] = ()
 
 
 class Take5Draft(BaseModel):
@@ -91,6 +98,8 @@ class Take5Draft(BaseModel):
             answer is left out.
         hazards: The hazards, in the order the worker listed them.
         fixes: The ID of the saved Take 5 this one fixes, or None for a fresh one.
+        started_at: When the worker started it, by the phone's clock, or None if the
+            phone didn't say. It must include its time zone.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -101,6 +110,7 @@ class Take5Draft(BaseModel):
     answers: Mapping[str, Answer] = {}
     hazards: tuple[HazardDraft, ...] = ()
     fixes: UUID | None = None
+    started_at: AwareDatetime | None = None
 
 
 class FieldError(BaseModel):
@@ -145,6 +155,23 @@ class ThinkingQuestion(BaseModel):
     message: str
 
 
+class Nudge(BaseModel):
+    """A suggestion to look again at an answer. It never stops submitting.
+
+    Attributes:
+        path: The answer's dotted field path, such as `hazards.0.description`.
+        message: The suggestion, in plain words.
+        question_id: The question to show it under, such as `vehicles`, so the phone
+            needn't work out where it goes.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    path: str
+    message: str
+    question_id: str
+
+
 class DraftCheck(BaseModel):
     """What checking a draft found.
 
@@ -155,6 +182,9 @@ class DraftCheck(BaseModel):
         assessment: The rated Take 5, or None while there are errors.
         can_submit: True when there are no errors.
         thinking_questions: Applicable prompts, including ones already answered.
+        runs_out_at: When the draft runs out (spec K2), or None when it never does.
+        nudges: Suggestions to make an answer clearer, in the order of the form. A nudge
+            never stops the draft being submitted.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -164,6 +194,8 @@ class DraftCheck(BaseModel):
     assessment: Take5 | None
     can_submit: bool
     thinking_questions: tuple[ThinkingQuestion, ...] = ()
+    runs_out_at: datetime | None = None
+    nudges: tuple[Nudge, ...] = ()
 
 
 def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
@@ -186,6 +218,8 @@ def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
         _required_text(value, path, errors)
     _job_wording(draft.job, errors)
     answers: dict[str, Answer] = _answers(draft.answers, template.questions, errors)
+    _unlinked_yes_answers(draft, template, errors)
+    covered: frozenset[str] = _covered_by_a_yes(answers, template.questions)
     if not draft.hazards:
         errors.append(FieldError(path="hazards", message=NO_HAZARD_MESSAGE))
     hazards: list[Hazard] = []
@@ -196,6 +230,7 @@ def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
             f"hazards.{index}",
             errors,
             questions,
+            covered,
         )
         if hazard is not None:
             hazards.append(hazard)
@@ -213,7 +248,51 @@ def check_draft(draft: Take5Draft, template: Take5Template) -> DraftCheck:
         assessment=assessment,
         can_submit=not errors,
         thinking_questions=tuple(questions),
+        nudges=_specific_hazard_nudges(draft, template),
     )
+
+
+def _specific_hazard_nudges(
+    draft: Take5Draft,
+    template: Take5Template,
+) -> tuple[Nudge, ...]:
+    """Nudge each short hazard linked to a Yes to say what could hurt and where (T6).
+
+    The example comes from the first question, in the card's order, that the hazard is
+    linked to and is answered Yes. A hazard linked to no Yes isn't nudged.
+
+    Args:
+        draft: The worker's answers so far.
+        template: The template the draft is filled in on.
+
+    Returns:
+        One nudge on each such hazard's `description` path, in the order of the list.
+    """
+    nudges: list[Nudge] = []
+    for index, hazard in enumerate(draft.hazards):
+        linked_yes: list[Question] = [
+            question
+            for question in template.questions
+            if question.role is QuestionRole.HAZARD
+            and question.id in hazard.covers
+            and draft.answers.get(question.id) is Answer.YES
+        ]
+        if not linked_yes:
+            continue
+        message: str | None = hazard_wording_nudge(
+            hazard.description,
+            linked_yes[0].example,
+            template.specific_hazard_words,
+        )
+        if message is not None:
+            nudges.append(
+                Nudge(
+                    path=f"hazards.{index}.description",
+                    message=message,
+                    question_id=linked_yes[0].id,
+                ),
+            )
+    return tuple(nudges)
 
 
 def _stop_answer_warnings(
@@ -284,12 +363,62 @@ def _answers(
     return answers
 
 
+def _unlinked_yes_answers(
+    draft: Take5Draft,
+    template: Take5Template,
+    errors: list[FieldError],
+) -> None:
+    """Report each hazard question answered Yes that no hazard is linked to (T5).
+
+    Args:
+        draft: The worker's answers so far.
+        template: The template the draft is filled in on.
+        errors: Where to add an error, at `answers.<question ID>`, for each one.
+    """
+    covered: tuple[str, ...] = tuple(
+        question_id for hazard in draft.hazards for question_id in hazard.covers
+    )
+    errors.extend(
+        FieldError(path=f"answers.{question_id}", message=UNLINKED_YES_MESSAGE)
+        for question_id in unlinked_yes_answers(
+            template.questions,
+            draft.answers,
+            covered,
+        )
+    )
+
+
+def _covered_by_a_yes(
+    answers: Mapping[str, Answer],
+    questions: tuple[Question, ...],
+) -> frozenset[str]:
+    """Find the hazard questions answered Yes, the only ones a saved hazard may cover.
+
+    A link to a question since answered No or N/A stays in the phone's draft, so going
+    back to Yes keeps it, but it is not saved.
+
+    Args:
+        answers: The checked answers, by question ID.
+        questions: The card's questions.
+
+    Returns:
+        The IDs of the hazard questions answered Yes.
+    """
+    return frozenset(
+        question.id
+        for question in questions
+        if question.role is QuestionRole.HAZARD
+        and answers.get(question.id) is Answer.YES
+    )
+
+
 def _hazard(
     draft: HazardDraft,
     matrix: RiskMatrix,
     path: str,
     errors: list[FieldError],
     questions: list[ThinkingQuestion],
+    covered: frozenset[str],
 ) -> Hazard | None:
     """Check one hazard and rate it.
 
@@ -304,6 +433,7 @@ def _hazard(
         path: The hazard's dotted path, such as `hazards.0`.
         errors: Where to add any errors found.
         questions: Where to add the thinking question, even when already answered.
+        covered: The hazard questions answered Yes. Only links to these are kept.
 
     Returns:
         The rated hazard, or None if it has any error.
@@ -349,6 +479,7 @@ def _hazard(
         weak_controls_reason=(
             draft.weak_controls_reason.strip() if question is not None else ""
         ),
+        covers=tuple(dict.fromkeys(item for item in draft.covers if item in covered)),
     )
 
 

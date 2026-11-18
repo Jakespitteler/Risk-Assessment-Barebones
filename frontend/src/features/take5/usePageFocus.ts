@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
+import { focusFirstEmptyBox, hasFinePointer } from "./focusFirstEmptyBox";
 import { focusFirstError } from "./focusFirstError";
 import type { Stage } from "./stage";
 
 /**
- * Move the focus when the page changes: to the new heading, so a screen reader starts
- * there, to the first error when the page was opened to fix one, or to a field the page
- * was opened to fill in.
+ * Move the focus when the page changes: to the first error when the page was opened to
+ * fix one, or to a field the page was opened to fill in. Otherwise, on a computer, to the
+ * first empty text box, so typing goes straight in. Failing that, to the new heading, so
+ * a screen reader starts there. A phone never gets the box, as its keyboard would pop up
+ * over the page before the worker has read it.
  */
 export function usePageFocus(stage: Stage) {
   const heading = useRef<HTMLHeadingElement>(null);
@@ -24,7 +27,8 @@ export function usePageFocus(stage: Stage) {
       errorsOn.current = null;
       focusFirstError(container.current);
     } else if (field) document.getElementById(field)?.focus();
-    else heading.current?.focus();
+    else if (!(hasFinePointer() && focusFirstEmptyBox(container.current)))
+      heading.current?.focus();
   }, [stageKey, attempt]);
 
   return {
@@ -36,6 +40,10 @@ export function usePageFocus(stage: Stage) {
     },
     focusFieldOn: (on: Stage, field: string) => {
       fieldOn.current = { stage: JSON.stringify(on), field };
+    },
+    /** Move the focus as if the page had just opened, when it is drawn again. */
+    focusPageAgain: () => {
+      setAttempt((count) => count + 1);
     },
   };
 }
