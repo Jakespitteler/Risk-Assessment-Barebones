@@ -1,9 +1,9 @@
 ---
 id: 0027
 title: The AI judges vague hazards (spec T6)
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/project-thread-p10g0r (stacked on task 0009's claude/project-thread-tsquwa, PR #45)
 ---
 
 ## Goal
