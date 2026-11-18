@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Take5Summary } from "../../api/take5";
-import { useSavedTake5List } from "../../api/take5";
+import { useFindSaved, useSavedTake5List } from "../../api/take5";
 import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
 import { Screen } from "../../components/Screen";
@@ -84,11 +84,22 @@ export function SavedTake5sScreen({
   const list = useSavedTake5List();
   const [kept, setKept] = useState(keptDraft);
   const [ranOut, setRanOut] = useState<string | null>(null);
-  const throwAwayRunOut = useCallback((message: string) => {
-    forgetKeptDraft();
-    setKept(null);
-    setRanOut(message);
-  }, []);
+  const [savedAlready, setSavedAlready] = useState<string | null>(null);
+  const findSaved = useFindSaved();
+  const refetchList = list.refetch;
+  // A draft that ran out may have been saved, with the answer lost on its way back.
+  const throwAwayRunOut = useCallback(
+    async (message: string) => {
+      const saved = kept ? await findSaved(kept.submissionId) : null;
+      forgetKeptDraft();
+      setKept(null);
+      if (saved) {
+        setSavedAlready(saved.take5.id);
+        void refetchList();
+      } else setRanOut(message);
+    },
+    [kept, findSaved, refetchList],
+  );
   const page = useRef<HTMLDivElement>(null);
   // Only a new heading moves the focus. A failed refresh keeps the list, so the
   // focus stays where the worker left it.
@@ -129,7 +140,25 @@ export function SavedTake5sScreen({
                 onDismiss={() => onDismissUndo?.()}
               />
             )}
-            {/* It appears once the back end answers, so a screen reader announces it. */}
+            {/* These appear once the back end answers, so a screen reader announces them. */}
+            {savedAlready && (
+              <div role="status">
+                <Card>
+                  <h2 className="text-xl font-bold">
+                    Your unfinished Take 5 was saved
+                  </h2>
+                  <p>
+                    It was saved before the signal dropped, so it’s in the list.
+                  </p>
+                  <a
+                    className={NEW_TAKE5_LINK}
+                    href={`/take5s/${savedAlready}`}
+                  >
+                    Open it
+                  </a>
+                </Card>
+              </div>
+            )}
             {ranOut && (
               <div role="status">
                 <Card>
@@ -141,7 +170,10 @@ export function SavedTake5sScreen({
               </div>
             )}
             {kept ? (
-              <KeptDraftCard draft={kept.draft} onRunOut={throwAwayRunOut} />
+              <KeptDraftCard
+                draft={kept.draft}
+                onRunOut={(message) => void throwAwayRunOut(message)}
+              />
             ) : (
               <a className={NEW_TAKE5_LINK} href="/">
                 Start a new Take 5

@@ -13,7 +13,7 @@ now (`docs/decisions.md`, 2026-11-14), so no task to switch storage is in the or
 1. **0019, back out of a Take 5 and keep drafts.** Jake asked for it on 2026-11-14 and answered its questions on
    2026-11-15 (spec D19 to D25). Built on 2026-11-15 and marked done in its pull request; done when Jake merges it.
 2. **0022, "It's on my list" on the hazard check page.** Jake asked for it on 2026-11-16 and answered its
-   questions on 2026-11-18 (spec D26 to D33). Built on 2026-11-18 in two stacked pull requests, after 0023's, and
+   questions on 2026-11-18 (spec D30 to D37). Built on 2026-11-18 in two stacked pull requests, after 0023's, and
    marked done in the second; done when Jake merges them. Task 0008 can give the saved links to the challenge
    question.
 3. **0023, one-line set-up for a new computer.** Jake asked for it on 2026-11-16. Built on 2026-11-17 and marked

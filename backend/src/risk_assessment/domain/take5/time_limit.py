@@ -36,11 +36,29 @@ def time_limit_error(
     Returns:
         The error to show, or None while the draft can still be used.
     """
-    if started_at is None or time_limit_minutes is None:
-        return None
-    if now - started_at <= timedelta(minutes=time_limit_minutes):
+    deadline: datetime | None = runs_out_at(started_at, time_limit_minutes)
+    if deadline is None or time_limit_minutes is None or now <= deadline:
         return None
     return FieldError(path=STARTED_AT_PATH, message=run_out_message(time_limit_minutes))
+
+
+def runs_out_at(
+    started_at: datetime | None,
+    time_limit_minutes: int | None,
+) -> datetime | None:
+    """Work out when a draft runs out, so the phone can show the time it has left.
+
+    Args:
+        started_at: When the worker started the draft, or None if the phone didn't
+            say.
+        time_limit_minutes: How many minutes a draft lasts, or None for no limit.
+
+    Returns:
+        The last moment the draft can still be used, or None when it never runs out.
+    """
+    if started_at is None or time_limit_minutes is None:
+        return None
+    return started_at + timedelta(minutes=time_limit_minutes)
 
 
 def run_out_message(time_limit_minutes: int) -> str:
