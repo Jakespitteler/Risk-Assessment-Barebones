@@ -45,13 +45,14 @@ function FormAt({ start }: { start: Stage }) {
   );
 }
 
-function storeDraft(draft = COMPLETE_DRAFT) {
+function storeDraft(draft = COMPLETE_DRAFT, keptWording?: string[]) {
   localStorage.setItem(
     "take5-draft",
     JSON.stringify({
       version: 4,
       draft: { started_at: STARTED_AT, ...draft },
       submissionId: SAVED.take5.id,
+      keptWording,
     }),
   );
 }
@@ -687,6 +688,28 @@ it("rewording in the nudge changes the hazard on the list as the worker types", 
       .textContent,
   ).toBe("Bitten by the guard dog at the side gate");
   expect(screen.getByLabelText("Hazard 1")).toBe(box);
+});
+
+it("keeps the nudge's box while the worker types words they kept before", async () => {
+  storeDraft(
+    {
+      ...COMPLETE_DRAFT,
+      answers: { keys: "Yes", dogs: "Yes" },
+      hazards: [{ ...DOG, description: "Cat" }],
+    },
+    ["Dog"],
+  );
+  stubApi({ "POST /api/take5s/check": { status: 200, body: NUDGED_CHECK } });
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  const box = await screen.findByLabelText("Hazard 1");
+
+  fireEvent.focus(box);
+  fireEvent.change(box, { target: { value: "Dog" } });
+
+  expect(screen.getByLabelText("Hazard 1")).toBe(box);
+  expect(screen.queryByText(NUDGE)).toBeNull();
+  fireEvent.blur(box);
+  expect(screen.queryByLabelText("Hazard 1")).toBeNull();
 });
 
 it("shows a nudge only under the question the back end names", async () => {
