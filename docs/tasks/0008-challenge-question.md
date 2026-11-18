@@ -1,9 +1,9 @@
 ---
 id: 0008
 title: The challenge question (spec F6)
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/0008-challenge-question
 ---
 
 ## Goal
