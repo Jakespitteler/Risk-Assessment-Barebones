@@ -207,3 +207,10 @@ export function renderWithApi(ui: ReactNode, client = quickClient()) {
     ...render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>),
   };
 }
+
+/** Pretend the main pointer is a mouse (a computer) or a finger (a phone). */
+export function stubPointer(pointer: "fine" | "coarse") {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query === `(pointer: ${pointer})`,
+  }));
+}

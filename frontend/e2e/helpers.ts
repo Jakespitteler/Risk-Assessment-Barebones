@@ -84,10 +84,8 @@ export async function pick(
     .click();
 }
 
+/** Fill in control 1, which a hazard with no controls opens with, empty. */
 export async function addControl(page: Page) {
-  await page
-    .getByRole("button", { name: "Add a control", exact: true })
-    .click();
   await page.getByLabel("What will you do?").fill(CONTROL);
   await page.getByLabel("Kind of control").selectOption("Barricade the hazard");
 }

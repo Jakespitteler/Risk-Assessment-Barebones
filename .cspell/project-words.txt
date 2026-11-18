@@ -36,6 +36,7 @@ subagents
 Talison
 taskkill
 testpaths
+trackpad
 tradeoffs
 unstub
 uvicorn

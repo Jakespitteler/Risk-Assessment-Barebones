@@ -3,8 +3,14 @@ import type { ControlDraft, TemplateResponse } from "../../api/take5";
 import { Button } from "../../components/Button";
 import { ControlEditor } from "../../components/ControlEditor";
 import { Guidance } from "../../components/Guidance";
+import { useFocusOnAdd } from "./useFocusOnAdd";
 
-/** Step 3: what the worker will do about one hazard. */
+const BLANK_CONTROL: ControlDraft = { description: "", kind: null };
+
+/**
+ * Step 3: what the worker will do about one hazard. With no controls yet, control 1 is
+ * open and empty, and joins the list once anything is typed or picked in it.
+ */
 export function ControlsPage({
   path,
   controls,
@@ -20,10 +26,15 @@ export function ControlsPage({
   template: TemplateResponse;
   errorFor: (path: string) => string | undefined;
   onChange: (index: number, control: ControlDraft) => void;
-  onAdd: () => void;
+  onAdd: (control: ControlDraft) => void;
   onRemove: (index: number) => void;
   children?: ReactNode;
 }) {
+  const shownControls = controls.length ? controls : [BLANK_CONTROL];
+  const markAdded = useFocusOnAdd(
+    controls.length,
+    `${path}.controls.${String(controls.length - 1)}.description`,
+  );
   return (
     <div className="flex flex-col gap-4">
       <p>
@@ -33,7 +44,7 @@ export function ControlsPage({
       <Guidance title="What do the control kinds mean?">
         <p>{template.control_guidance}</p>
       </Guidance>
-      {controls.map((control, index) => (
+      {shownControls.map((control, index) => (
         <ControlEditor
           key={index}
           control={control}
@@ -42,21 +53,29 @@ export function ControlsPage({
           path={`${path}.controls.${String(index)}`}
           errorFor={errorFor}
           onChange={(updated) => {
-            onChange(index, updated);
+            if (controls.length) onChange(index, updated);
+            else onAdd(updated);
           }}
-          onRemove={() => {
-            onRemove(index);
-          }}
+          onRemove={
+            controls.length
+              ? () => {
+                  onRemove(index);
+                }
+              : undefined
+          }
         />
       ))}
-      {!controls.length && (
-        <p className="rounded-xl border-2 border-dashed border-slate-400 p-4">
-          No controls listed yet.
-        </p>
+      {controls.length > 0 && (
+        <Button
+          variant="secondary"
+          onClick={() => {
+            markAdded();
+            onAdd(BLANK_CONTROL);
+          }}
+        >
+          Add a control
+        </Button>
       )}
-      <Button variant="secondary" onClick={onAdd}>
-        Add a control
-      </Button>
       {children}
     </div>
   );
