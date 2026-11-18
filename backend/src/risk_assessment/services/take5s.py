@@ -14,7 +14,7 @@ from risk_assessment.domain.take5.draft import (
 from risk_assessment.domain.take5.fix import fixes_error
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.template import Take5Template
-from risk_assessment.domain.take5.time_limit import time_limit_error
+from risk_assessment.domain.take5.time_limit import runs_out_at, time_limit_error
 from risk_assessment.domain.take5.verdict import verdict
 from risk_assessment.services.ports import Take5Repository
 
@@ -85,16 +85,16 @@ class Take5Service:
 
         Returns:
             What is missing, the warnings, and the rated Take 5 when nothing is
-            missing. A draft older than the template's time limit has an error on
-            `started_at` (spec K2).
+            missing, and when the draft runs out. A draft older than the template's
+            time limit has an error on `started_at` (spec K2).
         """
-        return _with_error(
+        time_limit_minutes: int | None = self._template.draft_time_limit_minutes
+        check: DraftCheck = _with_error(
             check_draft(draft, self._template),
-            time_limit_error(
-                draft.started_at,
-                self._clock(),
-                self._template.draft_time_limit_minutes,
-            ),
+            time_limit_error(draft.started_at, self._clock(), time_limit_minutes),
+        )
+        return check.model_copy(
+            update={"runs_out_at": runs_out_at(draft.started_at, time_limit_minutes)},
         )
 
     def submit(self, draft: Take5Draft, submission_id: UUID) -> SavedTake5:
