@@ -303,6 +303,18 @@
             "title": "Thinking Questions",
             "default": []
           },
+          "runs_out_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runs Out At"
+          },
           "nudges": {
             "items": {
               "$ref": "#/components/schemas/Nudge"
@@ -320,7 +332,7 @@
           "can_submit"
         ],
         "title": "DraftCheck",
-        "description": "What checking a draft found.\n\nAttributes:\n    errors: Every gap or mistake, in the order of the form.\n    warnings: Everything allowed that will stop the job, in the order of the form.\n        A warning never stops the draft being submitted.\n    assessment: The rated Take 5, or None while there are errors.\n    can_submit: True when there are no errors.\n    thinking_questions: Applicable prompts, including ones already answered.\n    nudges: Suggestions to make an answer clearer, in the order of the form. A nudge\n        never stops the draft being submitted."
+        "description": "What checking a draft found.\n\nAttributes:\n    errors: Every gap or mistake, in the order of the form.\n    warnings: Everything allowed that will stop the job, in the order of the form.\n        A warning never stops the draft being submitted.\n    assessment: The rated Take 5, or None while there are errors.\n    can_submit: True when there are no errors.\n    thinking_questions: Applicable prompts, including ones already answered.\n    runs_out_at: When the draft runs out (spec K2), or None when it never does.\n    nudges: Suggestions to make an answer clearer, in the order of the form. A nudge\n        never stops the draft being submitted."
       },
       "ErrorMessage": {
         "properties": {

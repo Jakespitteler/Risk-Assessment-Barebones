@@ -143,6 +143,7 @@ export interface components {
          *         assessment: The rated Take 5, or None while there are errors.
          *         can_submit: True when there are no errors.
          *         thinking_questions: Applicable prompts, including ones already answered.
+         *         runs_out_at: When the draft runs out (spec K2), or None when it never does.
          *         nudges: Suggestions to make an answer clearer, in the order of the form. A nudge
          *             never stops the draft being submitted.
          */
@@ -159,6 +160,8 @@ export interface components {
              * @default []
              */
             thinking_questions: components["schemas"]["ThinkingQuestion"][];
+            /** Runs Out At */
+            runs_out_at?: string | null;
             /**
              * Nudges
              * @default []
