@@ -45,7 +45,7 @@ saved until the worker submits it. Then the app asks its one question, and then 
 3. **Spot the hazards.** The worker first writes at least one thing that could hurt them or someone else. Only
    then does the app show the card's seven hazard questions as a cross-check ("did you miss any of these?"), on
    their own page after the list, with the worker's list at the top (decision D13). Each Yes asks "Which hazard
-   on your list is this?", and the worker links it to one (T5, decision D26). "It's on my list" shows the list
+   on your list is this?", and the worker links it to one (T5, decision D30). "It's on my list" shows the list
    to pick from, with nothing picked; "Add a hazard" opens the list with a new empty hazard, already linked, and
    Continue there comes back to the questions. Once linked, the Yes shows "On your list:" and the hazard, with
    "Not this one" to unlink it and "Add another". Every Take 5 has at least one hazard: "no hazards" is not an
@@ -200,10 +200,10 @@ the same every time and can be tested exactly.
 - **T5 Every Yes points to a hazard.** Each hazard question answered Yes needs a hazard on the worker's list
   linked to it: one picked from the list, or one added from that Yes. Until then the Yes asks "Which hazard on
   your list is this?", and Continue stops with "Pick the hazard on your list that this is, or add it." beside the
-  question. One hazard can be linked to several questions (decision D28).
+  question. One hazard can be linked to several questions (decision D32).
   A link to a question that is no longer Yes stays on the phone, so changing the answer back keeps it, but it is
   not saved. Each saved hazard keeps the questions it is linked to, and the review and the result show the
-  hazard under each Yes (decision D29).
+  hazard under each Yes (decision D33).
 
 ### The challenge question
 
@@ -511,7 +511,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D12 | The front-end libraries | React, TypeScript, Vite, Tailwind CSS, TanStack Query, React Router (see `architecture.md`) | Svelte or Vue |
 | D13 | Where the hazard questions go (2026-11-14) | Their own page after the hazard list, with the list at the top | Under the list on the same page |
 | D14 | What a fix does with the answers (2026-11-14) | Copies them; the review warns on each No with a way to change it | Leave them blank, so all 14 are answered again |
-| D15 | What a Yes shows after a hazard is added from it (2026-11-14) | A tick, "Added to your list", and an "Add another" link. Replaced by D26 | The same reminder without its button; or the reminder and button unchanged |
+| D15 | What a Yes shows after a hazard is added from it (2026-11-14) | A tick, "Added to your list", and an "Add another" link. Replaced by D30 | The same reminder without its button; or the reminder and button unchanged |
 | D16 | What each saved Take 5 shows in the list (2026-11-15) | The date, worker, job and verdict, and "Fixed" on a Don't start yet that has been fixed | The location as well |
 | D17 | How dates are written (2026-11-15) | "14 Nov 2026, 6:52 pm" everywhere | Each phone's own format |
 | D18 | How the saved list grows (2026-11-15) | Once hosted for a crew, the newest 50 with "Show more" (task 0021). Until then, all of them | All of them, always |
@@ -526,10 +526,10 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D27 | No signal to check a kept draft (2026-11-16) | Say so, with when it was started (K2) | Show nothing until a check gets through |
 | D28 | "Start a new Take 5" while a draft is kept (2026-11-16) | "Carry on your Take 5" (K1) | Keep the old label |
 | D29 | Show the time a draft has left (2026-11-16) | Yes, on the form and the list (K2) | Only say when it has run out |
-| D26 | A Yes to a hazard that is already on the list (2026-11-16) | "It's on my list", where the worker picks which hazard it is (T5) | A one-tap "It's already there" button, which can be tapped without looking at the list |
-| D27 | Must every Yes point to a hazard (2026-11-18) | Yes, before Continue (T5) | A reminder that can be passed by |
-| D28 | Can one hazard cover several questions (2026-11-18) | Yes; the picker says when a hazard is already on another question | One question per hazard |
-| D29 | Is the link saved (2026-11-18) | Yes, on each hazard, and shown under each Yes on the review and the result. A fix copies it | Kept only on the phone |
+| D30 | A Yes to a hazard that is already on the list (2026-11-16) | "It's on my list", where the worker picks which hazard it is (T5) | A one-tap "It's already there" button, which can be tapped without looking at the list |
+| D31 | Must every Yes point to a hazard (2026-11-18) | Yes, before Continue (T5) | A reminder that can be passed by |
+| D32 | Can one hazard cover several questions (2026-11-18) | Yes; the picker says when a hazard is already on another question | One question per hazard |
+| D33 | Is the link saved (2026-11-18) | Yes, on each hazard, and shown under each Yes on the review and the result. A fix copies it | Kept only on the phone |
 
 ## Open questions
 
