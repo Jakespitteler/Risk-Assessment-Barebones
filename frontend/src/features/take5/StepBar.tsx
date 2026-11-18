@@ -4,9 +4,10 @@ import { firstStageOf, sameStage, stepOf } from "./stage";
 const STEP_NAMES = ["Job", "Think", "Hazards", "Assess", "Review"];
 
 // Every step is at least 48 px high, for a gloved thumb. The bar above each name fills in
-// dark once the worker has reached that step, like a progress bar.
+// dark once the worker has reached that step, like a progress bar. The current step's bar
+// is the amber of the app's "5" badge.
 const STEP_LOOK =
-  "flex min-h-12 w-full items-start border-t-4 pt-2 text-left text-sm aria-[current=step]:font-bold";
+  "flex min-h-12 w-full items-start border-t-4 pt-2 text-left text-sm aria-[current=step]:border-amber-400 aria-[current=step]:font-bold";
 const REACHED_LOOK = `${STEP_LOOK} border-slate-900 font-semibold text-slate-900 underline underline-offset-4 aria-[current=step]:no-underline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-blue-700 disabled:cursor-wait disabled:opacity-60`;
 const SHOWING_LOOK = `${STEP_LOOK} border-slate-900 text-slate-900`;
 const NOT_REACHED_LOOK = `${STEP_LOOK} border-stone-300 text-slate-600`;

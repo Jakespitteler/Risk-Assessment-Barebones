@@ -31,8 +31,9 @@ Jake answered on 2026-11-18: "all your picks" (spec D38 to D43).
    tapped; the review then sends them to the new hazard's empty ratings (D41). Not chosen: lock the later steps
    again until Continue reaches them.
 5. **The look.** A reached step's bar is filled dark like a progress bar and its name is underlined, as a link
-   is. The current step is bold. A step not reached yet stays light grey. Each step is a 48 px tall tap target.
-   No ticks, because a tick would say "done" when the step may still have a gap (D42).
+   is. The current step is bold, and its bar is the amber of the app's "5" badge (Jake added this on
+   2026-11-18, after seeing the screenshots). A step not reached yet stays light grey. Each step is a 48 px tall
+   tap target. No ticks, because a tick would say "done" when the step may still have a gap (D42).
 6. **The phone's back gesture** undoes a tap, as it undoes Continue (D43).
 
 ## Acceptance criteria
@@ -50,8 +51,7 @@ Jake answered on 2026-11-18: "all your picks" (spec D38 to D43).
 
 ## Out of scope
 
-- A different colour for the current step's bar. The current step is told apart by bold text with no
-  underline, as agreed; the amber of the app's "5" badge is an option if that turns out too quiet on site.
+- Nothing else: the bar only moves between pages that already exist.
 
 ## Notes / assumptions
 
