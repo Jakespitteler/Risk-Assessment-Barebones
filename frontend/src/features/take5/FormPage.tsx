@@ -194,9 +194,9 @@ export function FormPage({
             ),
           });
         }}
-        onAdd={() => {
+        onAdd={(control) => {
           editHazard(index, "controls", {
-            controls: [...hazard.controls, { description: "", kind: null }],
+            controls: [...hazard.controls, control],
           });
         }}
         onRemove={(position) => {

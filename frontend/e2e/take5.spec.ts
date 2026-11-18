@@ -37,7 +37,8 @@ test("a worker fills in, saves, reopens and starts a new Take 5", async ({
   await expect(page.getByRole("radio", { checked: true })).toHaveCount(0);
   await capture(page, "take5-think");
   await answerThinkThrough(page);
-  await expect(focusedHeading(page)).toHaveText("What could hurt someone?");
+  // On a computer the cursor goes straight into the empty hazard box.
+  await expect(page.getByLabel("Hazard 1", { exact: true })).toBeFocused();
   await page.getByLabel("Hazard 1", { exact: true }).fill(HAZARD);
   await capture(page, "take5-hazards");
   await next(page);

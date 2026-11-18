@@ -3,7 +3,10 @@ import { Button } from "./Button";
 import { Field } from "./Field";
 import { FIELD_STYLE } from "./fieldStyle";
 
-/** One control: what the worker will do, and its kind from the back end's list. */
+/**
+ * One control: what the worker will do, and its kind from the back end's list. A control
+ * not yet on the list has no Remove button.
+ */
 export function ControlEditor({
   control,
   number,
@@ -19,7 +22,7 @@ export function ControlEditor({
   path: string;
   errorFor: (path: string) => string | undefined;
   onChange: (control: ControlDraft) => void;
-  onRemove: () => void;
+  onRemove?: () => void;
 }) {
   const description = `${path}.description`;
   const kind = `${path}.kind`;
@@ -69,9 +72,11 @@ export function ControlEditor({
           ))}
         </select>
       </Field>
-      <Button variant="quiet" onClick={onRemove}>
-        Remove control {number}
-      </Button>
+      {onRemove && (
+        <Button variant="quiet" onClick={onRemove}>
+          Remove control {number}
+        </Button>
+      )}
     </section>
   );
 }

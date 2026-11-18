@@ -424,6 +424,12 @@ The first four screens of the core workflow, saved when the worker submits.
   at the review sends the worker to it, and back to the review once it is filled in.
 - Acceptance: Enter in a one-line box or on a picked rating does what Continue does. Enter in a bigger box, such
   as the job, a hazard or a control, starts a new line. Enter never presses Finish.
+- Acceptance: a hazard with no controls opens its controls page with control 1 already open and empty; it joins
+  the list once anything is typed or picked in it, so a hazard can still have no controls. Adding a hazard or a
+  control puts the cursor in its box.
+- Acceptance: on a computer (a mouse or trackpad), a page that opens with an empty text box puts the cursor in the
+  first one, so typing goes straight in. On a phone the page opens on its heading, so the keyboard doesn't cover it
+  until the worker taps a box (Jake, 2026-11-18).
 - Acceptance: removing a hazard or a control can be undone.
 - Acceptance: once anything is filled in, every page has Leave in the top bar, to keep the draft for later or
   throw it away; throwing it away can be undone (K1). Closing the app keeps the draft, and opening it again

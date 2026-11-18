@@ -11,6 +11,7 @@ import {
   SMALL_TEMPLATE,
   renderWithApi,
   stubApi,
+  stubPointer,
 } from "../../test-utils";
 import type { Stage } from "./stage";
 import { Take5Form } from "./Take5Form";
@@ -88,6 +89,48 @@ it("starts with nothing filled in but the remembered name, and the heading focus
   expect(
     screen.getByLabelText<HTMLTextAreaElement>("What is the job?").value,
   ).toBe("");
+  expect(document.activeElement).toBe(
+    screen.getByRole("heading", { level: 1 }),
+  );
+});
+
+it("on a computer, puts the cursor in the first empty box as a page opens", () => {
+  stubPointer("fine");
+  localStorage.setItem("take5-worker-name", "Sam Example");
+  stubApi({});
+  renderWithApi(<FormAt start={{ page: "job" }} />);
+  expect(document.activeElement).toBe(
+    screen.getByLabelText("What is the job?"),
+  );
+});
+
+it("on a computer, opens control 1 with the cursor in it", () => {
+  stubPointer("fine");
+  storeDraft({
+    ...COMPLETE_DRAFT,
+    hazards: [{ ...HAZARD_DRAFT, controls: [] }],
+  });
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "controls", hazard: 0 }} />);
+  expect(document.activeElement).toBe(
+    screen.getByLabelText("What will you do?"),
+  );
+});
+
+it("on a computer, focuses the heading when every box is filled in", () => {
+  stubPointer("fine");
+  storeDraft();
+  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  renderWithApi(<FormAt start={{ page: "job" }} />);
+  expect(document.activeElement).toBe(
+    screen.getByRole("heading", { level: 1 }),
+  );
+});
+
+it("on a phone, focuses the heading so the keyboard stays down", () => {
+  stubPointer("coarse");
+  stubApi({});
+  renderWithApi(<FormAt start={{ page: "job" }} />);
   expect(document.activeElement).toBe(
     screen.getByRole("heading", { level: 1 }),
   );
@@ -390,7 +433,6 @@ it("opens a warning's controls page, then goes on to rate and back to the review
   expect(
     await screen.findByRole("heading", { name: "What will stop it?" }),
   ).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Add a control" }));
   fireEvent.change(screen.getByLabelText("What will you do?"), {
     target: { value: "Chock the wheel" },
   });

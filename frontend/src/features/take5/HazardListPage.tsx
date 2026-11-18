@@ -4,6 +4,7 @@ import { Card } from "../../components/Card";
 import { Field } from "../../components/Field";
 import { FIELD_STYLE } from "../../components/fieldStyle";
 import { fieldProps } from "./fieldProps";
+import { useFocusOnAdd } from "./useFocusOnAdd";
 
 /** Step 2: the hazards, in the worker's own words. */
 export function HazardListPage({
@@ -20,6 +21,10 @@ export function HazardListPage({
   onRemove: (index: number) => void;
 }) {
   const listError = errorFor("hazards");
+  const markAdded = useFocusOnAdd(
+    hazards.length,
+    `hazards.${String(hazards.length - 1)}.description`,
+  );
   return (
     <div className="flex flex-col gap-4">
       <p>
@@ -66,7 +71,13 @@ export function HazardListPage({
           {listError}
         </p>
       )}
-      <Button variant="secondary" onClick={onAdd}>
+      <Button
+        variant="secondary"
+        onClick={() => {
+          markAdded();
+          onAdd();
+        }}
+      >
         Add another hazard
       </Button>
     </div>
