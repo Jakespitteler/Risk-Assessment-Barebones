@@ -18,6 +18,18 @@ _INSERT: str = (
     "VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING"
 )
 _SELECT_DOCUMENT: str = "SELECT document FROM take5s WHERE id = ?"
+# An unfinished Take 5 has no verdict. These only change a row that is still
+# unfinished, so a finished Take 5 is never written to again, and the first of two
+# requests at once wins. A Take 5's question is added once, so its question stays put.
+_SAVE_QUESTION: str = (
+    "UPDATE take5s SET document = ? WHERE id = ? "
+    "AND json_extract(document, '$.verdict') IS NULL "
+    "AND json_extract(document, '$.challenge') IS NULL"
+)
+_FINISH: str = (
+    "UPDATE take5s SET document = ? WHERE id = ? "
+    "AND json_extract(document, '$.verdict') IS NULL"
+)
 # The service saves every time in UTC, and ISO text in one time zone sorts by time.
 # A time with no fraction of a second, such as 07:30:00+00:00, still sorts before
 # 07:30:00.000005+00:00, because "+" sorts before ".". The row ID breaks a tie, so
@@ -78,6 +90,30 @@ class SqliteTake5Repository:
             raise LookupError(f"Take 5 {take5.id} was not saved.")
         return stored
 
+    def save_question(self, take5: SavedTake5) -> SavedTake5:
+        """Replace an unfinished Take 5 that has no question yet with this one.
+
+        Args:
+            take5: The Take 5 with its question added.
+
+        Returns:
+            The Take 5 now saved with this ID: this one, or the one already there if
+            it had a question or was finished.
+        """
+        return self._update(_SAVE_QUESTION, take5)
+
+    def finish(self, take5: SavedTake5) -> SavedTake5:
+        """Replace an unfinished Take 5 with this finished one.
+
+        Args:
+            take5: The Take 5 with its answer, verdict and `finished_at`.
+
+        Returns:
+            The Take 5 now saved with this ID: this one, or the one already there if
+            it was finished first.
+        """
+        return self._update(_FINISH, take5)
+
     def get(self, take5_id: UUID) -> SavedTake5 | None:
         """Get a saved Take 5, with the template and verdict it was saved with.
 
@@ -117,6 +153,26 @@ class SqliteTake5Repository:
                 (str(take5_id),),
             ).fetchone()
         return UUID(row[0]) if row is not None else None
+
+    def _update(self, statement: str, take5: SavedTake5) -> SavedTake5:
+        """Run one guarded update of a Take 5's document, then read back what is saved.
+
+        Args:
+            statement: The UPDATE to run, which says when the row may change.
+            take5: The new document.
+
+        Returns:
+            The Take 5 now saved with this ID.
+
+        Raises:
+            LookupError: If no Take 5 is saved with this ID.
+        """
+        with closing(self._connect()) as connection, connection:
+            connection.execute(statement, (take5.model_dump_json(), str(take5.id)))
+            stored: SavedTake5 | None = _read(connection, take5.id)
+        if stored is None:
+            raise LookupError(f"Take 5 {take5.id} is not saved.")
+        return stored
 
     def _connect(self) -> sqlite3.Connection:
         """Open a short-lived connection, making the file and table on first use.

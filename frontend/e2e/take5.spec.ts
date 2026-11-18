@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
+  answerQuestion,
+  submit,
   CONTROL,
   HAZARD,
   addControl,
@@ -261,7 +263,7 @@ test("with no signal the answers stay, and Finish works once it is back", async 
 }) => {
   await page.route("**/api/take5s", (route) => route.abort());
   await controlledDraft(page);
-  await finish(page);
+  await submit(page);
   await expect(page.getByText(/Your answers are still here/)).toBeVisible(
     RETRIES_DONE,
   );
@@ -346,11 +348,12 @@ test("Finish can't be pressed twice while saving, so one Take 5 is sent", async 
     await route.continue();
   });
   await controlledDraft(page);
-  await finish(page);
+  await submit(page);
   const saving = page.getByRole("button", { name: "Saving…", exact: true });
   await expect(saving).toBeDisabled();
   await saving.dispatchEvent("click");
   release();
+  await answerQuestion(page);
   await expect(heading(page, "Good to go")).toBeVisible();
   expect(submissions).toBe(1);
 });
@@ -368,7 +371,7 @@ test("changed answers after a lost save can't replace the saved Take 5", async (
     await route.abort();
   });
   await controlledDraft(page);
-  await finish(page);
+  await submit(page);
   await expect(page.getByText(/Your answers are still here/)).toBeVisible(
     RETRIES_DONE,
   );
@@ -380,11 +383,12 @@ test("changed answers after a lost save can't replace the saved Take 5", async (
     .fill("Add a second barricade around the job");
   await next(page);
   await next(page);
-  await finish(page);
+  await submit(page);
   await expect(
     page.getByText(/already saved with different answers/),
   ).toBeVisible();
   await page.getByRole("link", { name: "Open the saved Take 5" }).click();
+  await answerQuestion(page);
   await expect(heading(page, "Good to go")).toBeVisible();
   await expect(page.getByText(CONTROL, { exact: true })).toBeVisible();
   await expect(

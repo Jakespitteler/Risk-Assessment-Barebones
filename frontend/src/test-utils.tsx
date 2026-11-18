@@ -115,6 +115,13 @@ export const SAVED: Take5Response = {
     answers: ANSWERS,
     hazards: [RATED_HAZARD],
     verdict: { can_start: true, reasons: [] },
+    challenge: {
+      question: "What stops the wheel moving while you work on it?",
+      asked_by: "ai",
+      model: "example-model",
+      instructions_version: "1",
+      answer: "Wheels chocked both sides",
+    },
   },
   rating: {
     likelihood: "Seldom",
@@ -142,6 +149,24 @@ export const STOPPED: Take5Response = {
   rating: { ...RATED_HAZARD.before },
   fixed_by: null,
   offers_fix: true,
+};
+
+// Saved, but its question isn't answered yet, so it has no verdict (spec C6).
+export const UNANSWERED: Take5Response = {
+  ...SAVED,
+  take5: {
+    ...SAVED.take5,
+    id: "33333333-3333-4333-8333-333333333333",
+    finished_at: null,
+    verdict: null,
+    challenge: {
+      question: "What stops the wheel moving while you work on it?",
+      asked_by: "ai",
+      model: "example-model",
+      instructions_version: "1",
+      answer: null,
+    },
+  },
 };
 
 type Reply = { status: number; body: unknown } | "offline";

@@ -58,6 +58,23 @@ it("lists each saved Take 5 in the order sent, with its verdict, job, worker and
   expect(oldest?.getByText("Change tyre")).toBeTruthy();
 });
 
+it("says Not finished for a Take 5 whose question is unanswered", async () => {
+  const unfinished: Take5Summary = {
+    id: "33333333-3333-4333-8333-333333333333",
+    created_at: "2026-11-14T02:00:00Z",
+    worker_name: "Sam Example",
+    job: "Change tyre",
+    can_start: null,
+    fixed: false,
+  };
+  stubApi({ "GET /api/take5s": { status: 200, body: [unfinished] } });
+  renderWithApi(<SavedTake5sScreen />);
+  const item = within(await screen.findByRole("listitem"));
+  expect(item.getByText("Not finished")).toBeTruthy();
+  expect(item.queryByText("Good to go")).toBeNull();
+  expect(item.queryByText("Don’t start yet")).toBeNull();
+});
+
 it("moves the focus to the heading, so a screen reader starts there", async () => {
   stubApi({ "GET /api/take5s": { status: 200, body: LIST } });
   renderWithApi(<SavedTake5sScreen />);

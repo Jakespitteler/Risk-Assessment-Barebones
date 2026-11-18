@@ -13,6 +13,7 @@ from risk_assessment.domain.take5.saved import SavedTake5
 FIXES_PATH: str = "fixes"
 NOT_SAVED_MESSAGE: str = "The Take 5 this fixes could not be found."
 NOTHING_TO_FIX_MESSAGE: str = "That Take 5 was Good to go, so there is nothing to fix."
+NOT_FINISHED_MESSAGE: str = "That Take 5 isn't finished yet, so it can't be fixed."
 
 
 def fixes_error(fixed: SavedTake5 | None) -> FieldError | None:
@@ -27,6 +28,8 @@ def fixes_error(fixed: SavedTake5 | None) -> FieldError | None:
     """
     if fixed is None:
         return FieldError(path=FIXES_PATH, message=NOT_SAVED_MESSAGE)
+    if fixed.verdict is None:
+        return FieldError(path=FIXES_PATH, message=NOT_FINISHED_MESSAGE)
     if fixed.verdict.can_start:
         return FieldError(path=FIXES_PATH, message=NOTHING_TO_FIX_MESSAGE)
     return None
@@ -52,9 +55,10 @@ def fixed_ids(take5s: Iterable[SavedTake5]) -> frozenset[UUID]:
     """Find the IDs of the Take 5s that these Take 5s fix.
 
     A Take 5 counts as fixed whatever the fix's own verdict, as its result screen
-    says. A fix is always saved after the Take 5 it fixes, so given every saved
-    Take 5 this finds every fixed one. Given only some, it can miss a fix that
-    isn't among them.
+    says, and even while the fix's question is unanswered, so a second fix can't be
+    started beside it. A fix is always saved after the Take 5 it fixes, so given
+    every saved Take 5 this finds every fixed one. Given only some, it can miss a
+    fix that isn't among them.
 
     Args:
         take5s: Saved Take 5s.

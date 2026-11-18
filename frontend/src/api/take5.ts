@@ -22,12 +22,17 @@ export type Hazard = Schemas["Hazard"];
 export type Take5Response = Schemas["Take5Response"];
 export type SavedTake5 = Schemas["SavedTake5"];
 export type Take5Summary = Schemas["Take5Summary"];
+export type Verdict = Schemas["Verdict"];
+export type Challenge = Schemas["Challenge"];
 type FormErrors = Schemas["FormErrors"];
 
 // Long enough for one bar of signal, short enough that the worker isn't left waiting.
 const TIMEOUT_MS = 10_000;
 // A Continue waits for one short try only: with no signal the worker carries on.
 const CONTINUE_TIMEOUT_MS = 5_000;
+// Submitting waits for the challenge question, which the back end gives the AI up to
+// 10 seconds to write before it asks the fixed one (spec C3).
+const SUBMIT_TIMEOUT_MS = 20_000;
 const NETWORK_RETRIES = 2;
 // Always send the request, even when the phone says it is offline. TanStack's default
 // pauses it until the phone is back online, which leaves the screen waiting for good.
@@ -182,7 +187,7 @@ export function useSubmitTake5() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, draft }: { id: string; draft: Take5Draft }) =>
-      request<Take5Response>("/api/take5s", { id, draft }),
+      request<Take5Response>("/api/take5s", { id, draft }, SUBMIT_TIMEOUT_MS),
     retry: retryOnNetworkError,
     networkMode: NETWORK_MODE,
     onSuccess: (saved) => {
@@ -195,7 +200,26 @@ export function useSubmitTake5() {
   });
 }
 
-/** A saved Take 5, with the verdict the worker was given. */
+/**
+ * Answer a saved Take 5's challenge question, which finishes it with its verdict. The
+ * same answer sent again gets the finished Take 5 back, so a retry is safe.
+ */
+export function useAnswerTake5(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (answer: string) =>
+      request<Take5Response>(`/api/take5s/${encodeURIComponent(id)}/answer`, {
+        answer,
+      }),
+    retry: retryOnNetworkError,
+    networkMode: NETWORK_MODE,
+    onSuccess: (finished) => {
+      queryClient.setQueryData(["take5", id], finished);
+    },
+  });
+}
+
+/** A saved Take 5, with the verdict the worker was given, or its question. */
 export function useSavedTake5(id: string) {
   return useQuery({
     queryKey: ["take5", id],

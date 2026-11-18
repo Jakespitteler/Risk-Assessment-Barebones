@@ -9,12 +9,14 @@ import {
   PASSING_CHECK,
   SAVED,
   SMALL_TEMPLATE,
+  UNANSWERED,
   renderWithApi,
   stubApi,
   stubPointer,
 } from "../../test-utils";
 import type { Stage } from "./stage";
 import { Take5Form } from "./Take5Form";
+import { answersHere } from "./unanswered";
 import type { StoredDraft } from "./useTake5Draft";
 
 const onSaved = vi.fn<(id: string) => void>();
@@ -57,10 +59,10 @@ function storeDraft(draft = COMPLETE_DRAFT, keptWording?: string[]) {
   );
 }
 
-/** Press Finish once the review's check has come back and enabled it. */
-async function clickFinish() {
+/** Press Submit once the review's check has come back and enabled it. */
+async function clickSubmit() {
   const button = await screen.findByRole<HTMLButtonElement>("button", {
-    name: "Finish Take 5",
+    name: "Submit Take 5",
   });
   await waitFor(() => {
     expect(button.disabled).toBe(false);
@@ -240,15 +242,31 @@ it("saves, forgets the draft, remembers the name and opens the result", async ()
     "POST /api/take5s": { status: 200, body: SAVED },
   });
   renderWithApi(<FormAt start={{ page: "review" }} />);
-  await clickFinish();
+  await clickSubmit();
   await waitFor(() => {
     expect(onSaved).toHaveBeenCalledWith(SAVED.take5.id);
   });
   expect(localStorage.getItem("take5-draft")).toBeNull();
   expect(localStorage.getItem("take5-worker-name")).toBe("Sam Example");
+  // A retry that finds it already answered has no question left to go back to.
+  expect(answersHere(SAVED.take5.id)).toBe(false);
 });
 
-it("sends the worker to the gap the back end found on Finish", async () => {
+it("remembers an unanswered Take 5, so only this phone answers it", async () => {
+  storeDraft();
+  stubApi({
+    "POST /api/take5s/check": { status: 200, body: PASSING_CHECK },
+    "POST /api/take5s": { status: 200, body: UNANSWERED },
+  });
+  renderWithApi(<FormAt start={{ page: "review" }} />);
+  await clickSubmit();
+  await waitFor(() => {
+    expect(onSaved).toHaveBeenCalledWith(UNANSWERED.take5.id);
+  });
+  expect(answersHere(UNANSWERED.take5.id)).toBe(true);
+});
+
+it("sends the worker to the gap the back end found on Submit", async () => {
   storeDraft();
   stubApi({
     "POST /api/take5s/check": { status: 200, body: PASSING_CHECK },
@@ -266,7 +284,7 @@ it("sends the worker to the gap the back end found on Finish", async () => {
     },
   });
   renderWithApi(<FormAt start={{ page: "review" }} />);
-  await clickFinish();
+  await clickSubmit();
   expect(
     await screen.findByRole("heading", { name: "What will stop it?" }),
   ).toBeTruthy();
@@ -283,7 +301,7 @@ it("offers the saved Take 5 when its ID was used for other answers", async () =>
     },
   });
   renderWithApi(<FormAt start={{ page: "review" }} />);
-  await clickFinish();
+  await clickSubmit();
   expect(
     await screen.findByRole("link", { name: "Open the saved Take 5" }),
   ).toBeTruthy();
@@ -300,13 +318,13 @@ it("moves on with no signal, even when the phone says it is offline", async () =
   ).toBeTruthy();
 });
 
-it("keeps Finish disabled when the review couldn't be checked", async () => {
+it("keeps Submit disabled when the review couldn't be checked", async () => {
   storeDraft();
   stubApi({ "POST /api/take5s/check": "offline" });
   renderWithApi(<FormAt start={{ page: "review" }} />);
   expect(await screen.findByRole("button", { name: "Try again" })).toBeTruthy();
   expect(
-    screen.getByRole<HTMLButtonElement>("button", { name: "Finish Take 5" })
+    screen.getByRole<HTMLButtonElement>("button", { name: "Submit Take 5" })
       .disabled,
   ).toBe(true);
 });
@@ -333,7 +351,7 @@ it("forgets the draft after a 409, so the next Take 5 in the tab starts afresh",
     },
   });
   renderWithApi(<FormAt start={{ page: "review" }} />);
-  await clickFinish();
+  await clickSubmit();
   await screen.findByRole("link", { name: "Open the saved Take 5" });
   expect(localStorage.getItem("take5-draft")).toBeNull();
 });
@@ -483,7 +501,7 @@ it("opens a warning's controls page, then goes on to rate and back to the review
   ]);
 });
 
-it("lets the worker finish with a warning showing", async () => {
+it("lets the worker submit with a warning showing", async () => {
   storeDraft();
   stubApi({
     "POST /api/take5s/check": {
@@ -502,7 +520,7 @@ it("lets the worker finish with a warning showing", async () => {
   });
   renderWithApi(<FormAt start={{ page: "review" }} />);
   await screen.findByText("No controls: you'll be told not to start.");
-  await clickFinish();
+  await clickSubmit();
   await waitFor(() => {
     expect(onSaved).toHaveBeenCalledWith(SAVED.take5.id);
   });
@@ -958,7 +976,7 @@ it("stops at the run-out screen when Continue finds the draft has run out", asyn
   expect(localStorage.getItem("take5-draft")).toBeNull();
 });
 
-it("stops at the run-out screen when Finish is refused for running out", async () => {
+it("stops at the run-out screen when Submit is refused for running out", async () => {
   storeDraft();
   stubApi({
     "POST /api/take5s/check": { status: 200, body: PASSING_CHECK },
@@ -971,7 +989,7 @@ it("stops at the run-out screen when Finish is refused for running out", async (
     },
   });
   renderWithApi(<FormAt start={{ page: "review" }} />);
-  await clickFinish();
+  await clickSubmit();
   expect(
     await screen.findByRole("heading", { name: "This Take 5 has run out" }),
   ).toBeTruthy();

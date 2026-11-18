@@ -1,10 +1,20 @@
-"""Check, submit, get and list Take 5s, through storage that can be swapped."""
+"""Check, submit, answer, get and list Take 5s, through swappable storage and AI."""
 
+import logging
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
+from risk_assessment.domain.take5.challenge import (
+    AI_TIME_LIMIT_SECONDS,
+    Challenge,
+    ai_challenge,
+    answer_error,
+    challenge_text,
+    fallback_challenge,
+)
 from risk_assessment.domain.take5.draft import (
     DraftCheck,
     FieldError,
@@ -16,10 +26,12 @@ from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.template import Take5Template
 from risk_assessment.domain.take5.time_limit import runs_out_at, time_limit_error
 from risk_assessment.domain.take5.verdict import verdict
-from risk_assessment.services.ports import Take5Repository
+from risk_assessment.services.ports import ChallengeAsker, Take5Repository
+
+_logger: logging.Logger = logging.getLogger(__name__)
 
 # The fields that differ between two saves of the same answers.
-_SAVE_DETAILS: set[str] = {"id", "created_at", "finished_at", "verdict"}
+_SAVE_DETAILS: set[str] = {"id", "created_at", "finished_at", "verdict", "challenge"}
 
 
 class InvalidDraftError(ValueError):
@@ -43,6 +55,31 @@ class SubmissionConflictError(ValueError):
     """The submission ID was already used to save different answers."""
 
 
+class Take5NotFoundError(LookupError):
+    """No Take 5 is saved with this ID."""
+
+
+class InvalidAnswerError(ValueError):
+    """An answer to the challenge question that can't be accepted yet (spec C4).
+
+    Attributes:
+        error: What is wrong, to show beside the answer.
+    """
+
+    def __init__(self, error: FieldError) -> None:
+        """Keep the error so the API can send it beside the answer.
+
+        Args:
+            error: What is wrong with the answer.
+        """
+        super().__init__("Answer the question before you finish.")
+        self.error: FieldError = error
+
+
+class AlreadyAnsweredError(ValueError):
+    """A different answer to a Take 5 that is already finished (spec C6)."""
+
+
 def utc_now() -> datetime:
     """Return the time now, in UTC: the clock the service uses unless a test swaps it.
 
@@ -60,17 +97,25 @@ class Take5Service:
         repository: Take5Repository,
         template: Take5Template,
         clock: Callable[[], datetime] = utc_now,
+        challenge_asker: ChallengeAsker | None = None,
+        ai_time_limit_seconds: float = AI_TIME_LIMIT_SECONDS,
     ) -> None:
-        """Take the storage, the current template and a clock from the composition root.
+        """Take the storage, the template, a clock and an AI from the composition root.
 
         Args:
             repository: Where Take 5s are kept.
             template: The template new Take 5s are filled in on.
             clock: Says what time it is now. Tests pass a fixed one.
+            challenge_asker: The AI that writes the challenge question, or None when
+                none is set up, which asks the fixed question every time (spec C3).
+            ai_time_limit_seconds: How long to wait for the AI before asking the fixed
+                question instead. 10 seconds (spec C3); tests pass a shorter time.
         """
         self._repository: Take5Repository = repository
         self._template: Take5Template = template
         self._clock: Callable[[], datetime] = clock
+        self._challenge_asker: ChallengeAsker | None = challenge_asker
+        self._ai_time_limit_seconds: float = ai_time_limit_seconds
 
     @property
     def template(self) -> Take5Template:
@@ -98,7 +143,11 @@ class Take5Service:
         )
 
     def submit(self, draft: Take5Draft, submission_id: UUID) -> SavedTake5:
-        """Check and save a Take 5 once. A retry gets back what was first saved.
+        """Check and save a Take 5 once, then ask its question. A retry gets the same.
+
+        The Take 5 is saved before the AI is asked, so a slow or failed AI never loses
+        it (spec F2). It stays unfinished, with no verdict, until the question is
+        answered (spec C6).
 
         Args:
             draft: The worker's answers.
@@ -106,7 +155,8 @@ class Take5Service:
                 every retry.
 
         Returns:
-            The saved Take 5, with its verdict.
+            The saved Take 5, with its question: unfinished, unless a retry finds it
+            already answered.
 
         Raises:
             InvalidDraftError: If anything is missing, `draft.fixes` isn't a saved
@@ -140,11 +190,9 @@ class Take5Service:
             hazards=check.assessment.hazards,
             id=submission_id,
             created_at=now,
-            finished_at=now,
             worker_name=draft.worker_name.strip(),
             job=draft.job.strip(),
             location=draft.location.strip(),
-            verdict=verdict(check.assessment),
             fixes=draft.fixes,
             started_at=draft.started_at,
         )
@@ -155,10 +203,52 @@ class Take5Service:
             raise SubmissionConflictError(
                 "This Take 5 was already saved with different answers.",
             )
-        return saved
+        return self._with_question(saved, ask_ai=True)
+
+    def answer(self, take5_id: UUID, answer: str) -> SavedTake5:
+        """Save the answer to a Take 5's question, and finish it with its verdict.
+
+        The verdict is worked out from what was saved, on the template it was saved
+        with, so the answer never changes it (spec C5). The same answer sent again,
+        such as a retry after a lost reply, gets back the finished Take 5.
+
+        Args:
+            take5_id: The Take 5's ID.
+            answer: The worker's answer.
+
+        Returns:
+            The finished Take 5, with its verdict.
+
+        Raises:
+            Take5NotFoundError: If no Take 5 is saved with this ID.
+            InvalidAnswerError: If the answer is shorter than four words (spec C4).
+            AlreadyAnsweredError: If the Take 5 was already finished with another
+                answer, or before it had a question (spec C6).
+        """
+        saved: SavedTake5 | None = self.get(take5_id)
+        if saved is None:
+            raise Take5NotFoundError("This Take 5 could not be found.")
+        answer = answer.strip()
+        if saved.is_finished:
+            return _answered_with(saved, answer)
+        error: FieldError | None = answer_error(answer)
+        if error is not None:
+            raise InvalidAnswerError(error)
+        challenge: Challenge = saved.challenge or fallback_challenge(saved)
+        finished: SavedTake5 = saved.model_copy(
+            update={
+                "challenge": challenge.model_copy(update={"answer": answer}),
+                "verdict": verdict(saved),
+                "finished_at": self._clock(),
+            },
+        )
+        return _answered_with(self._repository.finish(finished), answer)
 
     def get(self, take5_id: UUID) -> SavedTake5 | None:
         """Get a saved Take 5 as it was saved, without applying today's rules.
+
+        An unfinished Take 5 with no question (the app stopped between saving it and
+        asking) is given the fixed question, so opening it always shows one (spec C6).
 
         Args:
             take5_id: The Take 5's ID.
@@ -166,7 +256,8 @@ class Take5Service:
         Returns:
             The saved Take 5, or None if there is none with this ID.
         """
-        return self._repository.get(take5_id)
+        saved: SavedTake5 | None = self._repository.get(take5_id)
+        return self._with_question(saved, ask_ai=False) if saved is not None else None
 
     def list_newest_first(self) -> tuple[SavedTake5, ...]:
         """Get every saved Take 5 as it was saved, the newest first.
@@ -188,6 +279,58 @@ class Take5Service:
             The fix's ID, or None if it hasn't been fixed.
         """
         return self._repository.fixed_by(take5_id)
+
+    def _with_question(self, saved: SavedTake5, ask_ai: bool) -> SavedTake5:
+        """Give an unfinished Take 5 its question, once.
+
+        Args:
+            saved: The saved Take 5.
+            ask_ai: Whether to ask the AI first. When False, or when the AI can't
+                give a usable question, the fixed question is asked (spec C3).
+
+        Returns:
+            The Take 5 as now saved. One that is finished, or already has its
+            question, comes back unchanged.
+        """
+        if saved.is_finished or saved.challenge is not None:
+            return saved
+        challenge: Challenge = (
+            self._ai_challenge(saved) if ask_ai else None
+        ) or fallback_challenge(saved)
+        return self._repository.save_question(
+            saved.model_copy(update={"challenge": challenge}),
+        )
+
+    def _ai_challenge(self, saved: SavedTake5) -> Challenge | None:
+        """Ask the AI for the question, giving up after the time limit.
+
+        The worker never sees an AI error: any failure is logged and the caller asks
+        the fixed question instead.
+
+        Args:
+            saved: The saved Take 5. Only its job, location, answers and hazards are
+                sent, never the worker's name (spec C1).
+
+        Returns:
+            The AI's question, or None when no AI is set up, it fails, it takes longer
+            than the time limit, or its reply fails C2.
+        """
+        if self._challenge_asker is None:
+            return None
+        take5_text: str = challenge_text(saved, saved.job, saved.location)
+        # Not a `with` block: leaving one waits for the AI, even after the time limit.
+        executor = ThreadPoolExecutor(max_workers=1)
+        try:
+            reply = executor.submit(self._challenge_asker.ask, take5_text)
+            return ai_challenge(reply.result(timeout=self._ai_time_limit_seconds))
+        except Exception:  # Any AI failure at all means the fixed question.
+            _logger.warning(
+                "The AI could not ask a question, so the fixed one was asked.",
+                exc_info=True,
+            )
+            return None
+        finally:
+            executor.shutdown(wait=False, cancel_futures=True)
 
     def _fixes_error(
         self,
@@ -232,6 +375,27 @@ def _with_error(check: DraftCheck, error: FieldError | None) -> DraftCheck:
     )
 
 
+def _answered_with(saved: SavedTake5, answer: str) -> SavedTake5:
+    """Return a finished Take 5 if it was finished with this answer.
+
+    Args:
+        saved: A finished Take 5.
+        answer: The answer just sent, without spaces at its ends.
+
+    Returns:
+        The finished Take 5, when its saved answer is this one.
+
+    Raises:
+        AlreadyAnsweredError: If it was finished with another answer, or before it had
+            a question.
+    """
+    if saved.challenge is None or saved.challenge.answer != answer:
+        raise AlreadyAnsweredError(
+            "This Take 5 is already finished, so it can't be answered again.",
+        )
+    return saved
+
+
 def _answers(take5: SavedTake5) -> dict[str, Any]:
     """Return what the worker gave and what it was filled in on, without save details.
 
@@ -239,6 +403,6 @@ def _answers(take5: SavedTake5) -> dict[str, Any]:
         take5: A saved Take 5.
 
     Returns:
-        Its fields, without the ID, the times and the verdict.
+        Its fields, without the ID, the times, the verdict and the question.
     """
     return take5.model_dump(exclude=_SAVE_DETAILS)

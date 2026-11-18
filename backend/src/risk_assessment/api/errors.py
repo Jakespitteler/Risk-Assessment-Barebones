@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 
 from risk_assessment.api.schemas import FormErrors
 from risk_assessment.domain.take5.draft import FieldError
-from risk_assessment.services.take5s import InvalidDraftError
+from risk_assessment.services.take5s import InvalidAnswerError, InvalidDraftError
 
 _logger: logging.Logger = logging.getLogger(__name__)
 
@@ -25,6 +25,7 @@ def add_error_handlers(app: FastAPI) -> None:
         app: The app to add the handlers to.
     """
     app.add_exception_handler(InvalidDraftError, _invalid_draft)
+    app.add_exception_handler(InvalidAnswerError, _invalid_answer)
     app.add_exception_handler(RequestValidationError, _unreadable_request)
 
 
@@ -40,6 +41,22 @@ def _invalid_draft(_request: Request, error: Exception) -> JSONResponse:
     """
     errors: tuple[FieldError, ...] = (
         error.check.errors if isinstance(error, InvalidDraftError) else ()
+    )
+    return _form_errors(str(error), errors)
+
+
+def _invalid_answer(_request: Request, error: Exception) -> JSONResponse:
+    """Reply 422 with the error beside a challenge answer that is too short.
+
+    Args:
+        _request: The request that failed.
+        error: The `InvalidAnswerError` that the service raised.
+
+    Returns:
+        A `FormErrors` reply.
+    """
+    errors: tuple[FieldError, ...] = (
+        (error.error,) if isinstance(error, InvalidAnswerError) else ()
     )
     return _form_errors(str(error), errors)
 

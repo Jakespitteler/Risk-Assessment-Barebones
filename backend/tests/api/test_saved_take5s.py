@@ -1,47 +1,27 @@
 """Integration tests for the saved Take 5 list (spec F5)."""
 
 from typing import Any
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from fastapi.testclient import TestClient
 from httpx2 import Response
 
 from risk_assessment.api.app import create_app
-from risk_assessment.api.schemas import SubmissionRequest
-from risk_assessment.domain.take5.draft import Take5Draft
 from risk_assessment.domain.take5.verdict import Verdict
 from risk_assessment.storage.sqlite import SqliteTake5Repository
+from tests.api.take5_requests import finish, submit
 from tests.samples import sample_draft, sample_saved_take5, sample_uncontrolled_draft
-
-
-def _submit(client: TestClient, draft: Take5Draft) -> dict[str, Any]:
-    """Save a Take 5 through the API.
-
-    Args:
-        client: The test client.
-        draft: The worker's answers.
-
-    Returns:
-        The saved Take 5, as the API sent it.
-    """
-    request = SubmissionRequest(id=uuid4(), draft=draft)
-    response: Response = client.post(
-        "/api/take5s",
-        json=request.model_dump(mode="json"),
-    )
-    assert response.status_code == 200
-    return response.json()["take5"]
 
 
 def test_the_list_is_newest_first_with_the_date_worker_job_and_verdict(
     client: TestClient,
 ) -> None:
     """Each line has what the list screen shows, and nothing more of the card."""
-    stopped: dict[str, Any] = _submit(client, sample_uncontrolled_draft())
-    good_to_go: dict[str, Any] = _submit(
+    stopped: dict[str, Any] = finish(client, sample_uncontrolled_draft())["take5"]
+    good_to_go: dict[str, Any] = finish(
         client,
         sample_draft().model_copy(update={"job": "Another example tyre job"}),
-    )
+    )["take5"]
 
     response: Response = client.get("/api/take5s")
 
@@ -87,8 +67,8 @@ def test_the_list_sends_the_verdict_saved_not_one_worked_out_again(
 
 def test_a_dont_start_yet_with_a_fix_is_marked_fixed(client: TestClient) -> None:
     """The fixed one says so, so a sorted-out Don't start yet isn't taken as open."""
-    stopped: dict[str, Any] = _submit(client, sample_uncontrolled_draft())
-    _submit(client, sample_draft().model_copy(update={"fixes": UUID(stopped["id"])}))
+    stopped: dict[str, Any] = finish(client, sample_uncontrolled_draft())["take5"]
+    finish(client, sample_draft().model_copy(update={"fixes": UUID(stopped["id"])}))
 
     listed: list[dict[str, Any]] = client.get("/api/take5s").json()
 
@@ -102,8 +82,8 @@ def test_a_fix_that_also_says_dont_start_yet_still_marks_its_original_fixed(
     client: TestClient,
 ) -> None:
     """Fixed means a newer Take 5 fixes it, whatever that one's verdict (spec D16)."""
-    stopped: dict[str, Any] = _submit(client, sample_uncontrolled_draft())
-    _submit(
+    stopped: dict[str, Any] = finish(client, sample_uncontrolled_draft())["take5"]
+    finish(
         client,
         sample_uncontrolled_draft().model_copy(
             update={"fixes": UUID(stopped["id"])},
@@ -114,6 +94,28 @@ def test_a_fix_that_also_says_dont_start_yet_still_marks_its_original_fixed(
 
     assert [(line["can_start"], line["fixed"]) for line in listed] == [
         (False, False),
+        (False, True),
+    ]
+
+
+def test_an_unfinished_take5_lists_with_no_verdict(client: TestClient) -> None:
+    """Until its question is answered a Take 5 has no verdict (spec F5, C6)."""
+    submit(client, sample_draft())
+
+    listed: list[dict[str, Any]] = client.get("/api/take5s").json()
+
+    assert [line["can_start"] for line in listed] == [None]
+
+
+def test_an_unfinished_fix_still_marks_its_original_fixed(client: TestClient) -> None:
+    """A saved fix counts at once, so a second fix can't be started beside it."""
+    stopped: dict[str, Any] = finish(client, sample_uncontrolled_draft())["take5"]
+    submit(client, sample_draft().model_copy(update={"fixes": UUID(stopped["id"])}))
+
+    listed: list[dict[str, Any]] = client.get("/api/take5s").json()
+
+    assert [(line["can_start"], line["fixed"]) for line in listed] == [
+        (None, False),
         (False, True),
     ]
 
@@ -129,8 +131,9 @@ def test_the_list_is_empty_before_anything_is_saved(client: TestClient) -> None:
 def test_no_endpoint_changes_a_saved_take5() -> None:
     """Spec F5: a saved Take 5 can only be read. No route edits, replaces or deletes it.
 
-    Saving again with the same ID returns the first save (see the retry tests), so
-    the only route that writes is the one that adds a new Take 5.
+    Saving again with the same ID returns the first save (see the retry tests). The
+    only routes that write add a new Take 5, or answer an unfinished one's question
+    once (spec C6).
     """
     paths: dict[str, dict[str, Any]] = create_app().openapi()["paths"]
 
@@ -141,12 +144,13 @@ def test_no_endpoint_changes_a_saved_take5() -> None:
         "/api/take5s/check": {"post"},
         "/api/take5s": {"get", "post"},
         "/api/take5s/{take5_id}": {"get"},
+        "/api/take5s/{take5_id}/answer": {"post"},
     }
 
 
 def test_editing_or_deleting_a_saved_take5_is_refused(client: TestClient) -> None:
     """Each way HTTP has to change a resource gets 405, and the Take 5 is unchanged."""
-    saved: dict[str, Any] = _submit(client, sample_draft())
+    saved: dict[str, Any] = finish(client, sample_draft())["take5"]
     path: str = f"/api/take5s/{saved['id']}"
 
     refusals: list[int] = [

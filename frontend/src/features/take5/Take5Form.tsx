@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type {
   FieldError,
   FieldWarning,
+  SavedTake5,
   TemplateResponse,
 } from "../../api/take5";
 import {
@@ -29,6 +30,7 @@ import { SaveProblem } from "./SaveProblem";
 import { SavedListLink } from "./SavedListLink";
 import type { Stage } from "./stage";
 import * as stages from "./stage";
+import { forgetUnanswered, rememberUnanswered } from "./unanswered";
 import { usePageFocus } from "./usePageFocus";
 import type { StoredDraft } from "./useTake5Draft";
 import { blankHazard, useTake5Draft } from "./useTake5Draft";
@@ -113,12 +115,24 @@ export function Take5Form(props: Take5FormProps) {
     setRunOut({ message, lookedForSave: false });
     const saved = await findSaved(take5.submissionId);
     if (saved) {
-      take5.saved(saved.take5.worker_name);
-      onSaved(saved.take5.id);
+      openSaved(saved.take5);
       return;
     }
+    // Nothing was saved, so there is no question to go back to.
+    forgetUnanswered(take5.submissionId);
     take5.discard();
     setRunOut({ message, lookedForSave: true });
+  }
+
+  /**
+   * Leave the form for the saved Take 5: its question, or its result once answered. The
+   * phone remembers an unanswered one, as only this phone may answer it (spec C6).
+   */
+  function openSaved(saved: SavedTake5) {
+    take5.saved(saved.worker_name);
+    if (saved.verdict) forgetUnanswered(saved.id);
+    else rememberUnanswered(saved.id);
+    onSaved(saved.id);
   }
 
   /** Open the first page that has a gap, with that page's errors marked. */
@@ -231,23 +245,26 @@ export function Take5Form(props: Take5FormProps) {
     } else onStageChange(stages.nextStage(stage, draft));
   }
 
-  function finish() {
+  function submitTake5() {
     setProblem(null);
+    // Remembered before it is sent: if the reply is lost, the Take 5 may be saved all
+    // the same, and only this phone may answer its question.
+    rememberUnanswered(take5.submissionId);
     submit.mutate(
       { id: take5.submissionId, draft },
       {
         onSuccess: (saved) => {
-          take5.saved(saved.take5.worker_name);
-          onSaved(saved.take5.id);
+          openSaved(saved.take5);
         },
         onError: (error) => {
           const status = error instanceof ApiError ? error.status : 0;
           const ranOut =
             error instanceof ApiError ? runOutMessage(error.fieldErrors) : null;
           if (ranOut) void endRunOut(ranOut);
-          else if (status === 422 && error instanceof ApiError)
+          else if (status === 422 && error instanceof ApiError) {
+            forgetUnanswered(take5.submissionId);
             showGaps(error.fieldErrors);
-          else if (status === 409) {
+          } else if (status === 409) {
             take5.discard();
             setProblem("conflict");
           } else setProblem("unsent");
@@ -375,15 +392,15 @@ export function Take5Form(props: Take5FormProps) {
         <FormNav
           stage={stage}
           busy={busy}
-          // Finish waits until the review has shown the back end's answer.
-          canFinish={review.data?.can_submit === true}
+          // Submit waits until the review has shown the back end's answer.
+          canSubmit={review.data?.can_submit === true}
           label={
             submit.isPending ? "Saving…" : checking ? "Checking…" : undefined
           }
           onBack={() => {
             props.onBack(stages.previousStage(stage, draft));
           }}
-          onFinish={finish}
+          onSubmit={submitTake5}
         />
       </form>
     </Screen>

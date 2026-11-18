@@ -23,6 +23,7 @@ from risk_assessment.domain.take5.time_limit import STARTED_AT_PATH, run_out_mes
 from risk_assessment.services.take5s import InvalidDraftError, Take5Service
 from risk_assessment.storage.sqlite import SqliteTake5Repository
 from tests.samples import (
+    SAMPLE_ANSWER,
     sample_draft,
     sample_hazard_draft,
     sample_uncontrolled_draft,
@@ -39,6 +40,19 @@ class MemoryRepository:
     def add(self, take5: SavedTake5) -> SavedTake5:
         """Keep the first document for each ID."""
         return self.documents.setdefault(take5.id, take5)
+
+    def save_question(self, take5: SavedTake5) -> SavedTake5:
+        """Replace an unfinished document with no question yet."""
+        stored: SavedTake5 = self.documents[take5.id]
+        if stored.challenge is None and not stored.is_finished:
+            self.documents[take5.id] = take5
+        return self.documents[take5.id]
+
+    def finish(self, take5: SavedTake5) -> SavedTake5:
+        """Replace an unfinished document."""
+        if not self.documents[take5.id].is_finished:
+            self.documents[take5.id] = take5
+        return self.documents[take5.id]
 
     def get(self, take5_id: UUID) -> SavedTake5 | None:
         """Read the document or return nothing."""
@@ -68,6 +82,25 @@ class MemoryRepository:
         return newest.id if newest is not None else None
 
 
+def _finish(
+    service: Take5Service,
+    draft: Take5Draft,
+    submission_id: UUID | None = None,
+) -> SavedTake5:
+    """Submit a draft and answer its question, so it has its verdict.
+
+    Args:
+        service: The service to submit to.
+        draft: The worker's answers.
+        submission_id: The submission ID, or None for a new one.
+
+    Returns:
+        The finished Take 5.
+    """
+    saved: SavedTake5 = service.submit(draft, submission_id or uuid4())
+    return service.answer(saved.id, SAMPLE_ANSWER)
+
+
 def test_the_saved_template_and_verdict_survive_a_new_template() -> None:
     """Reading or retrying must retain the original template and verdict."""
     draft_rated_8_after: Take5Draft = sample_draft(
@@ -80,8 +113,8 @@ def test_the_saved_template_and_verdict_survive_a_new_template() -> None:
     )
     original = Take5Service(repository, original_template)
     submission_id: UUID = uuid4()
-    saved: SavedTake5 = original.submit(draft_rated_8_after, submission_id)
-    assert not saved.verdict.can_start
+    saved: SavedTake5 = _finish(original, draft_rated_8_after, submission_id)
+    assert saved.verdict is not None and not saved.verdict.can_start
     later_template = Take5Template(
         name="Example later card",
         matrix=BOOKLET_MATRIX.model_copy(update={"jha_threshold": 25}),
@@ -132,15 +165,15 @@ def _fixes_errors(service: Take5Service, draft: Take5Draft) -> tuple[FieldError,
 def test_a_fix_points_back_and_the_first_take5_is_unchanged() -> None:
     """The fix records `fixes`; the first is found to be fixed but never rewritten."""
     service: Take5Service = _service()
-    first: SavedTake5 = service.submit(sample_uncontrolled_draft(), uuid4())
+    first: SavedTake5 = _finish(service, sample_uncontrolled_draft())
 
-    fix: SavedTake5 = service.submit(
+    fix: SavedTake5 = _finish(
+        service,
         sample_draft().model_copy(update={"fixes": first.id}),
-        uuid4(),
     )
 
     assert fix.fixes == first.id
-    assert fix.verdict.can_start
+    assert fix.verdict is not None and fix.verdict.can_start
     assert service.get(first.id) == first
     assert service.fixed_by(first.id) == fix.id
     assert service.fixed_by(fix.id) is None
@@ -149,7 +182,7 @@ def test_a_fix_points_back_and_the_first_take5_is_unchanged() -> None:
 def test_the_newest_fix_is_the_one_found() -> None:
     """If a Take 5 is fixed twice, its result links to the later fix."""
     service: Take5Service = _service()
-    first: SavedTake5 = service.submit(sample_uncontrolled_draft(), uuid4())
+    first: SavedTake5 = _finish(service, sample_uncontrolled_draft())
     fixed: Take5Draft = sample_draft().model_copy(update={"fixes": first.id})
 
     service.submit(fixed, uuid4())
@@ -170,7 +203,7 @@ def test_a_fix_of_a_take5_that_is_not_saved_is_refused() -> None:
 def test_a_fix_of_a_good_to_go_is_refused() -> None:
     """Only a Don't start yet has something to fix."""
     service: Take5Service = _service()
-    good_to_go: SavedTake5 = service.submit(sample_draft(), uuid4())
+    good_to_go: SavedTake5 = _finish(service, sample_draft())
     draft: Take5Draft = sample_draft().model_copy(update={"fixes": good_to_go.id})
 
     assert _fixes_errors(service, draft) == (
@@ -182,7 +215,7 @@ def test_a_take5_cannot_fix_itself() -> None:
     """A retry of a Take 5 that names its own ID is refused, not linked to itself."""
     service: Take5Service = _service()
     submission_id: UUID = uuid4()
-    first: SavedTake5 = service.submit(sample_uncontrolled_draft(), submission_id)
+    first: SavedTake5 = _finish(service, sample_uncontrolled_draft(), submission_id)
     draft: Take5Draft = sample_uncontrolled_draft().model_copy(
         update={"fixes": submission_id},
     )
@@ -200,13 +233,17 @@ def test_a_take5_cannot_fix_itself() -> None:
 def test_the_list_is_newest_first_with_each_verdict_as_it_was_saved() -> None:
     """Listing applies no rules: each Take 5 keeps the verdict it was saved with."""
     service: Take5Service = _service()
-    stopped: SavedTake5 = service.submit(sample_uncontrolled_draft(), uuid4())
-    good_to_go: SavedTake5 = service.submit(sample_draft(), uuid4())
+    stopped: SavedTake5 = _finish(service, sample_uncontrolled_draft())
+    good_to_go: SavedTake5 = _finish(service, sample_draft())
 
     listed: tuple[SavedTake5, ...] = service.list_newest_first()
 
     assert listed == (good_to_go, stopped)
-    assert [take5.verdict.can_start for take5 in listed] == [True, False]
+    assert [take5.verdict for take5 in listed] == [
+        good_to_go.verdict,
+        stopped.verdict,
+    ]
+    assert good_to_go.verdict is not None and good_to_go.verdict.can_start
 
 
 def test_the_list_is_empty_before_anything_is_saved() -> None:

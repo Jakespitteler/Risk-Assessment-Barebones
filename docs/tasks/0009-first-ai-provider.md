@@ -43,3 +43,7 @@ Jake, 2026-11-18 (task 0022): once an AI is set up, it should also judge whether
 hazard check is vague, whenever it can be reached, with task 0022's word rule as the fallback. That widens the
 AI's use beyond the challenge question (spec D3 and "Out of scope"), so change the spec in the same PR, or give
 it its own task after this one.
+
+From task 0008: the service stops waiting for the AI after 10 seconds, but can't stop the call itself, so its
+thread runs on, and stopping the server waits for it. Give the provider's own client a network time limit just
+over 10 seconds.

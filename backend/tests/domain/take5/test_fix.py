@@ -6,6 +6,7 @@ import pytest
 
 from risk_assessment.domain.take5.draft import FieldError
 from risk_assessment.domain.take5.fix import (
+    NOT_FINISHED_MESSAGE,
     NOT_SAVED_MESSAGE,
     NOTHING_TO_FIX_MESSAGE,
     fixed_ids,
@@ -37,6 +38,19 @@ def test_a_good_to_go_cannot_be_fixed() -> None:
         path="fixes",
         message=NOTHING_TO_FIX_MESSAGE,
     )
+
+
+def test_an_unfinished_take5_cannot_be_fixed_until_it_has_a_verdict() -> None:
+    """A Take 5 whose question is unanswered has no verdict yet, so nothing to fix."""
+    unfinished: SavedTake5 = sample_saved_take5().model_copy(
+        update={"verdict": None, "finished_at": None},
+    )
+
+    assert fixes_error(unfinished) == FieldError(
+        path="fixes",
+        message=NOT_FINISHED_MESSAGE,
+    )
+    assert offers_a_fix(unfinished, None) is False
 
 
 _STOPPED = Verdict(can_start=False, reasons=("Say how you will control: Wheel",))

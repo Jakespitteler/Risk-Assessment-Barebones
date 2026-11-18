@@ -34,6 +34,8 @@ BARRICADE_DRAFT = ControlDraft(
     kind=ControlKind.BARRICADE,
 )
 GOOD_TO_GO = Verdict(can_start=True, reasons=())
+# Spec example 52: exactly four words, so it finishes a Take 5 (C4).
+SAMPLE_ANSWER: str = "Wheels chocked both sides"
 
 
 def sample_answers(**changed: Answer) -> dict[str, Answer]:

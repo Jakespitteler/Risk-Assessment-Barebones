@@ -16,7 +16,9 @@ from risk_assessment.domain.take5.draft import (
     Take5Draft,
 )
 from risk_assessment.domain.take5.saved import SavedTake5
+from risk_assessment.domain.take5.verdict import Verdict
 from risk_assessment.storage.sqlite import SqliteTake5Repository
+from tests.api.take5_requests import answer
 from tests.samples import (
     BARRICADE_DRAFT,
     sample_answers,
@@ -105,15 +107,15 @@ def test_example_36_the_answer_is_saved_without_changing_the_verdict(
         {"path": ANSWER_PATH, "message": QUESTION},
     ]
     assert response.status_code == 200
+    finished: Response = answer(client, str(request.id))
     saved: SavedTake5 | None = repository.get(request.id)
     assert saved is not None
     assert saved.hazards[0].weak_controls_reason == REASON
-    assert saved.verdict.can_start
-    assert saved.verdict.reasons == ()
-    assert client.get(f"/api/take5s/{request.id}").json() == response.json()
+    assert saved.verdict == Verdict(can_start=True, reasons=())
+    assert client.get(f"/api/take5s/{request.id}").json() == finished.json()
     assert (
         client.post("/api/take5s", json=request.model_dump(mode="json")).json()
-        == response.json()
+        == finished.json()
     )
 
 

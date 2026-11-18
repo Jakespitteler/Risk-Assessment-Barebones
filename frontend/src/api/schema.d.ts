@@ -59,12 +59,35 @@ export interface paths {
         put?: never;
         /**
          * Submit
-         * @description Check and save a Take 5 once, and return it with its verdict.
+         * @description Check and save a Take 5 once, and return it, unfinished, with its question.
          *
          *     A draft with gaps raises `InvalidDraftError`, which `api/errors.py` turns into
          *     a 422.
          */
         post: operations["submit_api_take5s_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/take5s/{take5_id}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Answer
+         * @description Save the answer to a Take 5's question, and return it finished.
+         *
+         *     An answer that is too short raises `InvalidAnswerError`, which
+         *     `api/errors.py` turns into a 422.
+         */
+        post: operations["answer_api_take5s__take5_id__answer_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -80,7 +103,7 @@ export interface paths {
         };
         /**
          * Get
-         * @description Return a saved Take 5 with the verdict the worker was given.
+         * @description Return a saved Take 5 with its verdict, or its question if unfinished.
          */
         get: operations["get_api_take5s__take5_id__get"];
         put?: never;
@@ -101,6 +124,46 @@ export interface components {
          * @enum {string}
          */
         Answer: "Yes" | "No" | "N/A";
+        /**
+         * AnswerRequest
+         * @description The worker's answer to a Take 5's challenge question.
+         *
+         *     Attributes:
+         *         answer: What the worker wrote.
+         */
+        AnswerRequest: {
+            /** Answer */
+            answer: string;
+        };
+        /**
+         * AskedBy
+         * @description Who wrote the question the worker was asked.
+         * @enum {string}
+         */
+        AskedBy: "ai" | "fallback";
+        /**
+         * Challenge
+         * @description The question a Take 5 was asked, who asked it, and the worker's answer.
+         *
+         *     Attributes:
+         *         question: The question the worker was shown.
+         *         asked_by: Whether the AI or the fallback asked it.
+         *         model: For an AI question, which model asked it. None for the fallback.
+         *         instructions_version: For an AI question, which version of its instructions
+         *             it had. None for the fallback.
+         *         answer: The worker's answer, or None until they give one.
+         */
+        Challenge: {
+            /** Question */
+            question: string;
+            asked_by: components["schemas"]["AskedBy"];
+            /** Model */
+            model?: string | null;
+            /** Instructions Version */
+            instructions_version?: string | null;
+            /** Answer */
+            answer?: string | null;
+        };
         /**
          * Control
          * @description What the worker will do about a hazard, and what kind of control it is.
@@ -416,8 +479,10 @@ export interface components {
          * SavedTake5
          * @description A Take 5 as it was saved: what the worker gave, and the verdict they were shown.
          *
-         *     It is never changed once saved, so it always shows the template and verdict the
-         *     worker was given, even after the rules change.
+         *     It is saved unfinished, before the challenge question is asked (spec C6). The
+         *     question is added once, then the answer and the verdict once, and from then on it
+         *     is never changed, so it always shows the template and verdict the worker was
+         *     given, even after the rules change.
          *
          *     Attributes:
          *         id: The ID the phone made when the worker started submitting.
@@ -425,12 +490,15 @@ export interface components {
          *         worker_name: Who did the Take 5.
          *         job: What the job is.
          *         location: Where the job is.
-         *         finished_at: When it was finished. Until task 0008 this is when it was saved.
-         *         verdict: The verdict the worker was shown.
+         *         finished_at: When the challenge question was answered, or None while it is
+         *             unfinished. A Take 5 saved before task 0008 was finished when it was saved.
+         *         verdict: The verdict the worker was shown, or None while it is unfinished.
          *         fixes: The ID of the saved Take 5 this one fixes, or None. It points back
          *             only, so the first Take 5 is never changed when it is fixed.
          *         started_at: When the worker started it, by the phone's clock, or None for a
          *             Take 5 saved before task 0019.
+         *         challenge: The question it was asked and the worker's answer, or None until
+         *             it is asked. A Take 5 finished before task 0008 has none.
          */
         SavedTake5: {
             template: components["schemas"]["Take5Template"];
@@ -459,16 +527,14 @@ export interface components {
             job: string;
             /** Location */
             location: string;
-            /**
-             * Finished At
-             * Format: date-time
-             */
-            finished_at: string;
-            verdict: components["schemas"]["Verdict"];
+            /** Finished At */
+            finished_at?: string | null;
+            verdict?: components["schemas"]["Verdict"] | null;
             /** Fixes */
             fixes?: string | null;
             /** Started At */
             started_at?: string | null;
+            challenge?: components["schemas"]["Challenge"] | null;
         };
         /**
          * SubmissionRequest
@@ -565,7 +631,8 @@ export interface components {
          * @description A saved Take 5, with the overall rating the back end worked out for it.
          *
          *     Attributes:
-         *         take5: The saved Take 5, with its verdict and a copy of its template.
+         *         take5: The saved Take 5, with its question and a copy of its template. Its
+         *             verdict is empty until the question is answered.
          *         rating: The Take 5's rating (spec R4 and R5).
          *         fixed_by: The ID of the newest Take 5 that fixes this one, or None. It is
          *             found when the Take 5 is opened, because the saved one never changes.
@@ -590,7 +657,7 @@ export interface components {
          *         worker_name: Who did it.
          *         job: What the job is.
          *         can_start: The verdict it was saved with: True for Good to go, False for
-         *             Don't start yet.
+         *             Don't start yet, or None while its question is unanswered.
          *         fixed: True when a newer Take 5 fixes this one.
          */
         Take5Summary: {
@@ -609,7 +676,7 @@ export interface components {
             /** Job */
             job: string;
             /** Can Start */
-            can_start: boolean;
+            can_start: boolean | null;
             /** Fixed */
             fixed: boolean;
         };
@@ -828,6 +895,59 @@ export interface operations {
                 };
             };
             /** @description This ID was used for other answers */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorMessage"];
+                };
+            };
+            /** @description Something is missing or wrong */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormErrors"];
+                };
+            };
+        };
+    };
+    answer_api_take5s__take5_id__answer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                take5_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Take5Response"];
+                };
+            };
+            /** @description No Take 5 has this ID */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorMessage"];
+                };
+            };
+            /** @description It was already answered */
             409: {
                 headers: {
                     [name: string]: unknown;

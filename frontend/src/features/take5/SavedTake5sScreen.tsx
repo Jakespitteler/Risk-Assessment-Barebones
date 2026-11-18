@@ -14,8 +14,17 @@ const HEADING = "text-3xl font-extrabold focus:outline-none";
 const NEW_TAKE5_LINK =
   "flex min-h-14 items-center justify-center rounded-xl bg-slate-900 px-5 text-lg font-bold text-white focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-blue-700";
 
-/** The verdict as a tag, in the same strong colours as the result screen. */
-function VerdictTag({ canStart }: { canStart: boolean }) {
+/**
+ * The verdict as a tag, in the same strong colours as the result screen, or "Not
+ * finished" while its question is unanswered (spec F5).
+ */
+function VerdictTag({ canStart }: { canStart: boolean | null }) {
+  if (canStart === null)
+    return (
+      <span className="rounded-lg bg-amber-400 px-2 py-1 text-sm font-bold text-slate-900 uppercase">
+        Not finished
+      </span>
+    );
   return (
     <span
       className={`rounded-lg px-2 py-1 text-sm font-bold text-white uppercase ${
