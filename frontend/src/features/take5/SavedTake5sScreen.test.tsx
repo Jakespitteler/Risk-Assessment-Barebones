@@ -233,3 +233,61 @@ it("ends the Undo once another Take 5 has been started, so it can't be replaced"
   expect(await screen.findByText("Grease the conveyor")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
 });
+
+it("points to the saved Take 5 when a draft that ran out had been saved already", async () => {
+  keepSampleDraft();
+  stubApi({
+    "GET /api/take5s": { status: 200, body: LIST },
+    "POST /api/take5s/check": {
+      status: 200,
+      body: {
+        ...PASSING_CHECK,
+        errors: [{ path: "started_at", message: RUN_OUT_MESSAGE }],
+        assessment: null,
+        can_submit: false,
+      },
+    },
+    [`GET /api/take5s/${SAVED.take5.id}`]: { status: 200, body: SAVED },
+  });
+  renderWithApi(<SavedTake5sScreen />);
+  expect(
+    await screen.findByRole("heading", {
+      name: "Your unfinished Take 5 was saved",
+    }),
+  ).toBeTruthy();
+  const notice = screen.getByRole("status");
+  expect(
+    within(notice).getByRole("link", { name: "Open it" }).getAttribute("href"),
+  ).toBe(`/take5s/${SAVED.take5.id}`);
+  expect(screen.queryByText(RUN_OUT_MESSAGE)).toBeNull();
+  expect(localStorage.getItem("take5-draft")).toBeNull();
+});
+
+it("says when the unfinished Take 5 couldn't be checked", async () => {
+  keepSampleDraft();
+  stubApi({
+    "GET /api/take5s": { status: 200, body: LIST },
+    "POST /api/take5s/check": "offline",
+  });
+  renderWithApi(<SavedTake5sScreen />);
+  expect((await screen.findByRole("status")).textContent).toBe(
+    "No signal: it couldn’t be checked to see if it’s still in time. If it has run out, it can’t be saved.",
+  );
+  expect(screen.getByRole("link", { name: "Carry on" })).toBeTruthy();
+});
+
+it("shows how long the unfinished Take 5 has left", async () => {
+  keepSampleDraft();
+  stubApi({
+    "GET /api/take5s": { status: 200, body: LIST },
+    "POST /api/take5s/check": {
+      status: 200,
+      body: {
+        ...PASSING_CHECK,
+        runs_out_at: new Date(Date.now() + 95.5 * 60_000).toISOString(),
+      },
+    },
+  });
+  renderWithApi(<SavedTake5sScreen />);
+  expect(await screen.findByText("1 hr 35 min left")).toBeTruthy();
+});

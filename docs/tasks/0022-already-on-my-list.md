@@ -27,8 +27,8 @@ has access. All else do the recommended." So the vague check is the word rule fo
 recommendations: question 9's hazard ID wasn't needed. The link is kept on the hazard itself (`covers`, the
 questions it is linked to), so removing a hazard removes its links and nothing else can shift.
 
-- Part 1 (links and T5): questions 3, 4, 5, 6, 8, 9, 11 and 12. Spec T5, examples 65 to 69, decisions D26 to
-  D29.
+- Part 1 (links and T5): questions 3, 4, 5, 6, 8, 9, 11 and 12. Spec T5, examples 65 to 69, decisions D30 to
+  D33.
 - Part 2 (the vague nudge): questions 1, 2, 7 and 10.
 
 ## Decide first

@@ -133,6 +133,30 @@ export function useOpeningCheck(draft: Take5Draft, enabled: boolean) {
 }
 
 /**
+ * Look up a saved Take 5 by ID, with one short try: the Take 5, or null when none is
+ * saved with that ID or the back end can't be reached. A draft that has run out may
+ * have been saved already, with the answer lost on its way back to the phone.
+ */
+export function useFindSaved() {
+  const queryClient = useQueryClient();
+  return (id: string) =>
+    queryClient
+      .query({
+        queryKey: ["take5", id],
+        queryFn: () =>
+          request<Take5Response>(
+            `/api/take5s/${encodeURIComponent(id)}`,
+            undefined,
+            CONTINUE_TIMEOUT_MS,
+          ),
+        staleTime: Infinity,
+        retry: false,
+        networkMode: NETWORK_MODE,
+      })
+      .catch(() => null);
+}
+
+/**
  * Check a draft now, for a Continue button: one short try, with no retry. The answer is
  * kept for `useDraftCheck`.
  */

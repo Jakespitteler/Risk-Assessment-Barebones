@@ -29,6 +29,10 @@ export function Take5ResultScreen({
 }) {
   const result = useSavedTake5(id);
   const [unfinished] = useState(() => keptDraft()?.draft ?? null);
+  // The phone keeps one draft, which the form opens, so say so rather than "new".
+  const newTake5Label = unfinished
+    ? "Carry on your Take 5"
+    : "Start a new Take 5";
   const page = useRef<HTMLDivElement>(null);
   useEffect(() => {
     page.current?.querySelector("h1")?.focus();
@@ -59,7 +63,7 @@ export function Take5ResultScreen({
           <Button onClick={() => void result.refetch()}>Try again</Button>
         )}
         <a className={NEW_TAKE5_LINK} href="/">
-          Start a new Take 5
+          {newTake5Label}
         </a>
       </Screen>
     );
@@ -115,7 +119,7 @@ export function Take5ResultScreen({
           Filled in on the {take5.template.name}. It is kept as it was saved.
         </p>
         <a className={NEW_TAKE5_LINK} href="/">
-          Start a new Take 5
+          {newTake5Label}
         </a>
       </div>
     </Screen>

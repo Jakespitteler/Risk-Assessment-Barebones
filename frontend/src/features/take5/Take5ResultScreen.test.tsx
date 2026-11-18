@@ -197,3 +197,16 @@ it("asks before a fix takes the place of the phone's unfinished Take 5", () => {
   expect(onFix).toHaveBeenCalledWith(STOPPED.take5);
   localStorage.clear();
 });
+
+it("says Carry on your Take 5 when the phone keeps an unfinished one", () => {
+  localStorage.clear();
+  keepSampleDraft();
+  showResult(SAVED);
+  expect(
+    screen
+      .getByRole("link", { name: "Carry on your Take 5" })
+      .getAttribute("href"),
+  ).toBe("/");
+  expect(screen.queryByRole("link", { name: "Start a new Take 5" })).toBeNull();
+  localStorage.clear();
+});

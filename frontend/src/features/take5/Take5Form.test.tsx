@@ -797,3 +797,59 @@ it("stops at the run-out screen when Finish is refused for running out", async (
   ).toBeTruthy();
   expect(onSaved).not.toHaveBeenCalled();
 });
+
+it("opens the saved result, not the run-out screen, when the draft was saved already", async () => {
+  storeDraft();
+  stubApi({
+    "POST /api/take5s/check": { status: 200, body: RUN_OUT_CHECK },
+    [`GET /api/take5s/${SAVED.take5.id}`]: { status: 200, body: SAVED },
+  });
+  renderWithApi(<FormAt start={{ page: "review" }} />);
+  await waitFor(() => {
+    expect(onSaved).toHaveBeenCalledWith(SAVED.take5.id);
+  });
+  expect(
+    screen.queryByRole("heading", { name: "This Take 5 has run out" }),
+  ).toBeNull();
+  expect(localStorage.getItem("take5-draft")).toBeNull();
+  expect(localStorage.getItem("take5-worker-name")).toBe("Sam Example");
+});
+
+it("says when a kept draft couldn't be checked, until a check gets through", async () => {
+  storeDraft();
+  stubApi({
+    "POST /api/take5s/check": ["offline", { status: 200, body: PASSING_CHECK }],
+  });
+  renderWithApi(<FormAt start={{ page: "think" }} />);
+  const notice = await screen.findByText(
+    "No signal: this Take 5 couldn’t be checked to see if it’s still in time.",
+  );
+  expect(notice.closest("[role=status]")).toBeTruthy();
+  expect(screen.getByText(/^You started it/)).toBeTruthy();
+
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+
+  await waitFor(() => {
+    expect(
+      screen.queryByText(
+        "No signal: this Take 5 couldn’t be checked to see if it’s still in time.",
+      ),
+    ).toBeNull();
+  });
+  expect(
+    screen.getByRole("heading", { name: "Think it through" }),
+  ).toBeTruthy();
+});
+
+it("shows how long a kept draft has left, as the back end says", async () => {
+  storeDraft();
+  const runsOutAt = new Date(Date.now() + 42.5 * 60_000).toISOString();
+  stubApi({
+    "POST /api/take5s/check": {
+      status: 200,
+      body: { ...PASSING_CHECK, runs_out_at: runsOutAt },
+    },
+  });
+  renderWithApi(<FormAt start={{ page: "think" }} />);
+  expect(await screen.findByText("42 min left")).toBeTruthy();
+});
