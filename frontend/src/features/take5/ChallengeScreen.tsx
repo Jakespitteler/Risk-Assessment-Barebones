@@ -22,11 +22,12 @@ const ANSWER = "answer";
 export function ChallengeScreen({
   take5,
   canAnswer,
-  onAlreadyFinished,
+  onOutOfDate,
 }: {
   take5: SavedTake5;
   canAnswer: boolean;
-  onAlreadyFinished: () => void;
+  /** Open the Take 5 again: it was answered elsewhere, or can't be found. */
+  onOutOfDate: () => void;
 }) {
   const [answer, setAnswer] = useState("");
   const [answerError, setAnswerError] = useState<string>();
@@ -52,7 +53,7 @@ export function ChallengeScreen({
             error.fieldErrors.find(({ path }) => path === ANSWER)?.message ??
               error.message,
           );
-        else if (status === 409) onAlreadyFinished();
+        else if (status === 409 || status === 404) onOutOfDate();
         else setUnsent(true);
       },
     });

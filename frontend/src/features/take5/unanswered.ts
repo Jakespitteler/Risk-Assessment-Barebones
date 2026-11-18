@@ -5,8 +5,18 @@ const UNANSWERED_KEY = "take5-unanswered";
 // unanswered question, not every link to the start page (decision D46).
 const OPENED_KEY = "take5-opened";
 
-// Storage can be switched off on a phone, so every read and write may fail.
+// Storage can be switched off on a phone, so every read and write may fail. Then the
+// list is kept here instead, so the worker who just pressed Submit can still answer.
+let idsWithoutStorage: string[] = [];
+
 function readIds(): string[] {
+  return [
+    ...storedIds().filter((id) => !idsWithoutStorage.includes(id)),
+    ...idsWithoutStorage,
+  ];
+}
+
+function storedIds(): string[] {
   try {
     const stored: unknown = JSON.parse(
       localStorage.getItem(UNANSWERED_KEY) ?? "[]",
@@ -20,11 +30,13 @@ function readIds(): string[] {
 }
 
 function writeIds(ids: string[]) {
+  idsWithoutStorage = idsWithoutStorage.filter((id) => ids.includes(id));
   try {
     if (ids.length === 0) localStorage.removeItem(UNANSWERED_KEY);
     else localStorage.setItem(UNANSWERED_KEY, JSON.stringify(ids));
   } catch {
-    /* The question can still be answered now; it just won't be found after a reload. */
+    // The question can still be answered now; it just won't be found after a reload.
+    idsWithoutStorage = ids;
   }
 }
 

@@ -1,4 +1,4 @@
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import {
   answersHere,
   forgetUnanswered,
@@ -7,6 +7,7 @@ import {
 } from "./unanswered";
 
 afterEach(() => {
+  vi.restoreAllMocks();
   localStorage.clear();
   sessionStorage.clear();
 });
@@ -32,4 +33,14 @@ it("has nothing to go back to when every question is answered", () => {
   rememberUnanswered("first");
   forgetUnanswered("first");
   expect(unansweredToOpen()).toBeNull();
+});
+
+it("still lets this phone answer when its storage is switched off", () => {
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+    throw new Error("Storage is switched off.");
+  });
+  rememberUnanswered("first");
+  expect(answersHere("first")).toBe(true);
+  forgetUnanswered("first");
+  expect(answersHere("first")).toBe(false);
 });

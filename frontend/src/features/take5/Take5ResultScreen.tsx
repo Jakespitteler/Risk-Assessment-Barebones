@@ -38,12 +38,14 @@ export function Take5ResultScreen({
     ? "Carry on your Take 5"
     : "Start a new Take 5";
   const page = useRef<HTMLDivElement>(null);
+  // Answering the question only swaps the data, so a finished Take 5 moves the focus too.
+  const finished = Boolean(result.data?.take5.verdict);
   useEffect(() => {
     page.current?.querySelector("h1")?.focus();
-  }, [result.status]);
+  }, [result.status, finished]);
   // A Take 5 that is finished, or was never saved, has no question left to go back to.
   const finishedOrMissing =
-    (result.data?.take5.verdict ?? null) !== null ||
+    finished ||
     (result.error instanceof ApiError && result.error.status === 404);
   useEffect(() => {
     if (finishedOrMissing) forgetUnanswered(id);
@@ -86,7 +88,7 @@ export function Take5ResultScreen({
         key={take5.id}
         take5={take5}
         canAnswer={answersHere(take5.id)}
-        onAlreadyFinished={() => void result.refetch()}
+        onOutOfDate={() => void result.refetch()}
       />
     );
   const details = [

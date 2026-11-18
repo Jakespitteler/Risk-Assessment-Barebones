@@ -1,7 +1,7 @@
 ---
 id: 0008
 title: The challenge question (spec F6)
-status: review
+status: done
 owner: claude
 branch: claude/0008-challenge-question
 ---
@@ -79,6 +79,16 @@ document.
   is the first visit to the start page in a browser tab (`sessionStorage`), so a "Start a new Take 5" link while
   the app is open still starts one.
 - The saved list's "Not finished" tag is amber, the app's attention colour, so it isn't mistaken for a verdict.
+
+### Found in review, left as they are
+
+- D47 is kept by the phone, not the API: with no sign-in (D4) the back end can't tell phones apart, so any request
+  with the ID can answer.
+- Opening an unfinished Take 5 during the AI's 10-second wait gives it the fallback question (C6), and the AI's
+  question then loses to it. Harmless today, with no AI.
+- The service stops waiting for the AI after 10 seconds, but the call's thread runs on until the AI answers, and
+  stopping the server waits for it. Task 0009's adapter needs its own network time limit (noted there).
+- Submit can take about a minute at worst: the phone waits 20 seconds and retries twice when there is no answer.
 
 ### Not done here
 

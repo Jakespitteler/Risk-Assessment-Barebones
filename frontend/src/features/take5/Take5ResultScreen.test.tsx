@@ -67,6 +67,10 @@ it("shows the result, with the question and answer, once it is answered", async 
     screen.getByRole("heading", { name: "The question before you started" }),
   ).toBeTruthy();
   expect(screen.getByText("Wheels chocked both sides")).toBeTruthy();
+  // The result's heading takes the focus, so a screen reader starts there.
+  expect(document.activeElement).toBe(
+    screen.getByRole("heading", { name: "Good to go" }),
+  );
   expect(calls).toContain(ANSWER_URL);
   expect(answersHere(UNANSWERED.take5.id)).toBe(false);
 });

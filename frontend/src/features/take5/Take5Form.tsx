@@ -118,6 +118,8 @@ export function Take5Form(props: Take5FormProps) {
       openSaved(saved.take5);
       return;
     }
+    // Nothing was saved, so there is no question to go back to.
+    forgetUnanswered(take5.submissionId);
     take5.discard();
     setRunOut({ message, lookedForSave: true });
   }
