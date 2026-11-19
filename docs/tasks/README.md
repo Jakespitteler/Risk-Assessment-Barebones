@@ -7,10 +7,10 @@ Recommended by Claude on 2026-11-13, agreed by Jake the same day. Tasks 0015 to 
 2026-11-14, 0021 on 2026-11-15, 0022 on 2026-11-16, 0023 on 2026-11-17, 0024 to 0027 on 2026-11-18, and 0028 and
 0029 on 2026-11-19; Jake can move them. Last brought up to date on 2026-11-19, in task 0029's pull request.
 
-Complete: 0001 to 0020, 0022, 0023, 0025 and 0026. Task 0027 is merged, but stays `review` until Jake's
-measurement of the AI's verdicts is in its pull request, as its last criterion asks. Task 0029 stays `review`
-until Jake tries Ctrl+C on Windows. Task 0018 decided to keep the
-built-in `sqlite3` for now (`docs/decisions.md`, 2026-11-14), so no task to switch storage is in the order below.
+Complete: 0001 to 0012, 0014 to 0020, 0022, 0023, 0025 and 0026. Task 0013 is in review. Task 0027 is merged, but
+stays `review` until Jake's measurement of the AI's verdicts is in its pull request, as its last criterion asks.
+Task 0029 stays `review` until Jake tries Ctrl+C on Windows. Task 0018 decided to keep the built-in `sqlite3` for
+now (`docs/decisions.md`, 2026-11-14), so no task to switch storage is in the order below.
 
 1. **0028, errors obvious in the terminal.** Jake asked for it on 2026-11-19, after a blank page on Windows whose
    error showed only in the browser. It builds on 0029's start script, so it comes straight after 0029, and it

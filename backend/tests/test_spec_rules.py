@@ -1,10 +1,13 @@
-"""Tests that every rule in the spec is named by at least one test (task 0013).
+"""Tests that every rule in the spec is named by a test, and no test names an old one.
+
+Task 0013.
 
 A rule is a numbered definition in `docs/spec.md`, such as **R1 Rating.** or **V2**.
 A test names it by putting the number in a back-end test function's docstring (Ruff
 keeps function names lowercase, so a name can't hold it), or in the name of a
 front-end `it(...)` or `test(...)`. `it.each` names, comments and module docstrings
-don't count, so each rule points to a real test.
+don't count, so each rule points to a real test. A rule number a test names that the
+spec no longer defines, such as a removed R7, fails too.
 """
 
 import ast
@@ -18,6 +21,9 @@ BACKEND_TESTS: Path = REPO_ROOT / "backend" / "tests"
 FRONTEND: Path = REPO_ROOT / "frontend"
 
 RULE_DEFINITION: re.Pattern[str] = re.compile(r"^\s*- \*\*([A-Z]\d+)\b", re.MULTILINE)
+# Rule numbers look like these: one of the spec's rule letters, then a number.
+# cspell:ignore RVTCK
+RULE_NUMBER: re.Pattern[str] = re.compile(r"\b[RVTCK]\d+\b")
 FRONTEND_TEST_NAME: re.Pattern[str] = re.compile(
     r"(?<![\w.])(?:it|test)\(\s*(?P<quote>[\"'`])(?P<name>.*?)(?P=quote)",
     re.DOTALL,
@@ -85,6 +91,26 @@ def rules_not_named(
     return [rule for rule in rule_numbers if not re.search(rf"\b{rule}\b", all_text)]
 
 
+def rules_named_but_not_defined(
+    rule_numbers: Iterable[str],
+    test_texts: Iterable[str],
+) -> list[str]:
+    """Find rule numbers that tests name but the spec doesn't define.
+
+    Args:
+        rule_numbers: The spec's rule numbers.
+        test_texts: Every test's name and docstring.
+
+    Returns:
+        Each unknown rule number once, sorted.
+    """
+    defined: set[str] = set(rule_numbers)
+    named: set[str] = {
+        number for text in test_texts for number in RULE_NUMBER.findall(text)
+    }
+    return sorted(named - defined)
+
+
 def all_test_texts() -> list[str]:
     """Read every test's name, and each back-end test's docstring.
 
@@ -131,6 +157,25 @@ def test_every_spec_rule_is_named_by_a_test() -> None:
         f"Spec rules no test names: {', '.join(missing)}. "
         "Put the rule number in a test's name or docstring."
     )
+
+
+def test_no_test_names_a_rule_the_spec_no_longer_has() -> None:
+    """A renumbered or removed rule can't leave tests pointing at nothing."""
+    rules: list[str] = spec_rule_numbers(SPEC_PATH.read_text(encoding="utf-8"))
+
+    unknown: list[str] = rules_named_but_not_defined(rules, all_test_texts())
+
+    assert not unknown, (
+        f"Tests name rules the spec doesn't define: {', '.join(unknown)}. "
+        "Use the spec's current rule numbers."
+    )
+
+
+def test_an_old_rule_number_is_found_but_decisions_and_features_are_not() -> None:
+    """R7 is not a rule; D6, F3 and LV12 aren't rule numbers at all."""
+    texts: list[str] = ["Controls can't raise it (R6, R7)", "D6 and F3 on LV12 (C4)"]
+
+    assert rules_named_but_not_defined(["R6", "C4"], texts) == ["R7"]
 
 
 def test_only_rule_definitions_count_as_rules() -> None:

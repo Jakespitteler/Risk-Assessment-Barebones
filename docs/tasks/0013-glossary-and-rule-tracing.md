@@ -1,7 +1,7 @@
 ---
 id: 0013
 title: A glossary of spec terms, and a test that every spec rule has a test
-status: done
+status: review
 owner: claude
 branch: claude/funny-ptolemy-7u9m8v
 ---
@@ -21,12 +21,16 @@ spec has no test that names it. This is the light version of the "shared semanti
 - [x] A back-end test reads `docs/spec.md`, finds every rule number (such as R1, V2, T3, C4), and fails with
   the missing numbers when one is not named in any test's name or docstring.
 - [x] The tests that are missing a rule number are named or documented so the new test passes.
+- [x] The rule test also fails when a test names a rule number the spec no longer defines (Jake's Q3).
+- [x] A test fails when a worked example in the spec has no test named by its number (Jake's Q4).
+- [ ] A test checks each code name in the glossary against the code, back end and front end (Jake's Q5). In
+  its own stacked pull request, `claude/0013-glossary-code-names`; this box is ticked there.
 - [x] All checks pass.
 
 ## Out of scope
 
 - A graph database, or a formal ontology with its own tools.
-- Renaming code to match the glossary. Mismatches are listed in this file for Jake to decide.
+- Renaming code to match the glossary. Jake chose to keep both names (see below).
 
 ## Notes / assumptions
 
@@ -44,7 +48,20 @@ Done earlier, it needs a list of rules not built yet that changes with every tas
 - Before this task, R1 to R4 and K1 were tested (worked examples 1 to 13, and the draft tests) but no test named
   them. Their docstrings and names now do; no test changed what it checks.
 
-### Assumptions
+### Jake's answers (2026-11-19)
+
+- **Q3, old rule numbers:** yes. `test_no_test_names_a_rule_the_spec_no_longer_has` fails on a rule number
+  (R, V, T, C or K and a number) that a test names and the spec doesn't define.
+- **Q4, every worked example has a test:** yes. `backend/tests/test_spec_examples.py` reads the 87 numbered
+  rows under "Worked examples" and fails with any number that no back-end test name covers. A name covers a run
+  of examples as `test_example_2_to_10_...` or `test_examples_50_and_51_...`, the forms the tests already use,
+  so no test needed renaming.
+- **Q5, the glossary's code names checked against the code:** yes, back end and front end. Built in its own
+  pull request, stacked after task 0029's, to keep this one small.
+- **The name mismatches below:** keep both names. The glossary maps each spec word to its code name, and nothing
+  is renamed.
+
+### How the checks decide (Claude's choices)
 
 - **What counts as a test naming a rule.** A back-end test function's own docstring (Ruff keeps function names
   lowercase, so a name can't hold one), or the name of a front-end `it(...)` or `test(...)`; `it.each` names are
@@ -58,9 +75,9 @@ Done earlier, it needs a list of rules not built yet that changes with every tas
   spec's layout can't make it pass with nothing. A task that adds a rule (0024 or 0029 might) adds it to that
   list as well as naming it in a test.
 
-### Mismatches for Jake to decide
+### Name mismatches (decided: keep both)
 
-Not renamed (out of scope). Each is where the spec's word and the code's name differ:
+Where the spec's word and the code's name differ. Jake chose on 2026-11-19 to keep both; the glossary maps them:
 
 | Spec says | Code says | Note |
 | --- | --- | --- |
