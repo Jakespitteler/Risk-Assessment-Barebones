@@ -114,4 +114,10 @@ The full table of questions is in the PR. All 15 questions passed C2, and none n
 - On Windows the app opened blank: `import { TimeLeft } from "./TimeLeft"` found `timeLeft.ts` (task 0019's
   countdown words) before `TimeLeft.tsx`, because Windows ignores the case of file names and Vite tries `.ts`
   first. Linux and CI never saw it. The words file is now `timeLeftText.ts`, so no two files in `frontend/` differ
-  only by case. Worth a check that keeps it that way (not added here).
+  only by case. `backend/tests/test_file_names.py` now keeps it that way: it fails when two files git tracks in
+  one folder have names that differ only by case, ignoring the last extension (Jake's yes, 2026-11-19).
+- Jake opened uvicorn's `:8000` address, which is only the API. `scripts/dev.py` now waits for Vite to answer and
+  prints "The Take 5 app is ready. Open `http://localhost:5173`" last (Jake's yes, 2026-11-19). Task 0029 replaces
+  `dev.py` and hides the other address lines.
+- Jake's yes, 2026-11-19: the line above Submit now says "answers, hazards and controls", since the controls
+  (with their ratings and the T3 reason) are sent too.

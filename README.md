@@ -63,7 +63,8 @@ The set-up script warns you if it finds the repo in one of these folders. It can
 
 1. In the repo root: `uv run scripts/dev.py`. It syncs the back end's packages, installs the front end's
    packages if Vite is missing, and waits for the API before starting the front end.
-2. Open <http://localhost:5173>. The back end's own API pages are at <http://localhost:8000/docs>.
+2. When it prints "The Take 5 app is ready", open the address on that line, <http://localhost:5173>. The
+   `:8000` address uvicorn prints earlier is only the API; its own pages are at <http://localhost:8000/docs>.
 
 Press Ctrl+C to stop. Both halves restart by themselves when their code changes.
 
