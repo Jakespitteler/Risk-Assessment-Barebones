@@ -37,6 +37,7 @@ from urllib.request import urlopen
 import setup
 
 REPO_ROOT: Path = Path(__file__).resolve().parent
+BACKEND: Path = REPO_ROOT / "backend"
 FRONTEND: Path = REPO_ROOT / "frontend"
 START_COMMAND: str = "uv run start.py"
 
@@ -58,10 +59,11 @@ BACKEND_READY_URL: str = f"http://127.0.0.1:{API_PORT}/api/take5/template"
 # address is only the API.
 LOCAL_APP_URL: str = f"http://localhost:{APP_PORT}"
 
-BACKEND_INSTALL: setup.InstallStep = setup.InstallStep(
-    "Python 3.13 and the back end's packages",
-    ["uv", "sync", "--locked", "--quiet"],
-    "backend",
+# Once the back end is installed, its sync runs quietly: it is quick, and says nothing
+# unless something changed or went wrong. The first install shows its progress.
+FIRST_BACKEND_INSTALL: setup.InstallStep = setup.INSTALL_STEPS[0]
+BACKEND_INSTALL: setup.InstallStep = FIRST_BACKEND_INSTALL._replace(
+    command=[*FIRST_BACKEND_INSTALL.command, "--quiet"],
 )
 FRONTEND_INSTALL: setup.InstallStep = setup.INSTALL_STEPS[1]
 BROWSER_INSTALL: setup.InstallStep = setup.INSTALL_STEPS[2]
@@ -187,30 +189,47 @@ def browser_needs_install(frontend: Path) -> bool:
     return not (frontend / "node_modules" / BROWSER_MARKER).is_file()
 
 
-def install_what_changed(frontend: Path) -> int:
+def sync_backend(backend: Path) -> int:
+    """Bring the back end's packages in line with `uv.lock`.
+
+    Args:
+        backend: The back end's folder.
+
+    Returns:
+        0 when it worked, otherwise uv's exit code.
+    """
+    if not (backend / ".venv").is_dir():
+        return setup.install([FIRST_BACKEND_INSTALL], START_COMMAND)
+    result: subprocess.CompletedProcess[bytes] = subprocess.run(
+        BACKEND_INSTALL.command,
+        cwd=backend,
+        env=setup.SETUP_ENVIRONMENT,
+        check=False,
+    )
+    if result.returncode != 0:
+        print(
+            f"\nFAILED while installing {BACKEND_INSTALL.what_it_installs}. Fix the "
+            f"problem shown above, then run `{START_COMMAND}` again.",
+        )
+    return result.returncode
+
+
+def install_what_changed(backend: Path, frontend: Path) -> int:
     """Bring the installs in line with the lock files, installing only what changed.
 
     The browser is only for the tests, so when it can't be installed this warns and goes
     on, and the next start tries again.
 
     Args:
+        backend: The back end's folder.
         frontend: The front end's folder.
 
     Returns:
         0 when the app can start, otherwise the exit code of the install that failed.
     """
-    backend_result: subprocess.CompletedProcess[bytes] = subprocess.run(
-        BACKEND_INSTALL.command,
-        cwd=REPO_ROOT / BACKEND_INSTALL.folder,
-        env=setup.SETUP_ENVIRONMENT,
-        check=False,
-    )
-    if backend_result.returncode != 0:
-        print(
-            f"\nFAILED while installing {BACKEND_INSTALL.what_it_installs}. Fix the "
-            f"problem shown above, then run `{START_COMMAND}` again.",
-        )
-        return backend_result.returncode
+    backend_exit_code: int = sync_backend(backend)
+    if backend_exit_code != 0:
+        return backend_exit_code
     if frontend_needs_install(frontend):
         exit_code: int = setup.install([FRONTEND_INSTALL], START_COMMAND)
         if exit_code != 0:
@@ -479,7 +498,7 @@ def main() -> int:
             print(f"  - {problem}")
         print(setup.REOPEN_TERMINAL_HELP)
         return 1
-    install_exit_code: int = install_what_changed(FRONTEND)
+    install_exit_code: int = install_what_changed(BACKEND, FRONTEND)
     if install_exit_code != 0:
         return install_exit_code
     return run_servers(app_url(os.environ), cloud_service)

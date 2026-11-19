@@ -11,6 +11,20 @@ import pytest
 import start
 
 
+def make_backend(folder: Path) -> Path:
+    """Make a stand-in back-end folder that has been installed before.
+
+    Args:
+        folder: Where to make it.
+
+    Returns:
+        The back end's folder.
+    """
+    backend: Path = folder / "backend"
+    (backend / ".venv").mkdir(parents=True)
+    return backend
+
+
 def make_frontend(folder: Path, lock_text: str = '{"lockfileVersion": 3}') -> Path:
     """Make a stand-in front-end folder holding only a lock file.
 
@@ -185,16 +199,28 @@ def test_nothing_changed_runs_only_the_quick_back_end_sync(tmp_path: Path) -> No
         ) as run,
         patch.object(start.setup, "install") as install,
     ):
-        exit_code: int = start.install_what_changed(frontend)
+        exit_code: int = start.install_what_changed(make_backend(tmp_path), frontend)
 
     assert exit_code == 0
     run.assert_called_once_with(
         ["uv", "sync", "--locked", "--quiet"],
-        cwd=start.REPO_ROOT / "backend",
+        cwd=tmp_path / "backend",
         env=start.setup.SETUP_ENVIRONMENT,
         check=False,
     )
     install.assert_not_called()
+
+
+def test_the_first_back_end_install_shows_its_progress(tmp_path: Path) -> None:
+    """With no `.venv` yet, uv's install runs under a heading, not quietly."""
+    frontend: Path = make_frontend(tmp_path)
+    mark_installed(frontend)
+    with patch.object(start.setup, "install", return_value=0) as install:
+        exit_code: int = start.install_what_changed(tmp_path / "backend", frontend)
+
+    assert exit_code == 0
+    install.assert_called_once_with([start.FIRST_BACKEND_INSTALL], "uv run start.py")
+    assert "--quiet" not in start.FIRST_BACKEND_INSTALL.command
 
 
 def test_a_changed_lock_file_installs_the_front_end_then_the_browser(
@@ -216,7 +242,7 @@ def test_a_changed_lock_file_installs_the_front_end_then_the_browser(
         ),
         patch.object(start.setup, "install", side_effect=install_succeeds) as install,
     ):
-        exit_code: int = start.install_what_changed(frontend)
+        exit_code: int = start.install_what_changed(make_backend(tmp_path), frontend)
 
     assert exit_code == 0
     assert install.mock_calls == [
@@ -254,7 +280,7 @@ def test_a_failed_front_end_install_is_not_remembered(tmp_path: Path) -> None:
         ),
         patch.object(start.setup, "install", return_value=1),
     ):
-        exit_code: int = start.install_what_changed(frontend)
+        exit_code: int = start.install_what_changed(make_backend(tmp_path), frontend)
 
     assert exit_code == 1
     assert start.frontend_needs_install(frontend)
@@ -274,7 +300,7 @@ def test_a_failed_back_end_sync_stops_it(
         ),
         patch.object(start.setup, "install") as install,
     ):
-        exit_code: int = start.install_what_changed(frontend)
+        exit_code: int = start.install_what_changed(make_backend(tmp_path), frontend)
 
     assert exit_code == 2
     assert "run `uv run start.py` again" in capsys.readouterr().out
@@ -297,7 +323,7 @@ def test_a_failed_browser_install_warns_and_the_app_still_starts(
         ),
         patch.object(start.setup, "install", return_value=1),
     ):
-        exit_code: int = start.install_what_changed(frontend)
+        exit_code: int = start.install_what_changed(make_backend(tmp_path), frontend)
 
     assert exit_code == 0
     assert "it starts anyway" in capsys.readouterr().out
