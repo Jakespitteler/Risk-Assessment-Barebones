@@ -94,14 +94,6 @@ this file and `docs/decisions.md`.
    - (b) Also a file, such as `backend/.logs/app.log`, which git ignores, kept to a few megabytes.
    - Recommended: (a). A file adds rotation and a place a worker's data could leak to, for no one who reads it
      yet. Hosting will bring its own log collection (0021's timing).
-8. **Should the checks catch file names that differ only in case?** Jake's blank page came from two such names.
-   CI runs on Linux, where both files live happily, so nothing caught it. Options:
-   - (a) Yes, in this task: `scripts/check.py` fails when two tracked paths differ only in case, with a test.
-     About 20 lines.
-   - (b) Yes, as its own small task.
-   - (c) No; the terminal line is enough.
-   - Recommended: (a). It stops the cause before anyone sees a blank page, and it is small enough to share this
-     pull request.
 
 Two more changes come with the task unless Jake says otherwise, because without them a glance at the terminal
 still misleads: when a server stops, the start script says which one, its exit code, and that its error is just
@@ -125,9 +117,8 @@ These follow the recommended picks; they change with Jake's answers.
 - [ ] Every line in the terminal says whether it came from the back end or the front end.
 - [ ] When either server stops, the script prints which one stopped and its exit code before stopping the other.
 - [ ] When the back end is down, the front end prints one line saying it can't reach it, not a proxy trace.
-- [ ] `scripts/check.py` fails, naming both paths, when two tracked files differ only in case.
 - [ ] No line ever holds a worker's name or what they typed (AGENTS.md, Logging).
-- [ ] Tests cover the line format, the one-line AI warnings, the request filter, the labels, the case check, and
+- [ ] Tests cover the line format, the one-line AI warnings, the request filter, the labels, and
   a browser error and a `console.log` in a running front end (the first reaches the terminal, the second
   doesn't).
 - [ ] `docs/architecture.md` describes how logging is set up, and AGENTS.md's Logging rule points to it.
@@ -139,8 +130,9 @@ These follow the recommended picks; they change with Jake's answers.
 - A screen on the phone that says something went wrong instead of a blank page. Worth its own task: a module that
   fails to load stops React before any screen can draw.
 - Logs for a hosted app, such as JSON lines or a log service. Later, with hosting.
-- Fixing the `TimeLeft.tsx` and `timeLeft.ts` clash itself. Task 0009's pull request (#45) renames `timeLeft.ts`
-  to `timeLeftText.ts`.
+- Fixing the `TimeLeft.tsx` and `timeLeft.ts` clash, and stopping the next one. Task 0009 renamed `timeLeft.ts`
+  to `timeLeftText.ts`, and added `backend/tests/test_file_names.py`, which fails when two tracked files in one
+  folder differ only in case.
 
 ## Notes / assumptions
 

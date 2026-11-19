@@ -59,10 +59,10 @@ saved until the worker submits it. Then the app asks its one question, and then 
    The app shows the score and band from the risk matrix as soon as both parts of a rating are picked.
 5. **One question before you start.** The worker presses Submit on the review and the Take 5 is saved; it can't
    be changed after that, so there is no way back to the form (decisions D44 and D45). When an AI is set up, the
-   review says just above Submit what goes to it: "Submit saves this Take 5 and sends the job, location, answers
-   and hazards (not your name) to an AI that writes one question for you." (decision D52). The app then asks one
-   question about the weakest part of what they wrote, for example "You're relying on a harness. What is it
-   anchored to, and who checked the anchor?" An AI writes the question; when it can't, the app asks a fixed one
+   review says just above Submit what goes to it: "Submit saves this Take 5 and sends the job, location, answers,
+   hazards and controls (not your name) to an AI that writes one question for you." (decision D52). The app then
+   asks one question about the weakest part of what they wrote, for example "You're relying on a harness. What is
+   it anchored to, and who checked the anchor?" An AI writes the question; when it can't, the app asks a fixed one
    instead. The worker answers in their own words and presses Finish. See
    [The challenge question](#the-challenge-question).
 6. **Result.** The Take 5 is now finished. It is saved with its verdict and the worker sees it: *Don't start
@@ -648,7 +648,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D49 | Does an unfinished fix mark its original Fixed (2026-11-18) | Yes, as soon as the fix is saved, so a second fix can't be started beside it | Only once the fix is answered |
 | D50 | Tell the worker whether the AI asked (2026-11-18) | No, for now; revisit in task 0009 with what is sent to the AI. Kept in task 0009 (D52) | Label an AI question |
 | D51 | Answers such as "I will be careful" (2026-11-18) | Keep C4 at four words; a smarter check belongs with the AI later | Also refuse a T2 phrase padded with small words |
-| D52 | Tell the worker what is sent to the AI (2026-11-18) | One line above Submit, when an AI is set up: the job, location, answers and hazards, not the name. The question itself is still not labelled (D50) | Label each AI question; say nothing |
+| D52 | Tell the worker what is sent to the AI (2026-11-18) | One line above Submit, when an AI is set up: the job, location, answers, hazards and controls, not the name. The question itself is still not labelled (D50) | Label each AI question; say nothing |
 | D53 | Which Claude model asks (2026-11-18) | Claude Opus 5.5 on low effort, the best questions; the model is a setting | Sonnet 5.5 (about half the cost); Haiku 5.5 (cheapest and fastest, most generic) |
 | D54 | May the question be about a hazard not on the list (2026-11-18) | Yes, when the job plainly has it (C1) | Only what the worker wrote |
 | D55 | When the AI judges vague hazards (2026-11-18) | Its own task, 0027, after 0009 | In task 0009 |
@@ -667,6 +667,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 - Is the three minute target right for a typical job?
 - T3 could be gamed by picking "Barricade the hazard" for a control that isn't one. Fixed rules can't catch
   that. The challenge question is the place it is most likely to be picked up.
-- What does the AI cost per Take 5, and is there a monthly limit? Tasks 0009 and 0027 measure it; the limit is
-  set in the provider's console, not in the app.
+- Is a monthly limit on AI spending needed in the app, or is the provider's console enough? Task 0009 measured
+  about 1 US cent per Take 5 on Opus 5.5 (0.3 cents on Sonnet 5.5, 0.03 cents on Haiku 5.5), so about US$30 a
+  month at 100 Take 5s a day. Task 0027 measures the hazard check.
 - Should the vague phrases in T2 be a longer list, and who maintains it?

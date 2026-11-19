@@ -15,7 +15,7 @@ const FALLBACK = `What is the one thing that has to go right so that '${HAZARD}'
 
 // What the back end's template says above Submit when an AI is set up (decision D52).
 const AI_NOTICE =
-  "Submit saves this Take 5 and sends the job, location, answers and hazards (not your name) to an AI that writes one question for you.";
+  "Submit saves this Take 5 and sends the job, location, answers, hazards and controls (not your name) to an AI that writes one question for you.";
 
 test("Submit asks one question, a short answer is refused, and the answer shows on the result", async ({
   page,

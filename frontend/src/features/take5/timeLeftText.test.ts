@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { timeLeft } from "./timeLeft";
+import { timeLeftText } from "./timeLeftText";
 
 const NOW = new Date("2026-11-16T03:00:00Z");
 
@@ -11,5 +11,5 @@ it.each([
   ["2026-11-16T03:00:59Z", "Under 1 min left"],
   ["2026-11-16T02:50:00Z", "Under 1 min left"],
 ])("counts down to %s as %s", (runsOutAt, expected) => {
-  expect(timeLeft(runsOutAt, NOW)).toBe(expected);
+  expect(timeLeftText(runsOutAt, NOW)).toBe(expected);
 });

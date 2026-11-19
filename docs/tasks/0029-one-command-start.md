@@ -17,8 +17,10 @@ fitting)."
 Today it takes two commands, `uv run scripts/setup.py` (task 0023) and then `uv run scripts/dev.py`, and the
 second one prints the wrong address loudest. Uvicorn's "Uvicorn running on <http://127.0.0.1:8000>" line is the
 most visible one, so Jake opened that address, which is only the API, instead of Vite's
-<http://localhost:5173>. One command should set up whatever isn't set up yet, bring the installs in line with the
-repo, start both halves, and print one address: the right one.
+<http://localhost:5173>. Task 0009's pull request then made `dev.py` print "The Take 5 app is ready. Open
+<http://localhost:5173>" last, once Vite answers, but uvicorn's line and Vite's own address box still show above it.
+One command should set up whatever isn't set up yet, bring the installs in line with the repo, start both halves,
+and print one address: the right one.
 
 Jake, later the same day: "I don't like how sometimes I have to cd into the backend or front end." Today the tests,
 lint, format and type-check commands in `AGENTS.md` each say "in `backend/`" or "in `frontend/`", and
@@ -100,7 +102,7 @@ The questions for Jake, each with Claude's recommended pick.
      rest of the servers' output: each request, any error, and the app's own lines (such as which AI model asks
      the challenge question), because Jake wants to see what the back end is doing.
    - (b) Hide all server output except errors, with a `--verbose` switch to see it.
-   - (c) Leave the output as it is and add the ready line at the end. The `:8000` line stays on screen.
+   - (c) Leave the output as it is today, with the ready line at the end. The `:8000` line stays on screen.
    - Recommended: (a). The API's own pages (<http://localhost:8000/docs>) stay listed in the README, not printed.
 6. **A safety net at the API's address.** Today opening <http://localhost:8000> shows `{"detail":"Not Found"}`.
    Options:
@@ -128,27 +130,35 @@ The questions for Jake, each with Claude's recommended pick.
    running in another terminal: use that one, or press Ctrl+C there first." and stop. Checking first matters on
    Windows, where an install fails while the app holds its files open. Vite already refuses to move to another
    port (`strictPort` in `vite.config.ts`), so the printed address is never wrong.
-10. **Every command from the repo root.** Today only set-up, start and `check.py` run from the root. Options:
-    - (a) One small file per job, all in the same place as question 1's command, each named for what it does:
-      `start.py`, `setup.py`, `check.py` and a new `test.py`. `uv run test.py` runs every test; `uv run test.py
-      backend`, `frontend` or `e2e` runs one kind; anything after that goes to the test tool, so
-      `uv run test.py backend -m real_ai` runs the real-AI test. `uv run check.py --fix` formats the code and makes
-      the fixes the lint tools can make by themselves (today's separate ruff and npm format commands). Inside, the
-      scripts use the tools' own "run in this folder" options (`uv run --directory backend`, `npm --prefix
-      frontend`), so nothing changes in how the tools are set up.
+10. **Every command from the repo root.** Today set-up, start, `check.py`, markdownlint and cspell run from the
+    root; the tests, lint, format, type check and API types each need a `cd` first. Options:
+    - (a) One small file per job, each named for what it does, all in the same folder as question 1's command (the
+      root at 1(a), `scripts/` at 1(c)). New: `test.py`, and a `--fix` switch for `check.py`, which today only
+      checks.
+      - `uv run test.py` runs every test; `uv run test.py backend`, `frontend` or `e2e` runs one kind. Anything
+        else on the line goes to the test tool, so `uv run test.py backend -m real_ai` runs the real-AI test.
+      - `uv run check.py --fix` formats the code, makes the fixes the lint tools can make by themselves, and
+        regenerates the API types. `uv run check.py` alone still checks everything, as CI does.
+      - Inside, the scripts use the tools' own "run in this folder" options (`uv run --directory backend`,
+        `npm --prefix frontend`), so nothing changes in how the tools are set up. Each root script keeps the
+        `# /// script` header `check.py` has: without one, `uv run` in the root makes a stray `.venv` and
+        `uv.lock` there, because the root `pyproject.toml` isn't a project.
     - (b) One file with a word for each job, like Django's `manage.py`: for example `uv run app.py start`,
       `uv run app.py test`. One name to remember, but one file doing many jobs, and question 1's name clash again.
     - (c) Make the repo root a uv workspace (and an npm workspace), so `uv run pytest` works from the root with no
-      script. The tools' own way, but it moves `backend/.venv` to the root, which changes Pylance's settings, the
-      hooks, the VS Code set-up and most docs, and the front-end commands stay long
-      (`npm test --workspace frontend`).
-    - Recommended: (a). With question 1 at (a), `setup.py` and `check.py` move to the root too, so all four sit
-      together; CI's workflow (`.github/workflows/ci.yml`) and the review agent's prompt
-      (`.github/workflows/agent-review.yml`) then name the new path. `AGENTS.md` "Commands" lists only root
-      commands, keeping the per-folder ones as a footnote for editors and debugging.
+      script. The tools' own way, but `backend/.venv` and `backend/uv.lock` move to the root, which changes
+      Pylance's settings, the hooks, CI, question 3's lock file and most docs. The back end's pytest settings would
+      have to move too, or a plain `uv run pytest` would run the paid real-AI test. The front-end commands stay
+      long (`npm test --workspace frontend`).
+    - Recommended: (a). With question 1 at (a), `setup.py` (if question 2 keeps it) and `check.py` move to the
+      root as well, so the commands sit together. Moving `check.py` also changes `.github/workflows/ci.yml`,
+      `.github/workflows/agent-review.yml`, `scripts/setup.py`'s "Next" lines, the README, `docs/dev-setup.md`,
+      `.claude/agents/reviewer.md` and the allow list in `.claude/settings.json` (which also needs the new
+      commands). The two `.claude` files are agent settings, so those changes need Jake's yes. `AGENTS.md`
+      "Commands" lists the root commands; the per-folder ones stay in a short note for editors and debugging.
 11. **Where it goes in the order of work.** Jake asked for it "soon". Options:
     - (a) Next after 0013, which is in progress on another branch, and before 0024 (dark mode).
-    - (b) Straight away, while 0009 and 0027 wait on Jake's measurement. It touches `scripts/`, the README,
+    - (b) Straight away, while 0027 waits on Jake's measurement. It touches `scripts/`, the README,
       `AGENTS.md`, `docs/dev-setup.md`, the structure in `docs/architecture.md`, perhaps `frontend/vite.config.ts`
       and a small logging setting in `backend/` (to hide the address lines), and one back-end route (if question 6
       is a yes), plus the CI workflows if question 10 moves `check.py`, so it barely overlaps the open pull
@@ -183,8 +193,11 @@ The questions for Jake, each with Claude's recommended pick.
   `docs/architecture.md`, and `setup.py`'s closing "Next" lines name the new command. `docs/decisions.md` records
   the choices.
 - [ ] A copy of the terminal output of a first run and a second run is in the pull request.
-- [ ] Every command in `AGENTS.md` "Commands" and in the README runs from the repo root, as question 10 decides,
-  including the real-AI test (`-m real_ai`). Tests cover how each root command maps to the tool it runs.
+- [ ] Every everyday command runs from the repo root, as question 10 decides: start, set-up, every kind of test
+  (including the real-AI test, `-m real_ai`), lint, format, type check and API types. Cloning, and the
+  per-folder note for editors, are the only places a `cd` is left in `AGENTS.md` and the README.
+- [ ] Tests cover how each root command maps to the tool it runs, including `check.py --fix` and extra arguments
+  passed through to the test tool.
 - [ ] All checks pass.
 
 ## Out of scope
@@ -200,10 +213,12 @@ The questions for Jake, each with Claude's recommended pick.
 
 ## Notes / assumptions
 
-- Asked for by Jake on 2026-11-19, as a task file only. Written stacked on task 0027's pull request (#46).
+- Asked for by Jake on 2026-11-19, as a task file only. Written stacked on task 0027's pull request (#46, which
+  GitHub closed when 0009's branch was deleted; 0027 is now #50).
 - Today: `scripts/dev.py` runs `uv sync --locked`, runs `npm ci` only when Vite is missing (so a pull that adds a
   front-end package isn't installed until something breaks), then starts uvicorn on port 8000 and, once the API
-  answers, Vite on 5173. `scripts/setup.py` checks git and Node.js 22.22.2 or newer, warns about cloud-synced
+  answers, Vite on 5173, and prints its ready line once Vite answers (`READY_MESSAGE`, added in 0009's pull
+  request). `scripts/setup.py` checks git and Node.js 22.22.2 or newer, warns about cloud-synced
   folders, and runs `uv sync --locked`, `npm ci --engine-strict` and `npx playwright install chromium` every time.
   Its tests are `backend/tests/test_setup.py`; `dev.py`'s are `backend/tests/test_dev.py` and import it as
   `from scripts import dev`. `backend/tests/test_format_edited_file.py` uses `scripts/dev.py` as its sample file.

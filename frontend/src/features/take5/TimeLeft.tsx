@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { formatDateTime } from "./formatDateTime";
-import { timeLeft } from "./timeLeft";
+import { timeLeftText } from "./timeLeftText";
 
 // Often enough that the minutes shown are never more than half a minute out.
 const REFRESH_MS = 30_000;
@@ -26,7 +26,7 @@ export function TimeLeft({
   if (!runsOutAt) return null;
   return (
     <p className="self-start rounded-lg border-2 border-slate-900 bg-white px-3 py-1 font-semibold">
-      {timeLeft(runsOutAt, now)}{" "}
+      {timeLeftText(runsOutAt, now)}{" "}
       <span className="font-normal text-slate-700">
         to finish, until{" "}
         <time dateTime={runsOutAt}>{formatDateTime(runsOutAt)}</time>

@@ -227,6 +227,8 @@ backend/.data/
 
 # Secrets: never commit them.
 .env.*
+# The settings template holds no secrets, so it is kept.
+!.env.example
 *.pem
 *.key
 secrets/

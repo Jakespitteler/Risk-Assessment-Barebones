@@ -294,10 +294,11 @@ two: the database (`Take5Repository`) and the AI (`ChallengeAsker` and `HazardJu
 `ai/providers/`, its library, and one line in `api/app.py` to plug it in; no rule and no job changes.
 
 The worker's name is never passed to an adapter (spec C1). The AI's key lives in the server's environment (or
-`backend/.env` on a developer's computer) and is never in the repo or sent to the phone. With no key, no AI is
-plugged in: the fixed question is always asked and the word rule judges every hazard. `api/app.py` has one table
-from `AiProvider` (a setting) to the adapter that builds that provider's models and the name of its quick model,
-which judges hazards unless `TAKE5_AI_HAZARD_MODEL` names another (spec D61).
+`backend/.env` on a developer's computer, copied from the template `backend/.env.example`, which names every
+setting and holds no key) and is never in the repo or sent to the phone. With no key, no AI is plugged in: the
+fixed question is always asked and the word rule judges every hazard. `api/app.py` has one table from
+`AiProvider` (a setting) to the adapter that builds that provider's models and the name of its quick model, which
+judges hazards unless `TAKE5_AI_HAZARD_MODEL` names another (spec D61).
 
 ## Ready for later
 
@@ -363,7 +364,7 @@ cloud account, or a model the company runs itself.
 | End to end | A worker fills in every screen in a real browser and reaches the right verdict | Playwright against the real front end and back end, with a stand-in AI |
 | Visual | Each changed screen looks right on a phone | Playwright screenshots at 360 px wide, attached to the PR; checked by eye, not in CI |
 | AI adapter | The adapter sends what it should and reads the reply, refusals and errors | The real adapter against a stand-in for the provider's API (`tests/ai/fake_anthropic.py`), so nothing leaves the computer |
-| Real AI | The real provider answers with a usable question | `uv run pytest -m real_ai`, skipped with no key; plain `pytest` and CI never run it. `scripts/try_challenge.py` measures questions, and `scripts/try_vague_hazard.py` verdicts on hazards, with time and cost |
+| Real AI | The real provider answers with a usable question | `uv run pytest -m real_ai` in `backend/`, skipped with no key; plain `pytest` and CI never run it. `scripts/try_challenge.py` measures questions, and `scripts/try_vague_hazard.py` verdicts on hazards, with time and cost |
 
 CI runs, on every PR and every push to `main` (task 0002): for the back end `ruff check`, `ruff format --check`,
 `pyright` and `pytest`; for the front end ESLint, Prettier's check, the TypeScript compiler, Vitest, and the
