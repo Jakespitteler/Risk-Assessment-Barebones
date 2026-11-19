@@ -8,13 +8,15 @@ rename that forgets the glossary makes this fail with the names it can't find.
   class's own field, method or enum member, always with its class (`Hazard.covers`,
   `Answer.YES`), a function's parameter (`submission_id`), or a file (`fix.py`,
   `ai/providers/claude.py`).
-- A front-end name is a component or helper file under `frontend/src` (`Take5Form`,
-  not counting test files), a name a file exports (`useTake5Draft`, `StoredDraft`,
-  and the API types `src/api/take5.ts` exports), or a field of a schema in the
-  generated API types (`worker_name`).
+- A front-end name is a component or helper file under `frontend/src` (`Take5Form`),
+  a name a file exports (`useTake5Draft`, `StoredDraft`, and the API types
+  `src/api/take5.ts` exports), or a field of a schema in the generated API types
+  (`worker_name`). Test files and the shared `test-utils.tsx` and `test-setup.ts`
+  don't count.
 
 Names the check can't see, such as attributes set in `__init__`, inherited members or
-`export { X }`, would be reported missing; none is in the glossary.
+`export { X }`, would be reported missing; none is in the glossary. A schema field
+counts if any schema has it, whichever schema the glossary row means.
 """
 
 import ast
@@ -99,6 +101,8 @@ def defined_names(node: ast.stmt) -> set[str]:
     """
     if isinstance(node, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
         return {node.name}
+    if isinstance(node, ast.TypeAlias):
+        return {node.name.id}
     if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
         return {node.target.id}
     if isinstance(node, ast.Assign):
@@ -150,7 +154,7 @@ def frontend_names(source_folder: Path, api_types: Path) -> set[str]:
     """
     names: set[str] = api_schema_fields(api_types.read_text(encoding="utf-8"))
     for path in [*source_folder.rglob("*.ts"), *source_folder.rglob("*.tsx")]:
-        if path == api_types or ".test." in path.name:
+        if path == api_types or ".test." in path.name or path.name.startswith("test-"):
             continue
         names.add(path.name.split(".")[0])
         names.update(FRONTEND_EXPORT.findall(path.read_text(encoding="utf-8")))
@@ -217,11 +221,12 @@ def test_a_class_member_is_found_only_with_its_class() -> None:
         "        return 1\n"
         "def submit(draft: object, submission_id: str) -> None:\n"
         "    pass\n"
+        'type Effort = Literal["low", "high"]\n'
     )
 
     names: set[str] = python_names(source)
 
-    assert {"Hazard", "Hazard.covers", "Hazard.rating", "submit"} <= names
+    assert {"Hazard", "Hazard.covers", "Hazard.rating", "submit", "Effort"} <= names
     assert "submission_id" in names
     assert unknown_names(["Hazard.covers", "covers", "Hazard.missing"], names) == [
         "Hazard.missing",
@@ -288,11 +293,15 @@ def test_the_front_end_counts_exports_and_files_but_not_test_files(
         encoding="utf-8",
     )
     (source / "Gone.test.tsx").write_text("it('x', () => {});\n", encoding="utf-8")
+    (source / "test-utils.tsx").write_text(
+        "export const SAVED = {};\n",
+        encoding="utf-8",
+    )
 
     names: set[str] = frontend_names(source, api_types)
 
     assert {"Take5Draft", "StoredDraft", "take5"} <= names
-    assert names.isdisjoint({"hidden", "Gone", "schema"})
+    assert names.isdisjoint({"hidden", "Gone", "schema", "test-utils", "SAVED"})
 
 
 def test_back_end_files_are_found_by_path_and_name(tmp_path: Path) -> None:

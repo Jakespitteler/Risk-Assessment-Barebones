@@ -64,8 +64,9 @@ the fifth, where Claude had recommended trusting a run test's name.
    rather than running it. A back-end name is a class, function or constant, a class's own field, method or
    enum member written with its class (`Hazard.covers`, `Answer.YES`), a function's parameter
    (`submission_id`), or a file (`fix.py`). A front-end name is a file under `frontend/src` (not a test file), a
-   name a file exports, or a field of a schema in the generated API types. A name the check can't see, such as
-   an attribute set in `__init__` or an inherited member, would be reported missing; none is in the glossary.
+   name a file exports, or a field of a schema in the generated API types; test files and the shared test helpers
+   don't count. A name the check can't see, such as an attribute set in `__init__`, an inherited member or
+   `export { X }`, would be reported missing; none is in the glossary. A schema field counts if any schema has it.
 4. **What counts as a test naming a rule?** A back-end test's docstring, or the name of a front-end `it(...)` or
    `test(...)`. Front-end names must count, because T1 and K1 can only be tested in the front end. Comments,
    file-level docstrings, `describe` names and ranges such as "C1 to C6" don't count, so each rule points to a
