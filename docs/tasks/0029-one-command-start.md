@@ -156,7 +156,7 @@ The questions for Jake, each with Claude's recommended pick.
       "Commands" lists the root commands; the per-folder ones stay in a short note for editors and debugging.
 11. **Where it goes in the order of work.** Jake asked for it "soon". Options:
     - (a) Next after 0013, which is in progress on another branch, and before 0024 (dark mode).
-    - (b) Straight away, while 0009 and 0027 wait on Jake's measurement. It touches `scripts/`, the README,
+    - (b) Straight away, while 0027 waits on Jake's measurement. It touches `scripts/`, the README,
       `AGENTS.md`, `docs/dev-setup.md`, the structure in `docs/architecture.md`, perhaps `frontend/vite.config.ts`
       and a small logging setting in `backend/` (to hide the address lines), and one back-end route (if question 6
       is a yes), plus the CI workflows if question 10 moves `check.py`, so it barely overlaps the open pull
