@@ -138,3 +138,40 @@ it("never offers or shows a hazard with nothing written in it", () => {
   });
   expect(within(picker).getAllByRole("button")).toHaveLength(2);
 });
+
+const HAZARD_AI_NOTICE =
+  "The hazards you link to a Yes are checked by an AI. Your name isn't sent.";
+
+it("says hazards go to an AI only when the back end sends that line (D63)", () => {
+  const { rerender } = render(
+    <HazardCheckPage
+      hazards={[HAZARD_DRAFT]}
+      questions={HAZARD_QUESTIONS}
+      choices={SMALL_TEMPLATE.answer_choices}
+      answers={{}}
+      errorFor={() => undefined}
+      onAnswer={vi.fn()}
+      onLink={vi.fn()}
+      onUnlink={vi.fn()}
+      onAddHazard={vi.fn()}
+      aiNotice={null}
+    />,
+  );
+  expect(screen.queryByText(HAZARD_AI_NOTICE)).toBeNull();
+
+  rerender(
+    <HazardCheckPage
+      hazards={[HAZARD_DRAFT]}
+      questions={HAZARD_QUESTIONS}
+      choices={SMALL_TEMPLATE.answer_choices}
+      answers={{}}
+      errorFor={() => undefined}
+      onAnswer={vi.fn()}
+      onLink={vi.fn()}
+      onUnlink={vi.fn()}
+      onAddHazard={vi.fn()}
+      aiNotice={HAZARD_AI_NOTICE}
+    />,
+  );
+  expect(screen.getByText(HAZARD_AI_NOTICE)).toBeTruthy();
+});

@@ -20,6 +20,7 @@ export function HazardCheckPage({
   onUnlink,
   onAddHazard,
   nudgeFor,
+  aiNotice,
 }: {
   hazards: HazardDraft[];
   questions: Question[];
@@ -32,6 +33,8 @@ export function HazardCheckPage({
   onAddHazard: (questionId: string) => void;
   /** Anything to ask about the wording of a hazard linked to this question (T6). */
   nudgeFor?: (questionId: string, hazardIndex: number) => ReactNode;
+  /** That linked hazards are checked by an AI, when one is set up (decision D63). */
+  aiNotice?: string | null;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -47,6 +50,7 @@ export function HazardCheckPage({
         Did you miss any of these? For each Yes, say which hazard on your list
         it is, or add it.
       </p>
+      {aiNotice && <p className="text-slate-700">{aiNotice}</p>}
       {questions.map((question) => {
         const path = `answers.${question.id}`;
         return (

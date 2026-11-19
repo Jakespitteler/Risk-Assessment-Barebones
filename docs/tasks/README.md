@@ -12,8 +12,8 @@ built-in `sqlite3` for now (`docs/decisions.md`, 2026-11-14), so no task to swit
 
 1. **0009, the first AI provider.** Depends on 0008, which is complete. Jake answered its questions on 2026-11-18
    (spec D52 to D55).
-2. **0027, the AI judges vague hazards.** Jake chose on 2026-11-18 to do it straight after 0009 (spec D55). Its
-   questions are answered when it starts.
+2. **0027, the AI judges vague hazards.** Jake chose on 2026-11-18 to do it straight after 0009 (spec D55). Built
+   on 2026-11-19 (spec D56 to D63), stacked on 0009's pull request; it waits on Jake's measurement, as 0009 does.
 3. **0013, glossary and rule tracing.** Last of these, because its test fails for any spec rule with no test yet, and
    most of those rules arrive in 0005 to 0008.
 4. **0024, dark mode.** Jake asked for it on 2026-11-18. It depends on no other task and makes no one think

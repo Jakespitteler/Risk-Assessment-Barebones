@@ -69,6 +69,52 @@
         }
       }
     },
+    "/api/take5s/nudges": {
+      "post": {
+        "tags": [
+          "take5"
+        ],
+        "summary": "Nudges",
+        "description": "Return a nudge for each vague hazard linked to a Yes, saving nothing (T6).\n\nAn AI judges the hazards when one is set up, for up to 5 seconds, and the word\nrule decides the rest. The phone asks once for each hazard's words.",
+        "operationId": "nudges_api_take5s_nudges_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Take5Draft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Nudge"
+                  },
+                  "type": "array",
+                  "title": "Response Nudges Api Take5S Nudges Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Something is missing or wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormErrors"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/take5s": {
       "get": {
         "tags": [
@@ -462,14 +508,6 @@
               }
             ],
             "title": "Runs Out At"
-          },
-          "nudges": {
-            "items": {
-              "$ref": "#/components/schemas/Nudge"
-            },
-            "type": "array",
-            "title": "Nudges",
-            "default": []
           }
         },
         "type": "object",
@@ -480,7 +518,7 @@
           "can_submit"
         ],
         "title": "DraftCheck",
-        "description": "What checking a draft found.\n\nAttributes:\n    errors: Every gap or mistake, in the order of the form.\n    warnings: Everything allowed that will stop the job, in the order of the form.\n        A warning never stops the draft being submitted.\n    assessment: The rated Take 5, or None while there are errors.\n    can_submit: True when there are no errors.\n    thinking_questions: Applicable prompts, including ones already answered.\n    runs_out_at: When the draft runs out (spec K2), or None when it never does.\n    nudges: Suggestions to make an answer clearer, in the order of the form. A nudge\n        never stops the draft being submitted."
+        "description": "What checking a draft found.\n\nAttributes:\n    errors: Every gap or mistake, in the order of the form.\n    warnings: Everything allowed that will stop the job, in the order of the form.\n        A warning never stops the draft being submitted.\n    assessment: The rated Take 5, or None while there are errors.\n    can_submit: True when there are no errors.\n    thinking_questions: Applicable prompts, including ones already answered.\n    runs_out_at: When the draft runs out (spec K2), or None when it never does."
       },
       "ErrorMessage": {
         "properties": {
@@ -1273,6 +1311,17 @@
               }
             ],
             "title": "Ai Notice"
+          },
+          "hazard_ai_notice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hazard Ai Notice"
           }
         },
         "type": "object",
@@ -1287,7 +1336,7 @@
           "control_guidance"
         ],
         "title": "TemplateResponse",
-        "description": "The card a new Take 5 is filled in on, so the phone keeps no copy of it.\n\nAttributes:\n    name: The template's name.\n    questions: The card's questions, in the order it prints them, each with its\n        role.\n    answer_choices: The answers a question can have, in the order to show them.\n    matrix: The risk matrix the hazards are rated on.\n    control_kinds: Every kind of control, strongest first.\n    likelihood_guidance: What each likelihood means, in the card's words.\n    consequence_guidance: What each consequence means, in the card's words.\n    control_guidance: The card's advice on choosing controls.\n    ai_notice: What Submit sends to the AI, to show above Submit, or None when\n        no AI is set up, so nothing is sent (decision D52)."
+        "description": "The card a new Take 5 is filled in on, so the phone keeps no copy of it.\n\nAttributes:\n    name: The template's name.\n    questions: The card's questions, in the order it prints them, each with its\n        role.\n    answer_choices: The answers a question can have, in the order to show them.\n    matrix: The risk matrix the hazards are rated on.\n    control_kinds: Every kind of control, strongest first.\n    likelihood_guidance: What each likelihood means, in the card's words.\n    consequence_guidance: What each consequence means, in the card's words.\n    control_guidance: The card's advice on choosing controls.\n    ai_notice: What Submit sends to the AI, to show above Submit, or None when\n        no AI is set up, so nothing is sent (decision D52).\n    hazard_ai_notice: That hazards linked to a Yes are checked by an AI, to show\n        on the hazard check page, or None when the word rule judges them, so\n        nothing is sent (decision D63)."
       },
       "ThinkingQuestion": {
         "properties": {

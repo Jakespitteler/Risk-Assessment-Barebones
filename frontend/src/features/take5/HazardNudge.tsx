@@ -1,20 +1,17 @@
 import { useState } from "react";
 import type { Take5Draft } from "../../api/take5";
-import { useDraftCheck } from "../../api/take5";
+import { useHazardNudges } from "../../api/take5";
 import { Button } from "../../components/Button";
 import { Field } from "../../components/Field";
 import { FIELD_STYLE } from "../../components/fieldStyle";
 import { Warning } from "../../components/Warning";
-import { useSettledValue } from "./useSettledValue";
-
-// Ask about the wording once the worker pauses, not once per key (as the controls do).
-const PAUSE_BEFORE_CHECK_MS = 400;
 
 /**
  * The back end's nudge to make a hazard linked to a Yes specific (spec T6), under the
  * question the back end names. The worker rewords the hazard in the box, which changes
  * it on the list as they type, or keeps it as it is. It never blocks Continue. While
- * the worker is typing the box stays, even once the words are specific enough.
+ * the worker is typing the box and its message stay, and nothing is asked: an AI may
+ * judge the words, so it is asked once they leave the box (decision D56).
  */
 export function HazardNudge({
   draft,
@@ -32,22 +29,17 @@ export function HazardNudge({
   onReword: (description: string) => void;
   onKeep: () => void;
 }) {
-  const [typing, setTyping] = useState(false);
-  // A check already made of this exact draft is used at once; otherwise wait a moment.
-  // Kept words are never asked about, so they send no checks.
-  const current = useDraftCheck(draft, false);
-  const settled = useDraftCheck(
-    useSettledValue(draft, PAUSE_BEFORE_CHECK_MS),
-    !kept,
-    true,
-  );
-  const check = current.data ? current : settled;
+  // The draft as it was when the worker went into the box. Until they leave it, that is
+  // what is judged, so typing sends nothing. Kept words are never asked about.
+  const [draftBeforeTyping, setDraftBeforeTyping] = useState<Take5Draft>();
+  const typing = draftBeforeTyping !== undefined;
+  const judged = useHazardNudges(draftBeforeTyping ?? draft, !kept);
   const path = `hazards.${String(index)}.description`;
   // Kept words are never asked about, but the box stays while the worker is in it, even
   // if what they type matches words they kept before.
   const nudge = kept
     ? undefined
-    : (check.data?.nudges ?? []).find(
+    : (judged.data ?? []).find(
         (item) => item.path === path && item.question_id === questionId,
       );
   if (!(nudge || typing)) return null;
@@ -64,10 +56,10 @@ export function HazardNudge({
           rows={3}
           value={description}
           onFocus={() => {
-            setTyping(true);
+            setDraftBeforeTyping(draft);
           }}
           onBlur={() => {
-            setTyping(false);
+            setDraftBeforeTyping(undefined);
           }}
           onChange={(event) => {
             onReword(event.target.value);

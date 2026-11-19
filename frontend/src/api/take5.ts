@@ -18,6 +18,7 @@ export type RatingChoice = Schemas["RatingChoice"];
 export type DraftCheck = Schemas["DraftCheck"];
 export type FieldError = Schemas["FieldError"];
 export type FieldWarning = Schemas["FieldWarning"];
+export type Nudge = Schemas["Nudge"];
 export type Hazard = Schemas["Hazard"];
 export type Take5Response = Schemas["Take5Response"];
 export type SavedTake5 = Schemas["SavedTake5"];
@@ -117,6 +118,23 @@ export function useDraftCheck(
     // Only the controls prompt retains old data during editing. Review and Finish
     // must wait for the check of the current draft, never a previous answer.
     placeholderData: keepQuestion ? keepPreviousData : undefined,
+  });
+}
+
+/**
+ * The back end's nudges to make vague hazards specific (spec T6). An AI may take a few
+ * seconds to judge new words, so the last answer stays on screen until the next one
+ * comes. Only asks while `enabled`.
+ */
+export function useHazardNudges(draft: Take5Draft, enabled: boolean) {
+  return useQuery({
+    queryKey: ["take5-nudges", draft],
+    queryFn: () => request<Nudge[]>("/api/take5s/nudges", draft),
+    staleTime: Infinity,
+    retry: retryOnNetworkError,
+    networkMode: NETWORK_MODE,
+    enabled,
+    placeholderData: keepPreviousData,
   });
 }
 

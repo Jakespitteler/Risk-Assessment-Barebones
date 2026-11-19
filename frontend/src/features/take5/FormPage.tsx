@@ -145,6 +145,7 @@ export function FormPage({
         }}
         onAddHazard={onAddHazard}
         nudgeFor={nudgeFor}
+        aiNotice={template.hazard_ai_notice}
       />
     );
   if (stage.page === "hazards")
