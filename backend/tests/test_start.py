@@ -427,6 +427,34 @@ def test_a_back_end_that_never_answers_is_stopped_and_vite_never_starts() -> Non
     stop.assert_called_once_with(backend)
 
 
+@pytest.mark.parametrize(
+    "how_it_ends",
+    [
+        pytest.param(RuntimeError("The back end stopped."), id="a_server_failed"),
+        pytest.param(KeyboardInterrupt(), id="ctrl_c"),
+    ],
+)
+def test_ctrl_c_is_ignored_before_the_servers_are_stopped(
+    how_it_ends: BaseException,
+) -> None:
+    """However stopping begins, a Ctrl+C during it can't leave a server running."""
+    events = MagicMock()
+    backend = MagicMock(spec=subprocess.Popen)
+    with (
+        patch.object(start, "start", return_value=backend),
+        patch.object(start, "wait_until_ready", side_effect=how_it_ends),
+        patch.object(start, "print", create=True),
+        patch.object(start, "stop", events.stop),
+        patch.object(start.signal, "signal", events.signal),
+    ):
+        start.run_servers("http://localhost:5173", None)
+
+    assert events.mock_calls[-2:] == [
+        call.signal(signal.SIGINT, signal.SIG_IGN),
+        call.stop(backend),
+    ]
+
+
 def test_the_cloud_sync_warning_shows_again_under_the_ready_line() -> None:
     """The warning printed before the installs has scrolled away by then."""
     backend = MagicMock(spec=subprocess.Popen)
@@ -541,6 +569,7 @@ def test_stopping_on_windows_ends_the_whole_tree() -> None:
         capture_output=True,
         check=False,
     )
+    server.wait.assert_called_once_with(timeout=start.STOP_WAIT_SECONDS)
 
 
 def test_a_failed_browser_install_warns_and_the_app_still_starts(
