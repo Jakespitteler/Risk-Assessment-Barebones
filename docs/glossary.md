@@ -8,8 +8,9 @@ Rule numbers (R1, V2, T3, C4, K1 and so on) are the bold definitions in the spec
 test's docstring or a front-end test's name: `backend/tests/test_spec_rules.py` fails with the numbers that aren't,
 or with any rule number a test names that the spec no longer has. `backend/tests/test_spec_examples.py` does the
 same for the worked examples: each needs a test named by its number, and a test named for a run of them must list
-each one as a case id, such as `test_example_3`. The front-end column holds components (files in `frontend/src/`),
-hooks and helpers, and API types, which come from `src/api/schema.d.ts` through `src/api/take5.ts`.
+each one as a case id, such as `test_example_3`. `backend/tests/test_glossary_names.py` fails when a code name
+below no longer exists in the code. The front-end column holds components (files in `frontend/src/`), hooks and
+helpers, and API types, which come from `src/api/schema.d.ts` through `src/api/take5.ts`.
 
 ## The Take 5
 

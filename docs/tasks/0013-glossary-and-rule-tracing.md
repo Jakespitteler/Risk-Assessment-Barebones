@@ -24,8 +24,8 @@ spec has no test that names it. This is the light version of the "shared semanti
 - [x] The rule test also fails when a test names a rule number the spec no longer defines.
 - [x] A test fails when a worked example in the spec has no test named by its number. A test named for a run of
   examples covers only those its cases list.
-- [ ] A test checks each code name in the glossary against the code, back end and front end. In its own stacked
-  pull request, `claude/0013-glossary-code-names`; this box is ticked there.
+- [x] A test checks each code name in the glossary against the code, back end and front end
+  (`backend/tests/test_glossary_names.py`, in its own stacked pull request, `claude/0013-glossary-code-names`).
 - [x] All checks pass.
 
 ## Out of scope
@@ -60,7 +60,10 @@ the fifth, where Claude had recommended trusting a run test's name.
 2. **Check that every worked example has a test named by its number?** Yes. `backend/tests/test_spec_examples.py`
    reads the 87 numbered rows under "Worked examples" and fails with any number no back-end test covers.
 3. **Check the glossary's code names against the code?** Yes, back end and front end, in its own pull request,
-   stacked after task 0029's, to keep this one small.
+   stacked after task 0029's, to keep this one small. `backend/tests/test_glossary_names.py` reads the code
+   rather than running it. A back-end name is a class, function or constant, a class's field or method
+   (`Hazard.covers`), a field or parameter on its own (`location`), or a file (`fix.py`). A front-end name is a
+   file under `frontend/src`, a name it exports, or a field of the generated API types.
 4. **What counts as a test naming a rule?** A back-end test's docstring, or the name of a front-end `it(...)` or
    `test(...)`. Front-end names must count, because T1 and K1 can only be tested in the front end. Comments,
    file-level docstrings, `describe` names and ranges such as "C1 to C6" don't count, so each rule points to a
