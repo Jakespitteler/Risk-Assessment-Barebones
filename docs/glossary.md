@@ -1,13 +1,13 @@
 # Glossary
 
 One name for one thing. Each row is a term from `docs/spec.md`: what it means, what the code calls it, and the
-spec rules about it. Use these names in code, tests and docs. When the code's name differs from the spec's word,
-the row says so; task 0013 lists those mismatches for Jake to decide, and nothing has been renamed.
+spec rules about it. Use these names in code, tests and docs. Where the code's name differs from the spec's word,
+the mismatch is listed in task 0013's file for Jake to decide; nothing has been renamed.
 
-Rule numbers (R1, V2, T3, C4, K1 and so on) are the bold definitions in the spec. Every one must be in the name
-or docstring of at least one test: `backend/tests/test_spec_rules.py` fails with the numbers that aren't. Names
-in the front-end column are files in `frontend/src/` unless they are API types, which come from
-`src/api/schema.d.ts` through `src/api/take5.ts`.
+Rule numbers (R1, V2, T3, C4, K1 and so on) are the bold definitions in the spec. Every one must be in a
+back-end test's docstring or a front-end test's name: `backend/tests/test_spec_rules.py` fails with the numbers
+that aren't. The front-end column holds components (files in `frontend/src/`), hooks and helpers, and API types,
+which come from `src/api/schema.d.ts` through `src/api/take5.ts`.
 
 ## The Take 5
 
@@ -76,8 +76,8 @@ in the front-end column are files in `frontend/src/` unless they are API types, 
 
 | Term | Meaning | Back end | Front end | Rules |
 | --- | --- | --- | --- | --- |
-| Draft | The Take 5 being filled in, kept on the phone until it is submitted or thrown away. | `Take5Draft` | `useTake5Draft`; `StoredDraft` | K1 |
-| Kept draft | A draft kept for later with Leave. It sits at the top of the saved list with "Carry on". | none (it lives on the phone) | `keptDraft`, `KeptDraftCard`, `LeavePanel` | K1 |
+| Draft | The Take 5 being filled in, kept on the phone until it is submitted or thrown away. | `Take5Draft` | `useTake5Draft`; type `Take5Draft` | K1 |
+| Kept draft | A draft kept for later with Leave. It sits at the top of the saved list with "Carry on". | none (it lives on the phone) | `StoredDraft`, `keptDraft`, `KeptDraftCard`, `LeavePanel` | K1 |
 | Time limit / run out | How long a draft lasts from the first change: 2 hours on the booklet. Past it, it has run out. | `Take5Template.draft_time_limit_minutes`; `time_limit_error`, `runs_out_at` | `TimeLeft`, `RunOutPanel` | K2 |
 | Start time | When the worker made the draft's first change. | `SavedTake5.started_at` | `started_at` | K2, K3 |
 | Submission ID | The ID the phone makes for a Take 5, so a retry gets the same saved Take 5 back. | `submission_id` | `useSubmitTake5` | K2 |

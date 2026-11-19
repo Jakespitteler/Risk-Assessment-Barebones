@@ -1,8 +1,9 @@
 """Tests that every rule in the spec is named by at least one test (task 0013).
 
 A rule is a numbered definition in `docs/spec.md`, such as **R1 Rating.** or **V2**.
-A test names it by putting the number in its name or docstring: a back-end test
-function, or a front-end `it(...)` or `test(...)`. Comments and module docstrings
+A test names it by putting the number in a back-end test function's docstring (Ruff
+keeps function names lowercase, so a name can't hold it), or in the name of a
+front-end `it(...)` or `test(...)`. `it.each` names, comments and module docstrings
 don't count, so each rule points to a real test.
 """
 
@@ -16,7 +17,7 @@ SPEC_PATH: Path = REPO_ROOT / "docs" / "spec.md"
 BACKEND_TESTS: Path = REPO_ROOT / "backend" / "tests"
 FRONTEND: Path = REPO_ROOT / "frontend"
 
-RULE_DEFINITION: re.Pattern[str] = re.compile(r"^- \*\*([A-Z]\d+)\b", re.MULTILINE)
+RULE_DEFINITION: re.Pattern[str] = re.compile(r"^\s*- \*\*([A-Z]\d+)\b", re.MULTILINE)
 FRONTEND_TEST_NAME: re.Pattern[str] = re.compile(
     r"(?<![\w.])(?:it|test)\(\s*(?P<quote>[\"'`])(?P<name>.*?)(?P=quote)",
     re.DOTALL,

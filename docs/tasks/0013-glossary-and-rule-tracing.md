@@ -1,7 +1,7 @@
 ---
 id: 0013
 title: A glossary of spec terms, and a test that every spec rule has a test
-status: review
+status: done
 owner: claude
 branch: claude/funny-ptolemy-7u9m8v
 ---
@@ -46,13 +46,17 @@ Done earlier, it needs a list of rules not built yet that changes with every tas
 
 ### Assumptions
 
-- **What counts as a test naming a rule.** A back-end test function's own name or docstring, or the name of a
-  front-end `it(...)` or `test(...)`. Front-end names count because T1 and K1 are about the screen and the phone,
+- **What counts as a test naming a rule.** A back-end test function's own docstring (Ruff keeps function names
+  lowercase, so a name can't hold one), or the name of a front-end `it(...)` or `test(...)`; `it.each` names are
+  not read. Front-end names count because T1 and K1 are about the screen and the phone,
   so only front-end tests can check them (the spec says so for T1). Module docstrings, comments and ranges such
   as "C1 to C6" don't count, so each rule points to a real test. The new test's own file is left out, since it
   names rules only as examples.
 - **What a rule is.** The bold numbered definitions under the spec's rule headings. Decision numbers (D1 ...)
   and feature headings (F1 to F6) are not rules.
+- **A new rule means two edits.** The test also checks the exact list of 24 rules it reads, so a change to the
+  spec's layout can't make it pass with nothing. A task that adds a rule (0024 or 0029 might) adds it to that
+  list as well as naming it in a test.
 
 ### Mismatches for Jake to decide
 

@@ -5,8 +5,8 @@ otherwise. Each task file's frontmatter holds its status; this page holds only t
 
 Recommended by Claude on 2026-11-13, agreed by Jake the same day. Tasks 0015 to 0020 added by Claude on
 2026-11-14, 0021 on 2026-11-15, 0022 on 2026-11-16, 0023 on 2026-11-17, 0024 to 0027 on 2026-11-18, and 0028 and
-0029 on 2026-11-19; Jake can move them. Last brought up to date on 2026-11-19, after Jake merged the pull request
-for 0027, by task 0013's pull request.
+0029 on 2026-11-19; Jake can move them. Last brought up to date on 2026-11-19, in task 0013's pull request,
+after Jake merged the one for 0027.
 
 Complete: 0001 to 0020, 0022, 0023, 0025 and 0026. Task 0027 is merged, but stays `review` until Jake's
 measurement of the AI's verdicts is in its pull request, as its last criterion asks. Task 0018 decided to keep the
