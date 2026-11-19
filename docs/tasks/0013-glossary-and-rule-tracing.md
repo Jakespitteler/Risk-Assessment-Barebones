@@ -21,10 +21,11 @@ spec has no test that names it. This is the light version of the "shared semanti
 - [x] A back-end test reads `docs/spec.md`, finds every rule number (such as R1, V2, T3, C4), and fails with
   the missing numbers when one is not named in any test's name or docstring.
 - [x] The tests that are missing a rule number are named or documented so the new test passes.
-- [x] The rule test also fails when a test names a rule number the spec no longer defines (Jake's Q3).
-- [x] A test fails when a worked example in the spec has no test named by its number (Jake's Q4).
-- [ ] A test checks each code name in the glossary against the code, back end and front end (Jake's Q5). In
-  its own stacked pull request, `claude/0013-glossary-code-names`; this box is ticked there.
+- [x] The rule test also fails when a test names a rule number the spec no longer defines.
+- [x] A test fails when a worked example in the spec has no test named by its number. A test named for a run of
+  examples covers only those its cases list.
+- [ ] A test checks each code name in the glossary against the code, back end and front end. In its own stacked
+  pull request, `claude/0013-glossary-code-names`; this box is ticked there.
 - [x] All checks pass.
 
 ## Out of scope
@@ -50,30 +51,34 @@ Done earlier, it needs a list of rules not built yet that changes with every tas
 
 ### Jake's answers (2026-11-19)
 
-- **Q3, old rule numbers:** yes. `test_no_test_names_a_rule_the_spec_no_longer_has` fails on a rule number
-  (R, V, T, C or K and a number) that a test names and the spec doesn't define.
-- **Q4, every worked example has a test:** yes. `backend/tests/test_spec_examples.py` reads the 87 numbered
-  rows under "Worked examples" and fails with any number that no back-end test name covers. A name covers a run
-  of examples as `test_example_2_to_10_...` or `test_examples_50_and_51_...`, the forms the tests already use,
-  so no test needed renaming.
-- **Q5, the glossary's code names checked against the code:** yes, back end and front end. Built in its own
-  pull request, stacked after task 0029's, to keep this one small.
-- **The name mismatches below:** keep both names. The glossary maps each spec word to its code name, and nothing
-  is renamed.
+Asked on pull request #51's review, each with Claude's recommendation; Jake took every recommendation except the
+fifth.
 
-### How the checks decide (Claude's choices)
+1. **Fail on old rule numbers?** Yes. `test_no_test_names_a_rule_the_spec_no_longer_has` fails on a rule number
+   that a test names and the spec doesn't define. A rule number is one of the spec's rule letters (R, V, T, C, K
+   today) and a number, so decisions (D6) and features (F3) are never caught.
+2. **Check that every worked example has a test named by its number?** Yes. `backend/tests/test_spec_examples.py`
+   reads the 87 numbered rows under "Worked examples" and fails with any number no back-end test covers.
+3. **Check the glossary's code names against the code?** Yes, back end and front end, in its own pull request,
+   stacked after task 0029's, to keep this one small.
+4. **What counts as a test naming a rule?** A back-end test's docstring, or the name of a front-end `it(...)` or
+   `test(...)`. Front-end names must count, because T1 and K1 can only be tested in the front end. Comments,
+   file-level docstrings, `describe` names and ranges such as "C1 to C6" don't count, so each rule points to a
+   real test. The same goes for the old-rule check, so an old number left in a comment isn't caught.
+5. **May a test named for a run of examples (`test_example_2_to_10_...`) cover them by its name alone?** No: it
+   covers only the examples its cases list, as a `pytest.param` id or an `ids=` entry such as `test_example_3`
+   or `example_50_one_word`, and the check fails on a run test that leaves one out. One test,
+   `test_examples_50_and_51_...` in `tests/services/test_challenge.py`, became two listed cases.
+6. **The name mismatches below?** Keep both names. The glossary maps each spec word to its code name, and
+   nothing is renamed.
 
-- **What counts as a test naming a rule.** A back-end test function's own docstring (Ruff keeps function names
-  lowercase, so a name can't hold one), or the name of a front-end `it(...)` or `test(...)`; `it.each` names are
-  not read. Front-end names count because T1 and K1 are about the screen and the phone,
-  so only front-end tests can check them (the spec says so for T1). Module docstrings, comments and ranges such
-  as "C1 to C6" don't count, so each rule points to a real test. The new test's own file is left out, since it
-  names rules only as examples.
-- **What a rule is.** The bold numbered definitions under the spec's rule headings. Decision numbers (D1 ...)
-  and feature headings (F1 to F6) are not rules.
-- **A new rule means two edits.** The test also checks the exact list of 24 rules it reads, so a change to the
-  spec's layout can't make it pass with nothing. A task that adds a rule (0024 or 0029 might) adds it to that
-  list as well as naming it in a test.
+### How the checks work
+
+- **Rules:** a rule is a bold numbered definition under the spec's rule headings. The test pins the exact list of
+  24, so a change to the spec's layout can't make it pass with nothing; a task that adds a rule adds it to that
+  list as well as naming it in a test. The test's own file is left out, since it names rules only as examples.
+- **Worked examples:** only back-end test names count, since every example is a back-end test today. The test
+  pins examples 1 to 87 for the same reason. A test marked to be skipped would still count; none is.
 
 ### Name mismatches (decided: keep both)
 

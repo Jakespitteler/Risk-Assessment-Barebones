@@ -6,7 +6,9 @@ both stay: Jake chose that on 2026-11-19, and task 0013's file lists the differe
 
 Rule numbers (R1, V2, T3, C4, K1 and so on) are the bold definitions in the spec. Every one must be in a
 back-end test's docstring or a front-end test's name: `backend/tests/test_spec_rules.py` fails with the numbers
-that aren't. The front-end column holds components (files in `frontend/src/`), hooks and helpers, and API types,
+that aren't, or with any rule number a test names that the spec no longer has.
+`backend/tests/test_spec_examples.py` does the same for the worked examples: each needs a test named by its
+number. The front-end column holds components (files in `frontend/src/`), hooks and helpers, and API types,
 which come from `src/api/schema.d.ts` through `src/api/take5.ts`.
 
 ## The Take 5
