@@ -227,18 +227,25 @@ def test_example_52_a_four_word_answer_finishes_the_take5(tmp_path: Path) -> Non
     assert service.get(saved.id) == finished
 
 
+@pytest.mark.parametrize(
+    "short_answer",
+    [
+        pytest.param("Yes", id="test_example_50_one_word"),
+        pytest.param("Chocked both sides", id="test_example_51_three_words"),
+    ],
+)
 def test_examples_50_and_51_a_short_answer_is_refused_and_nothing_changes(
     tmp_path: Path,
+    short_answer: str,
 ) -> None:
     """A one-word or three-word answer leaves the Take 5 unfinished (C4)."""
     service: Take5Service = _service(tmp_path)
     saved: SavedTake5 = service.submit(_tray_draft(), uuid4())
 
-    for short_answer in ("Yes", "Chocked both sides"):
-        with pytest.raises(InvalidAnswerError) as refusal:
-            service.answer(saved.id, short_answer)
-        assert refusal.value.error.path == "answer"
+    with pytest.raises(InvalidAnswerError) as refusal:
+        service.answer(saved.id, short_answer)
 
+    assert refusal.value.error.path == "answer"
     assert service.get(saved.id) == saved
 
 

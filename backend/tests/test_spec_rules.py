@@ -21,9 +21,6 @@ BACKEND_TESTS: Path = REPO_ROOT / "backend" / "tests"
 FRONTEND: Path = REPO_ROOT / "frontend"
 
 RULE_DEFINITION: re.Pattern[str] = re.compile(r"^\s*- \*\*([A-Z]\d+)\b", re.MULTILINE)
-# Rule numbers look like these: one of the spec's rule letters, then a number.
-# cspell:ignore RVTCK
-RULE_NUMBER: re.Pattern[str] = re.compile(r"\b[RVTCK]\d+\b")
 FRONTEND_TEST_NAME: re.Pattern[str] = re.compile(
     r"(?<![\w.])(?:it|test)\(\s*(?P<quote>[\"'`])(?P<name>.*?)(?P=quote)",
     re.DOTALL,
@@ -97,6 +94,9 @@ def rules_named_but_not_defined(
 ) -> list[str]:
     """Find rule numbers that tests name but the spec doesn't define.
 
+    A rule number is one of the spec's rule letters (R, V, T, C and K today) and a
+    number, so a decision such as D6 or a feature such as F3 is never one.
+
     Args:
         rule_numbers: The spec's rule numbers.
         test_texts: Every test's name and docstring.
@@ -105,8 +105,10 @@ def rules_named_but_not_defined(
         Each unknown rule number once, sorted.
     """
     defined: set[str] = set(rule_numbers)
+    rule_letters: str = "".join(sorted({number[0] for number in defined}))
+    rule_number: re.Pattern[str] = re.compile(rf"\b[{rule_letters}]\d+\b")
     named: set[str] = {
-        number for text in test_texts for number in RULE_NUMBER.findall(text)
+        number for text in test_texts for number in rule_number.findall(text)
     }
     return sorted(named - defined)
 
