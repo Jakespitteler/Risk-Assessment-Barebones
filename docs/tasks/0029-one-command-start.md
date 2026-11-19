@@ -270,8 +270,9 @@ The questions for Jake, each with Claude's recommended pick.
   `uv run start.py` and Ctrl+C in PowerShell, then check that nothing is left on ports 8000 and 5173. If a server
   stops by itself, `start.py` still runs `taskkill /T` on it, in case npm or uv ended before what it started; a
   review found Windows may no longer find that tree once its first process has ended. To try it: with the app
-  running, end the `node.exe` process for Vite in Task Manager; `start.py` should say the front end stopped and
-  leave nothing on ports 8000 and 5173.
+  running, open Task Manager's Details tab and add the "Command line" column. End the `node.exe` whose command
+  line has `npm-cli.js` (npm itself), not the one running Vite. `start.py` should say the front end stopped, and
+  then nothing should be left on port 5173.
 
 ### Notes
 
