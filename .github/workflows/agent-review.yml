@@ -69,7 +69,7 @@ jobs:
             PR NUMBER: ${{ github.event.pull_request.number }}
             Read and follow .claude/agents/reviewer.md in full.
             This is CI: review and fix mode. Review the PR against its actual base branch.
-            Run uv run scripts/check.py. Publish the report as one top-level PR comment
+            Run uv run check.py. Publish the report as one top-level PR comment
             using gh api to create or update the marked report described in the reviewer instructions.
             Do not post inline comments or submit an approval.
           claude_args: >-

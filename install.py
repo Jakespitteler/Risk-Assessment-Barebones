@@ -1,10 +1,11 @@
 # /// script
 # requires-python = ">=3.13"
 # ///
-"""Set up a freshly cloned copy of the repo, so the app and every check can run.
+"""Install everything a freshly cloned repo needs, so the app and every check can run.
 
-Usage, from the repo root: `uv run scripts/setup.py`. It is safe to run again, for
-example after pulling changes that add packages.
+Usage, from the repo root: `uv run install.py`. It is safe to run again, and installs
+everything afresh, so it is the command to run when an install seems broken. Day to day,
+`uv run start.py` installs only what has changed and starts the app.
 
 First it checks for the tools uv can't install: git and Node.js 22.22.2 or newer. If
 one is missing it says how to get it and stops before installing anything. Then it
@@ -12,6 +13,7 @@ installs Python 3.13 and the back end's packages, the front end's packages, and 
 browser the whole-app tests use. It ends with what it did and what to do next.
 """
 
+import hashlib
 import os
 import shutil
 import subprocess
@@ -20,7 +22,7 @@ from collections.abc import Sequence
 from pathlib import Path, PurePath
 from typing import NamedTuple
 
-REPO_ROOT: Path = Path(__file__).resolve().parent.parent
+REPO_ROOT: Path = Path(__file__).resolve().parent
 # The oldest Node.js the locked front-end packages accept (jsdom asks for 22.22.2).
 # npm also refuses any package whose stated Node.js range the version misses.
 MINIMUM_NODE_VERSION: tuple[int, int, int] = (22, 22, 2)
@@ -34,7 +36,7 @@ NPX: str = shutil.which("npx") or "npx"
 
 # `uv run` points VIRTUAL_ENV at this script's own throwaway environment. The back end
 # must use its own `.venv`, so the installs are run without it.
-SETUP_ENVIRONMENT: dict[str, str] = {
+INSTALL_ENVIRONMENT: dict[str, str] = {
     name: value for name, value in os.environ.items() if name != "VIRTUAL_ENV"
 }
 
@@ -62,37 +64,71 @@ NODE_INSTALL_HELP: str = (
     "https://nodejs.org/en/download (on Windows: winget install --id OpenJS.NodeJS.LTS "
     "-e; on macOS: brew install node)."
 )
+INSTALL_COMMAND: str = "uv run install.py"
 REOPEN_TERMINAL_HELP: str = (
     "After installing, close this terminal, open a new one (so it finds the new tools) "
-    "and run `uv run scripts/setup.py` again."
+    "and run the same command again."
 )
 
 
 class InstallStep(NamedTuple):
-    """One thing set-up installs: what it is, the command, and the folder it runs in."""
+    """One thing to install: what it is, the command, and the folder it runs in."""
 
     what_it_installs: str
     command: list[str]
     folder: str
 
 
+BACKEND_INSTALL_STEP: InstallStep = InstallStep(
+    "Python 3.13 and the back end's packages",
+    ["uv", "sync", "--locked"],
+    "backend",
+)
+FRONTEND_INSTALL_STEP: InstallStep = InstallStep(
+    "the front end's packages",
+    [NPM, "ci", "--engine-strict"],
+    "frontend",
+)
+BROWSER_INSTALL_STEP: InstallStep = InstallStep(
+    "the browser the whole-app tests use",
+    [NPX, "playwright", "install", "chromium"],
+    "frontend",
+)
 INSTALL_STEPS: list[InstallStep] = [
-    InstallStep(
-        "Python 3.13 and the back end's packages",
-        ["uv", "sync", "--locked"],
-        "backend",
-    ),
-    InstallStep(
-        "the front end's packages",
-        [NPM, "ci", "--engine-strict"],
-        "frontend",
-    ),
-    InstallStep(
-        "the browser the whole-app tests use",
-        [NPX, "playwright", "install", "chromium"],
-        "frontend",
-    ),
+    BACKEND_INSTALL_STEP,
+    FRONTEND_INSTALL_STEP,
+    BROWSER_INSTALL_STEP,
 ]
+
+
+# Kept inside node_modules, which `npm ci` deletes before it installs, so an install
+# that was stopped part way leaves none behind. `start.py` reads it to tell whether the
+# front end needs installing.
+FRONTEND_FINGERPRINT: str = ".take5-installed-lock"
+
+
+def lock_fingerprint(frontend: Path) -> str:
+    """Fingerprint the front end's lock file, to tell when it has changed.
+
+    Args:
+        frontend: The front end's folder.
+
+    Returns:
+        The SHA-256 of `package-lock.json`, in hex.
+    """
+    return hashlib.sha256((frontend / "package-lock.json").read_bytes()).hexdigest()
+
+
+def remember_frontend_install(frontend: Path) -> None:
+    """Note that the front end's packages match its lock file as it is now.
+
+    Args:
+        frontend: The front end's folder, after a successful `npm ci`.
+    """
+    (frontend / "node_modules" / FRONTEND_FINGERPRINT).write_text(
+        lock_fingerprint(frontend),
+        encoding="utf-8",
+    )
 
 
 def cloud_sync_service(folder: PurePath) -> str | None:
@@ -169,7 +205,7 @@ def node_problem(node_version: str | None, npm_found: bool) -> str | None:
 
 
 def missing_tools() -> list[str]:
-    """Check for the tools set-up needs and uv can't install.
+    """Check for the tools the installs need and uv can't install.
 
     Returns:
         One sentence for each missing tool, saying how to install it. Empty when all
@@ -195,18 +231,22 @@ def cloud_sync_warning(service_name: str) -> str:
     """
     return (
         f"WARNING: this repo is inside a {service_name} folder. {service_name} will "
-        "try to sync the twenty thousand or so files set-up installs, can lock files "
+        "try to sync the twenty thousand or so files the installs add, can lock files "
         "while they are being written, and can make conflicting copies. Clone the repo "
         "again into a folder that is not synced, such as C:\\dev on Windows or ~/dev "
         "on macOS and Linux."
     )
 
 
-def install(steps: Sequence[InstallStep]) -> int:
+def run_install_steps(
+    steps: Sequence[InstallStep],
+    rerun_command: str = INSTALL_COMMAND,
+) -> int:
     """Run each install step in turn, stopping at the first that fails.
 
     Args:
         steps: The steps to run, in order.
+        rerun_command: The command to run again once the problem is fixed.
 
     Returns:
         0 when every step worked, otherwise the exit code of the step that failed.
@@ -216,31 +256,32 @@ def install(steps: Sequence[InstallStep]) -> int:
         result: subprocess.CompletedProcess[bytes] = subprocess.run(
             step.command,
             cwd=REPO_ROOT / step.folder,
-            env=SETUP_ENVIRONMENT,
+            env=INSTALL_ENVIRONMENT,
             check=False,
         )
         if result.returncode != 0:
             print(
                 f"\nFAILED while installing {step.what_it_installs}. Fix the "
                 "problem shown above (if the app is running, stop it first), then "
-                "run `uv run scripts/setup.py` again.",
+                f"run `{rerun_command}` again.",
             )
             return result.returncode
     return 0
 
 
 def print_summary(cloud_service: str | None) -> None:
-    """Say what set-up did and what to do next.
+    """Say what was installed and what to do next.
 
     Args:
         cloud_service: The sync service whose folder holds the repo, if any.
     """
-    print("\nSet-up is complete. It checked git and Node.js, then installed:")
+    print("\nEverything is installed. It checked git and Node.js, then installed:")
     for step in INSTALL_STEPS:
         print(f"  - {step.what_it_installs}")
     print("\nNext:")
-    print("  - Start the app: uv run scripts/dev.py, then open http://localhost:5173")
-    print("  - Run every check, as CI does: uv run scripts/check.py")
+    print("  - Start the app: uv run start.py (it prints the address to open)")
+    print("  - Run the tests: uv run test.py")
+    print("  - Run every check, as CI does: uv run check.py")
     print("  - Using VS Code? Pick the interpreter: docs/dev-setup.md, First time.")
     if sys.platform == "linux":
         print(
@@ -251,28 +292,29 @@ def print_summary(cloud_service: str | None) -> None:
         print(f"\n{cloud_sync_warning(cloud_service)}")
 
 
-def set_up() -> int:
+def install_everything() -> int:
     """Check the tools, install everything, and report.
 
     Returns:
-        0 when set-up finished, otherwise a non-zero exit code.
+        0 when everything installed, otherwise a non-zero exit code.
     """
     cloud_service: str | None = cloud_sync_service(REPO_ROOT)
     if cloud_service is not None:
         print(cloud_sync_warning(cloud_service), flush=True)
     problems: list[str] = missing_tools()
     if problems:
-        print("\nSet-up can't start yet. Nothing was installed.")
+        print("\nThe install can't start yet. Nothing was installed.")
         for problem in problems:
             print(f"  - {problem}")
         print(REOPEN_TERMINAL_HELP)
         return 1
-    install_exit_code: int = install(INSTALL_STEPS)
+    install_exit_code: int = run_install_steps(INSTALL_STEPS)
     if install_exit_code != 0:
         return install_exit_code
+    remember_frontend_install(REPO_ROOT / "frontend")
     print_summary(cloud_service)
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(set_up())
+    sys.exit(install_everything())

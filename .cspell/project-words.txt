@@ -12,6 +12,7 @@ Deque
 describedby
 docstrings
 ECONNREFUSED
+elts
 ENOENT
 envrc
 EPERM
@@ -25,6 +26,7 @@ jsdom
 killpg
 Kincaid
 laydown
+levelprefix
 multiclass
 netrc
 nudger
@@ -53,6 +55,7 @@ unstub
 uvicorn
 venv
 vite
+vitest
 WCAG
 winget
 xhigh

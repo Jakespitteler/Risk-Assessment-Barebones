@@ -34,7 +34,10 @@
       "Edit(//**/.data/**)"
     ],
     "allow": [
-      "Bash(uv run scripts/check.py)",
+      "Bash(uv run check.py)",
+      "Bash(uv run check.py --fix)",
+      "Bash(uv run test.py)",
+      "Bash(uv run test.py *)",
       "Bash(uv run pytest)",
       "Bash(uv run pytest *)",
       "Bash(uv run ruff *)",
@@ -50,7 +53,10 @@
       "Bash(git status)",
       "Bash(git diff *)",
       "Bash(git log *)",
-      "PowerShell(uv run scripts/check.py)",
+      "PowerShell(uv run check.py)",
+      "PowerShell(uv run check.py --fix)",
+      "PowerShell(uv run test.py)",
+      "PowerShell(uv run test.py *)",
       "PowerShell(uv run pytest)",
       "PowerShell(uv run pytest *)",
       "PowerShell(uv run ruff *)",

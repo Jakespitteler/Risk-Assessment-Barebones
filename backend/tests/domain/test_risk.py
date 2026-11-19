@@ -7,7 +7,7 @@ from risk_assessment.domain.take5.template import BOOKLET_MATRIX
 
 
 def test_example_1_rare_low_is_1_low_with_no_jha() -> None:
-    """Worked example 1: the lowest cell of the booklet's matrix."""
+    """Worked example 1: the lowest cell of the booklet's matrix (R1, R2, R3)."""
     rating: RiskRating = rate(BOOKLET_MATRIX, "Rare", "Low")
 
     assert rating == RiskRating(
@@ -47,7 +47,7 @@ def test_example_2_to_10_rating_boundaries(
     band: str,
     needs_jha: bool,
 ) -> None:
-    """Each numbered example checks its score, band and JHA decision together."""
+    """Each numbered example checks its score, band and JHA decision (R1, R2, R3)."""
     rating: RiskRating = rate(BOOKLET_MATRIX, likelihood, consequence)
     assert rating == RiskRating(
         likelihood=likelihood,
@@ -102,7 +102,7 @@ def test_all_25_booklet_cells_match_the_spec(
     likelihood: str,
     expected: tuple[tuple[int, str], ...],
 ) -> None:
-    """Check all printed cells against independent expected scores and bands."""
+    """Check all printed cells against independent expected scores and bands (R1)."""
     consequences: tuple[str, ...] = ("Low", "Minor", "Moderate", "Major", "Critical")
     for consequence, (score, band) in zip(consequences, expected, strict=True):
         assert rate(BOOKLET_MATRIX, likelihood, consequence) == RiskRating(
