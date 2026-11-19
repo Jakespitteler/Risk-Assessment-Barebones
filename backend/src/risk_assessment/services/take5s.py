@@ -1,4 +1,4 @@
-"""Check, submit, answer, get and list Take 5s, through swappable storage and AI."""
+"""Check, nudge, submit, answer, get and list Take 5s, with swappable storage and AI."""
 
 import logging
 from collections.abc import Callable
@@ -22,11 +22,16 @@ from risk_assessment.domain.take5.draft import (
     check_draft,
 )
 from risk_assessment.domain.take5.fix import fixes_error
+from risk_assessment.domain.take5.hazard_nudges import (
+    HAZARD_AI_TIME_LIMIT_SECONDS,
+    Nudge,
+)
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.template import Take5Template
 from risk_assessment.domain.take5.time_limit import runs_out_at, time_limit_error
 from risk_assessment.domain.take5.verdict import verdict
-from risk_assessment.services.ports import ChallengeAsker, Take5Repository
+from risk_assessment.services.hazard_nudges import HazardNudger
+from risk_assessment.services.ports import ChallengeAsker, HazardJudge, Take5Repository
 
 _logger: logging.Logger = logging.getLogger(__name__)
 
@@ -99,8 +104,10 @@ class Take5Service:
         clock: Callable[[], datetime] = utc_now,
         challenge_asker: ChallengeAsker | None = None,
         ai_time_limit_seconds: float = AI_TIME_LIMIT_SECONDS,
+        hazard_judge: HazardJudge | None = None,
+        hazard_ai_time_limit_seconds: float = HAZARD_AI_TIME_LIMIT_SECONDS,
     ) -> None:
-        """Take the storage, the template, a clock and an AI from the composition root.
+        """Take the storage, the template, a clock and the AI from the composition root.
 
         Args:
             repository: Where Take 5s are kept.
@@ -110,12 +117,21 @@ class Take5Service:
                 none is set up, which asks the fixed question every time (spec C3).
             ai_time_limit_seconds: How long to wait for the AI before asking the fixed
                 question instead. 10 seconds (spec C3); tests pass a shorter time.
+            hazard_judge: The AI that judges whether a hazard is vague, or None when
+                none is set up, so the word rule always decides (spec T6).
+            hazard_ai_time_limit_seconds: How long to wait for that AI before the word
+                rule decides. 5 seconds (decision D57); tests pass a shorter time.
         """
         self._repository: Take5Repository = repository
         self._template: Take5Template = template
         self._clock: Callable[[], datetime] = clock
         self._challenge_asker: ChallengeAsker | None = challenge_asker
         self._ai_time_limit_seconds: float = ai_time_limit_seconds
+        self._hazard_nudger: HazardNudger = HazardNudger(
+            template,
+            hazard_judge,
+            hazard_ai_time_limit_seconds,
+        )
 
     @property
     def template(self) -> Take5Template:
@@ -126,6 +142,11 @@ class Take5Service:
     def asks_ai(self) -> bool:
         """Whether an AI writes the challenge question, not always the fallback."""
         return self._challenge_asker is not None
+
+    @property
+    def judges_hazards_with_ai(self) -> bool:
+        """Whether an AI judges vague hazards, not always the word rule (spec T6)."""
+        return self._hazard_nudger.asks_ai
 
     def check(self, draft: Take5Draft) -> DraftCheck:
         """Check a draft against the current template, without saving it.
@@ -146,6 +167,18 @@ class Take5Service:
         return check.model_copy(
             update={"runs_out_at": runs_out_at(draft.started_at, time_limit_minutes)},
         )
+
+    def nudges(self, draft: Take5Draft) -> tuple[Nudge, ...]:
+        """Nudge each vague hazard linked to a Yes to say what could hurt and where.
+
+        Args:
+            draft: The worker's answers so far. Nothing is saved.
+
+        Returns:
+            One nudge for each vague hazard, judged by the AI when it answers in time
+            and by the word rule otherwise (spec T6).
+        """
+        return self._hazard_nudger.nudges(draft)
 
     def submit(self, draft: Take5Draft, submission_id: UUID) -> SavedTake5:
         """Check and save a Take 5 once, then ask its question. A retry gets the same.

@@ -14,7 +14,7 @@ _LOCAL_SETTINGS_FILE: Path = _BACKEND_FOLDER / ".env"
 
 
 class AiProvider(StrEnum):
-    """Which company's AI writes the challenge question."""
+    """Which company's AI writes the challenge question and judges vague hazards."""
 
     CLAUDE = "claude"
 
@@ -28,11 +28,16 @@ class Settings(BaseSettings):
     Attributes:
         database_path: Where the SQLite file is kept (`TAKE5_DATABASE_PATH`). By
             default it is `backend/.data/take5.sqlite3`, which git ignores.
-        ai_provider: Whose AI writes the challenge question (`TAKE5_AI_PROVIDER`).
-        ai_model: Which of that provider's models to use (`TAKE5_AI_MODEL`). None
-            means the provider's own default.
+        ai_provider: Whose AI writes the challenge question and judges vague hazards
+            (`TAKE5_AI_PROVIDER`).
+        ai_model: Which of that provider's models writes the challenge question
+            (`TAKE5_AI_MODEL`). None means the provider's own default.
+        ai_hazard_model: Which of that provider's models judges vague hazards
+            (`TAKE5_AI_HAZARD_MODEL`). None means the provider's quick model
+            (decision D61).
         ai_key: The key for the provider's API (`TAKE5_AI_KEY`). With none, or an
-            empty one, no AI is asked and the fixed question is used (spec C3).
+            empty one, no AI is asked: the fixed question is used (spec C3) and the
+            word rule judges hazards (spec T6).
     """
 
     model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
@@ -47,6 +52,7 @@ class Settings(BaseSettings):
     database_path: Path = _DEFAULT_DATABASE_PATH
     ai_provider: AiProvider = AiProvider.CLAUDE
     ai_model: str | None = None
+    ai_hazard_model: str | None = None
     ai_key: SecretStr | None = None
 
     @property

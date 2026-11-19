@@ -133,7 +133,7 @@ def test_no_endpoint_changes_a_saved_take5() -> None:
 
     Saving again with the same ID returns the first save (see the retry tests). The
     only routes that write add a new Take 5, or answer an unfinished one's question
-    once (spec C6).
+    once (spec C6). The check and the nudges save nothing.
     """
     paths: dict[str, dict[str, Any]] = create_app().openapi()["paths"]
 
@@ -142,6 +142,7 @@ def test_no_endpoint_changes_a_saved_take5() -> None:
     assert methods == {
         "/api/take5/template": {"get"},
         "/api/take5s/check": {"post"},
+        "/api/take5s/nudges": {"post"},
         "/api/take5s": {"get", "post"},
         "/api/take5s/{take5_id}": {"get"},
         "/api/take5s/{take5_id}/answer": {"post"},

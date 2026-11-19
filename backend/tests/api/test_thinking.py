@@ -241,8 +241,10 @@ def test_a_reason_is_not_saved_once_the_question_no_longer_applies(
     assert saved.hazards[0].weak_controls_reason == ""
 
 
-def test_the_check_nudges_a_short_hazard_linked_to_a_yes(client: TestClient) -> None:
-    """T6 through the API: a nudge comes back beside the hazard, and nothing blocks."""
+def test_nudges_come_back_for_a_short_hazard_linked_to_a_yes(
+    client: TestClient,
+) -> None:
+    """T6 through the API, with no AI: the word rule nudges, and the check passes."""
     car: HazardDraft = sample_hazard_draft().model_copy(
         update={"description": "Get hit by a car", "covers": ("vehicles",)},
     )
@@ -254,11 +256,14 @@ def test_the_check_nudges_a_short_hazard_linked_to_a_yes(client: TestClient) -> 
         "/api/take5s/check",
         json=draft.model_dump(mode="json"),
     )
+    nudges: Response = client.post(
+        "/api/take5s/nudges",
+        json=draft.model_dump(mode="json"),
+    )
 
     assert check.json()["can_submit"]
-    assert [nudge["path"] for nudge in check.json()["nudges"]] == [
-        "hazards.0.description",
-    ]
+    assert "nudges" not in check.json()
+    assert [nudge["path"] for nudge in nudges.json()] == ["hazards.0.description"]
 
 
 def test_the_template_sends_each_hazard_questions_example(client: TestClient) -> None:

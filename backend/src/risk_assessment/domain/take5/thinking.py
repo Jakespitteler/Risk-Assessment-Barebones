@@ -115,6 +115,21 @@ def hazard_wording_nudge(
     words: int = word_count(description)
     if specific_hazard_words is None or words == 0 or words >= specific_hazard_words:
         return None
+    return specific_hazard_message(example)
+
+
+def specific_hazard_message(example: str) -> str:
+    """Write the nudge that asks for a specific hazard (T6), whoever judged it vague.
+
+    The words are always the app's own. An AI may decide that a hazard is vague, but
+    never writes what the worker is shown (decision D58).
+
+    Args:
+        example: A specific hazard to show, or an empty string for none.
+
+    Returns:
+        The nudge, with the example when there is one.
+    """
     if not example:
         return SPECIFIC_HAZARD_NUDGE
     return f'{SPECIFIC_HAZARD_NUDGE} For example: "{example}"'

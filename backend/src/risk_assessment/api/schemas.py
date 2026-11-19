@@ -29,6 +29,9 @@ class TemplateResponse(BaseModel):
         control_guidance: The card's advice on choosing controls.
         ai_notice: What Submit sends to the AI, to show above Submit, or None when
             no AI is set up, so nothing is sent (decision D52).
+        hazard_ai_notice: That hazards linked to a Yes are checked by an AI, to show
+            on the hazard check page, or None when the word rule judges them, so
+            nothing is sent (decision D63).
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -42,6 +45,7 @@ class TemplateResponse(BaseModel):
     consequence_guidance: tuple[LevelGuidance, ...]
     control_guidance: str
     ai_notice: str | None = None
+    hazard_ai_notice: str | None = None
 
 
 class SubmissionRequest(BaseModel):
