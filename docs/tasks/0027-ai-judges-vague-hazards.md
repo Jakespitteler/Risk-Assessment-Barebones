@@ -3,7 +3,7 @@ id: 0027
 title: The AI judges vague hazards (spec T6)
 status: review
 owner: claude
-branch: claude/project-thread-p10g0r (stacked on task 0009's claude/project-thread-tsquwa, PR #45)
+branch: claude/project-thread-p10g0r (first stacked on task 0009, PR #45; reopened against main after it merged)
 ---
 
 ## Goal

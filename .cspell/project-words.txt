@@ -2,6 +2,7 @@ addopts
 anthropics
 autouse
 Barebones
+caplog
 capsys
 charliermarsh
 conftest
