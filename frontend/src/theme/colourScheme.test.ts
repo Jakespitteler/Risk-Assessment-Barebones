@@ -2,6 +2,7 @@ import { afterEach, expect, it } from "vitest";
 import {
   choiceAfterSwitch,
   readChoice,
+  readFreshChoice,
   saveChoice,
   SCHEME_CHOICE_KEY,
   schemeToShow,
@@ -47,6 +48,16 @@ it("reads back a saved choice", () => {
   saveChoice({ chosen: "dark", phoneWhenChosen: "light" });
   expect(readChoice()).toEqual({ chosen: "dark", phoneWhenChosen: "light" });
   saveChoice(null);
+  expect(readChoice()).toBeNull();
+});
+
+it("forgets a choice made before the phone last changed", () => {
+  saveChoice({ chosen: "light", phoneWhenChosen: "dark" });
+  expect(readFreshChoice("dark")).toEqual({
+    chosen: "light",
+    phoneWhenChosen: "dark",
+  });
+  expect(readFreshChoice("light")).toBeNull();
   expect(readChoice()).toBeNull();
 });
 

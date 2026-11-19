@@ -17,8 +17,12 @@
         var scheme = phone;
         try {
           var choice = JSON.parse(localStorage.getItem("take5-colour-scheme"));
-          if (choice && choice.phoneWhenChosen === phone) {
-            scheme = choice.chosen === "dark" ? "dark" : "light";
+          if (
+            choice &&
+            choice.phoneWhenChosen === phone &&
+            (choice.chosen === "dark" || choice.chosen === "light")
+          ) {
+            scheme = choice.chosen;
           }
         } catch (error) {
           // No storage: follow the phone.

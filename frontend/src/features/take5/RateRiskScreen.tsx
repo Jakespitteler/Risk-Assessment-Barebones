@@ -2,9 +2,14 @@ import { useState } from "react";
 import { useTemplate } from "../../api/take5";
 import type { RatingChoice } from "../../api/take5";
 import { RatingPicker } from "../../components/RatingPicker";
+import { useColourScheme } from "../../theme/useColourScheme";
 
-/** The walking skeleton's one screen: rate a risk on the matrix the back end sends. */
+/**
+ * The walking skeleton's one screen: rate a risk on the matrix the back end sends. It has
+ * no top bar, so no switch, but it still follows the phone into light or dark.
+ */
 export function RateRiskScreen() {
+  useColourScheme();
   const template = useTemplate();
   const [rating, setRating] = useState<RatingChoice>({
     likelihood: null,

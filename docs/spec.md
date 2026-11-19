@@ -571,7 +571,8 @@ mode is how the screen looks, not a rule about the Take 5: it is kept on the pho
 sent to the server (decisions D64 to D74).
 
 - Acceptance: with no choice made, the app follows the phone's own light or dark setting, and changes with it.
-- Acceptance: a sun or moon button in the top bar of every screen switches to the other mode at once. A screen
+- Acceptance: a sun or moon button in the top bar of every screen with one (all but task 0002's rate-a-risk
+  screen) switches to the other mode at once. A screen
   reader reads it as "Switch to dark" or "Switch to light".
 - Acceptance: the choice lasts until the phone's own setting next changes, then the app follows the phone again.
   It survives a reload. Switching back to the phone's own mode simply follows the phone.
@@ -692,7 +693,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D71 | How much contrast, and how it is checked (2026-11-19) | 7 to 1 for text (4.5 to 1 for large text) in both modes, checked by axe on every screen the whole-app tests visit | WCAG AA (4.5 to 1) only; a test of named colour pairs only |
 | D72 | How the colours are written (2026-11-19) | Each colour named once by its job in `index.css`, with a light and a dark value | A `dark:` class beside every colour |
 | D73 | No flash of the wrong mode (2026-11-19) | A few lines in `index.html` set the mode before the app draws | Let the app set it once it has loaded |
-| D74 | When to build dark mode (2026-11-19) | Now, ahead of 0028 and 0021, while another agent works on 0013, 0029 and 0028 | After 0028 |
+| D74 | When to build dark mode (2026-11-19) | Now, while another agent works on 0013, 0029 and 0028 | After 0028 |
 
 ## Open questions
 

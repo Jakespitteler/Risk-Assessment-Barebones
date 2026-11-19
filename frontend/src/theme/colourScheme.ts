@@ -75,6 +75,17 @@ export function readChoice(): SchemeChoice | null {
   }
 }
 
+/**
+ * The saved choice if the phone hasn't changed since it was made. A stale one, from a phone
+ * that changed while the app was closed, is forgotten here.
+ */
+export function readFreshChoice(phone: ColourScheme): SchemeChoice | null {
+  const choice = readChoice();
+  if (choice === null || choice.phoneWhenChosen === phone) return choice;
+  saveChoice(null);
+  return null;
+}
+
 /** Saves the choice, or forgets it when given null. */
 export function saveChoice(choice: SchemeChoice | null): void {
   try {

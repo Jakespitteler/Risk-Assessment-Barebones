@@ -38,6 +38,12 @@ test("a choice lasts until the phone's own setting next changes", async ({
   // The phone goes dark at sunset, then light again at sunrise.
   await page.emulateMedia({ colorScheme: "dark" });
   await expect(page.locator("html")).toHaveAttribute(THEME_ATTRIBUTE, "dark");
+  // The choice is forgotten as the phone changes (dark either way, so wait to see it go).
+  await expect
+    .poll(() =>
+      page.evaluate(() => localStorage.getItem("take5-colour-scheme")),
+    )
+    .toBeNull();
   await page.emulateMedia({ colorScheme: "light" });
   await expect(page.locator("html")).toHaveAttribute(THEME_ATTRIBUTE, "light");
 
@@ -53,10 +59,11 @@ test("a dark phone never sees a white page, even before the app draws", async ({
   await page.route("**/src/main.tsx", () => undefined);
   await page.goto("/", { waitUntil: "commit" });
   await expect(page.locator("html")).toHaveAttribute(THEME_ATTRIBUTE, "dark");
-  const background = await page.evaluate(
-    () => getComputedStyle(document.documentElement).backgroundColor,
+  // The app's colours haven't loaded yet: it is this that makes the browser's own page dark.
+  const browserScheme = await page.evaluate(
+    () => document.documentElement.style.colorScheme,
   );
-  expect(background).not.toBe("rgb(255, 255, 255)");
+  expect(browserScheme).toBe("dark");
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
     "content",
     "#0f172b",

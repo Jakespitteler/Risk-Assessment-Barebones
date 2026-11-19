@@ -142,9 +142,10 @@ export function screenshotPath(name: string): string {
  * WCAG 2.2 AA rules.
  */
 export async function expectReadable(page: Page) {
+  // withRules() would replace the tags, so the 7 to 1 rule is turned on as an option.
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-    .withRules(["color-contrast-enhanced"])
+    .options({ rules: { "color-contrast-enhanced": { enabled: true } } })
     .analyze();
   expect(results.violations).toEqual([]);
 }

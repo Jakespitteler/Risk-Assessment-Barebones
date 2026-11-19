@@ -1,7 +1,7 @@
 ---
 id: 0024
 title: Dark mode
-status: review
+status: done
 owner: claude
 branch: claude/project-thread-ajrmy7
 ---
@@ -160,8 +160,14 @@ that shows on a light page and a dark one (D69); 7 as recommended (D70); 8 7 to 
   page "Before you start" wraps onto two lines beside it. Every other screen's name fits on one line.
 - Every browser test now runs twice, on a light phone and a dark one, and every screenshot is checked by axe. It
   takes about 2.7 minutes instead of 1.2. `@axe-core/playwright` 4.14.0 brings `axe-core` 4.14.1.
-- The rate-a-risk screen (`/rate-risk`, from task 0002) has no top bar, so no switch; it shows whatever the
-  phone or the last choice says.
-- A phone whose setting changes twice while the app is closed (dark at sunset, light by morning) can't be told
-  apart from one that never changed, so an old choice can come back. Accepted: it needs the app closed all night
-  and the same setting as when the choice was made.
+- The rate-a-risk screen (`/rate-risk`, from task 0002) has no top bar, so no switch; it follows the phone, or
+  the last choice.
+- A choice made before the phone changed, while the app was closed, is forgotten when the app opens. A phone whose
+  setting changes twice while the app is closed (dark at sunset, light by morning) can't be told apart from one
+  that never changed, so an old choice can come back then. Accepted: it needs the app closed all night.
+- The focus outline in dark (blue-400) is about 7 to 1 on the page, checked by hand: axe has no rule for the
+  contrast of an outline.
+- Reviewed by a separate reviewer agent on 2026-11-19. Fixed from its findings: axe ran only its contrast rule
+  (now every WCAG 2.2 AA rule as well), the no-flash test could not fail, `/rate-risk` didn't follow the phone
+  while open, the start-up lines read a broken choice differently from the app, a stale choice was kept, and the
+  saved list's hover didn't show in dark.

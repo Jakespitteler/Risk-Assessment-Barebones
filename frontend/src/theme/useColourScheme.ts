@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import {
   choiceAfterSwitch,
   phoneScheme,
-  readChoice,
+  readFreshChoice,
   saveChoice,
   schemeToShow,
   showScheme,
@@ -22,7 +22,9 @@ export function useColourScheme(): {
   switchScheme: () => void;
 } {
   const phone = useSyncExternalStore(watchPhoneScheme, phoneScheme);
-  const [choice, setChoice] = useState<SchemeChoice | null>(readChoice);
+  const [choice, setChoice] = useState<SchemeChoice | null>(() =>
+    readFreshChoice(phoneScheme()),
+  );
   const showing = schemeToShow(phone, choice);
 
   useEffect(() => {

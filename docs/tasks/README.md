@@ -12,17 +12,17 @@ built-in `sqlite3` for now (`docs/decisions.md`, 2026-11-14), so no task to swit
 
 1. **0027, the AI judges vague hazards.** Jake chose on 2026-11-18 to do it straight after 0009 (spec D55). Built
    on 2026-11-19 (spec D56 to D63); it waits on Jake's measurement, as 0009 did.
-2. **0013, glossary and rule tracing.** Last of these, because its test fails for any spec rule with no test yet, and
+2. **0024, dark mode.** Jake asked for it on 2026-11-18, and on 2026-11-19 chose to build it now (spec D74),
+   while another agent works on 0013, 0029 and 0028. It touches only the front end.
+3. **0013, glossary and rule tracing.** Last of these, because its test fails for any spec rule with no test yet, and
    most of those rules arrive in 0005 to 0008.
-3. **0029, one command to set up, update and start the app, and every command from the repo root.** Jake asked
+4. **0029, one command to set up, update and start the app, and every command from the repo root.** Jake asked
    for it "soon" on 2026-11-19, after opening the API's address instead of the app's. It depends on no other task.
    Recommended next after 0013; Jake can start it sooner, since it barely overlaps the open pull requests. Its
    questions are answered when it starts.
-4. **0028, errors obvious in the terminal.** Jake asked for it on 2026-11-19, after a blank page on Windows whose
+5. **0028, errors obvious in the terminal.** Jake asked for it on 2026-11-19, after a blank page on Windows whose
    error showed only in the browser. It builds on 0029's start script, so it comes straight after 0029, and it
    makes every later task quicker to debug. Jake can move it. Its questions are answered when it starts.
-5. **0024, dark mode.** Jake asked for it on 2026-11-18, and on 2026-11-19 chose to build it now (spec D74),
-   while another agent works on 0013, 0029 and 0028. It touches only the front end.
 6. **0021, the saved list 50 at a time.** Jake chose it on 2026-11-15, for when the app is hosted for a crew.
    Start it when hosting is planned, wherever that falls in this order.
 
