@@ -10,6 +10,7 @@ delenv
 Deque
 describedby
 docstrings
+ECONNREFUSED
 ENOENT
 envrc
 EPERM
@@ -37,6 +38,7 @@ pytest
 pytestmark
 pythonpath
 reinstalls
+reloader
 Spitteler
 sqlalchemy
 Starlette

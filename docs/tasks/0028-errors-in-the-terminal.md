@@ -146,14 +146,16 @@ These follow the recommended picks; they change with Jake's answers.
 
 - Depends on task 0029 (pull request #47); don't start until it is merged. Labelling lines and saying which
   server stopped means the start script reads each server's output instead of letting it pass straight through.
-  Task 0029 adds that reading to hide start-up lines, and may replace `scripts/dev.py` with a root `start.py`.
-  Build on whichever script 0029 leaves.
+  Task 0029 may add that reading to hide start-up lines, or may use a logging filter instead; if output still
+  passes straight through, this task adds the reading. 0029 may also replace `scripts/dev.py` with a root
+  `start.py`. Build on whichever script 0029 leaves.
 - Logging stays standard library `logging`. Uvicorn's reloader prints from its own process, before the app is
   built, so a set-up function inside the app can't reach it. A log settings file in `backend/`, handed to uvicorn
   with `--log-config` by the start script, can: it configures the `risk_assessment` and `uvicorn` loggers
-  together, and replaces the handler task 0009 added in `api/app.py`.
+  together, and replaces the handler task 0009 added in `api/app.py`. If 0029 already made that file (JSON, since
+  PyYAML isn't installed), extend it rather than adding a second.
 - A browser error's message could in theory hold what a worker typed. Front-end code must never pass a worker's
   name or answers to `console.error` or `console.warn`; the reviewer checks for it.
 - Tested by Claude on 2026-11-19 in a Linux container with Vite 8.3.8 and Chromium; not yet tried on Windows.
 
-<!-- cspell:ignore CLAUDECODE ECONNREFUSED reloader -->
+<!-- cspell:ignore CLAUDECODE -->
