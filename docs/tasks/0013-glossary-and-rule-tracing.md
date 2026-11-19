@@ -82,8 +82,9 @@ the fifth, where Claude had recommended trusting a run test's name.
   list as well as naming it in a test. The test's own file is left out, since it names rules only as examples.
 - **Worked examples:** only back-end tests count, since every example is a back-end test today. A test covers an
   example by its name, and a run test also by its case ids: only `pytest.param(..., id=...)` and
-  `parametrize(..., ids=[...])` are read, never a case's values. The test pins examples 1 to 87 for the same
-  reason as the rules. A test marked to be skipped would still count; none is.
+  `parametrize(..., ids=[...])` (a list or a tuple) are read, never a case's values or an `ids` kept in a variable.
+  The test pins examples 1 to 87 for the same reason as the rules. A test marked to be skipped would still count;
+  none is.
 - **Old rule numbers** are one of the spec's current rule letters and a number. If every rule with one letter
   left the spec, a test still naming one of them wouldn't be caught; the pinned list of 24 would still fail.
 

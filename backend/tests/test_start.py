@@ -1,5 +1,6 @@
 """Tests for `start.py`: checking, installing what changed, and starting both halves."""
 
+import copy
 import json
 import signal
 import socket
@@ -11,6 +12,7 @@ from urllib.error import URLError
 
 import pytest
 import start
+import uvicorn.config
 
 
 def make_backend(folder: Path) -> Path:
@@ -524,10 +526,10 @@ def test_a_group_that_has_already_gone_is_not_an_error() -> None:
 
 
 def test_stopping_on_windows_ends_the_whole_tree() -> None:
-    """`taskkill /T` stops npm or uv and everything they started."""
+    """`taskkill /T` runs even when npm or uv has ended before what it started."""
     server = MagicMock(spec=subprocess.Popen)
     server.pid = 4321
-    server.poll.return_value = None
+    server.poll.return_value = 0
     with (
         patch.object(start.sys, "platform", "win32"),
         patch.object(start.subprocess, "run") as run,
@@ -572,21 +574,21 @@ def test_a_failed_browser_install_warns_and_the_app_still_starts(
     assert not start.frontend_needs_install(frontend)
 
 
-def test_the_uvicorn_settings_turn_down_only_its_start_up_lines() -> None:
+def test_the_uvicorn_settings_turn_down_only_its_status_lines() -> None:
     """Uvicorn's "running on" line is `uvicorn.error` info; requests still show.
 
-    The file is uvicorn's own default log settings with that one logger at warnings,
-    so its errors, reload notices and tracebacks still reach the terminal.
+    The file is uvicorn's own default log settings, from the installed uvicorn, with
+    that one logger at warnings, so its errors, reload notices and tracebacks still
+    reach the terminal. A uvicorn upgrade that changes its defaults fails here.
     """
     settings_file: Path = start.BACKEND / "dev_logging.json"
     settings: dict[str, Any] = json.loads(settings_file.read_text(encoding="utf-8"))
+    expected: dict[str, Any] = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)
+    expected["loggers"]["uvicorn.error"]["level"] = "WARNING"
     flag_at: int = start.BACKEND_COMMAND.index("--log-config")
 
     assert start.BACKEND_COMMAND[flag_at + 1] == settings_file.name
-    assert settings["loggers"]["uvicorn.error"]["level"] == "WARNING"
-    assert settings["loggers"]["uvicorn.access"]["level"] == "INFO"
-    assert settings["loggers"]["uvicorn"]["level"] == "INFO"
-    assert settings["disable_existing_loggers"] is False
+    assert settings == expected
 
 
 def test_vite_prints_warnings_and_errors_but_not_its_address_box() -> None:

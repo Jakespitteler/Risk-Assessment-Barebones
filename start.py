@@ -16,9 +16,10 @@ In order, it:
    browser the whole-app tests use, only when `package-lock.json` changed since they
    were installed. It installs exactly the locked versions and never upgrades one.
 4. Starts the back end, then the front end, and prints the app's address once it
-   answers. Their own start-up lines, which give their own addresses, are turned off
-   in their settings: uvicorn's in `backend/dev_logging.json`, Vite's with
-   `--logLevel warn`. Requests, warnings and errors still show.
+   answers. Their own status lines, including those that give their own addresses,
+   are turned off in their settings: uvicorn's start-up, restart and shutdown lines in
+   `backend/dev_logging.json`, and Vite's address box with `--logLevel warn`. Requests,
+   the app's own lines, reload notices, warnings and errors still show.
 """
 
 import contextlib
@@ -43,7 +44,7 @@ START_COMMAND: str = "uv run start.py"
 
 API_PORT: int = 8000
 APP_PORT: int = 5173
-# `dev_logging.json` is uvicorn's own log settings with its start-up messages, such as
+# `dev_logging.json` is uvicorn's own log settings with its status messages, such as
 # "Uvicorn running on http://127.0.0.1:8000", turned down to warnings only.
 BACKEND_COMMAND: list[str] = [
     "uv",
@@ -323,12 +324,12 @@ def stop(server: subprocess.Popen[bytes]) -> None:
         server: The server to stop.
     """
     if sys.platform == "win32":
-        if server.poll() is None:
-            subprocess.run(
-                ["taskkill", "/F", "/T", "/PID", str(server.pid)],
-                capture_output=True,
-                check=False,
-            )
+        # Run even when npm or uv has ended, since what they started may not have.
+        subprocess.run(
+            ["taskkill", "/F", "/T", "/PID", str(server.pid)],
+            capture_output=True,
+            check=False,
+        )
     else:
         signal_process_group(server, signal.SIGTERM)
     try:
@@ -408,6 +409,8 @@ def run_servers(url: str, cloud_service: str | None) -> int:
     except KeyboardInterrupt:
         return 0
     finally:
+        # Once stopping has begun, Ctrl+C can't interrupt it, whatever began it.
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
         for server in servers.values():
             stop(server)
 

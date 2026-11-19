@@ -17,9 +17,9 @@ Newest first. One short entry per non-obvious decision.
   no `cd` before everyday commands. He took the recommended answers, except that the API gets no page at `/` and
   its address is never printed. Installing only the locked versions means a start never brings in a version the
   repo wasn't tested with.
-- How the address lines are hidden: in each server's own settings, and their output goes straight to the
-  terminal. Uvicorn gets `--log-config backend/dev_logging.json`: its default log settings with the
-  `uvicorn.error` logger at warnings, which drops "Uvicorn running on ..." and its other start-up lines but keeps
+- How the address lines are hidden: in each server's own settings, and their output goes straight to the terminal.
+  Uvicorn gets `--log-config backend/dev_logging.json`: its default log settings with the `uvicorn.error` logger at
+  warnings, which drops "Uvicorn running on ..." and its other start-up, restart and shutdown lines but keeps
   requests, reload notices, errors and the app's own lines. Vite gets `--logLevel warn`, which drops its address
   box (and its "page reloaded" notes) but keeps warnings and errors. Vite's `clearScreen` is off, so `npm run dev`
   alone doesn't clear earlier output either.

@@ -58,7 +58,7 @@ syncing the folder as well adds little, and it causes problems:
 - It can make "conflicted copy" files, or bring back old ones, inside `.git`, which can damage the repo.
 - A file kept "online only" isn't really on the disk until it's opened, which slows or breaks the tools.
 
-`start.py` and `install.py` warn you if they find the repo in one of these folders. It can't tell when macOS syncs
+`start.py` and `install.py` warn you if they find the repo in one of these folders. They can't tell when macOS syncs
 `Desktop` or `Documents`, because those paths don't change.
 
 ## Run it
