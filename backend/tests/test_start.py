@@ -437,7 +437,7 @@ def test_a_back_end_that_never_answers_is_stopped_and_vite_never_starts() -> Non
 def test_ctrl_c_is_ignored_before_the_servers_are_stopped(
     how_it_ends: BaseException,
 ) -> None:
-    """However stopping begins, a Ctrl+C during it can't leave a server running."""
+    """A failed start or Ctrl+C: Ctrl+C is ignored before any server is stopped."""
     events = MagicMock()
     backend = MagicMock(spec=subprocess.Popen)
     with (
@@ -452,6 +452,30 @@ def test_ctrl_c_is_ignored_before_the_servers_are_stopped(
     assert events.mock_calls[-2:] == [
         call.signal(signal.SIGINT, signal.SIG_IGN),
         call.stop(backend),
+    ]
+
+
+def test_ctrl_c_is_ignored_before_stopping_when_a_server_ends_by_itself() -> None:
+    """After the ready line, the front end ends: both servers stop, Ctrl+C ignored."""
+    events = MagicMock()
+    backend = MagicMock(spec=subprocess.Popen)
+    frontend = MagicMock(spec=subprocess.Popen)
+    backend.poll.return_value = None
+    frontend.poll.return_value = 1
+    with (
+        patch.object(start, "start", side_effect=[backend, frontend]),
+        patch.object(start, "wait_until_ready"),
+        patch.object(start, "print", create=True),
+        patch.object(start, "stop", events.stop),
+        patch.object(start.signal, "signal", events.signal),
+    ):
+        exit_code: int = start.run_servers("http://localhost:5173", None)
+
+    assert exit_code == 1
+    assert events.mock_calls[-3:] == [
+        call.signal(signal.SIGINT, signal.SIG_IGN),
+        call.stop(backend),
+        call.stop(frontend),
     ]
 
 
