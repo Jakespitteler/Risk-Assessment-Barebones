@@ -85,3 +85,10 @@ Jake took every recommended answer (spec D52 to D55):
 - Not checked on Windows: the whole-app tests set `TAKE5_AI_KEY` to empty so a key in `backend/.env` isn't used.
   Windows keeps an empty variable when Node starts a program, so it should hold. If the fallback-question tests
   fail on Windows with a key in `.env`, this is why.
+
+### Fixed here, though outside the task
+
+- On Windows the app opened blank: `import { TimeLeft } from "./TimeLeft"` found `timeLeft.ts` (task 0019's
+  countdown words) before `TimeLeft.tsx`, because Windows ignores the case of file names and Vite tries `.ts`
+  first. Linux and CI never saw it. The words file is now `timeLeftText.ts`, so no two files in `frontend/` differ
+  only by case. Worth a check that keeps it that way (not added here).
