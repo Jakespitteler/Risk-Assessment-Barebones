@@ -4,15 +4,16 @@
 rename that forgets the glossary makes this fail with the names it can't find.
 
 - A back-end name is looked up in `backend/src/risk_assessment` by reading the code,
-  not running it: a class, function or constant (`Take5`, `rate`, `BOOKLET_MATRIX`), a
+  not running it: a class, function, constant or type alias (`Take5`, `rate`,
+  `BOOKLET_MATRIX`), a
   class's own field, method or enum member, always with its class (`Hazard.covers`,
   `Answer.YES`), a function's parameter (`submission_id`), or a file (`fix.py`,
   `ai/providers/claude.py`).
 - A front-end name is a component or helper file under `frontend/src` (`Take5Form`),
   a name a file exports (`useTake5Draft`, `StoredDraft`, and the API types
   `src/api/take5.ts` exports), or a field of a schema in the generated API types
-  (`worker_name`). Test files and the shared `test-utils.tsx` and `test-setup.ts`
-  don't count.
+  (`worker_name`). Test files, and the shared helpers whose names start `test-`, such
+  as `test-utils.tsx`, don't count.
 
 Names the check can't see, such as attributes set in `__init__`, inherited members or
 `export { X }`, would be reported missing; none is in the glossary. A schema field
@@ -67,8 +68,8 @@ def python_names(source: str) -> set[str]:
         source: The text of a module.
 
     Returns:
-        Its top-level classes, functions and constants; each class's own members as
-        `Class.member`; and every function parameter.
+        Its top-level classes, functions, constants and type aliases; each class's
+        own members as `Class.member`; and every function parameter.
     """
     names: set[str] = set()
     module: ast.Module = ast.parse(source)
@@ -97,7 +98,7 @@ def defined_names(node: ast.stmt) -> set[str]:
         node: A statement in a module or class body.
 
     Returns:
-        The class, function or assigned names.
+        The class, function, type alias or assigned names.
     """
     if isinstance(node, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
         return {node.name}
@@ -149,8 +150,9 @@ def frontend_names(source_folder: Path, api_types: Path) -> set[str]:
         api_types: The generated API types, `schema.d.ts`.
 
     Returns:
-        Each file's name without its extension (test files and `schema.d.ts` left
-        out), each name a file exports, and each field of an API schema.
+        Each file's name without its extension and each name a file exports, with
+        test files, `test-*` helpers and `schema.d.ts` left out, and each field of
+        an API schema.
     """
     names: set[str] = api_schema_fields(api_types.read_text(encoding="utf-8"))
     for path in [*source_folder.rglob("*.ts"), *source_folder.rglob("*.tsx")]:
