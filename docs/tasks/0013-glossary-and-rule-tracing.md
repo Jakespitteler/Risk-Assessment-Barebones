@@ -3,7 +3,7 @@ id: 0013
 title: A glossary of spec terms, and a test that every spec rule has a test
 status: review
 owner: claude
-branch: claude/funny-ptolemy-7u9m8v
+branch: claude/funny-ptolemy-7u9m8v (PR #51), then claude/0013-glossary-code-names for the glossary-names check
 ---
 
 ## Goal
