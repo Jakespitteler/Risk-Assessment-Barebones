@@ -53,6 +53,7 @@ unstub
 uvicorn
 venv
 vite
+vitest
 WCAG
 winget
 xhigh

@@ -24,7 +24,7 @@ function button(page: Page, name: string) {
   return page.getByRole("button", { name, exact: true });
 }
 
-test("a Take 5 is kept to finish later, thrown away, and put back with Undo", async ({
+test("a Take 5 is kept to finish later, thrown away, and put back with Undo (K1)", async ({
   page,
 }) => {
   await page.goto("/");

@@ -34,6 +34,8 @@ newer (24.15 or newer on version 24). Run each from the folder shown.
 - `docs/spec.md` — what the app does, scoring rules, acceptance criteria.
 - `docs/architecture.md` — structure, data model, module boundaries.
 - `docs/decisions.md` — dated log of non-obvious choices and why.
+- `docs/glossary.md` — each spec term's meaning, code names and rule numbers. Use its names in code, tests
+  and docs.
 - `docs/tasks/` — one file per unit of work, with status and owner.
 - `docs/ideas.md` — Jake's ideas to discuss later. Not tasks or decisions: don't build from it.
 - Read `docs/spec.md` and `docs/architecture.md` before any change.
