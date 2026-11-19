@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
+import { ThemeSwitch } from "./ThemeSwitch";
 
 /**
  * The page every screen sits on, with the app's name at the top. `aside` goes at the
- * right of the top bar, for a link away from the screen.
+ * right of the top bar, for a link away from the screen, beside the light or dark switch.
  */
 export function Screen({
   subtitle,
@@ -27,9 +28,12 @@ export function Screen({
             <span className="text-sm font-bold tracking-wide text-ink-muted uppercase">
               Take 5
             </span>
-            <span className="font-semibold">{subtitle}</span>
+            <span className="font-semibold text-balance">{subtitle}</span>
           </p>
-          {aside && <div className="ml-auto">{aside}</div>}
+          <div className="-mr-2 ml-auto flex shrink-0 items-center">
+            {aside}
+            <ThemeSwitch />
+          </div>
         </header>
         {children}
       </main>

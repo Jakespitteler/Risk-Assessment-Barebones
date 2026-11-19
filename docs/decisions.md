@@ -2,6 +2,26 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-19: Dark mode, colours named by their job, and axe in the browser tests (task 0024)
+
+- Decision: The app follows the phone's light or dark setting, and a sun or moon button in the top bar overrides
+  it until the phone's own setting next changes. The choice is kept on the phone with the phone's setting at the
+  time. Every colour is named once by its job in `frontend/src/index.css`, with a light and a dark value; the
+  risk band colours stay fixed. A few lines in `index.html` set the mode before the app draws. Text reaches 7 to
+  1 in both modes, checked by `@axe-core/playwright` on every screenshot the whole-app tests take, and those tests
+  now run twice, on a light phone and a dark one (spec D64 to D74).
+- Why: Jake took every recommended answer, and added "how it looks" as a reason. Light reads best in full sun,
+  so a gloved worker needs a way back without the phone's settings, and a phone that goes dark at sunset should
+  take the app with it. Named colours mean a new component gets dark mode for free. axe checks the pages as
+  drawn, not a list of colour pairs someone remembered to write down.
+- How: axe-core is a new development dependency, approved by Jake on 2026-11-19; nothing new reaches the
+  worker's phone. To reach 7 to 1 in light, a step not yet reached now uses the quieter ink (slate-700, was
+  slate-600), and a text box with a gap now has the same red edge as its message (red-800, was red-700). Running
+  every browser test in both modes takes about 2.7 minutes instead of 1.2.
+- Not chosen: the phone's setting only; a three-way switch; a `dark:` class beside every colour; a Vitest test of
+  colour pairs; WCAG AA only.
+- Decided by: human (the product choices), agent (how).
+
 ## 2026-11-19: An AI judges vague hazards, with the word rule as the fallback (task 0027)
 
 - Decision: Whether a hazard linked to a Yes is vague (spec T6) is judged by an AI when one is set up, through a

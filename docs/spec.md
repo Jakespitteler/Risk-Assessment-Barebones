@@ -32,6 +32,9 @@ Where and when it is used (confirmed by Jake for task 0004):
 - It has to be quick enough that it is not resented. Target (to be confirmed, see Open questions): a job with two
   hazards takes under
   three minutes.
+- Sometimes at night, on a night shift, or on a phone the worker keeps set to dark. So the app has a dark mode as
+  well as a light one (F7). Jake's reasons (2026-11-19): night shift, phones set to dark, and how it looks. Light
+  stays the way back for bright sun.
 
 ## Core workflow
 
@@ -561,6 +564,23 @@ The first four screens of the core workflow, saved when the worker submits.
 - Acceptance: when an AI is set up, the review says above Submit what is sent to it, and that the name isn't
   (D52). With none, it says nothing about an AI.
 
+### F7: Light and dark
+
+Every screen comes in light (dark text on a light page) and dark (light text on a very dark slate page). The
+mode is how the screen looks, not a rule about the Take 5: it is kept on the phone, never saved with a Take 5 or
+sent to the server (decisions D64 to D74).
+
+- Acceptance: with no choice made, the app follows the phone's own light or dark setting, and changes with it.
+- Acceptance: a sun or moon button in the top bar of every screen switches to the other mode at once. A screen
+  reader reads it as "Switch to dark" or "Switch to light".
+- Acceptance: the choice lasts until the phone's own setting next changes, then the app follows the phone again.
+  It survives a reload. Switching back to the phone's own mode simply follows the phone.
+- Acceptance: a risk band looks the same in both modes, with one grey edge that shows on either page. A verdict,
+  a warning and a problem keep their colour's meaning: red for danger, green for good, amber for a warning.
+- Acceptance: every text colour reaches 7 to 1 against what it sits on (4.5 to 1 for large text), in both modes,
+  on every screen the whole-app tests visit, checked by axe.
+- Acceptance: a phone set to dark never shows a white page while the app starts.
+
 ## Out of scope (for now)
 
 - Any other use of AI than the challenge question and judging vague hazards (T6): marking the worker's answer,
@@ -572,6 +592,8 @@ The first four screens of the core workflow, saved when the worker submits.
 - Drafts kept on the server, or more than one draft at a time (decisions D20 and D23).
 - Starting a Take 5 from an earlier one, except to fix a Don't start yet (F3). Copying is the fastest way to stop
   thinking.
+- Colour themes other than light and dark, a company's own colours, and switching mode by the light around the
+  phone (F7).
 
 ### Planned for later
 
@@ -660,6 +682,17 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D61 | Which model judges vague hazards (2026-11-19) | Its own setting, `TAKE5_AI_HAZARD_MODEL`; by default the provider's quick model, Claude Haiku 5.5: a yes or no call, made mid-form | The challenge question's model, Opus 5.5 (about 40 times the cost) |
 | D62 | Tell the worker when the word rule decided (2026-11-19) | No, as D50; the server log says which decided | A line saying the check was simpler |
 | D63 | Tell the worker hazards go to the AI before Submit (2026-11-19) | One line on the hazard check page, under "Did you miss any of these?", when an AI is set up | Only the line above Submit (D52), which comes after the hazards were sent |
+| D64 | Why a dark mode (2026-11-19) | Night shift, phones set to dark, and how it looks | Light only |
+| D65 | What decides light or dark (2026-11-19) | The phone's setting to begin with, and a switch in the app that overrides it | The phone's setting only; a switch only, light to begin with |
+| D66 | How long a choice from the switch lasts (2026-11-19) | Until the phone's own setting next changes | Until switched back, with a third "Same as my phone" choice; this Take 5 only |
+| D67 | Where the switch is (2026-11-19) | A sun or moon button in the top bar of every screen | The first screen and the saved list only; a settings screen |
+| D68 | Where the choice is kept (2026-11-19) | On the phone only, as the worker's name is | Saved with the Take 5, or on the server |
+| D69 | The risk band colours in dark (2026-11-19) | The same fill and text as in light, with one grey edge that shows on both pages | Darker or lighter bands for dark |
+| D70 | Verdict, warning and problem colours in dark (2026-11-19) | The same colour for the same meaning, in darker fills or lighter text as contrast needs; a very dark slate page, not pure black | New colours for dark; a pure black page |
+| D71 | How much contrast, and how it is checked (2026-11-19) | 7 to 1 for text (4.5 to 1 for large text) in both modes, checked by axe on every screen the whole-app tests visit | WCAG AA (4.5 to 1) only; a test of named colour pairs only |
+| D72 | How the colours are written (2026-11-19) | Each colour named once by its job in `index.css`, with a light and a dark value | A `dark:` class beside every colour |
+| D73 | No flash of the wrong mode (2026-11-19) | A few lines in `index.html` set the mode before the app draws | Let the app set it once it has loaded |
+| D74 | When to build dark mode (2026-11-19) | Now, ahead of 0028 and 0021, while another agent works on 0013, 0029 and 0028 | After 0028 |
 
 ## Open questions
 

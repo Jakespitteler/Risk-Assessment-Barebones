@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { expectReadable, screenshotPath } from "./helpers";
 
 test("a worker rates a risk on the matrix the back end sends", async ({
   page,
@@ -11,9 +12,10 @@ test("a worker rates a risk on the matrix the back end sends", async ({
     "Pick both to see the score.",
   );
   await page.screenshot({
-    path: "test-results/screenshots/rate-a-risk-empty.png",
+    path: screenshotPath("rate-a-risk-empty"),
     fullPage: true,
   });
+  await expectReadable(page);
 
   await page
     .getByRole("group", { name: "How likely is it?" })
@@ -27,7 +29,8 @@ test("a worker rates a risk on the matrix the back end sends", async ({
   // Spec worked example 1: Rare / Low is 1 Low.
   await expect(page.getByRole("status")).toHaveText("1Low");
   await page.screenshot({
-    path: "test-results/screenshots/rate-a-risk-picked.png",
+    path: screenshotPath("rate-a-risk-picked"),
     fullPage: true,
   });
+  await expectReadable(page);
 });

@@ -9,6 +9,7 @@ import type {
   Take5Response,
   TemplateResponse,
 } from "./api/take5";
+import { fakeMatchMedia } from "./test-phone-scheme";
 
 // A made-up card with two questions and a two-by-two matrix, so a test proves nothing
 // about the booklet is built in.
@@ -232,9 +233,14 @@ export function renderWithApi(ui: ReactNode, client = quickClient()) {
   };
 }
 
-/** Pretend the main pointer is a mouse (a computer) or a finger (a phone). */
+/**
+ * Pretend the main pointer is a mouse (a computer) or a finger (a phone). The
+ * phone's light or dark setting still answers as `test-phone-scheme.ts` says.
+ */
 export function stubPointer(pointer: "fine" | "coarse") {
-  vi.stubGlobal("matchMedia", (query: string) => ({
-    matches: query === `(pointer: ${pointer})`,
-  }));
+  vi.stubGlobal("matchMedia", (query: string) =>
+    query === `(pointer: ${pointer})`
+      ? { matches: true }
+      : fakeMatchMedia(query),
+  );
 }

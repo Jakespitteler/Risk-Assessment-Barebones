@@ -1,11 +1,15 @@
 @import "tailwindcss";
 
+/* `dark:` follows the switch (the `data-theme` the app sets on the page), not only the phone. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /*
  * Every colour the app uses, named by its job rather than its shade. Components write
  * `bg-page` or `text-danger`, never `bg-stone-100`, so the look can change here in one place.
  * Tailwind 4 turns each `--color-<name>` into utilities such as `bg-<name>` and `text-<name>`.
  *
- * The risk band colours are not here: they stay in `RiskBadge.tsx`, the same everywhere.
+ * Each has a light value here and a dark value below. The risk band colours are not here: they
+ * stay in `RiskBadge.tsx`, the same in both (spec D69).
  */
 @theme {
   /* The page and what sits on it. */
@@ -14,10 +18,9 @@
   --color-surface-subtle: var(--color-stone-50);
   --color-surface-hover: var(--color-stone-100);
 
-  /* Text: main, quieter, and quietest (a step not reached yet). */
+  /* Text: main, and quieter. */
   --color-ink: var(--color-slate-900);
   --color-ink-muted: var(--color-slate-700);
-  --color-ink-faint: var(--color-slate-600);
 
   /* Edges: a card's, a choice's, and a text box's. */
   --color-line: var(--color-stone-300);
@@ -53,4 +56,47 @@
   --color-caution-line: var(--color-amber-700);
   --color-caution-soft: var(--color-amber-50);
   --color-on-caution-soft: var(--color-amber-950);
+
+  /* The edge round a risk band, so its shape shows on a light page and a dark one. */
+  --color-band-edge: var(--color-slate-400);
+}
+
+/*
+ * Dark: light text on a very dark slate page (not pure black, which smears for many eyes).
+ * The same colour keeps the same meaning: danger is red and success green in both. Every
+ * text colour reaches 7 to 1 on what it sits on (spec D71), which the whole-app tests check.
+ */
+:root[data-theme="dark"] {
+  --color-page: var(--color-slate-900);
+  --color-surface: var(--color-slate-800);
+  --color-surface-subtle: var(--color-slate-800);
+  --color-surface-hover: var(--color-slate-700);
+
+  --color-ink: var(--color-slate-50);
+  --color-ink-muted: var(--color-slate-300);
+
+  --color-line: var(--color-slate-600);
+  --color-line-strong: var(--color-slate-400);
+  --color-line-field: var(--color-slate-400);
+
+  --color-action: var(--color-slate-100);
+  --color-action-hover: var(--color-slate-300);
+  --color-on-action: var(--color-slate-900);
+
+  --color-focus: var(--color-blue-400);
+
+  --color-danger: var(--color-red-300);
+  --color-danger-soft: var(--color-red-950);
+  --color-on-danger-soft: var(--color-red-100);
+
+  --color-success: var(--color-green-300);
+
+  --color-caution-line: var(--color-amber-500);
+  --color-caution-soft: var(--color-amber-950);
+  --color-on-caution-soft: var(--color-amber-100);
+}
+
+/* The page colour reaches the very edges, so a pull past the end never shows white. */
+html {
+  background-color: var(--color-page);
 }

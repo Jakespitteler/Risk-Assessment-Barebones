@@ -45,6 +45,7 @@ Front end:
 | Screens and URLs | React Router | The long-standing router for React |
 | API types | openapi-typescript | Generates the TypeScript types from the back end's API description, so the two can't drift apart |
 | Tests | Vitest and React Testing Library for components; Playwright for the whole app in a real browser | Playwright also takes the phone-width screenshots |
+| Accessibility checks | `@axe-core/playwright` (Deque's axe), a development dependency only (task 0024) | The mainstream checker; it checks the screens as drawn, in both modes |
 | Lint and format | ESLint and Prettier | The long-standing pair |
 | Packages | npm | Comes with Node; nothing else to install |
 
@@ -137,7 +138,12 @@ frontend/
         api/               the generated types and a small typed client (the only place TanStack Query is set up)
         components/        pieces any feature can use: rating picker, Yes / No / N/A buttons, risk badge,
                            control editor, button, card, field, guidance, notice, warning, undo bar,
-                           and the screen with its top bar
+                           the screen with its top bar, and the light or dark switch in it (ThemeSwitch.tsx)
+        theme/             light or dark (spec F7): colourScheme.ts decides which to show and keeps the
+                           worker's choice on the phone (localStorage); useColourScheme.ts follows the phone
+        index.css          every colour, named by its job (page, ink, danger and so on), each with a light and
+                           a dark value. Components use these names, never a shade such as `bg-stone-100`; only
+                           the risk band colours in RiskBadge.tsx are fixed, the same in both modes
         features/take5/    the Take 5's screens: the four parts of the form, the question, the result, and
                            the list of saved Take 5s (SavedTake5sScreen.tsx). formatDateTime.ts writes
                            every date the one way the spec sets (D17)
@@ -154,8 +160,10 @@ frontend/
                            its answer on the result; unanswered.ts remembers which unanswered Take 5s this
                            phone submitted, so only it answers them and opening the app goes back to one
         test-utils.tsx     the fake card, drafts and API replies the Vitest tests share
+        test-phone-scheme.ts  a stand-in for the phone's light or dark setting, which Vitest's jsdom lacks
         app.tsx            the routes (the only place React Router is set up)
-    e2e/                   Playwright tests and screenshots
+    index.html             also sets light or dark before the app draws, so a dark phone never flashes white
+    e2e/                   Playwright tests and screenshots, run once on a light phone and once on a dark one
 scripts/
     setup.py               sets up a freshly cloned repo: checks git and Node.js, installs everything else
     dev.py                 starts both halves for development
@@ -363,6 +371,7 @@ cloud account, or a model the company runs itself.
 | Unit, front end | Each component and screen behaves: nothing pre-selected, errors beside fields, T1 | Vitest and React Testing Library |
 | End to end | A worker fills in every screen in a real browser and reaches the right verdict | Playwright against the real front end and back end, with a stand-in AI |
 | Visual | Each changed screen looks right on a phone | Playwright screenshots at 360 px wide, attached to the PR; checked by eye, not in CI |
+| Accessibility | Every screenshot the whole-app tests take, in both modes, is readable: text contrast to 7 to 1 (spec D71) and axe's other WCAG 2.2 AA rules | `@axe-core/playwright`, Deque's checker, inside the screenshot helper (`capture` in `e2e/helpers.ts`) |
 | AI adapter | The adapter sends what it should and reads the reply, refusals and errors | The real adapter against a stand-in for the provider's API (`tests/ai/fake_anthropic.py`), so nothing leaves the computer |
 | Real AI | The real provider answers with a usable question | `uv run pytest -m real_ai` in `backend/`, skipped with no key; plain `pytest` and CI never run it. `scripts/try_challenge.py` measures questions, and `scripts/try_vague_hazard.py` verdicts on hazards, with time and cost |
 
