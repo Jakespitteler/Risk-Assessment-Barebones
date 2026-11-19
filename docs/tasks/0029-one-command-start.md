@@ -1,9 +1,9 @@
 ---
 id: 0029
 title: Set up, update and start the app with one command
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/0029-one-command-start (stacked on task 0013, PR #51)
 ---
 
 ## Goal
