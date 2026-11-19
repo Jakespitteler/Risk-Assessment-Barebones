@@ -62,8 +62,17 @@ Depends on 0009, which adds `LanguageModel`, the Claude adapter and the AI setti
 - The AI is asked in up to 16 background threads kept for the server's life, so a verdict that comes after the
   5 seconds is still remembered. Two checks of the same words share one ask. At most 1,000 verdicts are kept;
   past that the oldest is forgotten.
+- The hazard check page makes one nudges request for the whole page (in `FormPage.tsx`), not one per nudge, so
+  typing in one nudge's box never makes another ask. It sends the draft without the links of hazards whose words
+  were kept, so kept words are never judged or sent to an AI.
 - On the phone, the last answer stays on screen while a new one is asked for, so a nudge doesn't blink off and
-  on when something else on the page changes. A hazard newly linked shows nothing until its first answer.
+  on when something else on the page changes. A hazard newly linked shows nothing until its first answer. Spec
+  T6 says so (a clarification of D57 for Jake to confirm).
+- Typing new words in the box and then tapping "Keep it as it is" leaves the box first, which asks once about
+  the new words before they are kept.
+- The background threads are never shut down, so stopping the server can wait up to 11 seconds for a call still
+  with the AI. `hazard_ai_notice` shows whenever an AI is set up, even on a template with no word minimum, where
+  nothing is sent; the booklet has a minimum.
 - `ClaudeModel` keeps its 11-second network limit, so a late call ends soon after the service has moved on.
 - Not checked in the cloud: real verdicts, times and costs (no key here, by Jake's choice in task 0009), and
   whether Haiku 5.5 accepts `effort: low` (Anthropic's docs say it does). `scripts/try_vague_hazard.py` shows both.

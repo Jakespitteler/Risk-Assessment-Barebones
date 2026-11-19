@@ -17,13 +17,16 @@ Newest first. One short entry per non-obvious decision.
   Opus 5.5, and the worker is mid-form. Remembering verdicts stops paying twice for the same words.
 - How: the nudges move off `POST /api/take5s/check` to their own `POST /api/take5s/nudges`, and `DraftCheck` loses
   `nudges`. The check runs on many pauses in typing and on every Continue, so an AI inside it would be asked far
-  more often and would hold up Continue. This is a change to a public interface, made for Jake's answer to
-  question 1 (D56). The AI is asked in background threads, so a late verdict is still remembered for the next
-  check, and two checks of the same words share one ask. Verdicts are kept for at most 1,000 texts. The worker's
-  name is never sent; the hazard is a quoted value in JSON, as the challenge question's Take 5 is.
+  more often and would hold up Continue. This is a change to a public interface, made to carry out Jake's answer
+  to question 1 (D56), and it waits on his approval in the pull request. The hazard check page makes one ask for
+  the whole page, and leaves out the links of hazards whose words were kept, so those are never sent. The AI is
+  asked in background threads, so a late verdict is still remembered for the next check, and two checks of the
+  same words share one ask. Verdicts are kept for at most 1,000 texts. The worker's name is never sent; the hazard
+  is a quoted value in JSON, as the challenge question's Take 5 is.
 - Not chosen: the AI inside the check; asking on every pause in typing; saving verdicts in the database (a data
   model change); a reason or rewording from the AI.
-- Decided by: human (the eight product choices), agent (how, including the separate endpoint).
+- Decided by: human (the eight product choices), agent (how). The separate endpoint is the agent's proposal;
+  the human approves it by merging the pull request.
 
 ## 2026-11-18: Claude Opus 5.5 writes the challenge question, and the review says what it is sent (task 0009)
 

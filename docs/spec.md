@@ -236,15 +236,18 @@ falls back to a fixed rule.
   - The AI is given the hazard, the question it is linked to, the job and where it is, as JSON. It is never given
     the worker's name. It replies with one word, "vague" or "specific"; spaces, capitals and a full stop at the
     end don't matter. The nudge's words never come from the AI (decision D58).
-  - While the AI is asked, nothing shows under the Yes. An answer that comes after 5 seconds is too late for that
-    check, so the word rule decides it, but it is used the next time the same words are checked (decision D57).
+  - While the AI is asked about a newly linked hazard, nothing shows under the Yes. After the worker rewords a
+    nudged hazard and leaves the box, the nudge stays until the answer comes, so it doesn't vanish and come back.
+    An answer that comes after 5 seconds is too late for that check, so the word rule decides it, but it is used
+    the next time the same words are checked (decision D57).
   - The AI's answer is remembered on the server for the same hazard, question, job and location until the server
-    restarts, so going back, opening the draft again or another check doesn't ask again (decision D59).
+    restarts, so going back, opening the draft again or another check doesn't ask again (decision D59). Words the
+    worker chose to keep are never sent (decision D37).
   - Only a hazard linked to a Yes is judged, because the nudge shows under that question (decision D60). The
     model is its own setting, by default the provider's quick model (decision D61).
-  - The worker isn't told whether the AI or the word rule decided (decision D62). When an AI is set up, the hazard
-    check page says under "Did you miss any of these?": "The hazards you link to a Yes are checked by an AI. Your name isn't
-    sent." (decision D63).
+  - The worker isn't told whether the AI or the word rule decided (decision D62). When an AI is set up, the
+    hazard check page says under "Did you miss any of these?": "The hazards you link to a Yes are checked by an
+    AI. Your name isn't sent." (decision D63).
   - A worker could write instructions to the AI into a hazard. They are sent as a quoted value and the AI is told
     to ignore them; at worst one skips a nudge, which "Keep it as it is" skips anyway.
 

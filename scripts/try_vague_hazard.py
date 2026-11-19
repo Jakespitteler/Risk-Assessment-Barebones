@@ -36,9 +36,9 @@ from risk_assessment.domain.take5.hazard_nudges import (
     hazard_judgement_text,
     hazard_verdict,
     hazards_to_judge,
+    specific_hazard_nudges,
 )
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
-from risk_assessment.domain.wording import word_count
 from risk_assessment.settings import Settings
 
 # Made up, every one: a hazard, the question it is linked to, the job, where it is,
@@ -131,13 +131,13 @@ SAMPLE_HAZARDS: tuple[tuple[str, str, str, str, HazardVerdict], ...] = (
 )
 
 
-def linked_hazard(
+def linked_draft(
     description: str,
     question_id: str,
     job: str,
     location: str,
-) -> HazardToJudge:
-    """Make one sample hazard, linked to its question's Yes, as the app would judge it.
+) -> Take5Draft:
+    """Make a draft with one sample hazard, linked to its question's Yes.
 
     Args:
         description: The hazard.
@@ -146,40 +146,32 @@ def linked_hazard(
         location: Where it is.
 
     Returns:
-        The hazard, with its question.
-
-    Raises:
-        ValueError: When the sample wouldn't be judged at all.
+        The draft, by a made-up worker.
     """
     answers: dict[str, Answer] = {
         question.id: Answer.YES if question.role is QuestionRole.STOP else Answer.NO
         for question in BOOKLET_TEMPLATE.questions
     } | {question_id: Answer.YES}
-    draft = Take5Draft(
+    return Take5Draft(
         worker_name="Sam Example",
         job=job,
         location=location,
         answers=answers,
         hazards=(HazardDraft(description=description, covers=(question_id,)),),
     )
-    judged: tuple[HazardToJudge, ...] = hazards_to_judge(draft, BOOKLET_TEMPLATE)
-    if not judged:
-        raise ValueError(f"The sample '{description}' would not be judged.")
-    return judged[0]
 
 
-def word_rule(description: str) -> str:
-    """Say what the word rule decides on its own (spec T6).
+def word_rule(draft: Take5Draft) -> str:
+    """Say what the app decides with no AI, using the app's own word rule (spec T6).
 
     Args:
-        description: The hazard.
+        draft: A draft with one linked hazard.
 
     Returns:
         "vague" or "specific".
     """
-    minimum: int | None = BOOKLET_TEMPLATE.specific_hazard_words
-    is_short: bool = minimum is not None and word_count(description) < minimum
-    return HazardVerdict.VAGUE.value if is_short else HazardVerdict.SPECIFIC.value
+    nudged: bool = bool(specific_hazard_nudges(draft, BOOKLET_TEMPLATE, {}))
+    return HazardVerdict.VAGUE.value if nudged else HazardVerdict.SPECIFIC.value
 
 
 def measure(model_name: str, api_key: str, counter: TokenCounter) -> list[str]:
@@ -192,16 +184,22 @@ def measure(model_name: str, api_key: str, counter: TokenCounter) -> list[str]:
 
     Returns:
         The table's rows for this model.
+
+    Raises:
+        ValueError: When a sample would not be judged at all.
     """
     judge = AiHazardJudge(ClaudeModel(api_key, model_name))
     prices: tuple[float, float] | None = PRICES_PER_MILLION_TOKENS.get(model_name)
     rows: list[str] = []
     for description, question_id, job, location, expected in SAMPLE_HAZARDS:
-        hazard: HazardToJudge = linked_hazard(description, question_id, job, location)
+        draft: Take5Draft = linked_draft(description, question_id, job, location)
+        judged: tuple[HazardToJudge, ...] = hazards_to_judge(draft, BOOKLET_TEMPLATE)
+        if not judged:
+            raise ValueError(f"The sample '{description}' would not be judged.")
         counter.input_tokens = counter.output_tokens = 0
         started: float = time.perf_counter()
         try:
-            reply: str = judge.judge(hazard_judgement_text(hazard, job, location))
+            reply: str = judge.judge(hazard_judgement_text(judged[0], job, location))
         except Exception as error:  # Show every failure in the table.
             reply = f"(failed: {type(error).__name__})"
         seconds: float = time.perf_counter() - started
@@ -209,7 +207,7 @@ def measure(model_name: str, api_key: str, counter: TokenCounter) -> list[str]:
         says: str = verdict.value if verdict else f"unusable: {reply.strip()}"
         rows.append(
             f"| {model_name} | {description} | {job} | {expected.value} "
-            f"| {word_rule(description)} | {says} | {seconds:.1f} s "
+            f"| {word_rule(draft)} | {says} | {seconds:.1f} s "
             f"| {counter.input_tokens} / {counter.output_tokens} "
             f"| {cost_in_cents(counter, prices)} |",
         )

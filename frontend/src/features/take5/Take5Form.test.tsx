@@ -737,6 +737,62 @@ it("asks about the words once the worker leaves the box, not while they type", a
   expect(asks()).toBe(2);
 });
 
+it("asks once for the whole page while the worker types, however many hazards are linked", async () => {
+  storeDraft({
+    ...COMPLETE_DRAFT,
+    answers: { keys: "Yes", dogs: "Yes" },
+    hazards: [DOG, { ...DOG, description: "Cat" }],
+  });
+  const calls = stubApi({
+    "POST /api/take5s/nudges": {
+      status: 200,
+      body: [NUDGES[0], { ...NUDGES[0], path: "hazards.1.description" }],
+    },
+  });
+  const asks = () =>
+    calls.filter((call) => call === "POST /api/take5s/nudges").length;
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  const box = await screen.findByLabelText("Hazard 1");
+  expect(screen.getByLabelText("Hazard 2")).toBeTruthy();
+
+  fireEvent.focus(box);
+  for (const words of ["Bitten", "Bitten by the", "Bitten by the guard dog"])
+    fireEvent.change(box, { target: { value: words } });
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  expect(asks()).toBe(1);
+});
+
+it("never sends the links of words the worker kept, so they aren't judged", async () => {
+  storeDraft(
+    {
+      ...COMPLETE_DRAFT,
+      answers: { keys: "Yes", dogs: "Yes" },
+      hazards: [DOG],
+    },
+    ["Dog"],
+  );
+  stubApi({ "POST /api/take5s/nudges": { status: 200, body: [] } });
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  await waitFor(() => {
+    expect(nudgeRequests()).toHaveLength(1);
+  });
+
+  expect(nudgeRequests()[0]?.hazards[0]?.covers).toEqual([]);
+});
+
+/** The drafts the page sent to ask for nudges, in order. */
+function nudgeRequests() {
+  return vi
+    .mocked(fetch)
+    .mock.calls.filter(([url]) => url === "/api/take5s/nudges")
+    .map(([, init]) =>
+      typeof init?.body === "string"
+        ? (JSON.parse(init.body) as Take5Draft)
+        : undefined,
+    );
+}
+
 it("keeps the nudge's box while the worker types words they kept before", async () => {
   storeDraft(
     {

@@ -5,12 +5,17 @@ fails, or takes too long.
 """
 
 import threading
+import time
 
 import pytest
 
 from risk_assessment.domain.questions import Answer
 from risk_assessment.domain.take5.draft import HazardDraft, Take5Draft
-from risk_assessment.domain.take5.hazard_nudges import HazardVerdict, Nudge
+from risk_assessment.domain.take5.hazard_nudges import (
+    HAZARD_AI_TIME_LIMIT_SECONDS,
+    HazardVerdict,
+    Nudge,
+)
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE, Take5Template
 from risk_assessment.services.hazard_nudges import HazardNudger, RememberedVerdicts
 from tests.samples import sample_answers, sample_draft, sample_hazard_draft
@@ -227,12 +232,34 @@ def test_example_84_a_late_answer_is_used_next_time() -> None:
 
     first: tuple[Nudge, ...] = nudger.nudges(_linked_to_vehicles("Get hit by a car"))
     let_it_answer.set()
-    assert judge.answered.wait(timeout=PLENTY_OF_TIME_SECONDS)
-    second: tuple[Nudge, ...] = nudger.nudges(_linked_to_vehicles("Get hit by a car"))
+    second: tuple[Nudge, ...] = _check_until_settled(
+        nudger,
+        _linked_to_vehicles("Get hit by a car"),
+    )
 
     assert len(first) == 1
     assert second == ()
     assert len(judge.texts_given) == 1
+
+
+def _check_until_settled(nudger: HazardNudger, draft: Take5Draft) -> tuple[Nudge, ...]:
+    """Check a draft again and again until the late answer is used, or time is up.
+
+    The late answer is stored a moment after the stand-in replies. A check before then
+    waits for the same ask, never a new one, so checking again is safe when slow.
+
+    Args:
+        nudger: The nudger that asked.
+        draft: The same draft as before.
+
+    Returns:
+        The first check's nudges once there are none, or the last check's at the end.
+    """
+    deadline: float = time.monotonic() + PLENTY_OF_TIME_SECONDS
+    nudges: tuple[Nudge, ...] = nudger.nudges(draft)
+    while nudges and time.monotonic() < deadline:
+        nudges = nudger.nudges(draft)
+    return nudges
 
 
 def test_two_checks_at_once_share_one_ask() -> None:
@@ -252,6 +279,11 @@ def test_two_checks_at_once_share_one_ask() -> None:
     ]
     for check in checks:
         check.start()
+    # Answer only once the first ask is with the AI and the second check is waiting.
+    deadline: float = time.monotonic() + PLENTY_OF_TIME_SECONDS
+    while not judge.texts_given and time.monotonic() < deadline:
+        time.sleep(0.01)
+    time.sleep(0.1)
     let_it_answer.set()
     for check in checks:
         check.join(timeout=PLENTY_OF_TIME_SECONDS)
@@ -303,3 +335,8 @@ def test_the_oldest_verdict_is_forgotten_past_the_limit() -> None:
     assert remembered.get("first") is None
     assert remembered.get("second") is HazardVerdict.SPECIFIC
     assert remembered.get("third") is HazardVerdict.VAGUE
+
+
+def test_the_ai_has_five_seconds() -> None:
+    """Decision D57: the word rule decides after 5 seconds."""
+    assert HAZARD_AI_TIME_LIMIT_SECONDS == 5

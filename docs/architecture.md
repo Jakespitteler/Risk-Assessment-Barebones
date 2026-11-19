@@ -202,8 +202,9 @@ them (spec T5). `POST /api/take5s/nudges` returns the nudges (task 0022, moved o
 each has a dotted `path`, a `message` and the `question_id` it shows under, and none ever stops a Take 5 being
 submitted. For now the only one is T6, on `hazards.<n>.description`, under the first Yes in card order that the
 hazard is linked to. Which nudge the worker chose to keep is remembered on the phone, not sent, because it is
-about what is on the screen. The phone asks again only when the words change, never while the worker types in
-the nudge's box (spec D56).
+about what is on the screen. The hazard check page asks once for the whole page, again only when the draft
+changes, and never while the worker types in a nudge's box (spec D56). It sends the draft without the links of
+hazards whose words were kept, so those are never judged.
 
 **The front end holds no rules and no card.** It gets the questions and the matrix from
 `GET /api/take5/template`, draws whatever it is sent, and shows a score by looking it up in that matrix. It finds
@@ -289,9 +290,8 @@ api/app.py is the one exception: it also imports storage, ai and settings, to pl
 
 Anything outside the app sits behind a Protocol, so it can be replaced without touching its callers. There are
 two: the database (`Take5Repository`) and the AI (`ChallengeAsker` and `HazardJudge`, each filled by any
-`LanguageModel`). Adding
-ChatGPT, Gemini, or a model a company runs itself means adding one file in `ai/providers/`, its library, and one
-line in `api/app.py` to plug it in; no rule and no job changes.
+`LanguageModel`). Adding ChatGPT, Gemini, or a model a company runs itself means adding one file in
+`ai/providers/`, its library, and one line in `api/app.py` to plug it in; no rule and no job changes.
 
 The worker's name is never passed to an adapter (spec C1). The AI's key lives in the server's environment (or
 `backend/.env` on a developer's computer) and is never in the repo or sent to the phone. With no key, no AI is
