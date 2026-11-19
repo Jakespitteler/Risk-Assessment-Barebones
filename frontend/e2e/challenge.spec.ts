@@ -13,10 +13,16 @@ import {
 // With no AI set up, the back end asks the fixed question about the riskiest hazard.
 const FALLBACK = `What is the one thing that has to go right so that '${HAZARD}' doesn't hurt anyone, and how will you check it before you start?`;
 
+// What the back end's template says above Submit when an AI is set up (decision D52).
+const AI_NOTICE =
+  "Submit saves this Take 5 and sends the job, location, answers, hazards and controls (not your name) to an AI that writes one question for you.";
+
 test("Submit asks one question, a short answer is refused, and the answer shows on the result", async ({
   page,
 }) => {
   await controlledDraft(page);
+  // The whole-app tests run with no AI, so nothing says one is sent anything.
+  await expect(page.getByText(/\bAI\b/)).toHaveCount(0);
   await capture(page, "challenge-review-submit");
   await submit(page);
 
@@ -88,4 +94,23 @@ test("an unanswered Take 5 is kept: the list says so, and opening the app goes b
   const later = await context.newPage();
   await later.goto("/");
   await expect(heading(later, "The job in front of you")).toBeVisible();
+});
+
+test("with an AI set up, the review says above Submit what is sent to it", async ({
+  page,
+}) => {
+  // The back end runs with no key here, so its template is given the notice it
+  // sends when an AI is set up.
+  await page.route("**/api/take5/template", async (route) => {
+    const response = await route.fetch();
+    const template = (await response.json()) as Record<string, unknown>;
+    await route.fulfill({
+      response,
+      json: { ...template, ai_notice: AI_NOTICE },
+    });
+  });
+  await controlledDraft(page);
+
+  await expect(page.getByText(AI_NOTICE, { exact: true })).toBeVisible();
+  await capture(page, "ai-notice-above-submit");
 });

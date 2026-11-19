@@ -13,14 +13,17 @@ import { HazardSummary } from "./HazardSummary";
  * the worker is sent to the page where it is. Each warning the back end sends is shown
  * beside what it is about, with a button that opens that page: a question answered No
  * (change the answer), or a hazard with no controls (add a control). A warning never
- * stops the worker finishing.
+ * stops the worker finishing. Last, just above Submit, the back end's note on what
+ * Submit sends to the AI, when one is set up (decision D52).
  */
 export function ReviewPage({
   draft,
+  aiNotice,
   onGaps,
   onOpenWarning,
 }: {
   draft: Take5Draft;
+  aiNotice?: string | null;
   onGaps: (errors: FieldError[]) => void;
   onOpenWarning: (warning: FieldWarning) => void;
 }) {
@@ -107,6 +110,7 @@ export function ReviewPage({
         Read your answers against the job in front of you. Go back if anything
         needs changing.
       </p>
+      {aiNotice && <p className="text-slate-700">{aiNotice}</p>}
     </div>
   );
 }

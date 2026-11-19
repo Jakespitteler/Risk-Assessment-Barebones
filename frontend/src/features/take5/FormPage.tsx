@@ -173,7 +173,12 @@ export function FormPage({
     );
   if (!("hazard" in stage))
     return (
-      <ReviewPage draft={draft} onGaps={onGaps} onOpenWarning={onOpenWarning} />
+      <ReviewPage
+        draft={draft}
+        aiNotice={template.ai_notice}
+        onGaps={onGaps}
+        onOpenWarning={onOpenWarning}
+      />
     );
 
   const index = stage.hazard;

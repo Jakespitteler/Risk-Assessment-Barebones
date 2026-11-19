@@ -58,9 +58,11 @@ saved until the worker submits it. Then the app asks its one question, and then 
       again.
    The app shows the score and band from the risk matrix as soon as both parts of a rating are picked.
 5. **One question before you start.** The worker presses Submit on the review and the Take 5 is saved; it can't
-   be changed after that, so there is no way back to the form (decisions D44 and D45). The app then asks one
-   question about the weakest part of what they wrote, for example "You're relying on a harness. What is it
-   anchored to, and who checked the anchor?" An AI writes the question; when it can't, the app asks a fixed one
+   be changed after that, so there is no way back to the form (decisions D44 and D45). When an AI is set up, the
+   review says just above Submit what goes to it: "Submit saves this Take 5 and sends the job, location, answers,
+   hazards and controls (not your name) to an AI that writes one question for you." (decision D52). The app then
+   asks one question about the weakest part of what they wrote, for example "You're relying on a harness. What is
+   it anchored to, and who checked the anchor?" An AI writes the question; when it can't, the app asks a fixed one
    instead. The worker answers in their own words and presses Finish. See
    [The challenge question](#the-challenge-question).
 6. **Result.** The Take 5 is now finished. It is saved with its verdict and the worker sees it: *Don't start
@@ -225,8 +227,8 @@ the same every time and can be tested exactly.
   goes once they leave it with specific words. "Keep it as it is" leaves the words as they are. A nudge never
   stops Continue or Submit (decision D35). Keeping the words is remembered on the phone for those exact words, so
   the nudge doesn't come back (decision D37). A short hazard can still be specific ("Crusher dust"), which is why
-  it only nudges. A template with no minimum never nudges. Once an AI is set up it judges this instead, when it
-  can be reached (see Planned for later).
+  it only nudges. A template with no minimum never nudges. Task 0027 has the AI judge this instead, when it can
+  be reached (see Planned for later).
 
 ### The challenge question
 
@@ -236,8 +238,10 @@ is the part they can't see coming, because it is written for this job.
 The safety rules stay in code. The AI only asks; it never decides whether anyone can start work.
 
 - **C1 One question, about this Take 5.** After the worker submits, the app asks one question about the weakest
-  part of what they wrote. The AI is given the job, where it is, the answers, and the hazards with their
-  ratings and controls. It is never given the worker's name.
+  part of what they wrote. That can be a hazard the job plainly has that isn't on their list: by then they have
+  listed hazards in their own words, so T1 still holds (decision D54). The AI is given the job, where it is, the
+  answers, and the hazards with their ratings and controls. It is never given the worker's name, and the review
+  says what is sent (D52).
 - **C2 Checked before it is shown.** Spaces and line breaks at the ends of the AI's text are removed first. What
   is left is used only if it is 300 characters or fewer and ends with a question mark. Anything else, such as an
   apology or a refusal, is thrown away and C3 applies.
@@ -261,7 +265,7 @@ The safety rules stay in code. The AI only asks; it never decides whether anyone
     Take 5 while the app is open still starts one (decision D46).
   - There is no time limit on answering: the answers are already saved and the answer can't change the verdict
     (decision D48).
-  - The worker isn't told whether the AI or the fallback asked (decision D50).
+  - The worker isn't told whether the AI or the fallback asked (decisions D50 and D52).
 
 ### Drafts
 
@@ -510,6 +514,10 @@ The first four screens of the core workflow, saved when the worker submits.
 - Acceptance: the AI provider is chosen in settings. Adding ChatGPT or Gemini means one new adapter file, its
   library, and one line where it is plugged in; no rule, screen or other file changes.
 - Acceptance: the AI's key is read from the server's settings; it is never in the repo or sent to the phone.
+- Acceptance: with no key set, the app runs and asks the fallback question every time. Each AI question is saved
+  with the model and the version of its instructions.
+- Acceptance: when an AI is set up, the review says above Submit what is sent to it, and that the name isn't
+  (D52). With none, it says nothing about an AI.
 
 ## Out of scope (for now)
 
@@ -528,8 +536,8 @@ Not in version 1, but Jake expects them, so version 1 is built not to block them
 under "Ready for later".
 
 - **The AI judges vague hazards.** Jake (2026-11-18): once an AI is set up, it judges whether a hazard linked to
-  a Yes is vague, whenever it can be reached, with task 0022's word rule as the fallback. Task 0009's notes say
-  where it fits.
+  a Yes is vague, whenever it can be reached, with task 0022's word rule as the fallback. Its own task, 0027,
+  straight after 0009 (decision D55).
 
 - **Each company's own Take 5.** Companies use different cards and different matrices. Later the app should
   read a photo, Word file or PDF of a company's blank card and build the matching template, which a person then
@@ -599,8 +607,12 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D47 | Who can answer the question (2026-11-18) | Only the phone that submitted the Take 5 (C6) | Anyone who opens it |
 | D48 | A time limit on answering (2026-11-18) | None (C6) | The draft's 2 hours from the start |
 | D49 | Does an unfinished fix mark its original Fixed (2026-11-18) | Yes, as soon as the fix is saved, so a second fix can't be started beside it | Only once the fix is answered |
-| D50 | Tell the worker whether the AI asked (2026-11-18) | No, for now; revisit in task 0009 with what is sent to the AI | Label an AI question |
+| D50 | Tell the worker whether the AI asked (2026-11-18) | No, for now; revisit in task 0009 with what is sent to the AI. Kept in task 0009 (D52) | Label an AI question |
 | D51 | Answers such as "I will be careful" (2026-11-18) | Keep C4 at four words; a smarter check belongs with the AI later | Also refuse a T2 phrase padded with small words |
+| D52 | Tell the worker what is sent to the AI (2026-11-18) | One line above Submit, when an AI is set up: the job, location, answers, hazards and controls, not the name. The question itself is still not labelled (D50) | Label each AI question; say nothing |
+| D53 | Which Claude model asks (2026-11-18) | Claude Opus 5.5 on low effort, the best questions; the model is a setting | Sonnet 5.5 (about half the cost); Haiku 5.5 (cheapest and fastest, most generic) |
+| D54 | May the question be about a hazard not on the list (2026-11-18) | Yes, when the job plainly has it (C1) | Only what the worker wrote |
+| D55 | When the AI judges vague hazards (2026-11-18) | Its own task, 0027, after 0009 | In task 0009 |
 
 ## Open questions
 
@@ -608,7 +620,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 - Is the three minute target right for a typical job?
 - T3 could be gamed by picking "Barricade the hazard" for a control that isn't one. Fixed rules can't catch
   that. The challenge question is the place it is most likely to be picked up.
-- What does the AI cost per Take 5, and is there a monthly limit? Worth measuring in the provider task (0009).
-- A job description can contain someone's name even though the worker's own name is never sent. Is that
-  acceptable, or should the worker be told what is sent?
+- Is a monthly limit on AI spending needed in the app, or is the provider's console enough? Task 0009 measured
+  about 1 US cent per Take 5 on Opus 5.5 (0.3 cents on Sonnet 5.5, 0.03 cents on Haiku 5.5), so about US$30 a
+  month at 100 Take 5s a day.
 - Should the vague phrases in T2 be a longer list, and who maintains it?

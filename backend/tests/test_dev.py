@@ -62,7 +62,7 @@ def test_backend_wait_retries_until_the_api_responds() -> None:
         ) as request,
         patch.object(dev.time, "sleep") as sleep,
     ):
-        dev.wait_for_backend(server)
+        dev.wait_until_ready(server, dev.BACKEND_READY_URL, "back end")
 
     assert request.call_count == 2
     sleep.assert_called_once_with(0.1)
@@ -72,8 +72,8 @@ def test_backend_wait_fails_when_the_server_exits() -> None:
     """An API process that exits is reported immediately instead of waiting."""
     server = MagicMock(spec=subprocess.Popen)
     server.poll.return_value = 1
-    with pytest.raises(RuntimeError, match="stopped before its API was ready"):
-        dev.wait_for_backend(server)
+    with pytest.raises(RuntimeError, match="back end stopped before it was ready"):
+        dev.wait_until_ready(server, dev.BACKEND_READY_URL, "back end")
 
 
 def test_backend_wait_has_a_deadline() -> None:
@@ -86,11 +86,11 @@ def test_backend_wait_has_a_deadline() -> None:
         patch.object(dev, "urlopen", side_effect=URLError("starting")),
         pytest.raises(TimeoutError, match="did not become ready"),
     ):
-        dev.wait_for_backend(server)
+        dev.wait_until_ready(server, dev.BACKEND_READY_URL, "back end")
 
 
 def test_servers_start_only_after_install_and_api_readiness() -> None:
-    """Preparation finishes first, then the API is ready before Vite can start."""
+    """Install, then the API, then Vite, then the app's address once Vite answers."""
     events = MagicMock()
     backend = MagicMock(spec=subprocess.Popen)
     frontend = MagicMock(spec=subprocess.Popen)
@@ -100,7 +100,8 @@ def test_servers_start_only_after_install_and_api_readiness() -> None:
         patch.object(dev.subprocess, "run", events.sync),
         patch.object(dev, "install_frontend_if_needed", events.install),
         patch.object(dev, "start", events.start),
-        patch.object(dev, "wait_for_backend", events.ready),
+        patch.object(dev, "wait_until_ready", events.ready),
+        patch.object(dev, "print", events.print, create=True),
         patch.object(dev, "stop", events.stop),
     ):
         dev.run_both()
@@ -114,8 +115,10 @@ def test_servers_start_only_after_install_and_api_readiness() -> None:
         ),
         call.install(),
         call.start(dev.BACKEND_COMMAND, "backend"),
-        call.ready(backend),
+        call.ready(backend, dev.BACKEND_READY_URL, "back end"),
         call.start(dev.FRONTEND_COMMAND, "frontend"),
+        call.ready(frontend, dev.APP_URL, "front end"),
+        call.print(dev.READY_MESSAGE, flush=True),
         call.stop(backend),
         call.stop(frontend),
     ]
@@ -128,7 +131,7 @@ def test_failed_backend_readiness_stops_it_without_starting_vite() -> None:
         patch.object(dev.subprocess, "run"),
         patch.object(dev, "install_frontend_if_needed"),
         patch.object(dev, "start", return_value=backend) as start,
-        patch.object(dev, "wait_for_backend", side_effect=TimeoutError("not ready")),
+        patch.object(dev, "wait_until_ready", side_effect=TimeoutError("not ready")),
         patch.object(dev, "stop") as stop,
         pytest.raises(TimeoutError, match="not ready"),
     ):
@@ -136,3 +139,9 @@ def test_failed_backend_readiness_stops_it_without_starting_vite() -> None:
 
     start.assert_called_once_with(dev.BACKEND_COMMAND, "backend")
     stop.assert_called_once_with(backend)
+
+
+def test_the_ready_line_names_only_the_app() -> None:
+    """The last line printed is the app's address, not the API's port 8000."""
+    assert "http://localhost:5173" in dev.READY_MESSAGE
+    assert "8000" not in dev.READY_MESSAGE

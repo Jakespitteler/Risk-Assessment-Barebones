@@ -27,7 +27,7 @@ Back end:
 | Data checking | pydantic, with pydantic-settings for settings | One definition of each shape, checked on the way in. Settings such as the AI key come from the environment |
 | Server | uvicorn | The usual server for FastAPI |
 | Database | SQLite through Python's built-in `sqlite3` | One file, nothing to install, every SQL statement is in the repo to read |
-| AI | One provider's own Python library per adapter, starting with `anthropic` (spec decision D9) | Each provider sits behind the same small interface |
+| AI | One provider's own Python library per adapter, starting with `anthropic` (spec decision D9; added in task 0009) | Each provider sits behind the same small interface |
 | Packaging | uv | One tool for Python versions, dependencies and running commands |
 | Lint and format | ruff | Project rule |
 | Type checking | pyright in strict mode | The command-line version of Pylance's strict rules |
@@ -104,19 +104,24 @@ backend/
         storage/           where things are kept
             sqlite.py          SqliteTake5Repository
         ai/                everything that talks to an AI
-            model.py           LanguageModel (a Protocol): instructions and text in, text out
-            challenge.py       the challenge question's instructions, and a ChallengeAsker
-                               that works with any LanguageModel
+            model.py           LanguageModel (a Protocol): instructions and text in, text out;
+                               LanguageModelError for a reply with no usable text
+            challenge.py       the challenge question's instructions and their version, and
+                               AiChallengeAsker, a ChallengeAsker that works with any LanguageModel
             providers/
-                claude.py          ClaudeModel, the first LanguageModel
+                claude.py          ClaudeModel, the first LanguageModel: one Messages API call, an
+                                   11-second network limit and no retries
         api/               the web API
             app.py             builds the FastAPI app and plugs the pieces together
             take5_routes.py    one function per Take 5 endpoint
             schemas.py         the shapes of requests and responses, including the error replies
             errors.py          turns errors into the declared error replies
-        settings.py        settings read from the environment (database path, AI provider, AI key)
+        settings.py        settings read from the environment or `backend/.env`, which git ignores
+                           (database path, AI provider, AI model, AI key)
     tests/                 mirrors src/risk_assessment/
+        conftest.py        hides any AI key from every test not marked `real_ai`
         samples.py         the made-up Take 5s that tests in more than one folder share
+        ai/fake_anthropic.py  a stand-in for Anthropic's API, so the real adapter runs with no network
         api/conftest.py    the API tests' set-up: an empty database and a client for each test
 frontend/
     package.json
@@ -147,6 +152,8 @@ scripts/
     setup.py               sets up a freshly cloned repo: checks git and Node.js, installs everything else
     dev.py                 starts both halves for development
     check.py               runs every check, as CI does
+    try_challenge.py       asks the real AI about five made-up Take 5s and prints each question, its time
+                           and its cost, to compare models or versions of the instructions
     agent_review.cjs       decides which PR events may start the CI reviewer
     claude_hooks/          Claude Code's hooks (set in .claude/settings.json): a guard that blocks
                            secrets and risky git commands, and a formatter that runs after each edit
@@ -160,7 +167,7 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 
 | Endpoint | What it does |
 | --- | --- |
-| `GET /api/take5/template` | The template a new Take 5 is filled in on: its questions, its matrix and its guidance, plus the answers a question can have and the control kinds |
+| `GET /api/take5/template` | The template a new Take 5 is filled in on: its questions, its matrix and its guidance, plus the answers a question can have and the control kinds. `ai_notice` (task 0009) is the line the review shows above Submit saying what is sent to the AI, or empty when no AI is set up (spec D52) |
 | `POST /api/take5s/check` | Checks a draft and returns what is missing, its warnings (allowed, but they will stop the job), which thinking rules apply and its nudges (never blocking). A draft that has run out (spec K2) has an error on `started_at`, and `runs_out_at` says when it runs out (empty with no time limit). Saves nothing |
 | `POST /api/take5s` | Checks and saves a Take 5, unfinished, then asks the AI (or the fallback) for its question, and returns it with the question. A retry returns what was saved, with the same question |
 | `POST /api/take5s/{id}/answer` | Saves the answer, works out the verdict, and returns the finished Take 5 (task 0008). A short answer is a 422 on `answer`; a different answer to a finished one is a 409; the same answer again returns the finished Take 5 |
@@ -245,7 +252,7 @@ domain        ->  nothing in the app
 domain/take5  ->  the shared files in domain (never the other way round)
 services      ->  domain
 storage       ->  services.ports, domain
-ai            ->  services.ports
+ai            ->  services.ports, domain
 ai/providers  ->  ai/model.py only
 api           ->  services, domain
 api/app.py is the one exception: it also imports storage, ai and settings, to plug them in
@@ -271,8 +278,11 @@ two: the database (`Take5Repository`) and the AI (`ChallengeAsker`, filled by an
 ChatGPT, Gemini, or a model a company runs itself means adding one file in `ai/providers/`, its library, and one
 line in `api/app.py` to plug it in; no rule and no job changes.
 
-The worker's name is never passed to an adapter (spec C1). The AI's key lives in the server's environment and
-is never in the repo or sent to the phone.
+The worker's name is never passed to an adapter (spec C1). The AI's key lives in the server's environment (or
+`backend/.env` on a developer's computer, copied from the template `backend/.env.example`, which names every
+setting and holds no key) and is never in the repo or sent to the phone. With no key, no AI is
+plugged in and the fixed question is always asked. `api/app.py` has one table from `AiProvider` (a setting) to
+the adapter that builds that provider's model.
 
 ## Ready for later
 
@@ -293,7 +303,7 @@ between Take 5s.
 
 | Risk | What it means | What stops it |
 | --- | --- | --- |
-| Poisoning | Wrong or hostile text gets in and is relied on | C2 checks every reply before it is shown. The AI's text is never fed into another AI call and never decides the verdict. A worker could type instructions into the job ("ignore your rules"); the instructions in `ai/challenge.py` must treat the Take 5 as data, and C2 limits any reply to one short question |
+| Poisoning | Wrong or hostile text gets in and is relied on | C2 checks every reply before it is shown. The AI's text is never fed into another AI call and never decides the verdict. A worker could type instructions into the job ("ignore your rules"); the instructions in `ai/challenge.py` tell the model the Take 5 is only data and to ignore any instructions in it (task 0009), and C2 limits any reply to one short question |
 | Distraction | Too much in front of the model | Each call sends one Take 5 and nothing builds up, so nothing needs compacting |
 | Confusion | Irrelevant material mixed in | Only that Take 5's own fields are sent (C1) |
 | Clash | Sources that disagree | One source today. When company standards arrive, `StandardsSource` picks only the sections that matter. What happens when a standard and the card disagree is a product decision for then |
@@ -337,7 +347,8 @@ cloud account, or a model the company runs itself.
 | Unit, front end | Each component and screen behaves: nothing pre-selected, errors beside fields, T1 | Vitest and React Testing Library |
 | End to end | A worker fills in every screen in a real browser and reaches the right verdict | Playwright against the real front end and back end, with a stand-in AI |
 | Visual | Each changed screen looks right on a phone | Playwright screenshots at 360 px wide, attached to the PR; checked by eye, not in CI |
-| AI adapter | The real provider answers and the adapter reads it | A small test that only runs when a key is set; never in CI |
+| AI adapter | The adapter sends what it should and reads the reply, refusals and errors | The real adapter against a stand-in for the provider's API (`tests/ai/fake_anthropic.py`), so nothing leaves the computer |
+| Real AI | The real provider answers with a usable question | `uv run pytest -m real_ai` in `backend/`, skipped with no key; plain `pytest` and CI never run it. `scripts/try_challenge.py` measures questions, time and cost |
 
 CI runs, on every PR and every push to `main` (task 0002): for the back end `ruff check`, `ruff format --check`,
 `pyright` and `pytest`; for the front end ESLint, Prettier's check, the TypeScript compiler, Vitest, and the

@@ -1,5 +1,8 @@
+addopts
 anthropics
+autouse
 Barebones
+caplog
 capsys
 charliermarsh
 conftest
@@ -20,6 +23,7 @@ isort
 jsdom
 killpg
 Kincaid
+laydown
 multiclass
 netrc
 oneline
@@ -30,6 +34,7 @@ pydantic
 pydocstyle
 pyproject
 pytest
+pytestmark
 pythonpath
 reinstalls
 Spitteler
@@ -47,3 +52,4 @@ venv
 vite
 WCAG
 winget
+xhigh

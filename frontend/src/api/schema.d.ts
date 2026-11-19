@@ -743,6 +743,8 @@ export interface components {
          *         likelihood_guidance: What each likelihood means, in the card's words.
          *         consequence_guidance: What each consequence means, in the card's words.
          *         control_guidance: The card's advice on choosing controls.
+         *         ai_notice: What Submit sends to the AI, to show above Submit, or None when
+         *             no AI is set up, so nothing is sent (decision D52).
          */
         TemplateResponse: {
             /** Name */
@@ -760,6 +762,8 @@ export interface components {
             consequence_guidance: components["schemas"]["LevelGuidance"][];
             /** Control Guidance */
             control_guidance: string;
+            /** Ai Notice */
+            ai_notice?: string | null;
         };
         /**
          * ThinkingQuestion

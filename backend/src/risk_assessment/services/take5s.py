@@ -122,6 +122,11 @@ class Take5Service:
         """The template a new Take 5 is filled in on."""
         return self._template
 
+    @property
+    def asks_ai(self) -> bool:
+        """Whether an AI writes the challenge question, not always the fallback."""
+        return self._challenge_asker is not None
+
     def check(self, draft: Take5Draft) -> DraftCheck:
         """Check a draft against the current template, without saving it.
 

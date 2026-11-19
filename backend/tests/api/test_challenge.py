@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from httpx2 import Response
 
 from risk_assessment.api.app import create_app
-from risk_assessment.domain.take5.challenge import AiQuestion
+from risk_assessment.domain.take5.challenge import AI_NOTICE, AiQuestion
 from risk_assessment.storage.sqlite import SqliteTake5Repository
 from tests.api.take5_requests import answer, finish, submit
 from tests.samples import SAMPLE_ANSWER, sample_draft
@@ -130,3 +130,22 @@ def test_answering_an_unknown_take5_is_a_404(client: TestClient) -> None:
 
     assert response.status_code == 404
     assert response.json() == {"detail": "This Take 5 could not be found."}
+
+
+def test_with_no_ai_the_template_has_no_notice(client: TestClient) -> None:
+    """Nothing is sent to an AI, so nothing above Submit says so (decision D52)."""
+    template: dict[str, Any] = client.get("/api/take5/template").json()
+
+    assert template["ai_notice"] is None
+
+
+def test_with_an_ai_the_template_says_what_submit_sends(
+    repository: SqliteTake5Repository,
+) -> None:
+    """The notice names what goes to the AI, and that the name doesn't (D52)."""
+    client = TestClient(create_app(repository, challenge_asker=FailingAsker()))
+
+    template: dict[str, Any] = client.get("/api/take5/template").json()
+
+    assert template["ai_notice"] == AI_NOTICE
+    assert "not your name" in AI_NOTICE
