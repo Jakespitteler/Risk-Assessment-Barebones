@@ -13,7 +13,7 @@ export function UndoBar({
   return (
     <div
       role="status"
-      className="flex items-center gap-2 rounded-xl bg-slate-900 p-3 text-white"
+      className="flex items-center gap-2 rounded-xl bg-action p-3 text-on-action"
     >
       <p className="grow font-semibold">{message}</p>
       <Button variant="secondary" onClick={onUndo} className="shrink-0">

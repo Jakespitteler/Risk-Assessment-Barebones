@@ -12,20 +12,20 @@ export function RateRiskScreen() {
   });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-white px-4 py-6">
-      <h1 className="text-3xl font-bold text-slate-900">Rate a risk</h1>
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-surface px-4 py-6">
+      <h1 className="text-3xl font-bold text-ink">Rate a risk</h1>
       {template.isPending && (
-        <p className="text-lg text-slate-700">Loading the card…</p>
+        <p className="text-lg text-ink-muted">Loading the card…</p>
       )}
       {template.isError && (
         <div className="flex flex-col gap-3">
-          <p className="text-lg text-slate-900">
+          <p className="text-lg text-ink">
             The card couldn’t be loaded. Check your signal and try again.
           </p>
           <button
             type="button"
             onClick={() => void template.refetch()}
-            className="min-h-14 rounded-xl bg-slate-900 px-4 text-lg font-semibold text-white"
+            className="min-h-14 rounded-xl bg-action px-4 text-lg font-semibold text-on-action"
           >
             Try again
           </button>

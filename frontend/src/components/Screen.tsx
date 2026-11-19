@@ -14,17 +14,17 @@ export function Screen({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-dvh bg-stone-100 text-base text-slate-900">
+    <div className="min-h-dvh bg-page text-base text-ink">
       <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-6">
         <header className="flex items-center gap-3">
           <span
             aria-hidden="true"
-            className="grid size-12 shrink-0 place-items-center rounded-xl bg-amber-400 text-3xl font-black"
+            className="grid size-12 shrink-0 place-items-center rounded-xl bg-brand text-3xl font-black text-on-brand"
           >
             5
           </span>
           <p className="flex flex-col">
-            <span className="text-sm font-bold tracking-wide text-slate-700 uppercase">
+            <span className="text-sm font-bold tracking-wide text-ink-muted uppercase">
               Take 5
             </span>
             <span className="font-semibold">{subtitle}</span>

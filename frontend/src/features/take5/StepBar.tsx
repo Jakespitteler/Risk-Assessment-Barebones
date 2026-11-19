@@ -7,10 +7,10 @@ const STEP_NAMES = ["Job", "Think", "Hazards", "Assess", "Review"];
 // dark once the worker has reached that step, like a progress bar. The current step's bar
 // is the amber of the app's "5" badge.
 const STEP_LOOK =
-  "flex min-h-12 w-full items-start border-t-4 pt-2 text-left text-sm aria-[current=step]:border-amber-400 aria-[current=step]:font-bold";
-const REACHED_LOOK = `${STEP_LOOK} border-slate-900 font-semibold text-slate-900 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-blue-700 disabled:cursor-wait disabled:opacity-60`;
-const SHOWING_LOOK = `${STEP_LOOK} border-slate-900 text-slate-900`;
-const NOT_REACHED_LOOK = `${STEP_LOOK} border-stone-300 text-slate-600`;
+  "flex min-h-12 w-full items-start border-t-4 pt-2 text-left text-sm aria-[current=step]:border-brand aria-[current=step]:font-bold";
+const REACHED_LOOK = `${STEP_LOOK} border-ink font-semibold text-ink focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60`;
+const SHOWING_LOOK = `${STEP_LOOK} border-ink text-ink`;
+const NOT_REACHED_LOOK = `${STEP_LOOK} border-line text-ink-faint`;
 
 /**
  * The five steps across the top of the form, which the worker can tap to move around it

@@ -1,1 +1,56 @@
 @import "tailwindcss";
+
+/*
+ * Every colour the app uses, named by its job rather than its shade. Components write
+ * `bg-page` or `text-danger`, never `bg-stone-100`, so the look can change here in one place.
+ * Tailwind 4 turns each `--color-<name>` into utilities such as `bg-<name>` and `text-<name>`.
+ *
+ * The risk band colours are not here: they stay in `RiskBadge.tsx`, the same everywhere.
+ */
+@theme {
+  /* The page and what sits on it. */
+  --color-page: var(--color-stone-100);
+  --color-surface: var(--color-white);
+  --color-surface-subtle: var(--color-stone-50);
+  --color-surface-hover: var(--color-stone-100);
+
+  /* Text: main, quieter, and quietest (a step not reached yet). */
+  --color-ink: var(--color-slate-900);
+  --color-ink-muted: var(--color-slate-700);
+  --color-ink-faint: var(--color-slate-600);
+
+  /* Edges: a card's, a choice's, and a text box's. */
+  --color-line: var(--color-stone-300);
+  --color-line-strong: var(--color-slate-400);
+  --color-line-field: var(--color-slate-500);
+
+  /* The main button, a picked choice and the undo bar, and the text on them. */
+  --color-action: var(--color-slate-900);
+  --color-action-hover: var(--color-slate-700);
+  --color-on-action: var(--color-white);
+
+  /* The outline round whatever the keyboard is on. */
+  --color-focus: var(--color-blue-700);
+
+  /* The amber of the "5", the current step and the "Draft" tag. */
+  --color-brand: var(--color-amber-400);
+  --color-on-brand: var(--color-slate-900);
+
+  /* Something wrong: an error, a problem, a "Don't start yet". */
+  --color-danger: var(--color-red-800);
+  --color-danger-fill: var(--color-red-800);
+  --color-danger-soft: var(--color-red-50);
+  --color-on-danger-soft: var(--color-red-900);
+
+  /* Something right: "Good to go", "Fixed". */
+  --color-success: var(--color-green-800);
+  --color-success-fill: var(--color-green-800);
+
+  /* Text on a danger or success fill. */
+  --color-on-fill: var(--color-white);
+
+  /* A warning to stop and think. */
+  --color-caution-line: var(--color-amber-700);
+  --color-caution-soft: var(--color-amber-50);
+  --color-on-caution-soft: var(--color-amber-950);
+}

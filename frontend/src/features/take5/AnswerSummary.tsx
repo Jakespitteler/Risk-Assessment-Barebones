@@ -31,7 +31,7 @@ export function AnswerSummary({
     return (
       <Card key={role}>
         <h2 className="text-xl font-bold">{title}</h2>
-        <dl className="flex flex-col divide-y divide-stone-300">
+        <dl className="flex flex-col divide-y divide-line">
           {asked.map((question) => {
             const note = noteFor?.(question.id);
             const linked = hazards.filter((hazard) =>
@@ -47,7 +47,7 @@ export function AnswerSummary({
                   {answers[question.id]}
                 </dd>
                 {linked.map((hazard, index) => (
-                  <dd key={index} className="col-span-2 text-green-800">
+                  <dd key={index} className="col-span-2 text-success">
                     On your list: {hazard.description}
                   </dd>
                 ))}

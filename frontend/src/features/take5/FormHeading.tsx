@@ -44,7 +44,7 @@ export function FormHeading({
         busy={busy}
         onPickStep={onPickStep}
       />
-      <p className="text-sm font-bold tracking-wide text-slate-700 uppercase">
+      <p className="text-sm font-bold tracking-wide text-ink-muted uppercase">
         Step {step} of {STEP_COUNT}
         {"hazard" in stage &&
           ` · Hazard ${String(stage.hazard + 1)} of ${String(hazardCount)}`}

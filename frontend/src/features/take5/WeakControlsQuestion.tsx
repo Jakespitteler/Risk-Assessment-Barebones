@@ -46,7 +46,7 @@ export function WeakControlsQuestion({
         </Notice>
       )}
       {(question || answer) && (
-        <div className="flex flex-col gap-3 rounded-xl border-2 border-amber-700 bg-amber-50 p-4">
+        <div className="flex flex-col gap-3 rounded-xl border-2 border-caution-line bg-caution-soft p-4">
           {question && <p className="text-lg font-bold">{question.message}</p>}
           <Field
             name={path}

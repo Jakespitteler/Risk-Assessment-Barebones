@@ -12,7 +12,7 @@ import { forgetKeptDraft, keptDraft } from "./useTake5Draft";
 
 const HEADING = "text-3xl font-extrabold focus:outline-none";
 const NEW_TAKE5_LINK =
-  "flex min-h-14 items-center justify-center rounded-xl bg-slate-900 px-5 text-lg font-bold text-white focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-blue-700";
+  "flex min-h-14 items-center justify-center rounded-xl bg-action px-5 text-lg font-bold text-on-action focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
 /**
  * The verdict as a tag, in the same strong colours as the result screen, or "Not
@@ -21,14 +21,14 @@ const NEW_TAKE5_LINK =
 function VerdictTag({ canStart }: { canStart: boolean | null }) {
   if (canStart === null)
     return (
-      <span className="rounded-lg bg-amber-400 px-2 py-1 text-sm font-bold text-slate-900 uppercase">
+      <span className="rounded-lg bg-brand px-2 py-1 text-sm font-bold text-on-brand uppercase">
         Not finished
       </span>
     );
   return (
     <span
-      className={`rounded-lg px-2 py-1 text-sm font-bold text-white uppercase ${
-        canStart ? "bg-green-800" : "bg-red-800"
+      className={`rounded-lg px-2 py-1 text-sm font-bold text-on-fill uppercase ${
+        canStart ? "bg-success-fill" : "bg-danger-fill"
       }`}
     >
       {canStart ? "Good to go" : "Don’t start yet"}
@@ -39,7 +39,7 @@ function VerdictTag({ canStart }: { canStart: boolean | null }) {
 /** Marks a Don't start yet that a newer Take 5 fixes, so it isn't taken as still open. */
 function FixedTag() {
   return (
-    <span className="rounded-lg border-2 border-green-800 px-2 py-0.5 text-sm font-bold text-green-800 uppercase">
+    <span className="rounded-lg border-2 border-success px-2 py-0.5 text-sm font-bold text-success uppercase">
       Fixed
     </span>
   );
@@ -51,7 +51,7 @@ function SavedTake5Item({ take5 }: { take5: Take5Summary }) {
     <li>
       <a
         href={`/take5s/${take5.id}`}
-        className="flex flex-col gap-2 rounded-2xl border border-stone-300 bg-white p-4 [overflow-wrap:anywhere] hover:bg-stone-50 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+        className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-4 [overflow-wrap:anywhere] hover:bg-surface-subtle focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus"
       >
         <span className="flex items-center justify-between gap-2">
           <span className="flex flex-wrap items-center gap-2">
@@ -65,7 +65,7 @@ function SavedTake5Item({ take5 }: { take5: Take5Summary }) {
         <span className="line-clamp-2 text-lg font-bold">{take5.job}</span>
         <span className="flex flex-col">
           <span>{take5.worker_name}</span>
-          <time dateTime={take5.created_at} className="text-slate-700">
+          <time dateTime={take5.created_at} className="text-ink-muted">
             {formatDateTime(take5.created_at)}
           </time>
         </span>

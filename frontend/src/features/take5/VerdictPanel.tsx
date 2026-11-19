@@ -4,8 +4,8 @@ import type { Verdict } from "../../api/take5";
 export function VerdictPanel({ verdict }: { verdict: Verdict }) {
   return (
     <section
-      className={`flex flex-col gap-3 rounded-2xl p-5 text-white ${
-        verdict.can_start ? "bg-green-800" : "bg-red-800"
+      className={`flex flex-col gap-3 rounded-2xl p-5 text-on-fill ${
+        verdict.can_start ? "bg-success-fill" : "bg-danger-fill"
       }`}
     >
       <p className="text-sm font-bold tracking-wide uppercase">Your result</p>

@@ -4,9 +4,9 @@ import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
 
 const LINK =
-  "flex min-h-14 items-center justify-center rounded-xl px-5 text-center text-lg font-bold focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-blue-700";
-const PRIMARY_LINK = `${LINK} bg-slate-900 text-white`;
-const SECONDARY_LINK = `${LINK} border-2 border-slate-900 bg-white text-slate-900`;
+  "flex min-h-14 items-center justify-center rounded-xl px-5 text-center text-lg font-bold focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus";
+const PRIMARY_LINK = `${LINK} bg-action text-on-action`;
+const SECONDARY_LINK = `${LINK} border-2 border-ink bg-surface text-ink`;
 
 /**
  * How a saved Take 5 links to its fix, as the back end says. It may offer to copy the

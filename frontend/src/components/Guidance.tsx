@@ -9,7 +9,7 @@ export function Guidance({
   children: ReactNode;
 }) {
   return (
-    <details className="rounded-xl border border-stone-300 bg-stone-50">
+    <details className="rounded-xl border border-line bg-surface-subtle">
       <summary className="flex min-h-12 cursor-pointer items-center px-4 font-semibold underline underline-offset-4">
         {title}
       </summary>

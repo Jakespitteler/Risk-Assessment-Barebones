@@ -27,7 +27,7 @@ export function ControlEditor({
   const description = `${path}.description`;
   const kind = `${path}.kind`;
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-stone-300 bg-white p-4">
+    <section className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-4">
       <h2 className="text-lg font-bold">Control {number}</h2>
       <Field
         name={description}

@@ -33,7 +33,7 @@ export function RatingPage({
           id={path}
           tabIndex={-1}
           aria-invalid="true"
-          className="font-semibold text-red-800"
+          className="font-semibold text-danger"
         >
           {ratingError}
         </p>
