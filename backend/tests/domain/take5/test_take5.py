@@ -43,7 +43,7 @@ def test_example_12_one_high_after_rating_needs_a_jha() -> None:
 
 
 def test_example_13_after_not_before_decides_the_jha() -> None:
-    """Reducing 18 Extreme to 10 High puts the Take 5 below the JHA threshold."""
+    """Reducing 18 Extreme to 10 High puts the Take 5 below the JHA threshold (R4)."""
     take5 = Take5(
         template=BOOKLET_TEMPLATE,
         answers=sample_answers(),

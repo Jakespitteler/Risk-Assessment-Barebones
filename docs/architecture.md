@@ -76,6 +76,7 @@ publishes it, the front end's types are generated from it, and either half can b
 ```text
 backend/
     pyproject.toml
+    dev_logging.json       uvicorn's log settings for start.py, with its start-up lines turned down
     src/risk_assessment/
         domain/            the rules, as plain data and pure functions
             risk.py            RiskMatrix (a matrix as data), RiskCell, RiskRating,
@@ -165,9 +166,6 @@ frontend/
     index.html             also sets light or dark before the app draws, so a dark phone never flashes white
     e2e/                   Playwright tests and screenshots, run once on a light phone and once on a dark one
 scripts/
-    setup.py               sets up a freshly cloned repo: checks git and Node.js, installs everything else
-    dev.py                 starts both halves for development
-    check.py               runs every check, as CI does
     try_challenge.py       asks the real AI about five made-up Take 5s and prints each question, its time
                            and its cost, to compare models or versions of the instructions
     try_vague_hazard.py    asks the real AI about twelve made-up hazards and prints each verdict beside
@@ -175,6 +173,11 @@ scripts/
     agent_review.cjs       decides which PR events may start the CI reviewer
     claude_hooks/          Claude Code's hooks (set in .claude/settings.json): a guard that blocks
                            secrets and risky git commands, and a formatter that runs after each edit
+start.py                   sets up what isn't set up, installs what the lock files changed, starts both
+                           halves and prints the app's one address (task 0029)
+install.py                 installs everything again from scratch: checks git and Node.js, then the rest
+test.py                    runs the tests, all or one kind, passing extra words to the test tool
+check.py                   runs every check, as CI does; `--fix` fixes what the tools can fix
 ```
 
 The four files directly under `domain/` know nothing about a Take 5. They are the shared building blocks, and
@@ -373,7 +376,7 @@ cloud account, or a model the company runs itself.
 | Visual | Each changed screen looks right on a phone | Playwright screenshots at 360 px wide, attached to the PR; checked by eye, not in CI |
 | Accessibility | Every screenshot the whole-app tests take, in both modes, is readable: text contrast to 7 to 1 (spec D71) and axe's other WCAG 2.2 AA rules | `@axe-core/playwright`, Deque's checker, inside the screenshot helper (`capture` in `e2e/helpers.ts`) |
 | AI adapter | The adapter sends what it should and reads the reply, refusals and errors | The real adapter against a stand-in for the provider's API (`tests/ai/fake_anthropic.py`), so nothing leaves the computer |
-| Real AI | The real provider answers with a usable question | `uv run pytest -m real_ai` in `backend/`, skipped with no key; plain `pytest` and CI never run it. `scripts/try_challenge.py` measures questions, and `scripts/try_vague_hazard.py` verdicts on hazards, with time and cost |
+| Real AI | The real provider answers with a usable question | `uv run test.py backend -m real_ai`, skipped with no key; plain `pytest` and CI never run it. `scripts/try_challenge.py` measures questions, and `scripts/try_vague_hazard.py` verdicts on hazards, with time and cost |
 
 CI runs, on every PR and every push to `main` (task 0002): for the back end `ruff check`, `ruff format --check`,
 `pyright` and `pytest`; for the front end ESLint, Prettier's check, the TypeScript compiler, Vitest, and the

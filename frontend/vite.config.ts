@@ -4,6 +4,8 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // Keep what was printed before Vite started, such as start.py's installs and warnings.
+  clearScreen: false,
   server: {
     port: 5173,
     strictPort: true,

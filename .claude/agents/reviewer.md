@@ -21,7 +21,7 @@ Check, in order:
 Report findings ranked by severity with file and line. Check each task criterion against a file and test.
 Look for undeclared API errors, rules copied into TypeScript, lost submit responses, missing timeouts/retries,
 missing screen or storage tests, oversized components, and departures from the documented settings and styling.
-Run `uv run scripts/check.py`; a successful subset is not a full pass.
+Run `uv run check.py`; a successful subset is not a full pass.
 
 ## Review modes
 

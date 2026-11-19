@@ -1,9 +1,9 @@
 ---
 id: 0029
 title: Set up, update and start the app with one command
-status: todo
-owner:
-branch:
+status: review
+owner: claude
+branch: claude/0029-one-command-start (stacked on task 0013, PR #51)
 ---
 
 ## Goal
@@ -51,6 +51,13 @@ Yes. It is the usual professional pattern, and the repo already has the pieces.
   sees two. That is for hosting, not this task.
 
 ## Decide first
+
+**Jake's answers, 2026-11-19:** 1 (a) `uv run start.py`; 10 (a), with the two `.claude` files updated too; 6:
+no route at `/`, and the API's address is never put in the terminal to click; every other question as
+recommended (2 a, 3 a, 4 a, 5 a, 7 a, 8 yes, 9 yes). Question 11 was settled by the order of work: next after 0013.
+Later on review: hide the address lines through each server's settings rather than a pipe; rename the root
+`setup.py` to `install.py`, since pip and some tools treat a root `setup.py` as a package build file; keep this
+pull request whole. The questions and criteria below keep the old name `setup.py`.
 
 The questions for Jake, each with Claude's recommended pick.
 
@@ -167,38 +174,38 @@ The questions for Jake, each with Claude's recommended pick.
 
 ## Acceptance criteria
 
-- [ ] In the repo root, the command question 1 picks, on a freshly cloned repo, checks for git and Node.js as
+- [x] In the repo root, the command question 1 picks, on a freshly cloned repo, checks for git and Node.js as
   `setup.py` does, installs what question 4 decides, starts both halves and prints the one ready line question 5
   describes.
-- [ ] Run again with nothing changed, it installs nothing new, and the ready line appears within 3 seconds of
+- [x] Run again with nothing changed, it installs nothing new, and the ready line appears within 3 seconds of
   when `dev.py` is ready today on the same computer. Both times measured and written in the pull request.
-- [ ] After a change to `backend/uv.lock`, or to `frontend/package-lock.json`, it brings that half's installs in
+- [x] After a change to `backend/uv.lock`, or to `frontend/package-lock.json`, it brings that half's installs in
   line before starting. It never upgrades a package (question 3).
-- [ ] The only address printed is the app's: `http://localhost:5173`, or the forwarded address in a Codespace
+- [x] The only address printed is the app's: `http://localhost:5173`, or the forwarded address in a Codespace
   (question 8). Neither uvicorn's nor Vite's own address lines appear.
-- [ ] A busy port stops it before any install, with the message question 9 describes.
-- [ ] A missing tool, a failed install or a server that stops says which and what to do, as `setup.py` and
+- [x] A busy port stops it before any install, with the message question 9 describes.
+- [x] A missing tool, a failed install or a server that stops says which and what to do, as `setup.py` and
   `dev.py` do today. The cloud-synced folder warning from task 0023 is still on screen once the app is ready (Vite
   clears the terminal when it starts, see the notes).
 - [ ] Ctrl+C stops both halves and everything they started, on Windows too, as `dev.py` does today.
-- [ ] If question 6 is a yes, the back end answers `/` with the pointer to the app, with a test, and
+- [x] If question 6 is a yes, the back end answers `/` with the pointer to the app, with a test, and
   `npm run generate:api` changes nothing.
-- [ ] `dev.py` and `setup.py` end up as question 2 decides. With (a): `dev.py` is gone, its tests are moved to the
+- [x] `dev.py` and `setup.py` end up as question 2 decides. With (a): `dev.py` is gone, its tests are moved to the
   new command, `setup.py`'s checks are shared rather than copied, and `test_setup.py` and
   `test_format_edited_file.py` no longer name `dev.py`.
-- [ ] The browser opens, or doesn't, as question 7 decides.
-- [ ] Tests cover: when each half needs installing, which address is printed, the busy-port check, and that the
+- [x] The browser opens, or doesn't, as question 7 decides.
+- [x] Tests cover: when each half needs installing, which address is printed, the busy-port check, and that the
   address lines are hidden.
-- [ ] `README.md` ("Set it up" and "Run it"), `AGENTS.md` (Install and Run), `docs/dev-setup.md`, the structure in
+- [x] `README.md` ("Set it up" and "Run it"), `AGENTS.md` (Install and Run), `docs/dev-setup.md`, the structure in
   `docs/architecture.md`, and `setup.py`'s closing "Next" lines name the new command. `docs/decisions.md` records
   the choices.
-- [ ] A copy of the terminal output of a first run and a second run is in the pull request.
-- [ ] Every everyday command runs from the repo root, as question 10 decides: start, set-up, every kind of test
+- [x] A copy of the terminal output of a first run and a second run is in the pull request.
+- [x] Every everyday command runs from the repo root, as question 10 decides: start, set-up, every kind of test
   (including the real-AI test, `-m real_ai`), lint, format, type check and API types. Cloning, and the
   per-folder note for editors, are the only places a `cd` is left in `AGENTS.md` and the README.
-- [ ] Tests cover how each root command maps to the tool it runs, including `check.py --fix` and extra arguments
+- [x] Tests cover how each root command maps to the tool it runs, including `check.py --fix` and extra arguments
   passed through to the test tool.
-- [ ] All checks pass.
+- [x] All checks pass.
 
 ## Out of scope
 
@@ -241,3 +248,48 @@ The questions for Jake, each with Claude's recommended pick.
 - The back end's AI key (task 0009) comes from a `.env` file the scripts must not read; the command only starts
   the back end, which reads it as it does today.
 - Assumption: "updates libraries" means installing the locked versions, not upgrading (question 3).
+
+### What was built (Claude, 2026-11-19)
+
+- `start.py`, `install.py` (was `scripts/setup.py`), `check.py` and `test.py` in the repo root; `scripts/dev.py` is
+  gone, and its tests moved to `backend/tests/test_start.py`. `install.py`'s tool checks, cloud-sync warning and
+  install steps are imported by `start.py`, not copied.
+- How the address lines are hidden, and why that way: `docs/decisions.md`, 2026-11-19. In short, each server's
+  own settings turn its start-up lines off (`backend/dev_logging.json` for uvicorn, `--logLevel warn` for Vite),
+  and their output goes straight to the terminal. A first version read the output through a pipe instead; Jake
+  chose this simpler way on review.
+- Measured here (Linux, in a cloud container): with nothing to install, `scripts/dev.py` was ready in 1.4 s and
+  `uv run start.py` in 1.8 s (three runs each; the extra 0.4 s is the quiet `uv sync --locked`, which now runs
+  every time). A fresh clone was ready in 9 s; a changed `package-lock.json` in 7 s. A busy port stopped it in
+  0.1 s. Both first and second runs are in the pull request.
+
+### Left for Jake
+
+- **Ctrl+C on Windows.** The criterion is not ticked: stopping works as `dev.py` did (its own process group, then
+  `taskkill /T`), and Ctrl+C was checked on Linux, but no Windows computer was available. Please try
+  `uv run start.py` and Ctrl+C in PowerShell, then check that nothing is left on ports 8000 and 5173. If a server
+  stops by itself, `start.py` still runs `taskkill /T` on it, in case npm or uv ended before what it started; a
+  review found Windows may no longer find that tree once its first process has ended. To try it: with the app
+  running, open Task Manager's Details tab and add the "Command line" column. End the `node.exe` whose command
+  line has `npm-cli.js` (npm itself), not the one running Vite. `start.py` should say the front end stopped, and
+  then nothing should be left on port 5173.
+
+### Notes
+
+- Ctrl+C can reach the script twice (uv passes it on as well). A second one used to break into the shutdown and
+  could leave Vite running, as `dev.py` did (it exited with code 130 in the timing runs). `start.py` acts on the
+  first Ctrl+C only. Stopping a server asks first, then forces it after 10 seconds, and signals the server's
+  whole process group even when npm or uv has already ended.
+- `install.py` leaves the same "installed for this lock file" fingerprint as `start.py`, so a start straight after
+  `uv run install.py` installs nothing more.
+- The test browser is installed after each front-end install. If that download fails, the app still starts, and
+  `uv run install.py` tries it again; `start.py` doesn't retry it until the lock file next changes.
+- With `--logLevel warn`, Vite no longer prints "page reloaded" notes while you work. The page still reloads.
+- The back end's sync on later starts is quiet: a pulled change to `uv.lock` is installed without a list of what
+  changed (errors still show).
+- Vite stops by itself when its keyboard input closes, so `uv run start.py < /dev/null` stops at once. This is
+  Vite's behaviour, the same as before; a terminal is never affected.
+- The port check connects to each port rather than binding it: binding would call a port busy for a minute or so
+  after a restart, while the old socket finishes closing.
+- `check.py --fix` runs every fix even when one reports a problem it can't fix (such as a line Ruff can't
+  shorten), then lists those, so the formatters after it still run.
