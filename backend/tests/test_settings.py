@@ -77,3 +77,21 @@ def test_the_ai_key_is_hidden_when_the_settings_are_printed(
     monkeypatch.setenv("TAKE5_AI_KEY", "made-up-key")
 
     assert "made-up-key" not in repr(Settings())
+
+
+SETTINGS_TEMPLATE: Path = Path(__file__).parents[1] / ".env.example"
+
+
+def test_the_settings_template_names_every_setting() -> None:
+    """`backend/.env.example` shows each setting, so a new one is not missed there."""
+    template: str = SETTINGS_TEMPLATE.read_text(encoding="utf-8")
+
+    for field_name in Settings.model_fields:
+        assert f"TAKE5_{field_name.upper()}=" in template
+
+
+def test_the_settings_template_holds_no_key() -> None:
+    """The template is in the repo, so its key line must stay empty."""
+    template: str = SETTINGS_TEMPLATE.read_text(encoding="utf-8")
+
+    assert "TAKE5_AI_KEY=\n" in template

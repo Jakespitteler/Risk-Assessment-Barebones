@@ -81,10 +81,11 @@ Without a key the app works, and asks the fixed challenge question every time. T
 1. Sign in at <https://console.anthropic.com>, add some credit, and set a monthly spend limit under Billing, so a
    mistake can't run up a bill.
 2. Make an API key under API keys. Copy it: it is only shown once.
-3. In the `backend` folder, make a file called `.env` holding one line: `TAKE5_AI_KEY=` followed by the key.
-   Make it in VS Code (File, New Text File, then save it as `backend/.env`), not with PowerShell's `>`, which
-   saves it in a form the app can't read. Git ignores `.env`, so the key never goes to GitHub. Never put a key
-   anywhere else in the repo.
+3. Copy the settings template: in PowerShell, in the repo root, `Copy-Item backend\.env.example backend\.env`
+   (on a Mac or Linux, `cp backend/.env.example backend/.env`). Open `backend/.env` in VS Code and paste the key
+   after `TAKE5_AI_KEY=`. Git ignores `.env`, so the key never goes to GitHub. Never put a key in
+   `.env.example` or anywhere else in the repo. (Don't make the file with PowerShell's `>`, which saves it in a
+   form the app can't read.)
 4. Restart `uv run scripts/dev.py`. The back end's log says which model asks the question.
 
 To use another model, add a line such as `TAKE5_AI_MODEL=claude-sonnet-5-5`. To try the AI on five made-up Take

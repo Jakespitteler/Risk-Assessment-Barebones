@@ -3,6 +3,7 @@
 import logging
 from pathlib import Path
 
+import pytest
 from pydantic import SecretStr
 
 from risk_assessment.ai.challenge import AiChallengeAsker
@@ -24,6 +25,16 @@ def test_with_a_key_the_ai_asks_the_question() -> None:
     )
 
     assert isinstance(asker, AiChallengeAsker)
+
+
+def test_the_log_names_the_model_that_asks(caplog: pytest.LogCaptureFixture) -> None:
+    """With a key, one info line says which model writes the question."""
+    with caplog.at_level(logging.INFO, logger="risk_assessment"):
+        build_challenge_asker(
+            Settings(ai_key=SecretStr("made-up-key"), ai_model="claude-haiku-5-5"),
+        )
+
+    assert "The challenge question is asked of claude-haiku-5-5." in caplog.messages
 
 
 def test_the_server_log_shows_which_model_asks(tmp_path: Path) -> None:

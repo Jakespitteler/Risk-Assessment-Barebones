@@ -70,6 +70,9 @@ Jake took every recommended answer (spec D52 to D55):
 - The key can be in `backend/.env` as well as the environment, so it is easy to set on Windows. Every back-end
   test hides it (`tests/conftest.py`) and the whole-app tests set it empty, so no test calls the real AI by
   accident. The real-AI test runs only with `uv run pytest -m real_ai`.
+- `backend/.env.example` is the settings template (Jake asked for one): copy it to `backend/.env` and fill it in.
+  `.gitignore` keeps it while ignoring every other `.env.*`. A test checks that it names every setting and that
+  its key line stays empty.
 - `ai_notice` comes from the back end on `GET /api/take5/template`, and is empty when no key is set, so the line
   above Submit is only shown when it is true. Its words sit beside `challenge_text()` in
   `domain/take5/challenge.py`, which is what decides what is sent.
@@ -81,7 +84,8 @@ Jake took every recommended answer (spec D52 to D55):
 - The app's own info lines (which model asks, and the tokens each reply used) were dropped, because uvicorn sets
   up only its own loggers. `create_app()` now shows the `risk_assessment` logger's info lines.
 - A `.env` saved by PowerShell 5.1's `>` is UTF-16 and is read as no key, without an error. The README says to
-  make it in VS Code; a UTF-8 file with a byte order mark is read too.
+  copy the template with `Copy-Item` (which keeps it UTF-8) and edit it in VS Code; a UTF-8 file with a byte
+  order mark is read too.
 - Not checked on Windows: the whole-app tests set `TAKE5_AI_KEY` to empty so a key in `backend/.env` isn't used.
   Windows keeps an empty variable when Node starts a program, so it should hold. If the fallback-question tests
   fail on Windows with a key in `.env`, this is why.

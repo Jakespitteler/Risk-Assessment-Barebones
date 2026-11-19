@@ -279,7 +279,8 @@ ChatGPT, Gemini, or a model a company runs itself means adding one file in `ai/p
 line in `api/app.py` to plug it in; no rule and no job changes.
 
 The worker's name is never passed to an adapter (spec C1). The AI's key lives in the server's environment (or
-`backend/.env` on a developer's computer) and is never in the repo or sent to the phone. With no key, no AI is
+`backend/.env` on a developer's computer, copied from the template `backend/.env.example`, which names every
+setting and holds no key) and is never in the repo or sent to the phone. With no key, no AI is
 plugged in and the fixed question is always asked. `api/app.py` has one table from `AiProvider` (a setting) to
 the adapter that builds that provider's model.
 
