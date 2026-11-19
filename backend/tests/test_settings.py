@@ -94,4 +94,8 @@ def test_the_settings_template_holds_no_key() -> None:
     """The template is in the repo, so its key line must stay empty."""
     template: str = SETTINGS_TEMPLATE.read_text(encoding="utf-8")
 
-    assert "TAKE5_AI_KEY=\n" in template
+    key_lines: list[str] = [
+        line for line in template.splitlines() if line.startswith("TAKE5_AI_KEY=")
+    ]
+
+    assert key_lines == ["TAKE5_AI_KEY="]
