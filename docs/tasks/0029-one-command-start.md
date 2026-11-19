@@ -34,7 +34,9 @@ Yes. It is the usual professional pattern, and the repo already has the pieces.
   - `make` or `npm run dev` at the root: Windows has no `make`; a root `package.json` would need another
     package (such as `concurrently`) to run both halves, and still needs uv for the Python side.
   - A task runner (`just`, Task, Poe the Poet): one more tool to install on every computer, or one more
-    dependency. uv has no task runner of its own.
+    dependency. uv has no built-in task runner (third-party ones exist).
+  - `uv run start` through a `[project.scripts]` entry point: the repo root would have to become a Python project
+    of its own, which changes what every `uv` command in the root does.
   - Docker Compose: needs Docker Desktop on Windows, reloads more slowly when code changes, and is a lot to learn
     for one person. It belongs with hosting, if anywhere.
 - **What it doesn't fix.** Two addresses exist because, while developing, Vite serves the screens and FastAPI the
@@ -47,13 +49,17 @@ The questions for Jake, each with Claude's recommended pick.
 
 1. **What is the command called, and where does it live?** Options:
    - (a) `uv run start.py`, a new file in the repo root. Short, says what it does, and sits where a person looks
-     first, as Django's `manage.py` does. Costs a few lines elsewhere: the type check, the lint in `check.py` and
-     the tests only look in `backend/` and `scripts/` today.
+     first, as Django's `manage.py` does. Costs a few lines elsewhere, because the checks only look in `backend/`
+     and `scripts/` today: add it to `PYTHON_FOLDERS` in `scripts/check.py` (ruff and pyright) and to `include` in
+     the root `pyproject.toml` (Pylance), and let Claude's formatter hook
+     (`scripts/claude_hooks/format_edited_file.py`) format a `.py` file in the root, which is a hook change for
+     Jake to approve. The tests can already import it.
    - (b) `uv run app.py` in the repo root, as Jake suggested. Short, but the back end already has an `app.py`
      (`backend/src/risk_assessment/api/app.py`, which builds the FastAPI app), and in Python projects `app.py`
      usually means "the file that holds the app". Two files with the same name doing different jobs would confuse
      anyone learning the back end.
-   - (c) `uv run scripts/start.py`. Beside the other scripts, with no other changes, but longer to type.
+   - (c) `uv run scripts/start.py`. Beside the other scripts, with no other changes, but longer to type. "Scripts
+     to Rule Them All" keeps its entry points in a folder like this.
    - (d) Keep `uv run scripts/dev.py` and make it do everything. Nothing new to learn, but "dev" is jargon and it
      is the longest.
    - Recommended: (a).
@@ -76,7 +82,8 @@ The questions for Jake, each with Claude's recommended pick.
      for each new version, and the checks and the review agent test it like any other change.
 4. **What does the first run install?** Options:
    - (a) Everything `setup.py` installs, including the browser the whole-app tests use (about 150 MB, and a
-     minute or so once). After that the repo is ready for every check too.
+     minute or so once). After that the repo is ready for every check too. The app doesn't need that browser, so
+     if its download fails (offline, or a proxy) the command warns and starts the app anyway.
    - (b) Only what the app needs to run. The test browser stays with `setup.py`, and the tests fail until it is
      run.
    - Recommended: (a), since Jake asked for "sets up if not already setup". Later starts reinstall only the half
@@ -93,8 +100,9 @@ The questions for Jake, each with Claude's recommended pick.
 6. **A safety net at the API's address.** Today opening <http://localhost:8000> shows `{"detail":"Not Found"}`.
    Options:
    - (a) The back end answers `/` with one plain line: "This is the API. Open the app at
-     <http://localhost:5173>." It is a new route on the API, so it needs Jake's yes, and it would be replaced when
-     hosting serves the screens from FastAPI.
+     <http://localhost:5173>." (or the Codespace's address, question 8). It is a new route on the API, so it needs
+     Jake's yes, and it would be replaced when hosting serves the screens from FastAPI. It is left out of the API's
+     description (`include_in_schema=False`), so the generated front-end types don't change.
    - (b) Leave it, since the command no longer prints that address.
    - Recommended: (a). It is a few lines, and it turns the exact mistake Jake made into a pointer to the right
      page.
@@ -104,20 +112,23 @@ The questions for Jake, each with Claude's recommended pick.
    - (b) Yes, on every start. Nothing to click, but each restart opens another tab.
    - (c) Only on the first start after set-up.
    - Recommended: (a).
-8. **GitHub Codespaces.** Jake also works in Codespaces, where `localhost:5173` is the wrong address: Codespaces
-   forwards it to an address like `https://<codespace-name>-5173.app.github.dev`. Recommended: when it runs in a
-   Codespace (Codespaces sets `CODESPACE_NAME` and `GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN`), print that address
-   instead, so "only the correct url" holds there too.
+8. **GitHub Codespaces.** Jake also works in Codespaces (Jake said so on 2026-11-17, during task 0023), where
+   `localhost:5173` is the wrong address: Codespaces forwards it to an address like
+   `https://<codespace-name>-5173.app.github.dev`. Recommended: when it runs in a Codespace (Codespaces sets
+   `CODESPACE_NAME` and `GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN`), print that address instead, so "only the
+   correct url" holds there too. VS Code in a Codespace often forwards a Ctrl+clicked `localhost` link by itself,
+   but not always, and never from a browser tab opened by hand.
 9. **When the app is already running, or a port is taken.** Recommended: before installing anything, check that
    ports 8000 and 5173 are free. If one isn't, say "Something is already using port 5173. The app may already be
    running in another terminal: use that one, or press Ctrl+C there first." and stop. Checking first matters on
    Windows, where an install fails while the app holds its files open. Vite already refuses to move to another
    port (`strictPort` in `vite.config.ts`), so the printed address is never wrong.
 10. **Where it goes in the order of work.** Jake asked for it "soon". Options:
-    - (a) Next after 0013, which is in progress, and before 0024 (dark mode).
-    - (b) Straight away, while 0009 and 0027 wait on Jake's measurement. It touches only `scripts/`, the README,
-      `AGENTS.md`, `docs/dev-setup.md`, the structure in `docs/architecture.md` and one back-end route (if
-      question 6 is a yes), so it barely overlaps the open pull requests.
+    - (a) Next after 0013, which is in progress on another branch, and before 0024 (dark mode).
+    - (b) Straight away, while 0009 and 0027 wait on Jake's measurement. It touches `scripts/`, the README,
+      `AGENTS.md`, `docs/dev-setup.md`, the structure in `docs/architecture.md`, perhaps `frontend/vite.config.ts`
+      and a small logging setting in `backend/` (to hide the address lines), and one back-end route (if question 6
+      is a yes), so it barely overlaps the open pull requests.
     - Recommended: (a), placed there in `docs/tasks/README.md`; Jake can pick (b).
 
 ## Acceptance criteria
@@ -125,17 +136,23 @@ The questions for Jake, each with Claude's recommended pick.
 - [ ] In the repo root, the command question 1 picks, on a freshly cloned repo, checks for git and Node.js as
   `setup.py` does, installs what question 4 decides, starts both halves and prints the one ready line question 5
   describes.
-- [ ] Run again with nothing changed, it installs nothing new and the time before the servers start grows by no
-  more than a few seconds. Measured and written in the pull request.
+- [ ] Run again with nothing changed, it installs nothing new, and the ready line appears within 3 seconds of
+  when `dev.py` is ready today on the same computer. Both times measured and written in the pull request.
 - [ ] After a change to `backend/uv.lock`, or to `frontend/package-lock.json`, it brings that half's installs in
   line before starting. It never upgrades a package (question 3).
 - [ ] The only address printed is the app's: `http://localhost:5173`, or the forwarded address in a Codespace
   (question 8). Neither uvicorn's nor Vite's own address lines appear.
 - [ ] A busy port stops it before any install, with the message question 9 describes.
 - [ ] A missing tool, a failed install or a server that stops says which and what to do, as `setup.py` and
-  `dev.py` do today. The cloud-synced folder warning from task 0023 still shows.
+  `dev.py` do today. The cloud-synced folder warning from task 0023 is still on screen once the app is ready (Vite
+  clears the terminal when it starts, see the notes).
 - [ ] Ctrl+C stops both halves and everything they started, on Windows too, as `dev.py` does today.
-- [ ] If question 6 is a yes, the back end answers `/` with the pointer to the app, with a test.
+- [ ] If question 6 is a yes, the back end answers `/` with the pointer to the app, with a test, and
+  `npm run generate:api` changes nothing.
+- [ ] `dev.py` and `setup.py` end up as question 2 decides. With (a): `dev.py` is gone, its tests are moved to the
+  new command, `setup.py`'s checks are shared rather than copied, and `test_setup.py` and
+  `test_format_edited_file.py` no longer name `dev.py`.
+- [ ] The browser opens, or doesn't, as question 7 decides.
 - [ ] Tests cover: when each half needs installing, which address is printed, the busy-port check, and that the
   address lines are hidden.
 - [ ] `README.md` ("Set it up" and "Run it"), `AGENTS.md` (Install and Run), `docs/dev-setup.md`, the structure in
@@ -147,11 +164,13 @@ The questions for Jake, each with Claude's recommended pick.
 ## Out of scope
 
 - Upgrading packages to newer versions, or setting up Dependabot (question 3).
+- Pulling new code from GitHub. "Updates" means the installs, not `git pull`, which stays Jake's to run.
 - Installing git, uv or Node.js themselves (as in task 0023).
 - Serving the built screens from FastAPI on one address, which is part of hosting.
 - Docker, a dev container for Codespaces, or VS Code tasks and launch settings. Each could be a later task.
-- How errors and log lines look once the app is running, and how each server's lines are labelled. That is task
-  0028 ("Make app errors obvious in the terminal"); this task owns only what is printed at start-up.
+- How errors and log lines look once the app is running, and how each server's lines are labelled. That is the
+  task "Make app errors obvious in the terminal", being written in another thread on 2026-11-19 as 0028; this task
+  owns only what is printed at start-up.
 
 ## Notes / assumptions
 
@@ -168,11 +187,16 @@ The questions for Jake, each with Claude's recommended pick.
   nothing has changed, so it can run every time. Playwright's browser needs reinstalling only when
   `@playwright/test` changes in `package-lock.json`.
 - Hiding the address lines: uvicorn's "running on" line comes from its `uvicorn.error` logger, so a small logging
-  filter (through `--log-config`) can drop it; reading the server's output through a pipe and dropping the line
-  also works, but can lose colours and delay lines. Vite's address box can be left out with a custom logger in
-  `vite.config.ts`, or by reading its output. The implementer picks whichever is simplest and says why.
-- If question 1 is (a), add the file to `include` in the root `pyproject.toml` and to the lint in
-  `scripts/check.py`, so it is checked like the other scripts.
+  filter (through `--log-config`) can drop it. The filter must be an importable Python class, so it lives under
+  `backend/`, and the config is JSON (PyYAML isn't installed). Reading the server's output through a pipe and
+  dropping the line also works, but can lose colours and delay lines. Vite's address box can be left out with a
+  custom logger in `vite.config.ts`, or by reading its output. The implementer picks whichever is simplest and
+  says why.
+- Vite clears the terminal when it starts (in a real terminal, when it hasn't printed anything itself yet), which
+  scrolls away the install output and the cloud-sync warning. Set `clearScreen: false` in `vite.config.ts`, or
+  print the warning again after the ready line.
+- The port check must cover IPv6 too: Vite binds `localhost`, which can be `::1`, so a check on `127.0.0.1` alone
+  can call 5173 free while the app is running.
 - The back end's AI key (task 0009) comes from a `.env` file the scripts must not read; the command only starts
   the back end, which reads it as it does today.
 - Assumption: "updates libraries" means installing the locked versions, not upgrading (question 3).
