@@ -5,7 +5,8 @@ pytest from `backend/` and use Ruff to format and sort imports.
 
 ## First time
 
-1. In the repo root, run `uv run scripts/setup.py` (see the [README](../README.md#set-it-up)).
+1. In the repo root, run `uv run start.py` once, which installs everything (see the
+   [README](../README.md#set-it-up)). Stop it with Ctrl+C.
 2. Run **Python: Select Interpreter** and pick the executable itself, not the `.venv` folder:
    `backend/.venv/Scripts/python.exe` on Windows, `backend/.venv/bin/python` on Linux or macOS.
    VS Code keeps this choice on your computer; it is not in the repo.
@@ -18,8 +19,8 @@ PowerShell command, a guard blocks anything that names a secret or saved Take 5s
 each edit a formatter tidies the file.
 
 - Start Claude Code in the repository root. It reads `.claude/settings.json` from the folder it starts in.
-- The hooks need `uv` on your `PATH` and Claude Code 2.1.295 or later. The formatter also needs the install
-  step above (`uv sync` in `backend/`, `npm ci` in `frontend/`).
+- The hooks need `uv` on your `PATH` and Claude Code 2.1.295 or later. The formatter also needs the installs
+  from step 1 under First time.
 - The pre-approved commands start once you trust the folder in Claude Code. Run `/hooks` to see the hooks.
 - If the guard breaks, times out or can't start, it blocks the call rather than letting it through, and says
   why.

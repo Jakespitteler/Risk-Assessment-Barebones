@@ -3,8 +3,9 @@
 # ///
 """Set up a freshly cloned copy of the repo, so the app and every check can run.
 
-Usage, from the repo root: `uv run scripts/setup.py`. It is safe to run again, for
-example after pulling changes that add packages.
+Usage, from the repo root: `uv run setup.py`. It is safe to run again, and installs
+everything afresh, so it is the command to run when an install seems broken. Day to day,
+`uv run start.py` installs only what has changed and starts the app.
 
 First it checks for the tools uv can't install: git and Node.js 22.22.2 or newer. If
 one is missing it says how to get it and stops before installing anything. Then it
@@ -20,7 +21,7 @@ from collections.abc import Sequence
 from pathlib import Path, PurePath
 from typing import NamedTuple
 
-REPO_ROOT: Path = Path(__file__).resolve().parent.parent
+REPO_ROOT: Path = Path(__file__).resolve().parent
 # The oldest Node.js the locked front-end packages accept (jsdom asks for 22.22.2).
 # npm also refuses any package whose stated Node.js range the version misses.
 MINIMUM_NODE_VERSION: tuple[int, int, int] = (22, 22, 2)
@@ -62,9 +63,10 @@ NODE_INSTALL_HELP: str = (
     "https://nodejs.org/en/download (on Windows: winget install --id OpenJS.NodeJS.LTS "
     "-e; on macOS: brew install node)."
 )
+SETUP_COMMAND: str = "uv run setup.py"
 REOPEN_TERMINAL_HELP: str = (
     "After installing, close this terminal, open a new one (so it finds the new tools) "
-    "and run `uv run scripts/setup.py` again."
+    "and run the same command again."
 )
 
 
@@ -202,11 +204,12 @@ def cloud_sync_warning(service_name: str) -> str:
     )
 
 
-def install(steps: Sequence[InstallStep]) -> int:
+def install(steps: Sequence[InstallStep], rerun_command: str = SETUP_COMMAND) -> int:
     """Run each install step in turn, stopping at the first that fails.
 
     Args:
         steps: The steps to run, in order.
+        rerun_command: The command to run again once the problem is fixed.
 
     Returns:
         0 when every step worked, otherwise the exit code of the step that failed.
@@ -223,7 +226,7 @@ def install(steps: Sequence[InstallStep]) -> int:
             print(
                 f"\nFAILED while installing {step.what_it_installs}. Fix the "
                 "problem shown above (if the app is running, stop it first), then "
-                "run `uv run scripts/setup.py` again.",
+                f"run `{rerun_command}` again.",
             )
             return result.returncode
     return 0
@@ -239,8 +242,9 @@ def print_summary(cloud_service: str | None) -> None:
     for step in INSTALL_STEPS:
         print(f"  - {step.what_it_installs}")
     print("\nNext:")
-    print("  - Start the app: uv run scripts/dev.py, then open http://localhost:5173")
-    print("  - Run every check, as CI does: uv run scripts/check.py")
+    print("  - Start the app: uv run start.py (it prints the address to open)")
+    print("  - Run the tests: uv run test.py")
+    print("  - Run every check, as CI does: uv run check.py")
     print("  - Using VS Code? Pick the interpreter: docs/dev-setup.md, First time.")
     if sys.platform == "linux":
         print(

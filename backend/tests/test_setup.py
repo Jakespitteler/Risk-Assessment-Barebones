@@ -1,12 +1,11 @@
-"""Tests for the one-line set-up of a freshly cloned repo (`scripts/setup.py`)."""
+"""Tests for `setup.py`, which sets up a freshly cloned repo from scratch."""
 
 import subprocess
 from pathlib import PurePath, PurePosixPath, PureWindowsPath
 from unittest.mock import MagicMock, call, patch
 
 import pytest
-
-from scripts import setup
+import setup
 
 
 @pytest.mark.parametrize(
@@ -187,9 +186,23 @@ def test_synced_folder_warns_at_start_and_end_and_carries_on(
     assert output.startswith("WARNING")
     for step in setup.INSTALL_STEPS:
         assert f"  - {step.what_it_installs}" in output
-    assert "uv run scripts/dev.py" in output
+    assert "uv run start.py" in output
 
 
 def test_installs_run_without_the_scripts_own_virtual_environment() -> None:
     """The back end's `.venv` is used, not the throwaway one `uv run` made."""
     assert "VIRTUAL_ENV" not in setup.SETUP_ENVIRONMENT
+
+
+def test_a_failed_install_says_which_command_to_run_again(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """`start.py` shares the install steps, and its own name is in the message."""
+    failed_install = MagicMock(return_value=subprocess.CompletedProcess([], 1))
+    with patch.object(setup.subprocess, "run", failed_install):
+        exit_code: int = setup.install(setup.INSTALL_STEPS[1:2], "uv run start.py")
+
+    output: str = capsys.readouterr().out
+    assert exit_code == 1
+    assert "FAILED while installing the front end's packages" in output
+    assert "run `uv run start.py` again" in output

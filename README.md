@@ -26,21 +26,23 @@ winget install --id OpenJS.NodeJS.LTS -e
 On a Mac with [Homebrew](https://brew.sh/): `brew install git uv node`. Then close the terminal and open a new
 one, so it finds them.
 
-Clone the repo into a folder that isn't synced to the cloud (see below), and run the set-up in its root folder:
+Clone the repo into a folder that isn't synced to the cloud (see below), and start the app from its root folder:
 
 ```powershell
 mkdir C:\dev
 cd C:\dev
 git clone https://github.com/Jakespitteler/Risk-Assessment-Barebones.git
 cd Risk-Assessment-Barebones
-uv run scripts/setup.py
+uv run start.py
 ```
 
-The last line is the set-up. It checks for git and Node.js, then installs Python 3.13, the back end's and front
-end's packages, and the browser the whole-app tests use. It ends by saying what it did and what to do next, or
-what is missing and how to get it. It is safe to run again, for example after pulling changes that add packages.
-Stop the app first, because Windows won't let it replace files the app is using. The same command works on macOS
-and Linux; use a folder such as `~/dev` there.
+The last line sets up and starts the app, every time you use it (see [Run it](#run-it)). The first time, it
+checks for git and Node.js, says what is missing and how to get it, then installs Python 3.13, the back end's and
+front end's packages, and the browser the whole-app tests use. After that it installs only what a pull has
+changed. The same command works on macOS and Linux; use a folder such as `~/dev` there.
+
+If an install seems broken, `uv run setup.py` installs everything again from scratch and says what to do next.
+Stop the app first, because Windows won't let it replace files the app is using.
 
 ### Don't clone into a cloud-synced folder
 
@@ -56,17 +58,19 @@ syncing the folder as well adds little, and it causes problems:
 - It can make "conflicted copy" files, or bring back old ones, inside `.git`, which can damage the repo.
 - A file kept "online only" isn't really on the disk until it's opened, which slows or breaks the tools.
 
-The set-up script warns you if it finds the repo in one of these folders. It can't tell when macOS syncs
+`start.py` and `setup.py` warn you if they find the repo in one of these folders. It can't tell when macOS syncs
 `Desktop` or `Documents`, because those paths don't change.
 
 ## Run it
 
-1. In the repo root: `uv run scripts/dev.py`. It syncs the back end's packages, installs the front end's
-   packages if Vite is missing, and waits for the API before starting the front end.
-2. When it prints "The Take 5 app is ready", open the address on that line, <http://localhost:5173>. The
-   `:8000` address uvicorn prints earlier is only the API; its own pages are at <http://localhost:8000/docs>.
+1. In the repo root: `uv run start.py`. If the app is already running in another terminal, it says so and stops.
+   Otherwise it brings the installs in line with the lock files (the exact versions the repo was tested with; it
+   never upgrades a package), then starts the back end and the front end.
+2. When it prints "The Take 5 app is ready", open the address on that line, <http://localhost:5173>. It is the
+   only address it prints. In a GitHub Codespace it prints the Codespace's forwarded address instead.
 
-Press Ctrl+C to stop. Both halves restart by themselves when their code changes.
+Press Ctrl+C to stop. Both halves restart by themselves when their code changes. The API's own pages, for working
+on the back end, are at <http://localhost:8000/docs>.
 
 The home page runs a Take 5: the job, the think-through questions, the hazards and the hazard check, a rating
 before and after controls for each hazard, a review, the challenge question, then the saved result at
@@ -87,18 +91,26 @@ Without a key the app works, and asks the fixed challenge question every time. T
    after `TAKE5_AI_KEY=`. Git ignores `.env`, so the key never goes to GitHub. Never put a key in
    `.env.example` or anywhere else in the repo. (Don't make the file with PowerShell's `>`, which saves it in a
    form the app can't read.)
-4. Restart `uv run scripts/dev.py`. The back end's log says which model asks the question.
+4. Restart `uv run start.py`. The back end's log says which model asks the question.
 
 To use another model, add a line such as `TAKE5_AI_MODEL=claude-sonnet-5-5`. To try the AI on five made-up Take
 5s and see what each question costs and how long it takes, run `uv run scripts/try_challenge.py` in the repo
 root (name models after it to compare them). Vague hazards are judged by Claude Haiku 5.5 unless a line such as
 `TAKE5_AI_HAZARD_MODEL=claude-sonnet-5-5` names another; `uv run scripts/try_vague_hazard.py` tries it on twelve
-made-up hazards. `cd backend` then `uv run pytest -m real_ai` runs the two tests that call the real AI. Each of
+made-up hazards. `uv run test.py backend -m real_ai` runs the two tests that call the real AI. Each of
 these costs a little money; the normal tests and CI never call it.
 
 Using VS Code? See [docs/dev-setup.md](docs/dev-setup.md) for the editor set-up and fixes for common problems.
 
 ## Test it
 
-In the repo root, `uv run scripts/check.py` runs every check that CI runs, in the same order, and stops at the
-first failure. The single commands are listed in [AGENTS.md](AGENTS.md#commands).
+Every command runs from the repo root:
+
+- `uv run test.py` runs every test: the back end's, the front end's, then the whole app in a browser.
+  `uv run test.py backend`, `frontend` or `e2e` runs one kind, and passes anything after it to that kind's test
+  tool, such as `uv run test.py backend tests/domain`.
+- `uv run check.py` runs every check that CI runs, in the same order, and stops at the first failure.
+- `uv run check.py --fix` formats the code, makes the fixes the lint tools can make by themselves, and writes the
+  API types again.
+
+The single commands are listed in [AGENTS.md](AGENTS.md#commands).

@@ -157,9 +157,6 @@ frontend/
         app.tsx            the routes (the only place React Router is set up)
     e2e/                   Playwright tests and screenshots
 scripts/
-    setup.py               sets up a freshly cloned repo: checks git and Node.js, installs everything else
-    dev.py                 starts both halves for development
-    check.py               runs every check, as CI does
     try_challenge.py       asks the real AI about five made-up Take 5s and prints each question, its time
                            and its cost, to compare models or versions of the instructions
     try_vague_hazard.py    asks the real AI about twelve made-up hazards and prints each verdict beside
@@ -167,6 +164,11 @@ scripts/
     agent_review.cjs       decides which PR events may start the CI reviewer
     claude_hooks/          Claude Code's hooks (set in .claude/settings.json): a guard that blocks
                            secrets and risky git commands, and a formatter that runs after each edit
+start.py                   sets up what isn't set up, installs what the lock files changed, starts both
+                           halves and prints the app's one address (task 0029)
+setup.py                   installs everything again from scratch: checks git and Node.js, then the rest
+test.py                    runs the tests, all or one kind, passing extra words to the test tool
+check.py                   runs every check, as CI does; `--fix` fixes what the tools can fix
 ```
 
 The four files directly under `domain/` know nothing about a Take 5. They are the shared building blocks, and

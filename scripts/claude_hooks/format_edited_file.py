@@ -83,7 +83,7 @@ def format_commands_for(
     edited_file: Path,
     repo_root: Path,
 ) -> tuple[FormatCommand, ...]:
-    """Choose the formatters for a file, with the settings `scripts/check.py` uses.
+    """Choose the formatters for a file, with the settings `check.py` uses.
 
     Args:
         edited_file: The file Claude edited, as an absolute path.
@@ -95,9 +95,11 @@ def format_commands_for(
     """
     if not edited_file.is_relative_to(repo_root):
         return ()
-    top_folder: str = edited_file.relative_to(repo_root).parts[0]
+    path_parts: tuple[str, ...] = edited_file.relative_to(repo_root).parts
+    top_folder: str = path_parts[0]
+    in_repo_root: bool = len(path_parts) == 1
     file_type: str = edited_file.suffix
-    if file_type == ".py" and top_folder in ("backend", "scripts"):
+    if file_type == ".py" and (in_repo_root or top_folder in ("backend", "scripts")):
         return python_format_commands(edited_file, repo_root / "backend")
     if file_type in FRONTEND_SUFFIXES and top_folder == "frontend":
         return (

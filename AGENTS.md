@@ -12,22 +12,23 @@ SQLite**. The full library list and the reasons are in `docs/architecture.md`.
 ## Commands
 
 Every agent must use exactly these. You need git, [uv](https://docs.astral.sh/uv/) and Node.js 22.22.2 or
-newer (24.15 or newer on version 24). Run each from the folder shown.
+newer (24.15 or newer on version 24). Run each from the repo root.
 
-- Install: in the repo root, `uv run scripts/setup.py` (it checks git and Node.js, then does the rest). By hand:
-  in `backend/`, `uv sync`. In `frontend/`, `npm ci` then `npx playwright install chromium`.
-- Run: in the repo root, `uv run scripts/dev.py`, then open <http://localhost:5173>. Ctrl+C stops it.
-- Test: in `backend/`, `uv run pytest`. In `frontend/`, `npm test` and `npm run test:e2e`.
-- Lint/format: in `backend/`, `uv run ruff check .` and `uv run ruff format .`. When the lint finds `COM812`
-  (missing trailing comma), run `uv run ruff check --fix --select COM812 . ../scripts`, then format again. In
-  `frontend/`, `npm run lint` and `npm run format`. Markdown, in the repo root:
-  `npx markdownlint-cli2@0.24.0 "**/*.md"`. `check.py` also lints `scripts/` with the back end's settings and
-  type checks it with the root `pyproject.toml`.
-- Spelling (Australian English), in the repo root: `npx -y -p cspell@10.5.0 -p @cspell/dict-en-au@1.1.31 cspell
-  -c .cspell/cli.json "**"`.
-- Typecheck: in `backend/`, `uv run pyright --project ..`. In `frontend/`, `npm run typecheck`.
-- API types: in `frontend/`, `npm run generate:api` after any change to the API. Commit both files it writes.
-- All checks (what CI runs): in the repo root, `uv run scripts/check.py`.
+- Start: `uv run start.py`, then open the one address it prints, <http://localhost:5173>. Ctrl+C stops it. It
+  sets up whatever isn't set up and installs what the lock files changed, so it is also the install command.
+- Install everything again from scratch: `uv run setup.py`.
+- Test: `uv run test.py` runs all; `uv run test.py backend`, `frontend` or `e2e` runs one kind, and passes the
+  rest of the line to pytest, Vitest or Playwright (the real-AI test: `uv run test.py backend -m real_ai`).
+- All checks (what CI runs): `uv run check.py`. It lints and type checks the back end, `scripts/` and the root
+  commands, and checks Markdown and spelling (Australian English) too.
+- Fix: `uv run check.py --fix` formats everything, makes the lint tools' own fixes (including Ruff's `COM812`,
+  a missing trailing comma) and writes the API types again. Run it after any change to the API, and commit both
+  files it writes in `frontend/src/api/`.
+- Single tools, for an editor or debugging, run in their folder: in `backend/`, `uv run pytest`,
+  `uv run ruff check .`, `uv run ruff format .` and `uv run pyright --project ..`; in `frontend/`, `npm test`,
+  `npm run test:e2e`, `npm run lint`, `npm run format`, `npm run typecheck` and `npm run generate:api`. In the
+  root: `npx markdownlint-cli2@0.24.0 "**/*.md"` and
+  `npx -y -p cspell@10.5.0 -p @cspell/dict-en-au@1.1.31 cspell -c .cspell/cli.json "**"`.
 
 ## Source of truth
 

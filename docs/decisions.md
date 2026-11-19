@@ -2,6 +2,32 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-19: One command starts the app, and every command runs from the repo root (task 0029)
+
+- Decision: `uv run start.py` in the repo root replaces `scripts/dev.py`. It stops if port 8000 or 5173 already
+  answers (on IPv4 or IPv6), before installing anything; checks git and Node.js with `setup.py`'s checks; runs
+  `uv sync --locked` every time; runs `npm ci` only when `package-lock.json` differs from the fingerprint kept in
+  `node_modules` after the last install; installs the test browser after a front-end install, warning and carrying
+  on if that fails; then starts both halves and prints one ready line with the app's address (the forwarded one in
+  a Codespace). `setup.py` and `check.py` move to the root beside it, and a new `test.py` runs the tests (all, or
+  `backend`, `frontend` or `e2e` with the rest of the line passed on). `check.py --fix` runs the formatters, the
+  lint tools' own fixes and the API types. CI, the reviewer's instructions and Claude's allow list name the new
+  commands.
+- Why: Jake asked for one command that sets up, updates the installs and prints only the right address, and for
+  no `cd` before everyday commands. He took the recommended answers, except that the API gets no page at `/` and
+  its address is never printed. Installing only the locked versions means a start never brings in a version the
+  repo wasn't tested with.
+- How the address lines are hidden: `start.py` reads each server's output through a pipe and passes every line
+  on except uvicorn's "Uvicorn running on" line and Vite's banner (and the blank lines it leaves), with colours
+  forced back on when it prints to a terminal. This keeps dev-only code out of the back-end package and the Vite
+  config, handles both servers in one place, and is the reader task 0028 needs to label each line. Vite's
+  `clearScreen` is off, so `npm run dev` alone doesn't clear earlier output either.
+- Not chosen: `uv run app.py` (clashes with the back end's `app.py`); a task runner, `make` or a root
+  `package.json` (another tool on every computer, or no Windows `make`); a uv workspace (moves `.venv` and the lock
+  file); upgrading packages on start; a uvicorn `--log-config` filter class plus a Vite custom logger; a port
+  check that binds the port (a socket waiting to close after a restart would read as busy).
+- Decided by: human (the product choices, 2026-11-19), agent (how).
+
 ## 2026-11-19: An AI judges vague hazards, with the word rule as the fallback (task 0027)
 
 - Decision: Whether a hazard linked to a Yes is vague (spec T6) is judged by an AI when one is set up, through a
