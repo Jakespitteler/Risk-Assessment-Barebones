@@ -12,6 +12,7 @@ Deque
 describedby
 docstrings
 ECONNREFUSED
+elts
 ENOENT
 envrc
 EPERM

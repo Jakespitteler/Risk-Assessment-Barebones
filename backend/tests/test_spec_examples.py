@@ -22,7 +22,7 @@ EXAMPLE_ROW: re.Pattern[str] = re.compile(r"^\| (\d+) \|", re.MULTILINE)
 EXAMPLE_TEST_NAME: re.Pattern[str] = re.compile(
     r"^test_examples?_(\d+)(?:_(to|and)_(\d+))?(?:_|$)",
 )
-EXAMPLE_CASE_ID: re.Pattern[str] = re.compile(r"(?:^|_)example_(\d+)(?:_|$)")
+EXAMPLE_CASE_ID: re.Pattern[str] = re.compile(r"^(?:test_)?example_(\d+)(?:_|$)")
 
 
 def worked_example_numbers(spec: str) -> list[int]:
@@ -67,6 +67,32 @@ class ExampleTest(NamedTuple):
     listed_examples: frozenset[int]
 
 
+def case_ids(test: ast.FunctionDef | ast.AsyncFunctionDef) -> list[str]:
+    """Read the ids a test gives its cases, and nothing else from its decorators.
+
+    Args:
+        test: The test function, with its decorators.
+
+    Returns:
+        Each `id=` given to a `pytest.param`, and each string in an `ids=` list.
+    """
+    ids: list[str] = []
+    for decorator in test.decorator_list:
+        for node in ast.walk(decorator):
+            if not isinstance(node, ast.Call):
+                continue
+            for keyword in node.keywords:
+                if keyword.arg == "id" and isinstance(keyword.value, ast.Constant):
+                    ids.append(str(keyword.value.value))
+                if keyword.arg == "ids" and isinstance(keyword.value, ast.List):
+                    ids.extend(
+                        str(item.value)
+                        for item in keyword.value.elts
+                        if isinstance(item, ast.Constant)
+                    )
+    return ids
+
+
 def listed_examples(test: ast.FunctionDef | ast.AsyncFunctionDef) -> frozenset[int]:
     """Read the example numbers a test's cases list in their ids.
 
@@ -77,11 +103,9 @@ def listed_examples(test: ast.FunctionDef | ast.AsyncFunctionDef) -> frozenset[i
         Each number from an id such as "test_example_3" or "example_50_one_word".
     """
     return frozenset(
-        int(number)
-        for decorator in test.decorator_list
-        for node in ast.walk(decorator)
-        if isinstance(node, ast.Constant) and isinstance(node.value, str)
-        for number in EXAMPLE_CASE_ID.findall(node.value)
+        int(match.group(1))
+        for case_id in case_ids(test)
+        if (match := EXAMPLE_CASE_ID.match(case_id)) is not None
     )
 
 
@@ -213,6 +237,19 @@ def test_a_missing_example_is_named() -> None:
     ]
 
     assert examples_without_a_test([1, 2, 3, 4, 5], tests) == [2, 5]
+
+
+def test_only_case_ids_list_examples() -> None:
+    """A case's value, an argument name or a fixture's params is not an id."""
+    source: str = (
+        '@pytest.mark.parametrize("example_2_input", ["example_3"], ids=["case_a"])\n'
+        "def test_example_2_to_3_values(example_2_input: str) -> None:\n"
+        "    pass\n"
+    )
+
+    (test,) = python_tests(source)
+
+    assert test.listed_examples == frozenset()
 
 
 def test_a_run_name_covers_only_the_examples_its_cases_list() -> None:

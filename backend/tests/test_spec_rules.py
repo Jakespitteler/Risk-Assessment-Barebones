@@ -105,6 +105,8 @@ def rules_named_but_not_defined(
         Each unknown rule number once, sorted.
     """
     defined: set[str] = set(rule_numbers)
+    if not defined:
+        return []
     rule_letters: str = "".join(sorted({number[0] for number in defined}))
     rule_number: re.Pattern[str] = re.compile(rf"\b[{rule_letters}]\d+\b")
     named: set[str] = {

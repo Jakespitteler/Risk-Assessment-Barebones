@@ -51,8 +51,8 @@ Done earlier, it needs a list of rules not built yet that changes with every tas
 
 ### Jake's answers (2026-11-19)
 
-Asked on pull request #51's review, each with Claude's recommendation; Jake took every recommendation except the
-fifth.
+Asked on pull request #51's review, each with Claude's recommendation. Jake took every recommendation except
+the fifth, where Claude had recommended trusting a run test's name.
 
 1. **Fail on old rule numbers?** Yes. `test_no_test_names_a_rule_the_spec_no_longer_has` fails on a rule number
    that a test names and the spec doesn't define. A rule number is one of the spec's rule letters (R, V, T, C, K
@@ -77,8 +77,12 @@ fifth.
 - **Rules:** a rule is a bold numbered definition under the spec's rule headings. The test pins the exact list of
   24, so a change to the spec's layout can't make it pass with nothing; a task that adds a rule adds it to that
   list as well as naming it in a test. The test's own file is left out, since it names rules only as examples.
-- **Worked examples:** only back-end test names count, since every example is a back-end test today. The test
-  pins examples 1 to 87 for the same reason. A test marked to be skipped would still count; none is.
+- **Worked examples:** only back-end tests count, since every example is a back-end test today. A test covers an
+  example by its name, and a run test also by its case ids: only `pytest.param(..., id=...)` and
+  `parametrize(..., ids=[...])` are read, never a case's values. The test pins examples 1 to 87 for the same
+  reason as the rules. A test marked to be skipped would still count; none is.
+- **Old rule numbers** are one of the spec's current rule letters and a number. If every rule with one letter
+  left the spec, a test still naming one of them wouldn't be caught; the pinned list of 24 would still fail.
 
 ### Name mismatches (decided: keep both)
 
