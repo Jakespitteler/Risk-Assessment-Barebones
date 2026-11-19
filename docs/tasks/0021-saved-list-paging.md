@@ -1,9 +1,9 @@
 ---
 id: 0021
 title: Show the saved Take 5 list 50 at a time (spec D18)
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/0021-saved-list-paging
 ---
 
 ## Goal
