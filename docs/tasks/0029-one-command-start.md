@@ -20,6 +20,11 @@ most visible one, so Jake opened that address, which is only the API, instead of
 <http://localhost:5173>. One command should set up whatever isn't set up yet, bring the installs in line with the
 repo, start both halves, and print one address: the right one.
 
+Jake, later the same day: "I don't like how sometimes I have to cd into the backend or front end." Today the tests,
+lint, format and type-check commands in `AGENTS.md` each say "in `backend/`" or "in `frontend/`", and
+`uv run pytest -m real_ai` fails when run from the repo root. So the task also gives every everyday command a form
+that runs from the repo root, and nobody needs `cd` (question 10).
+
 ## Is one command the right approach?
 
 Yes. It is the usual professional pattern, and the repo already has the pieces.
@@ -123,12 +128,31 @@ The questions for Jake, each with Claude's recommended pick.
    running in another terminal: use that one, or press Ctrl+C there first." and stop. Checking first matters on
    Windows, where an install fails while the app holds its files open. Vite already refuses to move to another
    port (`strictPort` in `vite.config.ts`), so the printed address is never wrong.
-10. **Where it goes in the order of work.** Jake asked for it "soon". Options:
+10. **Every command from the repo root.** Today only set-up, start and `check.py` run from the root. Options:
+    - (a) One small file per job, all in the same place as question 1's command, each named for what it does:
+      `start.py`, `setup.py`, `check.py` and a new `test.py`. `uv run test.py` runs every test; `uv run test.py
+      backend`, `frontend` or `e2e` runs one kind; anything after that goes to the test tool, so
+      `uv run test.py backend -m real_ai` runs the real-AI test. `uv run check.py --fix` formats the code and makes
+      the fixes the lint tools can make by themselves (today's separate ruff and npm format commands). Inside, the
+      scripts use the tools' own "run in this folder" options (`uv run --directory backend`, `npm --prefix
+      frontend`), so nothing changes in how the tools are set up.
+    - (b) One file with a word for each job, like Django's `manage.py`: for example `uv run app.py start`,
+      `uv run app.py test`. One name to remember, but one file doing many jobs, and question 1's name clash again.
+    - (c) Make the repo root a uv workspace (and an npm workspace), so `uv run pytest` works from the root with no
+      script. The tools' own way, but it moves `backend/.venv` to the root, which changes Pylance's settings, the
+      hooks, the VS Code set-up and most docs, and the front-end commands stay long
+      (`npm test --workspace frontend`).
+    - Recommended: (a). With question 1 at (a), `setup.py` and `check.py` move to the root too, so all four sit
+      together; CI's workflow (`.github/workflows/ci.yml`) and the review agent's prompt
+      (`.github/workflows/agent-review.yml`) then name the new path. `AGENTS.md` "Commands" lists only root
+      commands, keeping the per-folder ones as a footnote for editors and debugging.
+11. **Where it goes in the order of work.** Jake asked for it "soon". Options:
     - (a) Next after 0013, which is in progress on another branch, and before 0024 (dark mode).
     - (b) Straight away, while 0009 and 0027 wait on Jake's measurement. It touches `scripts/`, the README,
       `AGENTS.md`, `docs/dev-setup.md`, the structure in `docs/architecture.md`, perhaps `frontend/vite.config.ts`
       and a small logging setting in `backend/` (to hide the address lines), and one back-end route (if question 6
-      is a yes), so it barely overlaps the open pull requests.
+      is a yes), plus the CI workflows if question 10 moves `check.py`, so it barely overlaps the open pull
+      requests.
     - Recommended: (a), placed there in `docs/tasks/README.md`; Jake can pick (b).
 
 ## Acceptance criteria
@@ -159,6 +183,8 @@ The questions for Jake, each with Claude's recommended pick.
   `docs/architecture.md`, and `setup.py`'s closing "Next" lines name the new command. `docs/decisions.md` records
   the choices.
 - [ ] A copy of the terminal output of a first run and a second run is in the pull request.
+- [ ] Every command in `AGENTS.md` "Commands" and in the README runs from the repo root, as question 10 decides,
+  including the real-AI test (`-m real_ai`). Tests cover how each root command maps to the tool it runs.
 - [ ] All checks pass.
 
 ## Out of scope
