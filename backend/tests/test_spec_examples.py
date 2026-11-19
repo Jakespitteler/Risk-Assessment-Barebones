@@ -74,17 +74,28 @@ def case_ids(test: ast.FunctionDef | ast.AsyncFunctionDef) -> list[str]:
         test: The test function, with its decorators.
 
     Returns:
-        Each `id=` given to a `pytest.param`, and each string in an `ids=` list.
+        Each `id=` given to a `pytest.param(...)`, and each string in a
+        `parametrize(..., ids=...)` list or tuple. An `id=` anywhere else, such as
+        inside a case's value, is not a case id.
     """
     ids: list[str] = []
     for decorator in test.decorator_list:
         for node in ast.walk(decorator):
             if not isinstance(node, ast.Call):
                 continue
+            called: str = node.func.attr if isinstance(node.func, ast.Attribute) else ""
             for keyword in node.keywords:
-                if keyword.arg == "id" and isinstance(keyword.value, ast.Constant):
+                if (
+                    called == "param"
+                    and keyword.arg == "id"
+                    and isinstance(keyword.value, ast.Constant)
+                ):
                     ids.append(str(keyword.value.value))
-                if keyword.arg == "ids" and isinstance(keyword.value, ast.List):
+                if (
+                    called == "parametrize"
+                    and keyword.arg == "ids"
+                    and isinstance(keyword.value, ast.List | ast.Tuple)
+                ):
                     ids.extend(
                         str(item.value)
                         for item in keyword.value.elts
@@ -240,16 +251,20 @@ def test_a_missing_example_is_named() -> None:
 
 
 def test_only_case_ids_list_examples() -> None:
-    """A case's value, an argument name or a fixture's params is not an id."""
+    """A case's value, an argument name or an `id=` inside a value is not an id."""
     source: str = (
-        '@pytest.mark.parametrize("example_2_input", ["example_3"], ids=["case_a"])\n'
-        "def test_example_2_to_3_values(example_2_input: str) -> None:\n"
+        "@pytest.mark.parametrize(\n"
+        '    "example_2_input",\n'
+        '    ["example_3", pytest.param(Hazard(id="example_4"), id="case_b")],\n'
+        '    ids=("case_a", "test_example_5"),\n'
+        ")\n"
+        "def test_example_2_to_5_values(example_2_input: str) -> None:\n"
         "    pass\n"
     )
 
     (test,) = python_tests(source)
 
-    assert test.listed_examples == frozenset()
+    assert test.listed_examples == {5}
 
 
 def test_a_run_name_covers_only_the_examples_its_cases_list() -> None:

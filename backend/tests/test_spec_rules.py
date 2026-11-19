@@ -182,6 +182,11 @@ def test_an_old_rule_number_is_found_but_decisions_and_features_are_not() -> Non
     assert rules_named_but_not_defined(["R6", "C4"], texts) == ["R7"]
 
 
+def test_with_no_rules_defined_no_number_is_called_old() -> None:
+    """An empty rule list gives an empty answer, not a broken pattern."""
+    assert rules_named_but_not_defined([], ["Controls can't raise it (R6)"]) == []
+
+
 def test_only_rule_definitions_count_as_rules() -> None:
     """A rule mentioned in passing, or a decision such as D6, is not a new rule."""
     spec: str = (
