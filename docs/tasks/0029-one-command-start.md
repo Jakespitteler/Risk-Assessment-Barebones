@@ -267,7 +267,9 @@ The questions for Jake, each with Claude's recommended pick.
 
 - **Ctrl+C on Windows.** The criterion is not ticked: stopping works as `dev.py` did (its own process group, then
   `taskkill /T`), and Ctrl+C was checked on Linux, but no Windows computer was available. Please try
-  `uv run start.py` and Ctrl+C in PowerShell, then check that nothing is left on ports 8000 and 5173.
+  `uv run start.py` and Ctrl+C in PowerShell, then check that nothing is left on ports 8000 and 5173. If a server
+  stops by itself, `start.py` still runs `taskkill /T` on it, in case npm or uv ended before what it started; a
+  review found Windows may no longer find that tree once its first process has ended, so it is worth trying too.
 
 ### Notes
 

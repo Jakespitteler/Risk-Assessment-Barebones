@@ -324,7 +324,8 @@ def stop(server: subprocess.Popen[bytes]) -> None:
         server: The server to stop.
     """
     if sys.platform == "win32":
-        # Run even when npm or uv has ended, since what they started may not have.
+        # Tried even when npm or uv has ended, in case what they started hasn't. Whether
+        # Windows still finds the tree then is to be checked on Windows (task 0029).
         subprocess.run(
             ["taskkill", "/F", "/T", "/PID", str(server.pid)],
             capture_output=True,
