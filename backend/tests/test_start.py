@@ -51,8 +51,8 @@ def mark_installed(frontend: Path) -> None:
     """
     node_modules: Path = frontend / "node_modules"
     node_modules.mkdir()
-    (node_modules / start.setup.FRONTEND_FINGERPRINT).write_text(
-        start.setup.lock_fingerprint(frontend),
+    (node_modules / start.install.FRONTEND_FINGERPRINT).write_text(
+        start.install.lock_fingerprint(frontend),
         encoding="utf-8",
     )
 
@@ -83,9 +83,9 @@ def test_a_busy_port_stops_it_before_anything_is_installed(
 ) -> None:
     """With 5173 taken it says the app may be running, and installs nothing."""
     with (
-        patch.object(start.setup, "cloud_sync_service", return_value=None),
+        patch.object(start.install, "cloud_sync_service", return_value=None),
         patch.object(start, "port_is_busy", side_effect=only_the_app_port_is_busy),
-        patch.object(start.setup, "missing_tools") as missing_tools,
+        patch.object(start.install, "missing_tools") as missing_tools,
         patch.object(start, "install_what_changed") as install,
         patch.object(start, "run_servers") as run_servers,
     ):
@@ -102,11 +102,11 @@ def test_a_busy_port_stops_it_before_anything_is_installed(
 def test_a_missing_tool_stops_it_before_anything_is_installed(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """The same check and help as `setup.py`, before any install."""
+    """The same check and help as `install.py`, before any install."""
     with (
-        patch.object(start.setup, "cloud_sync_service", return_value=None),
+        patch.object(start.install, "cloud_sync_service", return_value=None),
         patch.object(start, "port_is_busy", return_value=False),
-        patch.object(start.setup, "missing_tools", return_value=["git is missing."]),
+        patch.object(start.install, "missing_tools", return_value=["git is missing."]),
         patch.object(start, "install_what_changed") as install,
     ):
         exit_code: int = start.main()
@@ -114,16 +114,16 @@ def test_a_missing_tool_stops_it_before_anything_is_installed(
     output: str = capsys.readouterr().out
     assert exit_code == 1
     assert "  - git is missing." in output
-    assert start.setup.REOPEN_TERMINAL_HELP in output
+    assert start.install.REOPEN_TERMINAL_HELP in output
     install.assert_not_called()
 
 
 def test_a_failed_install_stops_it_before_the_servers_start() -> None:
     """The install's exit code is passed on, and nothing is started."""
     with (
-        patch.object(start.setup, "cloud_sync_service", return_value=None),
+        patch.object(start.install, "cloud_sync_service", return_value=None),
         patch.object(start, "port_is_busy", return_value=False),
-        patch.object(start.setup, "missing_tools", return_value=[]),
+        patch.object(start.install, "missing_tools", return_value=[]),
         patch.object(start, "install_what_changed", return_value=4),
         patch.object(start, "run_servers") as run_servers,
     ):
@@ -200,7 +200,7 @@ def test_nothing_changed_runs_only_the_quick_back_end_sync(tmp_path: Path) -> No
             "run",
             return_value=subprocess.CompletedProcess([], 0),
         ) as run,
-        patch.object(start.setup, "install") as install,
+        patch.object(start.install, "run_install_steps") as install,
     ):
         exit_code: int = start.install_what_changed(make_backend(tmp_path), frontend)
 
@@ -208,7 +208,7 @@ def test_nothing_changed_runs_only_the_quick_back_end_sync(tmp_path: Path) -> No
     run.assert_called_once_with(
         ["uv", "sync", "--locked", "--quiet"],
         cwd=tmp_path / "backend",
-        env=start.setup.SETUP_ENVIRONMENT,
+        env=start.install.INSTALL_ENVIRONMENT,
         check=False,
     )
     install.assert_not_called()
@@ -218,12 +218,15 @@ def test_the_first_back_end_install_shows_its_progress(tmp_path: Path) -> None:
     """With no `.venv` yet, uv's install runs under a heading, not quietly."""
     frontend: Path = make_frontend(tmp_path)
     mark_installed(frontend)
-    with patch.object(start.setup, "install", return_value=0) as install:
+    with patch.object(start.install, "run_install_steps", return_value=0) as install:
         exit_code: int = start.install_what_changed(tmp_path / "backend", frontend)
 
     assert exit_code == 0
-    install.assert_called_once_with([start.FIRST_BACKEND_INSTALL], "uv run start.py")
-    assert "--quiet" not in start.FIRST_BACKEND_INSTALL.command
+    install.assert_called_once_with(
+        [start.install.BACKEND_INSTALL_STEP],
+        "uv run start.py",
+    )
+    assert "--quiet" not in start.install.BACKEND_INSTALL_STEP.command
 
 
 def test_a_changed_lock_file_installs_the_front_end_then_the_browser(
@@ -243,29 +246,33 @@ def test_a_changed_lock_file_installs_the_front_end_then_the_browser(
             "run",
             return_value=subprocess.CompletedProcess([], 0),
         ),
-        patch.object(start.setup, "install", side_effect=install_succeeds) as install,
+        patch.object(
+            start.install,
+            "run_install_steps",
+            side_effect=install_succeeds,
+        ) as install,
     ):
         exit_code: int = start.install_what_changed(make_backend(tmp_path), frontend)
 
     assert exit_code == 0
     assert install.mock_calls == [
-        call([start.FRONTEND_INSTALL], "uv run start.py"),
-        call([start.BROWSER_INSTALL], "uv run start.py"),
+        call([start.install.FRONTEND_INSTALL_STEP], "uv run start.py"),
+        call([start.install.BROWSER_INSTALL_STEP], "uv run start.py"),
     ]
-    assert start.FRONTEND_INSTALL.command[1:] == ["ci", "--engine-strict"]
+    assert start.install.FRONTEND_INSTALL_STEP.command[1:] == ["ci", "--engine-strict"]
     assert not start.frontend_needs_install(frontend)
 
 
 def test_installs_never_upgrade_a_package() -> None:
     """Every install takes the lock files' versions exactly (task 0029, question 3)."""
     commands: list[list[str]] = [
-        start.BACKEND_INSTALL.command,
-        start.FRONTEND_INSTALL.command,
-        start.BROWSER_INSTALL.command,
+        start.QUIET_BACKEND_INSTALL_STEP.command,
+        start.install.FRONTEND_INSTALL_STEP.command,
+        start.install.BROWSER_INSTALL_STEP.command,
     ]
 
-    assert "--locked" in start.BACKEND_INSTALL.command
-    assert start.FRONTEND_INSTALL.command[1] == "ci"
+    assert "--locked" in start.QUIET_BACKEND_INSTALL_STEP.command
+    assert start.install.FRONTEND_INSTALL_STEP.command[1] == "ci"
     assert not any(
         "upgrade" in word or "update" in word for c in commands for word in c
     )
@@ -280,7 +287,7 @@ def test_a_failed_front_end_install_is_not_remembered(tmp_path: Path) -> None:
             "run",
             return_value=subprocess.CompletedProcess([], 0),
         ),
-        patch.object(start.setup, "install", return_value=1),
+        patch.object(start.install, "run_install_steps", return_value=1),
     ):
         exit_code: int = start.install_what_changed(make_backend(tmp_path), frontend)
 
@@ -300,7 +307,7 @@ def test_a_failed_back_end_sync_stops_it(
             "run",
             return_value=subprocess.CompletedProcess([], 2),
         ),
-        patch.object(start.setup, "install") as install,
+        patch.object(start.install, "run_install_steps") as install,
     ):
         exit_code: int = start.install_what_changed(make_backend(tmp_path), frontend)
 
@@ -433,14 +440,14 @@ def test_the_cloud_sync_warning_shows_again_under_the_ready_line() -> None:
 
     said: list[str] = [message.args[0] for message in say.call_args_list]
     ready_at: int = said.index(start.ready_message("http://localhost:5173"))
-    assert said[ready_at + 1].startswith(start.setup.cloud_sync_warning("OneDrive"))
+    assert said[ready_at + 1].startswith(start.install.cloud_sync_warning("OneDrive"))
 
 
-def test_a_start_after_setup_installs_nothing_more(tmp_path: Path) -> None:
-    """`setup.py` leaves the same fingerprint, so its reinstall isn't done twice."""
+def test_a_start_after_install_py_installs_nothing_more(tmp_path: Path) -> None:
+    """`install.py` leaves the same fingerprint, so its reinstall isn't done twice."""
     frontend: Path = make_frontend(tmp_path)
     (frontend / "node_modules").mkdir()
-    start.setup.remember_frontend_install(frontend)
+    start.install.remember_frontend_install(frontend)
 
     assert not start.frontend_needs_install(frontend)
 
@@ -538,13 +545,13 @@ def test_a_failed_browser_install_warns_and_the_app_still_starts(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """The app doesn't need the test browser; `setup.py` can try it again later."""
+    """The app doesn't need the test browser; `install.py` can try it again later."""
     frontend: Path = make_frontend(tmp_path)
 
     def front_end_works_browser_fails(steps: list[object], rerun_command: str) -> int:
         """Stand in for the installs: npm works, the browser download doesn't."""
         (frontend / "node_modules").mkdir(exist_ok=True)
-        return 0 if steps == [start.FRONTEND_INSTALL] else 1
+        return 0 if steps == [start.install.FRONTEND_INSTALL_STEP] else 1
 
     with (
         patch.object(
@@ -552,12 +559,16 @@ def test_a_failed_browser_install_warns_and_the_app_still_starts(
             "run",
             return_value=subprocess.CompletedProcess([], 0),
         ),
-        patch.object(start.setup, "install", side_effect=front_end_works_browser_fails),
+        patch.object(
+            start.install,
+            "run_install_steps",
+            side_effect=front_end_works_browser_fails,
+        ),
     ):
         exit_code: int = start.install_what_changed(make_backend(tmp_path), frontend)
 
     assert exit_code == 0
-    assert "starts anyway. Run `uv run setup.py` later" in capsys.readouterr().out
+    assert "starts anyway. Run `uv run install.py` later" in capsys.readouterr().out
     assert not start.frontend_needs_install(frontend)
 
 

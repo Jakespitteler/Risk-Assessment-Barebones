@@ -5,14 +5,14 @@ Newest first. One short entry per non-obvious decision.
 ## 2026-11-19: One command starts the app, and every command runs from the repo root (task 0029)
 
 - Decision: `uv run start.py` in the repo root replaces `scripts/dev.py`. It stops if port 8000 or 5173 already
-  answers (on IPv4 or IPv6), before installing anything; checks git and Node.js with `setup.py`'s checks; runs
+  answers (on IPv4 or IPv6), before installing anything; checks git and Node.js with `install.py`'s checks; runs
   `uv sync --locked` every time; runs `npm ci` only when `package-lock.json` differs from the fingerprint kept in
-  `node_modules` after the last install (`setup.py` writes it too); installs the test browser after each front-end
-  install, warning and carrying on if that fails; then starts both halves and prints one ready line with the app's
-  address (the forwarded one in a Codespace). `setup.py` and `check.py` move to the root beside it, and a new
-  `test.py` runs the tests (all, or `backend`, `frontend` or `e2e` with the rest of the line passed on).
-  `check.py --fix` runs the formatters, the lint tools' own fixes and the API types. CI, the reviewer's instructions and
-  Claude's allow list name the new commands.
+  `node_modules` after the last install (`install.py` writes it too); installs the test browser after each
+  front-end install, warning and carrying on if that fails; then starts both halves and prints one ready line with
+  the app's address (the forwarded one in a Codespace). `scripts/setup.py` moves to the root as `install.py`,
+  `check.py` moves there too, and a new `test.py` runs the tests (all, or `backend`, `frontend` or `e2e` with the
+  rest of the line passed on). `check.py --fix` runs the formatters, the lint tools' own fixes and the API types.
+  CI, the reviewer's instructions and Claude's allow list name the new commands.
 - Why: Jake asked for one command that sets up, updates the installs and prints only the right address, and for
   no `cd` before everyday commands. He took the recommended answers, except that the API gets no page at `/` and
   its address is never printed. Installing only the locked versions means a start never brings in a version the
@@ -32,8 +32,9 @@ Newest first. One short entry per non-obvious decision.
   file); upgrading packages on start; reading the servers' output through a pipe (above); a port
   check that binds the port (a socket waiting to close after a restart would read as busy).
 - Also: Claude's format hook now formats a `.py` file in the repo root too, the hook change question 1 (a)
-  named. A root `setup.py` is, by an old convention, a Python package build file, so `pip install -e .` in the root
-  would run it; nothing here uses pip, and the root `pyproject.toml` declares no project.
+  named. The "install everything again" command is `install.py`, not `setup.py`: by an old convention a root
+  `setup.py` is a Python package build file, which pip and some tools would try to run (Jake chose the name on
+  2026-11-19).
 - Decided by: human (the product choices, 2026-11-19), agent (how).
 
 ## 2026-11-19: An AI judges vague hazards, with the word rule as the fallback (task 0027)

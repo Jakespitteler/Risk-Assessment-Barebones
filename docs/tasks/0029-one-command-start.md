@@ -55,6 +55,9 @@ Yes. It is the usual professional pattern, and the repo already has the pieces.
 **Jake's answers, 2026-11-19:** 1 (a) `uv run start.py`; 10 (a), with the two `.claude` files updated too; 6:
 no route at `/`, and the API's address is never put in the terminal to click; every other question as
 recommended (2 a, 3 a, 4 a, 5 a, 7 a, 8 yes, 9 yes). Question 11 was settled by the order of work: next after 0013.
+Later on review: hide the address lines through each server's settings rather than a pipe; rename the root
+`setup.py` to `install.py`, since pip and some tools treat a root `setup.py` as a package build file; keep this
+pull request whole. The questions and criteria below keep the old name `setup.py`.
 
 The questions for Jake, each with Claude's recommended pick.
 
@@ -248,9 +251,9 @@ The questions for Jake, each with Claude's recommended pick.
 
 ### What was built (Claude, 2026-11-19)
 
-- `start.py`, `setup.py`, `check.py` and `test.py` in the repo root; `scripts/dev.py` is gone, and its tests
-  moved to `backend/tests/test_start.py`. `setup.py`'s tool checks, cloud-sync warning and install steps are
-  imported by `start.py`, not copied.
+- `start.py`, `install.py` (was `scripts/setup.py`), `check.py` and `test.py` in the repo root; `scripts/dev.py` is
+  gone, and its tests moved to `backend/tests/test_start.py`. `install.py`'s tool checks, cloud-sync warning and
+  install steps are imported by `start.py`, not copied.
 - How the address lines are hidden, and why that way: `docs/decisions.md`, 2026-11-19. In short, each server's
   own settings turn its start-up lines off (`backend/dev_logging.json` for uvicorn, `--logLevel warn` for Vite),
   and their output goes straight to the terminal. A first version read the output through a pipe instead; Jake
@@ -272,10 +275,10 @@ The questions for Jake, each with Claude's recommended pick.
   could leave Vite running, as `dev.py` did (it exited with code 130 in the timing runs). `start.py` acts on the
   first Ctrl+C only. Stopping a server asks first, then forces it after 10 seconds, and signals the server's
   whole process group even when npm or uv has already ended.
-- `setup.py` leaves the same "installed for this lock file" fingerprint as `start.py`, so a start straight after
-  `uv run setup.py` installs nothing more.
+- `install.py` leaves the same "installed for this lock file" fingerprint as `start.py`, so a start straight after
+  `uv run install.py` installs nothing more.
 - The test browser is installed after each front-end install. If that download fails, the app still starts, and
-  `uv run setup.py` tries it again; `start.py` doesn't retry it until the lock file next changes.
+  `uv run install.py` tries it again; `start.py` doesn't retry it until the lock file next changes.
 - With `--logLevel warn`, Vite no longer prints "page reloaded" notes while you work. The page still reloads.
 - The back end's sync on later starts is quiet: a pulled change to `uv.lock` is installed without a list of what
   changed (errors still show).

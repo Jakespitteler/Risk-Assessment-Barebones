@@ -41,7 +41,7 @@ checks for git and Node.js, says what is missing and how to get it, then install
 front end's packages, and the browser the whole-app tests use. After that it installs only what a pull has
 changed. The same command works on macOS and Linux; use a folder such as `~/dev` there.
 
-If an install seems broken, `uv run setup.py` installs everything again from scratch and says what to do next.
+If an install seems broken, `uv run install.py` installs everything again from scratch and says what to do next.
 Stop the app first, because Windows won't let it replace files the app is using.
 
 ### Don't clone into a cloud-synced folder
@@ -58,7 +58,7 @@ syncing the folder as well adds little, and it causes problems:
 - It can make "conflicted copy" files, or bring back old ones, inside `.git`, which can damage the repo.
 - A file kept "online only" isn't really on the disk until it's opened, which slows or breaks the tools.
 
-`start.py` and `setup.py` warn you if they find the repo in one of these folders. It can't tell when macOS syncs
+`start.py` and `install.py` warn you if they find the repo in one of these folders. It can't tell when macOS syncs
 `Desktop` or `Documents`, because those paths don't change.
 
 ## Run it

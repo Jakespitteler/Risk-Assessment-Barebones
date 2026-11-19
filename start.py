@@ -10,7 +10,7 @@ In order, it:
 
 1. Stops if ports 8000 or 5173 are already in use, before installing anything, since the
    app is probably running in another terminal.
-2. Checks for git and Node.js, as `setup.py` does.
+2. Checks for git and Node.js, as `install.py` does.
 3. Brings the installs in line with the lock files the repo holds: the back end's
    packages every time (quick when nothing changed), and the front end's, then the
    browser the whole-app tests use, only when `package-lock.json` changed since they
@@ -34,7 +34,7 @@ from pathlib import Path
 from types import FrameType
 from urllib.request import OpenerDirector, ProxyHandler, build_opener
 
-import setup
+import install
 
 REPO_ROOT: Path = Path(__file__).resolve().parent
 BACKEND: Path = REPO_ROOT / "backend"
@@ -59,7 +59,7 @@ BACKEND_COMMAND: list[str] = [
 ]
 # Vite's info lines are its address box and its "page reloaded" notes; warnings and
 # errors still show.
-FRONTEND_COMMAND: list[str] = [setup.NPM, "run", "dev", "--", "--logLevel", "warn"]
+FRONTEND_COMMAND: list[str] = [install.NPM, "run", "dev", "--", "--logLevel", "warn"]
 BACKEND_READY_URL: str = f"http://127.0.0.1:{API_PORT}/api/take5/template"
 # The app itself, served by Vite. Only this address is ever printed: the back end's own
 # address is only the API.
@@ -68,12 +68,9 @@ LOCAL_APP_URL: str = f"http://localhost:{APP_PORT}"
 # The first back-end install shows its progress. After that the sync runs quietly, so a
 # start with nothing new prints nothing for it: uv still prints any error, but a pulled
 # change to `uv.lock` is installed without a list of what changed.
-FIRST_BACKEND_INSTALL: setup.InstallStep = setup.INSTALL_STEPS[0]
-BACKEND_INSTALL: setup.InstallStep = FIRST_BACKEND_INSTALL._replace(
-    command=[*FIRST_BACKEND_INSTALL.command, "--quiet"],
+QUIET_BACKEND_INSTALL_STEP: install.InstallStep = install.BACKEND_INSTALL_STEP._replace(
+    command=[*install.BACKEND_INSTALL_STEP.command, "--quiet"],
 )
-FRONTEND_INSTALL: setup.InstallStep = setup.INSTALL_STEPS[1]
-BROWSER_INSTALL: setup.InstallStep = setup.INSTALL_STEPS[2]
 READY_WAIT_SECONDS: float = 30.0
 STOP_WAIT_SECONDS: float = 10.0
 
@@ -158,13 +155,13 @@ def frontend_needs_install(frontend: Path) -> bool:
         frontend: The front end's folder.
 
     Returns:
-        True when they were never installed by this script or `setup.py`, an install
+        True when they were never installed by this script or `install.py`, an install
         was stopped part way, or `package-lock.json` has changed since.
     """
-    fingerprint_file: Path = frontend / "node_modules" / setup.FRONTEND_FINGERPRINT
+    fingerprint_file: Path = frontend / "node_modules" / install.FRONTEND_FINGERPRINT
     if not fingerprint_file.is_file():
         return True
-    return fingerprint_file.read_text(encoding="utf-8") != setup.lock_fingerprint(
+    return fingerprint_file.read_text(encoding="utf-8") != install.lock_fingerprint(
         frontend,
     )
 
@@ -179,17 +176,18 @@ def sync_backend(backend: Path) -> int:
         0 when it worked, otherwise uv's exit code.
     """
     if not (backend / ".venv").is_dir():
-        return setup.install([FIRST_BACKEND_INSTALL], START_COMMAND)
+        return install.run_install_steps([install.BACKEND_INSTALL_STEP], START_COMMAND)
     result: subprocess.CompletedProcess[bytes] = subprocess.run(
-        BACKEND_INSTALL.command,
+        QUIET_BACKEND_INSTALL_STEP.command,
         cwd=backend,
-        env=setup.SETUP_ENVIRONMENT,
+        env=install.INSTALL_ENVIRONMENT,
         check=False,
     )
     if result.returncode != 0:
         print(
-            f"\nFAILED while installing {BACKEND_INSTALL.what_it_installs}. Fix the "
-            f"problem shown above, then run `{START_COMMAND}` again.",
+            "\nFAILED while installing "
+            f"{install.BACKEND_INSTALL_STEP.what_it_installs}. Fix the problem shown "
+            f"above, then run `{START_COMMAND}` again.",
         )
     return result.returncode
 
@@ -213,14 +211,17 @@ def install_what_changed(backend: Path, frontend: Path) -> int:
         return backend_exit_code
     if not frontend_needs_install(frontend):
         return 0
-    frontend_exit_code: int = setup.install([FRONTEND_INSTALL], START_COMMAND)
+    frontend_exit_code: int = install.run_install_steps(
+        [install.FRONTEND_INSTALL_STEP],
+        START_COMMAND,
+    )
     if frontend_exit_code != 0:
         return frontend_exit_code
-    setup.remember_frontend_install(frontend)
-    if setup.install([BROWSER_INSTALL], START_COMMAND) != 0:
+    install.remember_frontend_install(frontend)
+    if install.run_install_steps([install.BROWSER_INSTALL_STEP], START_COMMAND) != 0:
         print(
             "\nThe app doesn't need that browser, only the whole-app tests do, so it "
-            f"starts anyway. Run `{setup.SETUP_COMMAND}` later to try again.",
+            f"starts anyway. Run `{install.INSTALL_COMMAND}` later to try again.",
             flush=True,
         )
     return 0
@@ -242,13 +243,13 @@ def start(command: list[str], folder: str) -> subprocess.Popen[bytes]:
         return subprocess.Popen(
             command,
             cwd=REPO_ROOT / folder,
-            env=setup.SETUP_ENVIRONMENT,
+            env=install.INSTALL_ENVIRONMENT,
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
         )
     return subprocess.Popen(
         command,
         cwd=REPO_ROOT / folder,
-        env=setup.SETUP_ENVIRONMENT,
+        env=install.INSTALL_ENVIRONMENT,
         start_new_session=True,
     )
 
@@ -384,7 +385,7 @@ def run_servers(url: str, cloud_service: str | None) -> int:
         wait_until_ready(servers["front end"], LOCAL_APP_URL, "front end")
         print(ready_message(url), flush=True)
         if cloud_service is not None:
-            print(f"{setup.cloud_sync_warning(cloud_service)}\n", flush=True)
+            print(f"{install.cloud_sync_warning(cloud_service)}\n", flush=True)
         while True:
             for name, server in servers.items():
                 exit_code: int | None = server.poll()
@@ -417,19 +418,19 @@ def main() -> int:
     Returns:
         The exit code: 0 after Ctrl+C, otherwise non-zero.
     """
-    cloud_service: str | None = setup.cloud_sync_service(REPO_ROOT)
+    cloud_service: str | None = install.cloud_sync_service(REPO_ROOT)
     if cloud_service is not None:
-        print(setup.cloud_sync_warning(cloud_service), flush=True)
+        print(install.cloud_sync_warning(cloud_service), flush=True)
     for port in (API_PORT, APP_PORT):
         if port_is_busy(port):
             print(busy_port_message(port))
             return 1
-    problems: list[str] = setup.missing_tools()
+    problems: list[str] = install.missing_tools()
     if problems:
         print("\nThe app can't start yet. Nothing was installed.")
         for problem in problems:
             print(f"  - {problem}")
-        print(setup.REOPEN_TERMINAL_HELP)
+        print(install.REOPEN_TERMINAL_HELP)
         return 1
     install_exit_code: int = install_what_changed(BACKEND, FRONTEND)
     if install_exit_code != 0:

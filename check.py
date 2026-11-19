@@ -44,7 +44,7 @@ PYTHON_FOLDERS: list[str] = [
     ".",
     "../scripts",
     "../start.py",
-    "../setup.py",
+    "../install.py",
     "../check.py",
     "../test.py",
 ]

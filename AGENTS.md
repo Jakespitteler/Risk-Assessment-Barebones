@@ -16,7 +16,7 @@ newer (24.15 or newer on version 24). Run each from the repo root.
 
 - Start: `uv run start.py`, then open the one address it prints, <http://localhost:5173>. Ctrl+C stops it. It
   sets up whatever isn't set up and installs what the lock files changed, so it is also the install command.
-- Install everything again from scratch: `uv run setup.py`.
+- Install everything again from scratch: `uv run install.py`.
 - Test: `uv run test.py` runs all; `uv run test.py backend`, `frontend` or `e2e` runs one kind, and passes the
   rest of the line to pytest, Vitest or Playwright (the real-AI test: `uv run test.py backend -m real_ai`).
 - All checks (what CI runs): `uv run check.py`. It lints and type checks the back end, `scripts/` and the root
