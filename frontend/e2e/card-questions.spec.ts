@@ -188,10 +188,12 @@ test("a short hazard picked for a Yes is nudged to be specific (T6)", async ({
 
   const box = page.getByLabel("Hazard 2", { exact: true });
   await box.fill("Hit by a haul truck at the workshop crossing");
-  await expect(nudge).toBeHidden();
+  // Nothing is asked while the worker types, so the message stays (decision D56).
+  await expect(nudge).toBeVisible();
   await expect(box).toBeFocused();
   await box.press("Tab");
   await expect(box).toBeHidden();
+  await expect(nudge).toBeHidden();
   await expect(
     page.getByText(
       "On your list: Hit by a haul truck at the workshop crossing",

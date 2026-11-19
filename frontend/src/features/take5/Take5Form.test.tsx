@@ -647,12 +647,10 @@ it("“It’s on my list” links a Yes to the hazard picked, and it stays linke
 
 const NUDGE =
   'Make it specific: say what could hurt you, and where. For example: "Bitten by the guard dog at the side gate"';
-const NUDGED_CHECK = {
-  ...PASSING_CHECK,
-  nudges: [
-    { path: "hazards.0.description", message: NUDGE, question_id: "dogs" },
-  ],
-};
+const NUDGES = [
+  { path: "hazards.0.description", message: NUDGE, question_id: "dogs" },
+];
+const NUDGED = { status: 200, body: NUDGES };
 const DOG: typeof HAZARD_DRAFT = {
   ...HAZARD_DRAFT,
   description: "Dog",
@@ -665,7 +663,7 @@ it("nudges a short hazard linked to a Yes, and keeping it stops the nudge for go
     answers: { keys: "Yes", dogs: "Yes" },
     hazards: [DOG],
   });
-  stubApi({ "POST /api/take5s/check": { status: 200, body: NUDGED_CHECK } });
+  stubApi({ "POST /api/take5s/nudges": NUDGED });
   const beforeReload = renderWithApi(<FormAt start={{ page: "check" }} />);
   expect(await screen.findByText(NUDGE)).toBeTruthy();
   expect(screen.getByLabelText<HTMLTextAreaElement>("Hazard 1").value).toBe(
@@ -691,7 +689,7 @@ it("rewording in the nudge changes the hazard on the list as the worker types", 
     answers: { keys: "Yes", dogs: "Yes" },
     hazards: [DOG],
   });
-  stubApi({ "POST /api/take5s/check": { status: 200, body: NUDGED_CHECK } });
+  stubApi({ "POST /api/take5s/nudges": NUDGED });
   renderWithApi(<FormAt start={{ page: "check" }} />);
   const box = await screen.findByLabelText("Hazard 1");
 
@@ -708,6 +706,93 @@ it("rewording in the nudge changes the hazard on the list as the worker types", 
   expect(screen.getByLabelText("Hazard 1")).toBe(box);
 });
 
+it("asks about the words once the worker leaves the box, not while they type", async () => {
+  storeDraft({
+    ...COMPLETE_DRAFT,
+    answers: { keys: "Yes", dogs: "Yes" },
+    hazards: [DOG],
+  });
+  const calls = stubApi({
+    "POST /api/take5s/nudges": [NUDGED, { status: 200, body: [] }],
+  });
+  const asks = () =>
+    calls.filter((call) => call === "POST /api/take5s/nudges").length;
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  const box = await screen.findByLabelText("Hazard 1");
+  expect(asks()).toBe(1);
+
+  fireEvent.focus(box);
+  fireEvent.change(box, { target: { value: "Bitten by the guard" } });
+  fireEvent.change(box, {
+    target: { value: "Bitten by the guard dog at the side gate" },
+  });
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  expect(asks()).toBe(1);
+  expect(screen.getByText(NUDGE)).toBeTruthy();
+
+  fireEvent.blur(box);
+  await waitFor(() => {
+    expect(screen.queryByLabelText("Hazard 1")).toBeNull();
+  });
+  expect(asks()).toBe(2);
+});
+
+it("asks once for the whole page while the worker types, however many hazards are linked", async () => {
+  storeDraft({
+    ...COMPLETE_DRAFT,
+    answers: { keys: "Yes", dogs: "Yes" },
+    hazards: [DOG, { ...DOG, description: "Cat" }],
+  });
+  const calls = stubApi({
+    "POST /api/take5s/nudges": {
+      status: 200,
+      body: [NUDGES[0], { ...NUDGES[0], path: "hazards.1.description" }],
+    },
+  });
+  const asks = () =>
+    calls.filter((call) => call === "POST /api/take5s/nudges").length;
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  const box = await screen.findByLabelText("Hazard 1");
+  expect(screen.getByLabelText("Hazard 2")).toBeTruthy();
+
+  fireEvent.focus(box);
+  for (const words of ["Bitten", "Bitten by the", "Bitten by the guard dog"])
+    fireEvent.change(box, { target: { value: words } });
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  expect(asks()).toBe(1);
+});
+
+it("never sends the links of words the worker kept, so they aren't judged", async () => {
+  storeDraft(
+    {
+      ...COMPLETE_DRAFT,
+      answers: { keys: "Yes", dogs: "Yes" },
+      hazards: [DOG],
+    },
+    ["Dog"],
+  );
+  stubApi({ "POST /api/take5s/nudges": { status: 200, body: [] } });
+  renderWithApi(<FormAt start={{ page: "check" }} />);
+  await waitFor(() => {
+    expect(nudgeRequests()).toHaveLength(1);
+  });
+
+  expect(nudgeRequests()[0]?.hazards[0]?.covers).toEqual([]);
+});
+
+/** The drafts the page sent to ask for nudges, in order. */
+function nudgeRequests() {
+  return vi
+    .mocked(fetch)
+    .mock.calls.filter(([url]) => url === "/api/take5s/nudges")
+    .map(([, init]) =>
+      typeof init?.body === "string"
+        ? (JSON.parse(init.body) as Take5Draft)
+        : undefined,
+    );
+}
+
 it("keeps the nudge's box while the worker types words they kept before", async () => {
   storeDraft(
     {
@@ -717,7 +802,7 @@ it("keeps the nudge's box while the worker types words they kept before", async 
     },
     ["Dog"],
   );
-  stubApi({ "POST /api/take5s/check": { status: 200, body: NUDGED_CHECK } });
+  stubApi({ "POST /api/take5s/nudges": NUDGED });
   renderWithApi(<FormAt start={{ page: "check" }} />);
   const box = await screen.findByLabelText("Hazard 1");
 
@@ -737,12 +822,9 @@ it("shows a nudge only under the question the back end names", async () => {
     hazards: [DOG],
   });
   stubApi({
-    "POST /api/take5s/check": {
+    "POST /api/take5s/nudges": {
       status: 200,
-      body: {
-        ...NUDGED_CHECK,
-        nudges: [{ ...NUDGED_CHECK.nudges[0], question_id: "other" }],
-      },
+      body: [{ ...NUDGES[0], question_id: "other" }],
     },
   });
   renderWithApi(<FormAt start={{ page: "check" }} />);
@@ -756,7 +838,7 @@ it("shows no nudge for a hazard the back end doesn't nudge", async () => {
     answers: { keys: "Yes", dogs: "Yes" },
     hazards: [DOG],
   });
-  stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
+  stubApi({ "POST /api/take5s/nudges": { status: 200, body: [] } });
   renderWithApi(<FormAt start={{ page: "check" }} />);
   await new Promise((resolve) => setTimeout(resolve, 500));
   expect(screen.getByText("On your list: Dog", { exact: false })).toBeTruthy();

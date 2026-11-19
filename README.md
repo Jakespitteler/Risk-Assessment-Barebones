@@ -91,8 +91,10 @@ Without a key the app works, and asks the fixed challenge question every time. T
 
 To use another model, add a line such as `TAKE5_AI_MODEL=claude-sonnet-5-5`. To try the AI on five made-up Take
 5s and see what each question costs and how long it takes, run `uv run scripts/try_challenge.py` in the repo
-root (name models after it to compare them). `cd backend` then `uv run pytest -m real_ai` runs the one test that
-calls the real AI. Each of these costs a little money; the normal tests and CI never call it.
+root (name models after it to compare them). Vague hazards are judged by Claude Haiku 5.5 unless a line such as
+`TAKE5_AI_HAZARD_MODEL=claude-sonnet-5-5` names another; `uv run scripts/try_vague_hazard.py` tries it on twelve
+made-up hazards. `cd backend` then `uv run pytest -m real_ai` runs the two tests that call the real AI. Each of
+these costs a little money; the normal tests and CI never call it.
 
 Using VS Code? See [docs/dev-setup.md](docs/dev-setup.md) for the editor set-up and fixes for common problems.
 

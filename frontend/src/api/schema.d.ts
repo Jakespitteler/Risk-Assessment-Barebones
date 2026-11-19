@@ -44,6 +44,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/take5s/nudges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Nudges
+         * @description Return a nudge for each vague hazard linked to a Yes, saving nothing (T6).
+         *
+         *     An AI judges the hazards when one is set up, for up to 5 seconds, and the word
+         *     rule decides the rest. The phone asks once for each hazard's words.
+         */
+        post: operations["nudges_api_take5s_nudges_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/take5s": {
         parameters: {
             query?: never;
@@ -207,8 +230,6 @@ export interface components {
          *         can_submit: True when there are no errors.
          *         thinking_questions: Applicable prompts, including ones already answered.
          *         runs_out_at: When the draft runs out (spec K2), or None when it never does.
-         *         nudges: Suggestions to make an answer clearer, in the order of the form. A nudge
-         *             never stops the draft being submitted.
          */
         DraftCheck: {
             /** Errors */
@@ -225,11 +246,6 @@ export interface components {
             thinking_questions: components["schemas"]["ThinkingQuestion"][];
             /** Runs Out At */
             runs_out_at?: string | null;
-            /**
-             * Nudges
-             * @default []
-             */
-            nudges: components["schemas"]["Nudge"][];
         };
         /**
          * ErrorMessage
@@ -745,6 +761,9 @@ export interface components {
          *         control_guidance: The card's advice on choosing controls.
          *         ai_notice: What Submit sends to the AI, to show above Submit, or None when
          *             no AI is set up, so nothing is sent (decision D52).
+         *         hazard_ai_notice: That hazards linked to a Yes are checked by an AI, to show
+         *             on the hazard check page, or None when the word rule judges them, so
+         *             nothing is sent (decision D63).
          */
         TemplateResponse: {
             /** Name */
@@ -764,6 +783,8 @@ export interface components {
             control_guidance: string;
             /** Ai Notice */
             ai_notice?: string | null;
+            /** Hazard Ai Notice */
+            hazard_ai_notice?: string | null;
         };
         /**
          * ThinkingQuestion
@@ -843,6 +864,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DraftCheck"];
+                };
+            };
+            /** @description Something is missing or wrong */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormErrors"];
+                };
+            };
+        };
+    };
+    nudges_api_take5s_nudges_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Take5Draft"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Nudge"][];
                 };
             };
             /** @description Something is missing or wrong */

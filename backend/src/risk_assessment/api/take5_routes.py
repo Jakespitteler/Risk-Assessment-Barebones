@@ -19,6 +19,7 @@ from risk_assessment.domain.questions import Answer
 from risk_assessment.domain.take5.challenge import AI_NOTICE
 from risk_assessment.domain.take5.draft import DraftCheck, Take5Draft
 from risk_assessment.domain.take5.fix import fixed_ids, offers_a_fix
+from risk_assessment.domain.take5.hazard_nudges import HAZARD_AI_NOTICE, Nudge
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.template import Take5Template
 from risk_assessment.services.take5s import (
@@ -70,12 +71,24 @@ def create_router(service: Take5Service) -> APIRouter:
             consequence_guidance=template.consequence_guidance,
             control_guidance=template.control_guidance,
             ai_notice=AI_NOTICE if service.asks_ai else None,
+            hazard_ai_notice=(
+                HAZARD_AI_NOTICE if service.judges_hazards_with_ai else None
+            ),
         )
 
     @router.post("/api/take5s/check", responses=_UNREADABLE)
     def check(draft: Take5Draft) -> DraftCheck:
         """Return what is missing, the warnings and the ratings, saving nothing."""
         return service.check(draft)
+
+    @router.post("/api/take5s/nudges", responses=_UNREADABLE)
+    def nudges(draft: Take5Draft) -> tuple[Nudge, ...]:
+        """Return a nudge for each vague hazard linked to a Yes, saving nothing (T6).
+
+        An AI judges the hazards when one is set up, for up to 5 seconds, and the word
+        rule decides the rest. The phone asks once for each hazard's words.
+        """
+        return service.nudges(draft)
 
     @router.post("/api/take5s", responses=_UNREADABLE | _CONFLICT)
     def submit(request: SubmissionRequest) -> Take5Response:

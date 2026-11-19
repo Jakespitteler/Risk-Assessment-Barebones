@@ -1,58 +1,44 @@
 import { useState } from "react";
-import type { Take5Draft } from "../../api/take5";
-import { useDraftCheck } from "../../api/take5";
+import type { Nudge } from "../../api/take5";
 import { Button } from "../../components/Button";
 import { Field } from "../../components/Field";
 import { FIELD_STYLE } from "../../components/fieldStyle";
 import { Warning } from "../../components/Warning";
-import { useSettledValue } from "./useSettledValue";
-
-// Ask about the wording once the worker pauses, not once per key (as the controls do).
-const PAUSE_BEFORE_CHECK_MS = 400;
 
 /**
  * The back end's nudge to make a hazard linked to a Yes specific (spec T6), under the
  * question the back end names. The worker rewords the hazard in the box, which changes
  * it on the list as they type, or keeps it as it is. It never blocks Continue. While
- * the worker is typing the box stays, even once the words are specific enough.
+ * the worker is typing the box and its message stay, and the page asks nothing: an AI
+ * may judge the words, so it is asked once they leave the box (decision D56).
  */
 export function HazardNudge({
-  draft,
+  nudge: sentNudge,
+  description,
   index,
-  questionId,
   kept,
+  onTyping,
   onReword,
   onKeep,
 }: {
-  draft: Take5Draft;
+  /** The back end's nudge for this hazard under this question, if it sent one. */
+  nudge: Nudge | undefined;
+  description: string;
   index: number;
-  questionId: string;
   /** True when the worker chose to keep these exact words, so nothing is asked. */
   kept: boolean;
+  /** Called with true as the worker goes into the box, and false as they leave it. */
+  onTyping: (typing: boolean) => void;
   onReword: (description: string) => void;
   onKeep: () => void;
 }) {
   const [typing, setTyping] = useState(false);
-  // A check already made of this exact draft is used at once; otherwise wait a moment.
-  // Kept words are never asked about, so they send no checks.
-  const current = useDraftCheck(draft, false);
-  const settled = useDraftCheck(
-    useSettledValue(draft, PAUSE_BEFORE_CHECK_MS),
-    !kept,
-    true,
-  );
-  const check = current.data ? current : settled;
-  const path = `hazards.${String(index)}.description`;
-  // Kept words are never asked about, but the box stays while the worker is in it, even
-  // if what they type matches words they kept before.
-  const nudge = kept
-    ? undefined
-    : (check.data?.nudges ?? []).find(
-        (item) => item.path === path && item.question_id === questionId,
-      );
+  // The box stays while the worker is in it, even if what they type matches words they
+  // kept before.
+  const nudge = kept ? undefined : sentNudge;
   if (!(nudge || typing)) return null;
 
-  const description = draft.hazards[index]?.description ?? "";
+  const path = `hazards.${String(index)}.description`;
   const fieldId = `nudge.${path}`;
   return (
     <Warning>
@@ -65,9 +51,11 @@ export function HazardNudge({
           value={description}
           onFocus={() => {
             setTyping(true);
+            onTyping(true);
           }}
           onBlur={() => {
             setTyping(false);
+            onTyping(false);
           }}
           onChange={(event) => {
             onReword(event.target.value);

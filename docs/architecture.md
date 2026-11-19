@@ -87,7 +87,10 @@ backend/
                                    Take 5 is filled in on. BOOKLET_TEMPLATE is the only one for now
                 take5.py           Take5, Hazard: the filled-in card                      (spec R4 to R6)
                 draft.py           Take5Draft (what the phone sends) and check_draft(): every
-                                   gap, warning, thinking question and nudge by field path (spec R5, R6, V2, T2 to T6)
+                                   gap, warning and thinking question by field path (spec R5, R6, V2, T2 to T5)
+                hazard_nudges.py   which hazards T6 judges, the text the AI is given about one
+                                   (without the worker's name), the check on its one-word reply,
+                                   and the nudges, with the word rule when the AI can't decide   (spec T6)
                 fix.py             which saved Take 5 a new one may fix                   (spec F3)
                 time_limit.py      when a draft has run out, given the time now           (spec K2)
                 saved.py           SavedTake5: a Take 5 as it was saved, with its verdict
@@ -97,10 +100,12 @@ backend/
                                    worker's name), the check on its question,
                                    the fallback question, the check on the answer         (spec C1 to C4)
         services/          what the app does
-            take5s.py          Take5Service: check a draft, submit, answer, get, list. It is
+            take5s.py          Take5Service: check a draft, nudge, submit, answer, get, list. It is
                                given a clock, so tests can set the time
-            ports.py           Take5Repository and ChallengeAsker (Protocols): what the
-                               service needs from storage and from an AI
+            hazard_nudges.py   HazardNudger: asks the AI about each hazard for up to 5 seconds,
+                               remembers its verdicts until the server restarts      (spec T6)
+            ports.py           Take5Repository, ChallengeAsker and HazardJudge (Protocols): what
+                               the service needs from storage and from an AI
         storage/           where things are kept
             sqlite.py          SqliteTake5Repository
         ai/                everything that talks to an AI
@@ -108,16 +113,19 @@ backend/
                                LanguageModelError for a reply with no usable text
             challenge.py       the challenge question's instructions and their version, and
                                AiChallengeAsker, a ChallengeAsker that works with any LanguageModel
+            vague_hazard.py    the vague-hazard instructions and their version, and AiHazardJudge,
+                               a HazardJudge that works with any LanguageModel        (spec T6)
             providers/
                 claude.py          ClaudeModel, the first LanguageModel: one Messages API call, an
-                                   11-second network limit and no retries
+                                   11-second network limit and no retries. QUICK_MODEL names the
+                                   model for short jobs (Haiku 5.5)
         api/               the web API
             app.py             builds the FastAPI app and plugs the pieces together
             take5_routes.py    one function per Take 5 endpoint
             schemas.py         the shapes of requests and responses, including the error replies
             errors.py          turns errors into the declared error replies
         settings.py        settings read from the environment or `backend/.env`, which git ignores
-                           (database path, AI provider, AI model, AI key)
+                           (database path, AI provider, AI model, hazard AI model, AI key)
     tests/                 mirrors src/risk_assessment/
         conftest.py        hides any AI key from every test not marked `real_ai`
         samples.py         the made-up Take 5s that tests in more than one folder share
@@ -154,6 +162,8 @@ scripts/
     check.py               runs every check, as CI does
     try_challenge.py       asks the real AI about five made-up Take 5s and prints each question, its time
                            and its cost, to compare models or versions of the instructions
+    try_vague_hazard.py    asks the real AI about twelve made-up hazards and prints each verdict beside
+                           the word rule's, with its time and cost
     agent_review.cjs       decides which PR events may start the CI reviewer
     claude_hooks/          Claude Code's hooks (set in .claude/settings.json): a guard that blocks
                            secrets and risky git commands, and a formatter that runs after each edit
@@ -167,8 +177,9 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 
 | Endpoint | What it does |
 | --- | --- |
-| `GET /api/take5/template` | The template a new Take 5 is filled in on: its questions, its matrix and its guidance, plus the answers a question can have and the control kinds. `ai_notice` (task 0009) is the line the review shows above Submit saying what is sent to the AI, or empty when no AI is set up (spec D52) |
-| `POST /api/take5s/check` | Checks a draft and returns what is missing, its warnings (allowed, but they will stop the job), which thinking rules apply and its nudges (never blocking). A draft that has run out (spec K2) has an error on `started_at`, and `runs_out_at` says when it runs out (empty with no time limit). Saves nothing |
+| `GET /api/take5/template` | The template a new Take 5 is filled in on: its questions, its matrix and its guidance, plus the answers a question can have and the control kinds. `ai_notice` (task 0009) is the line the review shows above Submit saying what is sent to the AI, or empty when no AI is set up (spec D52). `hazard_ai_notice` (task 0027) is the line the hazard check page shows when an AI judges hazards, or empty (spec D63) |
+| `POST /api/take5s/check` | Checks a draft and returns what is missing, its warnings (allowed, but they will stop the job), and which thinking rules apply. A draft that has run out (spec K2) has an error on `started_at`, and `runs_out_at` says when it runs out (empty with no time limit). Saves nothing |
+| `POST /api/take5s/nudges` | The T6 nudges for a draft (task 0027): one for each vague hazard linked to a Yes, judged by the AI for up to 5 seconds, then by the word rule. Saves nothing. Its own endpoint, not part of the check, so the phone asks it only when a hazard's words change and Continue never waits for an AI |
 | `POST /api/take5s` | Checks and saves a Take 5, unfinished, then asks the AI (or the fallback) for its question, and returns it with the question. A retry returns what was saved, with the same question |
 | `POST /api/take5s/{id}/answer` | Saves the answer, works out the verdict, and returns the finished Take 5 (task 0008). A short answer is a 422 on `answer`; a different answer to a finished one is a 409; the same answer again returns the finished Take 5 |
 | `GET /api/take5s` | The list, newest first. Each line is a `Take5Summary`: the ID, when it was saved, the worker, the job, the verdict (`can_start`, empty while the question is unanswered) and whether a newer Take 5 fixes it (`fixed`), not the whole card |
@@ -187,10 +198,13 @@ drafts and documents. The phone's draft keeps the answer even if a later edit ad
 never discards the worker's words, but the rated `Hazard` (and so the saved Take 5) keeps it only while T3 still
 asks. It never changes the verdict. In the same way `HazardDraft.covers` keeps every question the worker linked to the
 hazard, and the rated `Hazard` keeps only those still answered Yes, each once, in the order the worker linked
-them (spec T5). The check also returns `nudges` (task 0022): each has a dotted `path`, a `message` and the
-`question_id` it shows under, and none ever stops a Take 5 being submitted. For now the only one is T6, on
-`hazards.<n>.description`, under the first Yes in card order that the hazard is linked to. Which nudge the
-worker chose to keep is remembered on the phone, not sent, because it is about what is on the screen.
+them (spec T5). `POST /api/take5s/nudges` returns the nudges (task 0022, moved off the check by task 0027):
+each has a dotted `path`, a `message` and the `question_id` it shows under, and none ever stops a Take 5 being
+submitted. For now the only one is T6, on `hazards.<n>.description`, under the first Yes in card order that the
+hazard is linked to. Which nudge the worker chose to keep is remembered on the phone, not sent, because it is
+about what is on the screen. The hazard check page asks once for the whole page, again only when the draft
+changes, and never while the worker types in a nudge's box (spec D56). It sends the draft without the links of
+hazards whose words were kept, so those are never judged.
 
 **The front end holds no rules and no card.** It gets the questions and the matrix from
 `GET /api/take5/template`, draws whatever it is sent, and shows a score by looking it up in that matrix. It finds
@@ -261,28 +275,30 @@ api/app.py is the one exception: it also imports storage, ai and settings, to pl
 - **`domain`** owns every scoring, verdict, thinking and challenge rule. It uses only the standard library and
   pydantic. It never reads a file, a database, a clock or the network, so each rule is a function of its inputs
   and can be tested with a one-line example from the spec. A rule about time, such as K2, is given the time.
-- **`services`** owns the use cases. It depends on the `Take5Repository` and `ChallengeAsker` Protocols, not on
-  SQLite or on any AI provider.
+- **`services`** owns the use cases. It depends on the `Take5Repository`, `ChallengeAsker` and `HazardJudge`
+  Protocols, not on SQLite or on any AI provider.
 - **`storage`** owns the SQL. It stores and fetches; it makes no decisions.
 - **`ai`** owns talking to an AI, in two layers. A *provider* (`ai/providers/claude.py`) is a `LanguageModel`: it
-  is given instructions and text and returns text, and knows nothing about this app. A *job* (`ai/challenge.py`)
-  holds the instructions for one task and works with any provider. Neither decides anything:
-  `domain/take5/challenge.py` checks what comes back, and `services` falls back to the fixed question on any
-  failure or after 10 seconds.
+  is given instructions and text and returns text, and knows nothing about this app. A *job* (`ai/challenge.py`,
+  `ai/vague_hazard.py`) holds the instructions for one task and works with any provider. Neither decides
+  anything: `domain/take5/challenge.py` and `domain/take5/hazard_nudges.py` check what comes back, and
+  `services` falls back to the fixed question on any failure or after 10 seconds, and to the word rule for a
+  hazard on any failure or after 5 seconds.
 - **`api`** owns HTTP. It holds no rules: a route calls a service and returns what comes back.
 - **`api/app.py`** is the only place that knows which real pieces are plugged in (the composition root). Tests
   plug in an in-memory repository and a stand-in AI instead.
 
 Anything outside the app sits behind a Protocol, so it can be replaced without touching its callers. There are
-two: the database (`Take5Repository`) and the AI (`ChallengeAsker`, filled by any `LanguageModel`). Adding
-ChatGPT, Gemini, or a model a company runs itself means adding one file in `ai/providers/`, its library, and one
-line in `api/app.py` to plug it in; no rule and no job changes.
+two: the database (`Take5Repository`) and the AI (`ChallengeAsker` and `HazardJudge`, each filled by any
+`LanguageModel`). Adding ChatGPT, Gemini, or a model a company runs itself means adding one file in
+`ai/providers/`, its library, and one line in `api/app.py` to plug it in; no rule and no job changes.
 
 The worker's name is never passed to an adapter (spec C1). The AI's key lives in the server's environment (or
 `backend/.env` on a developer's computer, copied from the template `backend/.env.example`, which names every
-setting and holds no key) and is never in the repo or sent to the phone. With no key, no AI is
-plugged in and the fixed question is always asked. `api/app.py` has one table from `AiProvider` (a setting) to
-the adapter that builds that provider's model.
+setting and holds no key) and is never in the repo or sent to the phone. With no key, no AI is plugged in: the
+fixed question is always asked and the word rule judges every hazard. `api/app.py` has one table from
+`AiProvider` (a setting) to the adapter that builds that provider's models and the name of its quick model, which
+judges hazards unless `TAKE5_AI_HAZARD_MODEL` names another (spec D61).
 
 ## Ready for later
 
@@ -339,7 +355,7 @@ cloud account, or a model the company runs itself.
 | Kind | Covers | How |
 | --- | --- | --- |
 | Unit, domain | Every worked example in the spec, by number, plus all 25 matrix cells. Also one made-up template and matrix, to prove nothing about the booklet is hard-coded in the rules | Parametrised pytest tables that mirror the spec's tables. No fakes needed |
-| Unit, services | Check, submit, answer, get and list, including every way the AI can fail | An in-memory `Take5Repository` and a stand-in `ChallengeAsker` |
+| Unit, services | Check, nudge, submit, answer, get and list, including every way the AI can fail | An in-memory `Take5Repository` and a stand-in `ChallengeAsker` or `HazardJudge` |
 | Integration, storage | A Take 5 saved to SQLite comes back identical | A temporary database file per test |
 | Integration, API | Each endpoint: the right answers, and the right errors for a bad request | FastAPI's test client against the real app with a temporary database and a stand-in AI |
 | Architecture | The import rules under Boundaries | One test that reads the imports of every module |
@@ -348,7 +364,7 @@ cloud account, or a model the company runs itself.
 | End to end | A worker fills in every screen in a real browser and reaches the right verdict | Playwright against the real front end and back end, with a stand-in AI |
 | Visual | Each changed screen looks right on a phone | Playwright screenshots at 360 px wide, attached to the PR; checked by eye, not in CI |
 | AI adapter | The adapter sends what it should and reads the reply, refusals and errors | The real adapter against a stand-in for the provider's API (`tests/ai/fake_anthropic.py`), so nothing leaves the computer |
-| Real AI | The real provider answers with a usable question | `uv run pytest -m real_ai` in `backend/`, skipped with no key; plain `pytest` and CI never run it. `scripts/try_challenge.py` measures questions, time and cost |
+| Real AI | The real provider answers with a usable question | `uv run pytest -m real_ai` in `backend/`, skipped with no key; plain `pytest` and CI never run it. `scripts/try_challenge.py` measures questions, and `scripts/try_vague_hazard.py` verdicts on hazards, with time and cost |
 
 CI runs, on every PR and every push to `main` (task 0002): for the back end `ruff check`, `ruff format --check`,
 `pyright` and `pytest`; for the front end ESLint, Prettier's check, the TypeScript compiler, Vitest, and the

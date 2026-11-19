@@ -92,7 +92,6 @@ export const RATED_HAZARD = {
 
 export const PASSING_CHECK: DraftCheck = {
   thinking_questions: [],
-  nudges: [],
   errors: [],
   warnings: [],
   can_submit: true,

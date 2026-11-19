@@ -2,26 +2,47 @@
 
 import logging
 from collections.abc import Callable
+from typing import ClassVar
 
 from fastapi import FastAPI
+from pydantic import BaseModel, ConfigDict
 
 from risk_assessment.ai.challenge import AiChallengeAsker
 from risk_assessment.ai.model import LanguageModel
-from risk_assessment.ai.providers.claude import ClaudeModel
+from risk_assessment.ai.providers import claude
+from risk_assessment.ai.vague_hazard import AiHazardJudge
 from risk_assessment.api.errors import add_error_handlers
 from risk_assessment.api.take5_routes import create_router
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
-from risk_assessment.services.ports import ChallengeAsker, Take5Repository
+from risk_assessment.services.ports import ChallengeAsker, HazardJudge, Take5Repository
 from risk_assessment.services.take5s import Take5Service
 from risk_assessment.settings import AiProvider, Settings
 from risk_assessment.storage.sqlite import SqliteTake5Repository
 
 _logger: logging.Logger = logging.getLogger(__name__)
 
-# How to build each provider's model from its key and model name (None for its
-# default). Adding a provider is one adapter file and one line here.
-_LANGUAGE_MODELS: dict[AiProvider, Callable[[str, str | None], LanguageModel]] = {
-    AiProvider.CLAUDE: ClaudeModel,
+
+class _ProviderModels(BaseModel):
+    """How to reach one provider's models.
+
+    Attributes:
+        build: Builds a model from the key and the model's name (None for the
+            provider's default).
+        quick_model: The provider's fastest model, for short jobs (decision D61).
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    build: Callable[[str, str | None], LanguageModel]
+    quick_model: str
+
+
+# Adding a provider is one adapter file and one line here.
+_PROVIDERS: dict[AiProvider, _ProviderModels] = {
+    AiProvider.CLAUDE: _ProviderModels(
+        build=claude.ClaudeModel,
+        quick_model=claude.QUICK_MODEL,
+    ),
 }
 
 
@@ -29,6 +50,7 @@ def create_app(
     repository: Take5Repository | None = None,
     settings: Settings | None = None,
     challenge_asker: ChallengeAsker | None = None,
+    hazard_judge: HazardJudge | None = None,
 ) -> FastAPI:
     """Build the API.
 
@@ -39,6 +61,9 @@ def create_app(
         challenge_asker: What writes the challenge question. Tests pass a stand-in.
             By default it is the AI named in the settings, or none when no key is
             set, so the fixed question is asked every time (spec C3).
+        hazard_judge: What judges whether a hazard is vague. Tests pass a stand-in.
+            By default it is the AI named in the settings, or none when no key is
+            set, so the word rule decides every time (spec T6).
 
     Returns:
         The FastAPI app.
@@ -59,6 +84,11 @@ def create_app(
             challenge_asker
             if challenge_asker is not None
             else build_challenge_asker(app_settings)
+        ),
+        hazard_judge=(
+            hazard_judge
+            if hazard_judge is not None
+            else build_hazard_judge(app_settings)
         ),
     )
     app.include_router(create_router(service))
@@ -93,9 +123,30 @@ def build_challenge_asker(settings: Settings) -> ChallengeAsker | None:
     if ai_key is None:
         _logger.info("No AI key is set, so the fixed question is always asked.")
         return None
-    build_model: Callable[[str, str | None], LanguageModel] = _LANGUAGE_MODELS[
-        settings.ai_provider
-    ]
-    model: LanguageModel = build_model(ai_key, settings.ai_model)
+    provider: _ProviderModels = _PROVIDERS[settings.ai_provider]
+    model: LanguageModel = provider.build(ai_key, settings.ai_model)
     _logger.info("The challenge question is asked of %s.", model.name)
     return AiChallengeAsker(model)
+
+
+def build_hazard_judge(settings: Settings) -> HazardJudge | None:
+    """Build the AI that judges whether a hazard is vague, if a key is set.
+
+    Args:
+        settings: The provider, hazard model and key to use.
+
+    Returns:
+        A judge for the provider's hazard model (its quick model unless the settings
+        name another), or None when no key is set.
+    """
+    ai_key: str | None = settings.usable_ai_key
+    if ai_key is None:
+        _logger.info("No AI key is set, so the word rule judges every hazard.")
+        return None
+    provider: _ProviderModels = _PROVIDERS[settings.ai_provider]
+    model: LanguageModel = provider.build(
+        ai_key,
+        settings.ai_hazard_model or provider.quick_model,
+    )
+    _logger.info("Vague hazards are judged by %s.", model.name)
+    return AiHazardJudge(model)

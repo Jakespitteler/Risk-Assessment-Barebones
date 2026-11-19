@@ -26,6 +26,7 @@ Kincaid
 laydown
 multiclass
 netrc
+nudger
 oneline
 parametrize
 psycopg

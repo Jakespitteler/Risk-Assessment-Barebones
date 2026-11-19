@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type {
   Answer,
   FieldError,
@@ -7,6 +8,7 @@ import type {
   Take5Draft,
   TemplateResponse,
 } from "../../api/take5";
+import { useHazardNudges } from "../../api/take5";
 import { ControlsPage } from "./ControlsPage";
 import { HazardCheckPage } from "./HazardCheckPage";
 import { HazardListPage } from "./HazardListPage";
@@ -41,6 +43,14 @@ export function FormPage({
   onAddHazard: (questionId: string) => void;
 }) {
   const { draft, change, remove } = take5;
+  // The draft as it was when the worker went into a nudge's box. While they type there,
+  // that is what is judged, so typing asks nothing (decision D56). One ask covers the
+  // whole page, however many hazards are linked.
+  const [draftBeforeTyping, setDraftBeforeTyping] = useState<Take5Draft>();
+  const nudges = useHazardNudges(
+    withoutKeptLinks(draftBeforeTyping ?? draft, take5.keptAsIs),
+    stage.page === "check",
+  );
   const errorFor = (path: string) =>
     errors.find((error) => error.path === path)?.message;
 
@@ -81,13 +91,19 @@ export function FormPage({
   function nudgeFor(questionId: string, hazardIndex: number) {
     const hazard = draft.hazards[hazardIndex];
     if (!hazard) return null;
+    const path = `hazards.${String(hazardIndex)}.description`;
     return (
       <HazardNudge
         key={`${questionId}:${String(hazardIndex)}`}
-        draft={draft}
+        nudge={nudges.data?.find(
+          (item) => item.path === path && item.question_id === questionId,
+        )}
+        description={hazard.description}
         index={hazardIndex}
-        questionId={questionId}
         kept={take5.keptAsIs(hazard.description)}
+        onTyping={(typing) => {
+          setDraftBeforeTyping(typing ? draft : undefined);
+        }}
         onReword={(description) => {
           editHazard(hazardIndex, "description", { description });
         }}
@@ -145,6 +161,7 @@ export function FormPage({
         }}
         onAddHazard={onAddHazard}
         nudgeFor={nudgeFor}
+        aiNotice={template.hazard_ai_notice}
       />
     );
   if (stage.page === "hazards")
@@ -244,4 +261,20 @@ export function FormPage({
       }}
     />
   );
+}
+
+/**
+ * The draft without the links of hazards whose words the worker chose to keep, so the
+ * back end never judges them or sends them to an AI (decisions D37 and D56).
+ */
+function withoutKeptLinks(
+  draft: Take5Draft,
+  keptAsIs: (description: string) => boolean,
+): Take5Draft {
+  return {
+    ...draft,
+    hazards: draft.hazards.map((hazard) =>
+      keptAsIs(hazard.description) ? { ...hazard, covers: [] } : hazard,
+    ),
+  };
 }

@@ -1,4 +1,4 @@
-"""What the Take 5 service needs from the world outside: storage and an AI."""
+"""What the Take 5 service needs from the world outside: storage and AI jobs."""
 
 from typing import Protocol
 from uuid import UUID
@@ -93,5 +93,22 @@ class ChallengeAsker(Protocol):
 
         Returns:
             The reply, which the service checks before it is shown (spec C2).
+        """
+        ...
+
+
+class HazardJudge(Protocol):
+    """Anything that judges whether a hazard is vague: an AI, or a stand-in in tests."""
+
+    def judge(self, hazard_text: str) -> str:
+        """Say whether one hazard is vague or specific (spec T6).
+
+        Args:
+            hazard_text: The hazard as `hazard_judgement_text()` writes it out. It never
+                holds the worker's name.
+
+        Returns:
+            The reply, "vague" or "specific", which the service checks before it is
+            used (decision D58).
         """
         ...
