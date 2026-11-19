@@ -1,7 +1,7 @@
 ---
 id: 0009
 title: The first AI provider (spec F6)
-status: review
+status: done
 owner: claude
 branch: claude/project-thread-tsquwa
 ---
@@ -24,7 +24,7 @@ means adding one file and changing one setting.
   network call replaced.
 - [x] A test that only runs when a key is set calls the real provider once and gets a usable question.
 - [x] When an AI is set up, the review says above Submit what is sent to it (spec D52).
-- [ ] The PR lists the questions the AI asked for at least five sample Take 5s, and the measured cost and time per
+- [x] The PR lists the questions the AI asked for at least five sample Take 5s, and the measured cost and time per
   question.
 - [x] `README.md` explains how to set the key locally.
 - [x] All checks pass.
@@ -69,7 +69,7 @@ Jake took every recommended answer (spec D52 to D55):
   not used, because the fixed question already covers a refusal.
 - The key can be in `backend/.env` as well as the environment, so it is easy to set on Windows. Every back-end
   test hides it (`tests/conftest.py`) and the whole-app tests set it empty, so no test calls the real AI by
-  accident. The real-AI test runs only with `uv run pytest -m real_ai`.
+  accident. The real-AI test runs only with `uv run pytest -m real_ai`, in `backend/`.
 - `backend/.env.example` is the settings template (Jake asked for one): copy it to `backend/.env` and fill it in.
   `.gitignore` keeps it while ignoring every other `.env.*`. A test checks that it names every setting and that
   its key line stays empty.
@@ -78,6 +78,25 @@ Jake took every recommended answer (spec D52 to D55):
   `domain/take5/challenge.py`, which is what decides what is sent.
 - `ai/` may import `domain` (as `storage/` may), because `AiQuestion` lives in `domain/take5/challenge.py`.
 - The adapter logs the tokens each reply used, never any text, so cost can be followed in the back end's log.
+
+### Measured by Jake (2026-11-19)
+
+Jake ran `uv run scripts/try_challenge.py claude-opus-5-5 claude-sonnet-5-5 claude-haiku-5-5` with his own key.
+The full table of questions is in the PR. All 15 questions passed C2, and none needed the fixed question.
+
+| Model | Time per question | Tokens in / out | Cost per question |
+| --- | --- | --- | --- |
+| Opus 5.5 (low effort, the setting) | 2.8 to 3.6 s | about 1,240 / 140 to 290 | 0.8 to 1.1 US cents |
+| Sonnet 5.5 (low effort) | 1.3 to 2.3 s | about 1,240 / 55 to 75 | about 0.3 cents |
+| Haiku 5.5 (low effort) | 2.1 to 2.8 s | about 1,240 / 340 to 400 | about 0.03 cents |
+
+- All three accept `effort` "low". Every question came well inside the 11 second limit.
+- At 100 Take 5s a day, Opus 5.5 costs about US$30 a month, Sonnet 5.5 about $9 and Haiku 5.5 under $1.
+- Opus 5.5 asked the sharpest questions on the crusher chute (material falling from upstream) and the crib hut
+  light (both hands on the light means no three points of contact). Sonnet 5.5 was the only one to ask about
+  falling off the trailer deck, the hazard missing from that sample.
+- No model asked about electrical isolation for the crib hut light, the hazard missing from that sample. Each
+  chose the weak ladder control instead. Worth watching when the instructions are next changed.
 
 ### Found in review
 

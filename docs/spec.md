@@ -620,6 +620,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 - Is the three minute target right for a typical job?
 - T3 could be gamed by picking "Barricade the hazard" for a control that isn't one. Fixed rules can't catch
   that. The challenge question is the place it is most likely to be picked up.
-- What does the AI cost per Take 5, and is there a monthly limit? Task 0009 measures it; the limit is set in
-  the provider's console, not in the app.
+- Is a monthly limit on AI spending needed in the app, or is the provider's console enough? Task 0009 measured
+  about 1 US cent per Take 5 on Opus 5.5 (0.3 cents on Sonnet 5.5, 0.03 cents on Haiku 5.5), so about US$30 a
+  month at 100 Take 5s a day.
 - Should the vague phrases in T2 be a longer list, and who maintains it?
