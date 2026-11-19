@@ -18,12 +18,12 @@ helpers, and API types, which come from `src/api/schema.d.ts` through `src/api/t
 | --- | --- | --- | --- | --- |
 | Take 5 | The short personal risk assessment a worker does just before starting a task. | `Take5`; saved as `SavedTake5` | `Take5Form`, `Take5ResultScreen`; types `Take5Draft`, `SavedTake5` | R5, V1 to V3 |
 | Worker | The person filling in the Take 5. They type their name; there is no sign-in. | `SavedTake5.worker_name` | `worker_name` | C1, T6 (never sent to an AI) |
-| Job | What the task is, in the worker's words. | `job`; `job_wording_error` | `JobPage` | T4 |
-| Where it is | Where the job is, in the worker's words. | `location` | `location` | C1, T6 |
+| Job | What the task is, in the worker's words. | `SavedTake5.job`; `job_wording_error` | `JobPage` | T4 |
+| Where it is | Where the job is, in the worker's words. | `SavedTake5.location` | `location` | C1, T6 |
 | Template | One company's Take 5: its questions, matrix, guidance and limits. The booklet is the first. | `Take5Template`; `BOOKLET_TEMPLATE` | `TemplateResponse`; `useTemplate` | K2, T6 |
 | Think-through question | One of the card's seven questions; No means sort it out first. | `Question` with `QuestionRole.STOP` | `ThinkPage` | V1 |
 | Hazard question | One of the card's questions about a kind of hazard; Yes needs a hazard linked to it. | `Question` with `QuestionRole.HAZARD`; `Question.example` | `HazardCheckPage` | T1, T5, T6 |
-| Answer | Yes, No or N/A. Nothing is picked to begin with, and N/A never stops a job. | `Answer` (`YES`, `NO`, `NOT_APPLICABLE`) | `Answer`; `AnswerPicker` | V1, T5 |
+| Answer | Yes, No or N/A. Nothing is picked to begin with, and N/A never stops a job. | `Answer` (`Answer.YES`, `Answer.NO`, `Answer.NOT_APPLICABLE`) | `Answer`; `AnswerPicker` | V1, T5 |
 | Hazard | Something on the job that could hurt the worker or someone else, in their words. | `Hazard.description`; `HazardDraft` while being filled in | `HazardListPage`; `HazardDraft` | T1, T5, T6, R4 to R6 |
 | Link | A hazard on the list chosen as the one a Yes is about. One hazard can cover several questions. | `Hazard.covers` (question IDs); `unlinked_yes_answers` | `HazardLink` | T5 |
 
@@ -46,7 +46,7 @@ helpers, and API types, which come from `src/api/schema.d.ts` through `src/api/t
 
 | Term | Meaning | Back end | Front end | Rules |
 | --- | --- | --- | --- | --- |
-| Control | What the worker will do to stop a hazard hurting someone: a kind and their own words. | `Control` (`description`, `kind`); `ControlDraft` | `ControlEditor`, `ControlsPage` | V2, T2, T3 |
+| Control | What the worker will do to stop a hazard hurting someone: a kind and their own words. | `Control` (`Control.description`, `Control.kind`); `ControlDraft` | `ControlEditor`, `ControlsPage` | V2, T2, T3 |
 | Control kind | One of the card's six "Make the changes" options. | `ControlKind` | `ControlEditor` | T3 |
 | Strong / weak control | Remove, isolate and barricade are strong; the other three rely on people getting it right. | `ControlKind.is_strong` | none | T3 |
 | Vague phrase | A control that is only a phrase such as "be careful". It is not accepted. | `VAGUE_PHRASES`, `is_vague`; `control_wording_error` | `ControlEditor` | T2 |
@@ -56,7 +56,7 @@ helpers, and API types, which come from `src/api/schema.d.ts` through `src/api/t
 
 | Term | Meaning | Back end | Front end | Rules |
 | --- | --- | --- | --- | --- |
-| Verdict | Good to go, or Don't start yet with every reason that applies. | `Verdict` (`can_start`, `reasons`); `verdict` | `VerdictPanel` | V1 to V3, C5 |
+| Verdict | Good to go, or Don't start yet with every reason that applies. | `Verdict` (`Verdict.can_start`, `Verdict.reasons`); `verdict` | `VerdictPanel` | V1 to V3, C5 |
 | Reason | One line saying why the job is stopped. | `Verdict.reasons` | `VerdictPanel` | V1 to V3 |
 | Warning | On the review, something allowed that will stop the job. | `FieldWarning`; `DraftCheck.warnings` | `ReviewPage`, `Warning` | V1, V2 |
 | Form error | Something missing or not allowed, so the page can't go on. Not a verdict. | `FieldError`, `FormErrors` | `Field`; `FieldError` | T2 to T5 |

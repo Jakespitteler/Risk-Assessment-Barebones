@@ -61,9 +61,11 @@ the fifth, where Claude had recommended trusting a run test's name.
    reads the 87 numbered rows under "Worked examples" and fails with any number no back-end test covers.
 3. **Check the glossary's code names against the code?** Yes, back end and front end, in its own pull request,
    stacked after task 0029's, to keep this one small. `backend/tests/test_glossary_names.py` reads the code
-   rather than running it. A back-end name is a class, function or constant, a class's field or method
-   (`Hazard.covers`), a field or parameter on its own (`location`), or a file (`fix.py`). A front-end name is a
-   file under `frontend/src`, a name it exports, or a field of the generated API types.
+   rather than running it. A back-end name is a class, function or constant, a class's own field, method or
+   enum member written with its class (`Hazard.covers`, `Answer.YES`), a function's parameter
+   (`submission_id`), or a file (`fix.py`). A front-end name is a file under `frontend/src` (not a test file), a
+   name a file exports, or a field of a schema in the generated API types. A name the check can't see, such as
+   an attribute set in `__init__` or an inherited member, would be reported missing; none is in the glossary.
 4. **What counts as a test naming a rule?** A back-end test's docstring, or the name of a front-end `it(...)` or
    `test(...)`. Front-end names must count, because T1 and K1 can only be tested in the front end. Comments,
    file-level docstrings, `describe` names and ranges such as "C1 to C6" don't count, so each rule points to a
