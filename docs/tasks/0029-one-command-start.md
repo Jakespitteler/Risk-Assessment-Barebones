@@ -17,8 +17,10 @@ fitting)."
 Today it takes two commands, `uv run scripts/setup.py` (task 0023) and then `uv run scripts/dev.py`, and the
 second one prints the wrong address loudest. Uvicorn's "Uvicorn running on <http://127.0.0.1:8000>" line is the
 most visible one, so Jake opened that address, which is only the API, instead of Vite's
-<http://localhost:5173>. One command should set up whatever isn't set up yet, bring the installs in line with the
-repo, start both halves, and print one address: the right one.
+<http://localhost:5173>. Task 0009's pull request then made `dev.py` print "The Take 5 app is ready. Open
+<http://localhost:5173>" last, once Vite answers, but uvicorn's line and Vite's own address box still show above it.
+One command should set up whatever isn't set up yet, bring the installs in line with the repo, start both halves,
+and print one address: the right one.
 
 Jake, later the same day: "I don't like how sometimes I have to cd into the backend or front end." Today the tests,
 lint, format and type-check commands in `AGENTS.md` each say "in `backend/`" or "in `frontend/`", and
@@ -100,7 +102,7 @@ The questions for Jake, each with Claude's recommended pick.
      rest of the servers' output: each request, any error, and the app's own lines (such as which AI model asks
      the challenge question), because Jake wants to see what the back end is doing.
    - (b) Hide all server output except errors, with a `--verbose` switch to see it.
-   - (c) Leave the output as it is and add the ready line at the end. The `:8000` line stays on screen.
+   - (c) Leave the output as it is today, with the ready line at the end. The `:8000` line stays on screen.
    - Recommended: (a). The API's own pages (<http://localhost:8000/docs>) stay listed in the README, not printed.
 6. **A safety net at the API's address.** Today opening <http://localhost:8000> shows `{"detail":"Not Found"}`.
    Options:
@@ -211,10 +213,12 @@ The questions for Jake, each with Claude's recommended pick.
 
 ## Notes / assumptions
 
-- Asked for by Jake on 2026-11-19, as a task file only. Written stacked on task 0027's pull request (#46).
+- Asked for by Jake on 2026-11-19, as a task file only. Written stacked on task 0027's pull request (#46, which
+  GitHub closed when 0009's branch was deleted; 0027 is now #50).
 - Today: `scripts/dev.py` runs `uv sync --locked`, runs `npm ci` only when Vite is missing (so a pull that adds a
   front-end package isn't installed until something breaks), then starts uvicorn on port 8000 and, once the API
-  answers, Vite on 5173. `scripts/setup.py` checks git and Node.js 22.22.2 or newer, warns about cloud-synced
+  answers, Vite on 5173, and prints its ready line once Vite answers (`READY_MESSAGE`, added in 0009's pull
+  request). `scripts/setup.py` checks git and Node.js 22.22.2 or newer, warns about cloud-synced
   folders, and runs `uv sync --locked`, `npm ci --engine-strict` and `npx playwright install chromium` every time.
   Its tests are `backend/tests/test_setup.py`; `dev.py`'s are `backend/tests/test_dev.py` and import it as
   `from scripts import dev`. `backend/tests/test_format_edited_file.py` uses `scripts/dev.py` as its sample file.

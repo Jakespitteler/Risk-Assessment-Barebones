@@ -3,6 +3,7 @@
 import logging
 from pathlib import Path
 
+import pytest
 from pydantic import SecretStr
 
 from risk_assessment.ai.challenge import AiChallengeAsker
@@ -59,7 +60,17 @@ def test_the_hazard_model_is_a_setting() -> None:
     assert judge.model_name == "claude-sonnet-5-5"
 
 
-def test_the_server_log_shows_which_model_asks(tmp_path: Path) -> None:
+def test_the_log_names_the_model_that_asks(caplog: pytest.LogCaptureFixture) -> None:
+    """With a key, one info line says which model writes the question."""
+    with caplog.at_level(logging.INFO, logger="risk_assessment"):
+        build_challenge_asker(
+            Settings(ai_key=SecretStr("made-up-key"), ai_model="claude-haiku-5-5"),
+        )
+
+    assert "The challenge question is asked of claude-haiku-5-5." in caplog.messages
+
+
+def test_the_app_lets_its_info_lines_reach_the_log(tmp_path: Path) -> None:
     """The app's info lines reach the log, so a developer sees the AI is on."""
     create_app(SqliteTake5Repository(tmp_path / "take5.sqlite3"))
 
