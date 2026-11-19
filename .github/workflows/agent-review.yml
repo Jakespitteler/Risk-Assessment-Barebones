@@ -73,7 +73,7 @@ jobs:
             using gh api to create or update the marked report described in the reviewer instructions.
             Do not post inline comments or submit an approval.
           claude_args: >-
-            --model claude-opus-5-5
+            --model claude-sonnet-5-5
             --max-turns 40
             --allowedTools "Read,Grep,Glob,Edit,Write,Bash"
       - name: Report a failed review
