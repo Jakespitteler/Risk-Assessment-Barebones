@@ -55,7 +55,8 @@ TEST_KINDS: dict[str, KindOfTest] = {
 }
 USAGE: str = (
     "Usage: uv run test.py [backend|frontend|e2e] [anything for that test tool]\n"
-    "With no kind named it runs all three, and takes nothing else."
+    "With no kind named it runs all three, and takes nothing else.\n"
+    "Paths for pytest are from backend/; for Vitest or Playwright, from frontend/."
 )
 
 

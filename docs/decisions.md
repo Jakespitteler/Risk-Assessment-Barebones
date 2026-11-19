@@ -26,6 +26,9 @@ Newest first. One short entry per non-obvious decision.
   `package.json` (another tool on every computer, or no Windows `make`); a uv workspace (moves `.venv` and the lock
   file); upgrading packages on start; a uvicorn `--log-config` filter class plus a Vite custom logger; a port
   check that binds the port (a socket waiting to close after a restart would read as busy).
+- Also: Claude's format hook now formats a `.py` file in the repo root too, the hook change question 1 (a)
+  named. A root `setup.py` is, by an old convention, a Python package build file, so `pip install -e .` in the root
+  would run it; nothing here uses pip, and the root `pyproject.toml` declares no project.
 - Decided by: human (the product choices, 2026-11-19), agent (how).
 
 ## 2026-11-19: An AI judges vague hazards, with the word rule as the fallback (task 0027)

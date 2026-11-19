@@ -366,7 +366,7 @@ cloud account, or a model the company runs itself.
 | End to end | A worker fills in every screen in a real browser and reaches the right verdict | Playwright against the real front end and back end, with a stand-in AI |
 | Visual | Each changed screen looks right on a phone | Playwright screenshots at 360 px wide, attached to the PR; checked by eye, not in CI |
 | AI adapter | The adapter sends what it should and reads the reply, refusals and errors | The real adapter against a stand-in for the provider's API (`tests/ai/fake_anthropic.py`), so nothing leaves the computer |
-| Real AI | The real provider answers with a usable question | `uv run pytest -m real_ai` in `backend/`, skipped with no key; plain `pytest` and CI never run it. `scripts/try_challenge.py` measures questions, and `scripts/try_vague_hazard.py` verdicts on hazards, with time and cost |
+| Real AI | The real provider answers with a usable question | `uv run test.py backend -m real_ai`, skipped with no key; plain `pytest` and CI never run it. `scripts/try_challenge.py` measures questions, and `scripts/try_vague_hazard.py` verdicts on hazards, with time and cost |
 
 CI runs, on every PR and every push to `main` (task 0002): for the back end `ruff check`, `ruff format --check`,
 `pyright` and `pytest`; for the front end ESLint, Prettier's check, the TypeScript compiler, Vitest, and the

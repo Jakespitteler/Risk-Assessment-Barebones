@@ -267,8 +267,13 @@ The questions for Jake, each with Claude's recommended pick.
 ### Notes
 
 - Ctrl+C can reach the script twice (uv passes it on as well). A second one used to break into the shutdown and
-  could leave Vite running, as `dev.py` did (it exited with code 130 in the timing runs). `start.py` ignores
-  further Ctrl+C while it stops the servers.
+  could leave Vite running, as `dev.py` did (it exited with code 130 in the timing runs). `start.py` acts on the
+  first Ctrl+C only. Stopping a server asks first, then forces it after 10 seconds, and signals the server's
+  whole process group even when npm or uv has already ended.
+- `setup.py` leaves the same "installed for this lock file" markers as `start.py`, so a start straight after
+  `uv run setup.py` installs nothing more.
+- The back end's sync on later starts is quiet: a pulled change to `uv.lock` is installed without a list of what
+  changed (errors still show).
 - Vite stops by itself when its keyboard input closes, so `uv run start.py < /dev/null` stops at once. This is
   Vite's behaviour, the same as before; a terminal is never affected.
 - The port check connects to each port rather than binding it: binding would call a port busy for a minute or so

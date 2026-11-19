@@ -1,6 +1,7 @@
 """Tests for `start.py`: checking, installing what changed, and starting both halves."""
 
 import io
+import signal
 import socket
 import subprocess
 from pathlib import Path
@@ -49,11 +50,11 @@ def mark_installed(frontend: Path) -> None:
     """
     node_modules: Path = frontend / "node_modules"
     node_modules.mkdir()
-    (node_modules / start.FRONTEND_FINGERPRINT).write_text(
-        start.lock_fingerprint(frontend),
+    (node_modules / start.setup.FRONTEND_FINGERPRINT).write_text(
+        start.setup.lock_fingerprint(frontend),
         encoding="utf-8",
     )
-    (node_modules / start.BROWSER_MARKER).touch()
+    (node_modules / start.setup.BROWSER_MARKER).touch()
 
 
 def only_the_app_port_is_busy(port: int) -> bool:
@@ -82,6 +83,7 @@ def test_a_busy_port_stops_it_before_anything_is_installed(
 ) -> None:
     """With 5173 taken it says the app may be running, and installs nothing."""
     with (
+        patch.object(start.setup, "cloud_sync_service", return_value=None),
         patch.object(start, "port_is_busy", side_effect=only_the_app_port_is_busy),
         patch.object(start.setup, "missing_tools") as missing_tools,
         patch.object(start, "install_what_changed") as install,
@@ -102,6 +104,7 @@ def test_a_missing_tool_stops_it_before_anything_is_installed(
 ) -> None:
     """The same check and help as `setup.py`, before any install."""
     with (
+        patch.object(start.setup, "cloud_sync_service", return_value=None),
         patch.object(start, "port_is_busy", return_value=False),
         patch.object(start.setup, "missing_tools", return_value=["git is missing."]),
         patch.object(start, "install_what_changed") as install,
@@ -118,6 +121,7 @@ def test_a_missing_tool_stops_it_before_anything_is_installed(
 def test_a_failed_install_stops_it_before_the_servers_start() -> None:
     """The install's exit code is passed on, and nothing is started."""
     with (
+        patch.object(start.setup, "cloud_sync_service", return_value=None),
         patch.object(start, "port_is_busy", return_value=False),
         patch.object(start.setup, "missing_tools", return_value=[]),
         patch.object(start, "install_what_changed", return_value=4),
@@ -314,7 +318,7 @@ def test_a_failed_browser_install_warns_and_the_app_still_starts(
     """The app doesn't need the test browser; the next start tries it again."""
     frontend: Path = make_frontend(tmp_path)
     mark_installed(frontend)
-    (frontend / "node_modules" / start.BROWSER_MARKER).unlink()
+    (frontend / "node_modules" / start.setup.BROWSER_MARKER).unlink()
     with (
         patch.object(
             start.subprocess,
@@ -375,13 +379,11 @@ def test_the_wait_retries_until_the_server_answers() -> None:
     """A refused connection while starting is tried again."""
     server = MagicMock(spec=subprocess.Popen)
     server.poll.return_value = None
-    response = MagicMock()
-    response.__enter__.return_value.status = 200
     with (
         patch.object(
             start,
-            "urlopen",
-            side_effect=[URLError("starting"), response],
+            "is_local_server_ready",
+            side_effect=[URLError("starting"), True],
         ) as request,
         patch.object(start.time, "sleep") as sleep,
     ):
@@ -406,7 +408,7 @@ def test_the_wait_has_a_deadline() -> None:
     with (
         patch.object(start.time, "monotonic", side_effect=[0.0, 0.0, 31.0]),
         patch.object(start.time, "sleep"),
-        patch.object(start, "urlopen", side_effect=URLError("starting")),
+        patch.object(start, "is_local_server_ready", side_effect=URLError("starting")),
         pytest.raises(TimeoutError, match="did not become ready"),
     ):
         start.wait_until_ready(server, start.BACKEND_READY_URL, "back end")
@@ -500,3 +502,145 @@ def test_the_cloud_sync_warning_shows_again_under_the_ready_line() -> None:
     said: list[str] = [message.args[0] for message in say.call_args_list]
     ready_at: int = said.index(start.ready_message("http://localhost:5173"))
     assert said[ready_at + 1].startswith(start.setup.cloud_sync_warning("OneDrive"))
+
+
+def test_a_start_after_setup_installs_nothing_more(tmp_path: Path) -> None:
+    """`setup.py` leaves the same markers, so its reinstall isn't done twice."""
+    frontend: Path = make_frontend(tmp_path)
+    (frontend / "node_modules").mkdir()
+    start.setup.remember_frontend_install(frontend)
+    start.setup.remember_browser_install(frontend)
+
+    assert not start.frontend_needs_install(frontend)
+    assert not start.browser_needs_install(frontend)
+
+
+def test_the_back_end_keeps_its_colours_when_printing_to_a_terminal() -> None:
+    """Uvicorn is told to use colours, since through a pipe it would drop them."""
+    backend = MagicMock(spec=subprocess.Popen)
+    backend.poll.return_value = 0
+    with (
+        patch.object(start.sys.stdout, "isatty", return_value=True),
+        patch.object(start, "start", return_value=backend) as start_server,
+        patch.object(start, "wait_until_ready"),
+        patch.object(start, "say"),
+        patch.object(start, "stop"),
+        patch.object(start.signal, "signal"),
+    ):
+        start.run_servers("http://localhost:5173", None)
+
+    first_command: list[str] = start_server.call_args_list[0].args[0]
+    assert first_command == [*start.BACKEND_COMMAND, "--use-colors"]
+    assert start_server.call_args_list[0].args[2]["FORCE_COLOR"] == "1"
+
+
+def test_ctrl_c_stops_both_servers_and_ends_quietly() -> None:
+    """Ctrl+C while the app runs returns 0, with no traceback, and leaves nothing."""
+    backend = MagicMock(spec=subprocess.Popen)
+    frontend = MagicMock(spec=subprocess.Popen)
+    backend.poll.return_value = None
+    frontend.poll.return_value = None
+    with (
+        patch.object(start, "start", side_effect=[backend, frontend]),
+        patch.object(start, "wait_until_ready"),
+        patch.object(start, "say"),
+        patch.object(start.time, "sleep", side_effect=KeyboardInterrupt),
+        patch.object(start, "stop") as stop,
+        patch.object(start.signal, "signal"),
+    ):
+        exit_code: int = start.run_servers("http://localhost:5173", None)
+
+    assert exit_code == 0
+    assert stop.mock_calls == [call(backend), call(frontend)]
+
+
+def test_only_the_first_ctrl_c_interrupts() -> None:
+    """A second Ctrl+C (uv passes it on too) can't break into stopping the servers."""
+    with patch.object(start.signal, "signal") as set_handler:
+        start.stop_on_the_first_ctrl_c()
+
+    (signal_number, on_ctrl_c) = set_handler.call_args.args
+    assert signal_number == signal.SIGINT
+    with pytest.raises(KeyboardInterrupt):
+        on_ctrl_c(signal.SIGINT, None)
+    on_ctrl_c(signal.SIGINT, None)
+
+
+@pytest.mark.skipif(start.sys.platform == "win32", reason="process groups")
+def test_stopping_signals_the_whole_group_even_after_its_leader_ended() -> None:
+    """Npm or uv can end before what they started; the group is still stopped."""
+    server = MagicMock(spec=subprocess.Popen)
+    server.pid = 4321
+    with patch.object(start.os, "killpg") as killpg:
+        start.stop(server)
+
+    killpg.assert_called_once_with(4321, signal.SIGTERM)
+    server.wait.assert_called_once_with(timeout=start.STOP_WAIT_SECONDS)
+
+
+@pytest.mark.skipif(start.sys.platform == "win32", reason="process groups")
+def test_a_server_that_wont_stop_is_forced_after_the_wait() -> None:
+    """A server still busy after the wait is killed, so start.py always ends."""
+    server = MagicMock(spec=subprocess.Popen)
+    server.pid = 4321
+    server.wait.side_effect = [subprocess.TimeoutExpired("uvicorn", 10), 0]
+    with patch.object(start.os, "killpg") as killpg:
+        start.stop(server)
+
+    assert killpg.mock_calls == [
+        call(4321, signal.SIGTERM),
+        call(4321, signal.SIGKILL),
+    ]
+    server.kill.assert_called_once()
+
+
+@pytest.mark.skipif(start.sys.platform == "win32", reason="process groups")
+def test_a_group_that_has_already_gone_is_not_an_error() -> None:
+    """Stopping a server whose processes have all ended prints no traceback."""
+    server = MagicMock(spec=subprocess.Popen)
+    server.pid = 4321
+    with patch.object(start.os, "killpg", side_effect=ProcessLookupError):
+        start.stop(server)
+
+    server.wait.assert_called_once()
+
+
+def test_stopping_on_windows_ends_the_whole_tree() -> None:
+    """`taskkill /T` stops npm or uv and everything they started."""
+    server = MagicMock(spec=subprocess.Popen)
+    server.pid = 4321
+    server.poll.return_value = None
+    with (
+        patch.object(start.sys, "platform", "win32"),
+        patch.object(start.subprocess, "run") as run,
+    ):
+        start.stop(server)
+
+    run.assert_called_once_with(
+        ["taskkill", "/F", "/T", "/PID", "4321"],
+        capture_output=True,
+        check=False,
+    )
+
+
+def test_a_server_that_stops_has_its_last_lines_printed_before_why() -> None:
+    """Its traceback is waited for, so the message under it isn't printed first."""
+    events = MagicMock()
+    backend = MagicMock(spec=subprocess.Popen)
+    backend.poll.return_value = 1
+    with (
+        patch.object(start, "start", return_value=backend),
+        patch.object(start, "wait_until_ready"),
+        patch.object(start, "wait_for_output", events.wait_for_output),
+        patch.object(start, "say", events.say),
+        patch.object(start, "stop"),
+        patch.object(start.signal, "signal"),
+    ):
+        start.run_servers("http://localhost:5173", None)
+
+    stopped_at: int = next(
+        index
+        for index, event in enumerate(events.mock_calls)
+        if event[0] == "say" and "stopped (exit code 1)" in event.args[0]
+    )
+    assert events.mock_calls[stopped_at - 1] == call.wait_for_output([backend])

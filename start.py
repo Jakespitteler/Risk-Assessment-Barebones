@@ -19,7 +19,7 @@ In order, it:
    that give their own addresses, and prints the app's address once it answers.
 """
 
-import hashlib
+import contextlib
 import os
 import re
 import signal
@@ -31,8 +31,9 @@ import time
 from collections.abc import Iterable, Mapping
 from http.client import HTTPResponse
 from pathlib import Path
+from types import FrameType
 from typing import IO
-from urllib.request import urlopen
+from urllib.request import OpenerDirector, ProxyHandler, build_opener
 
 import setup
 
@@ -59,18 +60,15 @@ BACKEND_READY_URL: str = f"http://127.0.0.1:{API_PORT}/api/take5/template"
 # address is only the API.
 LOCAL_APP_URL: str = f"http://localhost:{APP_PORT}"
 
-# Once the back end is installed, its sync runs quietly: it is quick, and says nothing
-# unless something changed or went wrong. The first install shows its progress.
+# The first back-end install shows its progress. After that the sync runs quietly, so a
+# start with nothing new prints nothing for it: uv still prints any error, but a pulled
+# change to `uv.lock` is installed without a list of what changed.
 FIRST_BACKEND_INSTALL: setup.InstallStep = setup.INSTALL_STEPS[0]
 BACKEND_INSTALL: setup.InstallStep = FIRST_BACKEND_INSTALL._replace(
     command=[*FIRST_BACKEND_INSTALL.command, "--quiet"],
 )
 FRONTEND_INSTALL: setup.InstallStep = setup.INSTALL_STEPS[1]
 BROWSER_INSTALL: setup.InstallStep = setup.INSTALL_STEPS[2]
-# Both are kept inside node_modules, which `npm ci` deletes before it installs, so an
-# install that was stopped part way leaves neither behind and is done again.
-FRONTEND_FINGERPRINT: str = ".take5-installed-lock"
-BROWSER_MARKER: str = ".take5-installed-browser"
 
 # What uvicorn and Vite print about their own addresses: uvicorn's "running on" line and
 # Vite's banner. Colour codes are removed before a line is matched.
@@ -80,9 +78,15 @@ ADDRESS_LINE: re.Pattern[str] = re.compile(
 )
 COLOUR_CODE: re.Pattern[str] = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 READY_WAIT_SECONDS: float = 30.0
+STOP_WAIT_SECONDS: float = 10.0
+OUTPUT_WAIT_SECONDS: float = 2.0
 
 # One server's lines and this script's own never interleave mid-line.
 _output_lock: threading.Lock = threading.Lock()
+# The thread passing on each server's output, so it can be waited for.
+_output_readers: dict[subprocess.Popen[bytes], threading.Thread] = {}
+# The readiness checks ask this computer directly, never through an HTTP proxy.
+_direct_opener: OpenerDirector = build_opener(ProxyHandler({}))
 
 
 def port_is_busy(port: int) -> bool:
@@ -113,6 +117,9 @@ def busy_port_message(port: int) -> str:
 
     Args:
         port: The port something else is using.
+
+    Returns:
+        The message to print.
     """
     return (
         f"Something is already using port {port}. The app may already be running in "
@@ -145,20 +152,11 @@ def ready_message(url: str) -> str:
 
     Args:
         url: The app's address.
-    """
-    return f"\nThe Take 5 app is ready. Open {url}  (Ctrl+C stops it.)\n"
-
-
-def lock_fingerprint(frontend: Path) -> str:
-    """Fingerprint the front end's lock file, to tell when it has changed.
-
-    Args:
-        frontend: The front end's folder.
 
     Returns:
-        The SHA-256 of `package-lock.json`, in hex.
+        The message, with a blank line before and after.
     """
-    return hashlib.sha256((frontend / "package-lock.json").read_bytes()).hexdigest()
+    return f"\nThe Take 5 app is ready. Open {url}  (Ctrl+C stops it.)\n"
 
 
 def frontend_needs_install(frontend: Path) -> bool:
@@ -168,13 +166,15 @@ def frontend_needs_install(frontend: Path) -> bool:
         frontend: The front end's folder.
 
     Returns:
-        True when they were never installed by this script, an install was stopped part
-        way, or `package-lock.json` has changed since.
+        True when they were never installed by this script or `setup.py`, an install
+        was stopped part way, or `package-lock.json` has changed since.
     """
-    fingerprint_file: Path = frontend / "node_modules" / FRONTEND_FINGERPRINT
+    fingerprint_file: Path = frontend / "node_modules" / setup.FRONTEND_FINGERPRINT
     if not fingerprint_file.is_file():
         return True
-    return fingerprint_file.read_text(encoding="utf-8") != lock_fingerprint(frontend)
+    return fingerprint_file.read_text(encoding="utf-8") != setup.lock_fingerprint(
+        frontend,
+    )
 
 
 def browser_needs_install(frontend: Path) -> bool:
@@ -185,8 +185,11 @@ def browser_needs_install(frontend: Path) -> bool:
 
     Args:
         frontend: The front end's folder.
+
+    Returns:
+        True when it hasn't been installed since the last front-end install.
     """
-    return not (frontend / "node_modules" / BROWSER_MARKER).is_file()
+    return not (frontend / "node_modules" / setup.BROWSER_MARKER).is_file()
 
 
 def sync_backend(backend: Path) -> int:
@@ -234,13 +237,10 @@ def install_what_changed(backend: Path, frontend: Path) -> int:
         exit_code: int = setup.install([FRONTEND_INSTALL], START_COMMAND)
         if exit_code != 0:
             return exit_code
-        (frontend / "node_modules" / FRONTEND_FINGERPRINT).write_text(
-            lock_fingerprint(frontend),
-            encoding="utf-8",
-        )
+        setup.remember_frontend_install(frontend)
     if browser_needs_install(frontend):
         if setup.install([BROWSER_INSTALL], START_COMMAND) == 0:
-            (frontend / "node_modules" / BROWSER_MARKER).touch()
+            setup.remember_browser_install(frontend)
         else:
             print(
                 "\nThe app doesn't need that browser, only the whole-app tests do, so "
@@ -255,6 +255,9 @@ def visible_text(line: bytes) -> str:
 
     Args:
         line: One line of output, which may hold colour codes.
+
+    Returns:
+        The line's text, as a person sees it.
     """
     return COLOUR_CODE.sub("", line.decode("utf-8", errors="replace"))
 
@@ -264,6 +267,9 @@ def is_address_line(line: bytes) -> bool:
 
     Args:
         line: One line of output, which may hold colour codes.
+
+    Returns:
+        True for uvicorn's "running on" line and the lines of Vite's banner.
     """
     return ADDRESS_LINE.search(visible_text(line)) is not None
 
@@ -322,11 +328,13 @@ def server_environment(in_colour: bool) -> dict[str, str]:
 
     Returns:
         This script's environment, without its own `VIRTUAL_ENV` (the back end uses its
-        own `.venv`), and with Python's output sent at once.
+        own `.venv`), and with Python's output sent at once and in UTF-8 (Windows would
+        otherwise write a pipe in its own code page).
     """
     environment: dict[str, str] = {
         **setup.SETUP_ENVIRONMENT,
         "PYTHONUNBUFFERED": "1",
+        "PYTHONUTF8": "1",
     }
     if in_colour:
         environment["FORCE_COLOR"] = "1"
@@ -370,12 +378,42 @@ def start(
             start_new_session=True,
         )
     if server.stdout is not None:
-        threading.Thread(
+        reader: threading.Thread = threading.Thread(
             target=pass_on_output,
             args=(server.stdout, sys.stdout.buffer),
             daemon=True,
-        ).start()
+        )
+        reader.start()
+        _output_readers[server] = reader
     return server
+
+
+def wait_for_output(servers: Iterable[subprocess.Popen[bytes]]) -> None:
+    """Let the servers' last lines reach the terminal, such as an error's traceback.
+
+    Called once they have stopped, before saying why, and before this script exits.
+
+    Args:
+        servers: The servers whose output to wait for.
+    """
+    for server in servers:
+        reader: threading.Thread | None = _output_readers.get(server)
+        if reader is not None:
+            reader.join(timeout=OUTPUT_WAIT_SECONDS)
+
+
+def is_local_server_ready(url: str) -> bool:
+    """Ask a server on this computer, directly, whether it answers yet.
+
+    Args:
+        url: An address that answers 200 once the server is ready.
+
+    Returns:
+        True when it answered 200.
+    """
+    response: HTTPResponse
+    with _direct_opener.open(url, timeout=1) as response:
+        return response.status == 200
 
 
 def wait_until_ready(
@@ -397,33 +435,82 @@ def wait_until_ready(
         TimeoutError: The server didn't answer in time.
     """
     deadline: float = time.monotonic() + timeout
-    response: HTTPResponse
     while time.monotonic() < deadline:
         if server.poll() is not None:
             raise RuntimeError(f"The {name} stopped before it was ready.")
         try:
-            with urlopen(url, timeout=1) as response:
-                if response.status == 200:
-                    return
+            if is_local_server_ready(url):
+                return
         except OSError:
             pass
         time.sleep(0.1)
     raise TimeoutError(f"The {name} did not become ready in {timeout:.0f} seconds.")
 
 
+def signal_process_group(server: subprocess.Popen[bytes], signal_number: int) -> None:
+    """Send a signal to a server's whole process group, on macOS and Linux.
+
+    The group is signalled even when the server's own process has ended, since npm or
+    uv can end before what they started.
+
+    Args:
+        server: The server, started in a group of its own.
+        signal_number: The signal, such as `signal.SIGTERM`.
+    """
+    with contextlib.suppress(ProcessLookupError):  # Everything in it ended already.
+        os.killpg(server.pid, signal_number)
+
+
 def stop(server: subprocess.Popen[bytes]) -> None:
-    """Stop a server and every process it started (npm and uv each start another)."""
-    if server.poll() is not None:
-        return
+    """Stop a server and every process it started (npm and uv each start another).
+
+    It asks first, then forces the stop if the server takes longer than
+    `STOP_WAIT_SECONDS`, for example while a request to the AI finishes.
+
+    Args:
+        server: The server to stop.
+    """
     if sys.platform == "win32":
-        subprocess.run(
-            ["taskkill", "/F", "/T", "/PID", str(server.pid)],
-            capture_output=True,
-            check=False,
-        )
+        if server.poll() is None:
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(server.pid)],
+                capture_output=True,
+                check=False,
+            )
     else:
-        os.killpg(server.pid, signal.SIGTERM)
-    server.wait()
+        signal_process_group(server, signal.SIGTERM)
+    try:
+        server.wait(timeout=STOP_WAIT_SECONDS)
+    except subprocess.TimeoutExpired:
+        if sys.platform != "win32":
+            signal_process_group(server, signal.SIGKILL)
+        server.kill()
+        server.wait()
+
+
+def stop_on_the_first_ctrl_c() -> None:
+    """Make Ctrl+C stop the app once, and ignore it while the servers are stopped.
+
+    Ctrl+C can arrive twice, because uv passes it on as well, and a second one must not
+    interrupt stopping the servers and leave them running.
+    """
+    stopping: list[bool] = []
+
+    def on_ctrl_c(signal_number: int, frame: FrameType | None) -> None:
+        """Raise KeyboardInterrupt the first time only.
+
+        Args:
+            signal_number: The signal (SIGINT).
+            frame: Where the program was; not used.
+
+        Raises:
+            KeyboardInterrupt: On the first Ctrl+C.
+        """
+        if not stopping:
+            stopping.append(True)
+            raise KeyboardInterrupt
+
+    signal.signal(signal.SIGINT, on_ctrl_c)
 
 
 def run_servers(url: str, cloud_service: str | None) -> int:
@@ -443,6 +530,7 @@ def run_servers(url: str, cloud_service: str | None) -> int:
     if in_colour:
         backend_command = [*BACKEND_COMMAND, "--use-colors"]
     servers: dict[str, subprocess.Popen[bytes]] = {}
+    stop_on_the_first_ctrl_c()
     try:
         servers["back end"] = start(backend_command, "backend", environment)
         wait_until_ready(servers["back end"], BACKEND_READY_URL, "back end")
@@ -455,6 +543,7 @@ def run_servers(url: str, cloud_service: str | None) -> int:
             for name, server in servers.items():
                 exit_code: int | None = server.poll()
                 if exit_code is not None:
+                    wait_for_output([server])
                     say(
                         f"\nThe {name} stopped (exit code {exit_code}), so the app was "
                         f"stopped. Check its output above, then run `{START_COMMAND}` "
@@ -463,6 +552,9 @@ def run_servers(url: str, cloud_service: str | None) -> int:
                     return 1
             time.sleep(1)
     except (RuntimeError, TimeoutError) as problem:
+        wait_for_output(
+            server for server in servers.values() if server.poll() is not None
+        )
         say(
             f"\n{problem} Check its output above, fix the problem, then run "
             f"`{START_COMMAND}` again.",
@@ -471,11 +563,9 @@ def run_servers(url: str, cloud_service: str | None) -> int:
     except KeyboardInterrupt:
         return 0
     finally:
-        # Ctrl+C can arrive twice (uv passes it on as well), and a second one must not
-        # stop the servers being stopped.
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
         for server in servers.values():
             stop(server)
+        wait_for_output(servers.values())
 
 
 def main() -> int:

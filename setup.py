@@ -13,6 +13,7 @@ installs Python 3.13 and the back end's packages, the front end's packages, and 
 browser the whole-app tests use. It ends with what it did and what to do next.
 """
 
+import hashlib
 import os
 import shutil
 import subprocess
@@ -95,6 +96,46 @@ INSTALL_STEPS: list[InstallStep] = [
         "frontend",
     ),
 ]
+
+
+# Kept inside node_modules, which `npm ci` deletes before it installs, so an install
+# that was stopped part way leaves neither behind. `start.py` reads them to tell whether
+# the front end, and then the test browser, need installing.
+FRONTEND_FINGERPRINT: str = ".take5-installed-lock"
+BROWSER_MARKER: str = ".take5-installed-browser"
+
+
+def lock_fingerprint(frontend: Path) -> str:
+    """Fingerprint the front end's lock file, to tell when it has changed.
+
+    Args:
+        frontend: The front end's folder.
+
+    Returns:
+        The SHA-256 of `package-lock.json`, in hex.
+    """
+    return hashlib.sha256((frontend / "package-lock.json").read_bytes()).hexdigest()
+
+
+def remember_frontend_install(frontend: Path) -> None:
+    """Note that the front end's packages match its lock file as it is now.
+
+    Args:
+        frontend: The front end's folder, after a successful `npm ci`.
+    """
+    (frontend / "node_modules" / FRONTEND_FINGERPRINT).write_text(
+        lock_fingerprint(frontend),
+        encoding="utf-8",
+    )
+
+
+def remember_browser_install(frontend: Path) -> None:
+    """Note that the test browser was installed for these front-end packages.
+
+    Args:
+        frontend: The front end's folder, after a successful Playwright install.
+    """
+    (frontend / "node_modules" / BROWSER_MARKER).touch()
 
 
 def cloud_sync_service(folder: PurePath) -> str | None:
@@ -274,6 +315,8 @@ def set_up() -> int:
     install_exit_code: int = install(INSTALL_STEPS)
     if install_exit_code != 0:
         return install_exit_code
+    remember_frontend_install(REPO_ROOT / "frontend")
+    remember_browser_install(REPO_ROOT / "frontend")
     print_summary(cloud_service)
     return 0
 

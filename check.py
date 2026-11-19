@@ -95,17 +95,22 @@ CHECKS: list[Check] = [
 ]
 
 
+# The formatter runs before and after the lint fixes, as Claude's format hook does: a
+# trailing comma (COM812) can only be added once the formatter has wrapped a long line,
+# and the formatter then puts each item on its own line.
+BACK_END_FORMAT: Check = Check(
+    "Back end format",
+    [*RUFF, "format", *RUFF_SETTINGS, *PYTHON_FOLDERS],
+    "backend",
+)
 FIXES: list[Check] = [
+    BACK_END_FORMAT,
     Check(
         "Back end lint fixes",
         [*RUFF, "check", "--fix", *RUFF_SETTINGS, *PYTHON_FOLDERS],
         "backend",
     ),
-    Check(
-        "Back end format",
-        [*RUFF, "format", *RUFF_SETTINGS, *PYTHON_FOLDERS],
-        "backend",
-    ),
+    BACK_END_FORMAT,
     Check("Front end lint fixes", [NPM, "run", "lint", "--", "--fix"], "frontend"),
     Check("Front end format", [NPM, "run", "format"], "frontend"),
     Check(

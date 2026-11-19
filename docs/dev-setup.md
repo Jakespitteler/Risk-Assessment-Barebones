@@ -31,8 +31,9 @@ each edit a formatter tidies the file.
 ## How type checking is set up
 
 Pylance and the command-line checks share one strict Pyright configuration, `[tool.pyright]` in the root
-`pyproject.toml`. It points at `backend/src` and `backend/.venv`. From `backend/`, run
-`uv run pyright --project ..`, so the repo root is the import root and the launcher's `scripts/` folder is not
+`pyproject.toml`. It points at `backend/src` and `backend/.venv`, and covers the back end, `scripts/` and the
+commands in the repo root. `uv run check.py` runs it from the repo root. To run it alone, from `backend/` run
+`uv run pyright --project ..`, so the repo root is the import root and the root's `scripts/` folder is not
 mixed up with `backend/scripts/`. The back end's packages and Ruff settings stay in `backend/pyproject.toml`.
 
 ## Common problems

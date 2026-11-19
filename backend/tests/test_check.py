@@ -41,19 +41,24 @@ def test_with_nothing_after_it_every_check_runs_in_order() -> None:
 
 
 def test_fix_formats_fixes_and_writes_the_api_types_without_checking() -> None:
-    """`--fix` runs only the fixes: Ruff, ESLint, Prettier, markdownlint, API types."""
+    """`--fix` runs only the fixes: Ruff, ESLint, Prettier, markdownlint, API types.
+
+    Ruff formats before and after its lint fixes, so a trailing comma (COM812) added
+    to a line the formatter wrapped is followed by one item per line.
+    """
     exit_code, run = run_with_success(["--fix"])
 
     commands: list[list[str]] = [each.args[0] for each in run.mock_calls]
     assert exit_code == 0
     assert commands == [each.command for each in check.FIXES]
-    assert commands[0][3:5] == ["check", "--fix"]
-    assert commands[1][3] == "format"
-    assert "--check" not in commands[1]
-    assert commands[2][1:] == ["run", "lint", "--", "--fix"]
-    assert commands[3][1:] == ["run", "format"]
-    assert "--fix" in commands[4]
-    assert commands[5][1:] == ["run", "generate:api"]
+    assert commands[0][3] == "format"
+    assert "--check" not in commands[0]
+    assert commands[1][3:5] == ["check", "--fix"]
+    assert commands[2] == commands[0]
+    assert commands[3][1:] == ["run", "lint", "--", "--fix"]
+    assert commands[4][1:] == ["run", "format"]
+    assert "--fix" in commands[5]
+    assert commands[6][1:] == ["run", "generate:api"]
 
 
 def test_fix_and_check_cover_the_commands_in_the_repo_root() -> None:
