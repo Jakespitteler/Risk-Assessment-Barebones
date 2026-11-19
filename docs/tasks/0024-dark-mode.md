@@ -1,9 +1,9 @@
 ---
 id: 0024
 title: Dark mode
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/project-thread-ajrmy7
 ---
 
 ## Goal
