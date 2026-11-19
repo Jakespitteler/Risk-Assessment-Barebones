@@ -12,27 +12,26 @@ In order, it:
    app is probably running in another terminal.
 2. Checks for git and Node.js, as `setup.py` does.
 3. Brings the installs in line with the lock files the repo holds: the back end's
-   packages every time (quick when nothing changed), the front end's only when
-   `package-lock.json` changed since they were installed, and then the browser the
-   whole-app tests use. It installs exactly the locked versions and never upgrades one.
-4. Starts the back end, then the front end, passing on what they print except the lines
-   that give their own addresses, and prints the app's address once it answers.
+   packages every time (quick when nothing changed), and the front end's, then the
+   browser the whole-app tests use, only when `package-lock.json` changed since they
+   were installed. It installs exactly the locked versions and never upgrades one.
+4. Starts the back end, then the front end, and prints the app's address once it
+   answers. Their own start-up lines, which give their own addresses, are turned off
+   in their settings: uvicorn's in `backend/dev_logging.json`, Vite's with
+   `--logLevel warn`. Requests, warnings and errors still show.
 """
 
 import contextlib
 import os
-import re
 import signal
 import socket
 import subprocess
 import sys
-import threading
 import time
-from collections.abc import Iterable, Mapping
+from collections.abc import Mapping
 from http.client import HTTPResponse
 from pathlib import Path
 from types import FrameType
-from typing import IO
 from urllib.request import OpenerDirector, ProxyHandler, build_opener
 
 import setup
@@ -44,6 +43,8 @@ START_COMMAND: str = "uv run start.py"
 
 API_PORT: int = 8000
 APP_PORT: int = 5173
+# `dev_logging.json` is uvicorn's own log settings with its start-up messages, such as
+# "Uvicorn running on http://127.0.0.1:8000", turned down to warnings only.
 BACKEND_COMMAND: list[str] = [
     "uv",
     "run",
@@ -53,8 +54,12 @@ BACKEND_COMMAND: list[str] = [
     "--reload",
     "--port",
     str(API_PORT),
+    "--log-config",
+    "dev_logging.json",
 ]
-FRONTEND_COMMAND: list[str] = [setup.NPM, "run", "dev"]
+# Vite's info lines are its address box and its "page reloaded" notes; warnings and
+# errors still show.
+FRONTEND_COMMAND: list[str] = [setup.NPM, "run", "dev", "--", "--logLevel", "warn"]
 BACKEND_READY_URL: str = f"http://127.0.0.1:{API_PORT}/api/take5/template"
 # The app itself, served by Vite. Only this address is ever printed: the back end's own
 # address is only the API.
@@ -69,22 +74,9 @@ BACKEND_INSTALL: setup.InstallStep = FIRST_BACKEND_INSTALL._replace(
 )
 FRONTEND_INSTALL: setup.InstallStep = setup.INSTALL_STEPS[1]
 BROWSER_INSTALL: setup.InstallStep = setup.INSTALL_STEPS[2]
-
-# What uvicorn and Vite print about their own addresses: uvicorn's "running on" line and
-# Vite's banner. Colour codes are removed before a line is matched.
-ADDRESS_LINE: re.Pattern[str] = re.compile(
-    r"Uvicorn running on "
-    r"|\bLocal:\s|\bNetwork:\s|press h \+ enter|VITE v\S+\s+ready in",
-)
-COLOUR_CODE: re.Pattern[str] = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 READY_WAIT_SECONDS: float = 30.0
 STOP_WAIT_SECONDS: float = 10.0
-OUTPUT_WAIT_SECONDS: float = 2.0
 
-# One server's lines and this script's own never interleave mid-line.
-_output_lock: threading.Lock = threading.Lock()
-# The thread passing on each server's output, so it can be waited for.
-_output_readers: dict[subprocess.Popen[bytes], threading.Thread] = {}
 # The readiness checks ask this computer directly, never through an HTTP proxy.
 _direct_opener: OpenerDirector = build_opener(ProxyHandler({}))
 
@@ -177,21 +169,6 @@ def frontend_needs_install(frontend: Path) -> bool:
     )
 
 
-def browser_needs_install(frontend: Path) -> bool:
-    """Say whether the whole-app tests' browser needs installing.
-
-    It is installed after every front-end install, so a new version of Playwright gets
-    its own browser.
-
-    Args:
-        frontend: The front end's folder.
-
-    Returns:
-        True when it hasn't been installed since the last front-end install.
-    """
-    return not (frontend / "node_modules" / setup.BROWSER_MARKER).is_file()
-
-
 def sync_backend(backend: Path) -> int:
     """Bring the back end's packages in line with `uv.lock`.
 
@@ -220,8 +197,9 @@ def sync_backend(backend: Path) -> int:
 def install_what_changed(backend: Path, frontend: Path) -> int:
     """Bring the installs in line with the lock files, installing only what changed.
 
-    The browser is only for the tests, so when it can't be installed this warns and goes
-    on, and the next start tries again.
+    The test browser is installed after each front-end install, so a new version of
+    Playwright gets its own browser. The app doesn't need it, so when it can't be
+    installed this warns and goes on.
 
     Args:
         backend: The back end's folder.
@@ -233,173 +211,46 @@ def install_what_changed(backend: Path, frontend: Path) -> int:
     backend_exit_code: int = sync_backend(backend)
     if backend_exit_code != 0:
         return backend_exit_code
-    if frontend_needs_install(frontend):
-        exit_code: int = setup.install([FRONTEND_INSTALL], START_COMMAND)
-        if exit_code != 0:
-            return exit_code
-        setup.remember_frontend_install(frontend)
-    if browser_needs_install(frontend):
-        if setup.install([BROWSER_INSTALL], START_COMMAND) == 0:
-            setup.remember_browser_install(frontend)
-        else:
-            print(
-                "\nThe app doesn't need that browser, only the whole-app tests do, so "
-                "it starts anyway. The next start tries again.",
-                flush=True,
-            )
+    if not frontend_needs_install(frontend):
+        return 0
+    frontend_exit_code: int = setup.install([FRONTEND_INSTALL], START_COMMAND)
+    if frontend_exit_code != 0:
+        return frontend_exit_code
+    setup.remember_frontend_install(frontend)
+    if setup.install([BROWSER_INSTALL], START_COMMAND) != 0:
+        print(
+            "\nThe app doesn't need that browser, only the whole-app tests do, so it "
+            f"starts anyway. Run `{setup.SETUP_COMMAND}` later to try again.",
+            flush=True,
+        )
     return 0
 
 
-def visible_text(line: bytes) -> str:
-    """Read a line a server printed as text, without its colour codes.
+def start(command: list[str], folder: str) -> subprocess.Popen[bytes]:
+    """Start a server in its own process group, so `stop` can stop its children too.
 
-    Args:
-        line: One line of output, which may hold colour codes.
-
-    Returns:
-        The line's text, as a person sees it.
-    """
-    return COLOUR_CODE.sub("", line.decode("utf-8", errors="replace"))
-
-
-def is_address_line(line: bytes) -> bool:
-    """Say whether a line a server printed gives the server's own address.
-
-    Args:
-        line: One line of output, which may hold colour codes.
-
-    Returns:
-        True for uvicorn's "running on" line and the lines of Vite's banner.
-    """
-    return ADDRESS_LINE.search(visible_text(line)) is not None
-
-
-def write_line(line: bytes, terminal: IO[bytes]) -> None:
-    """Write one whole line to the terminal, without splitting another's.
-
-    Args:
-        line: The line, ending with its line break.
-        terminal: Where to write it, such as `sys.stdout.buffer`.
-    """
-    with _output_lock:
-        terminal.write(line)
-        terminal.flush()
-
-
-def say(message: str) -> None:
-    """Print one of this script's own messages once servers are printing too.
-
-    Args:
-        message: What to say.
-    """
-    sys.stdout.flush()
-    write_line(f"{message}\n".encode(), sys.stdout.buffer)
-
-
-def pass_on_output(lines: Iterable[bytes], terminal: IO[bytes]) -> None:
-    """Pass a server's output on to the terminal, leaving out its address lines.
-
-    Each line goes on unchanged, colours and all, as soon as it arrives. A blank line
-    straight after another blank line or an address line is left out too, so Vite's
-    banner leaves no gap behind.
-
-    Args:
-        lines: The server's output, one line at a time.
-        terminal: Where to write it.
-    """
-    after_gap: bool = True
-    for line in lines:
-        if is_address_line(line):
-            after_gap = True
-            continue
-        is_blank: bool = not visible_text(line).strip()
-        if is_blank and after_gap:
-            continue
-        write_line(line, terminal)
-        after_gap = is_blank
-
-
-def server_environment(in_colour: bool) -> dict[str, str]:
-    """Build the environment the servers run in.
-
-    Args:
-        in_colour: Whether this script prints to a terminal, so the servers should keep
-            their colours though their output goes through a pipe.
-
-    Returns:
-        This script's environment, without its own `VIRTUAL_ENV` (the back end uses its
-        own `.venv`), and with Python's output sent at once and in UTF-8 (Windows would
-        otherwise write a pipe in its own code page).
-    """
-    environment: dict[str, str] = {
-        **setup.SETUP_ENVIRONMENT,
-        "PYTHONUNBUFFERED": "1",
-        "PYTHONUTF8": "1",
-    }
-    if in_colour:
-        environment["FORCE_COLOR"] = "1"
-    return environment
-
-
-def start(
-    command: list[str],
-    folder: str,
-    environment: Mapping[str, str],
-) -> subprocess.Popen[bytes]:
-    """Start a server in its own process group, passing on what it prints.
-
-    Its own process group lets `stop` stop everything it starts too.
+    What it prints goes straight to this terminal.
 
     Args:
         command: The server's command.
         folder: The folder, under the repo root, to run it in.
-        environment: The environment to run it in.
 
     Returns:
         The server's process.
     """
-    server: subprocess.Popen[bytes]
     if sys.platform == "win32":
-        server = subprocess.Popen(
+        return subprocess.Popen(
             command,
             cwd=REPO_ROOT / folder,
-            env=dict(environment),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            env=setup.SETUP_ENVIRONMENT,
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
         )
-    else:
-        server = subprocess.Popen(
-            command,
-            cwd=REPO_ROOT / folder,
-            env=dict(environment),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            start_new_session=True,
-        )
-    if server.stdout is not None:
-        reader: threading.Thread = threading.Thread(
-            target=pass_on_output,
-            args=(server.stdout, sys.stdout.buffer),
-            daemon=True,
-        )
-        reader.start()
-        _output_readers[server] = reader
-    return server
-
-
-def wait_for_output(servers: Iterable[subprocess.Popen[bytes]]) -> None:
-    """Let the servers' last lines reach the terminal, such as an error's traceback.
-
-    Called once they have stopped, before saying why, and before this script exits.
-
-    Args:
-        servers: The servers whose output to wait for.
-    """
-    for server in servers:
-        reader: threading.Thread | None = _output_readers.get(server)
-        if reader is not None:
-            reader.join(timeout=OUTPUT_WAIT_SECONDS)
+    return subprocess.Popen(
+        command,
+        cwd=REPO_ROOT / folder,
+        env=setup.SETUP_ENVIRONMENT,
+        start_new_session=True,
+    )
 
 
 def is_local_server_ready(url: str) -> bool:
@@ -524,40 +375,33 @@ def run_servers(url: str, cloud_service: str | None) -> int:
     Returns:
         0 after Ctrl+C, otherwise 1 when a server didn't start or stopped by itself.
     """
-    in_colour: bool = sys.stdout.isatty()
-    environment: dict[str, str] = server_environment(in_colour)
-    backend_command: list[str] = BACKEND_COMMAND
-    if in_colour:
-        backend_command = [*BACKEND_COMMAND, "--use-colors"]
     servers: dict[str, subprocess.Popen[bytes]] = {}
     stop_on_the_first_ctrl_c()
     try:
-        servers["back end"] = start(backend_command, "backend", environment)
+        servers["back end"] = start(BACKEND_COMMAND, "backend")
         wait_until_ready(servers["back end"], BACKEND_READY_URL, "back end")
-        servers["front end"] = start(FRONTEND_COMMAND, "frontend", environment)
+        servers["front end"] = start(FRONTEND_COMMAND, "frontend")
         wait_until_ready(servers["front end"], LOCAL_APP_URL, "front end")
-        say(ready_message(url))
+        print(ready_message(url), flush=True)
         if cloud_service is not None:
-            say(f"{setup.cloud_sync_warning(cloud_service)}\n")
+            print(f"{setup.cloud_sync_warning(cloud_service)}\n", flush=True)
         while True:
             for name, server in servers.items():
                 exit_code: int | None = server.poll()
                 if exit_code is not None:
-                    wait_for_output([server])
-                    say(
+                    print(
                         f"\nThe {name} stopped (exit code {exit_code}), so the app was "
                         f"stopped. Check its output above, then run `{START_COMMAND}` "
                         "again.",
+                        flush=True,
                     )
                     return 1
             time.sleep(1)
     except (RuntimeError, TimeoutError) as problem:
-        wait_for_output(
-            server for server in servers.values() if server.poll() is not None
-        )
-        say(
+        print(
             f"\n{problem} Check its output above, fix the problem, then run "
             f"`{START_COMMAND}` again.",
+            flush=True,
         )
         return 1
     except KeyboardInterrupt:
@@ -565,7 +409,6 @@ def run_servers(url: str, cloud_service: str | None) -> int:
     finally:
         for server in servers.values():
             stop(server)
-        wait_for_output(servers.values())
 
 
 def main() -> int:

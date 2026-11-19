@@ -75,6 +75,7 @@ publishes it, the front end's types are generated from it, and either half can b
 ```text
 backend/
     pyproject.toml
+    dev_logging.json       uvicorn's log settings for start.py, with its start-up lines turned down
     src/risk_assessment/
         domain/            the rules, as plain data and pure functions
             risk.py            RiskMatrix (a matrix as data), RiskCell, RiskRating,

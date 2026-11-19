@@ -25,6 +25,7 @@ jsdom
 killpg
 Kincaid
 laydown
+levelprefix
 multiclass
 netrc
 nudger

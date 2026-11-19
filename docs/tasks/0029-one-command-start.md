@@ -251,8 +251,10 @@ The questions for Jake, each with Claude's recommended pick.
 - `start.py`, `setup.py`, `check.py` and `test.py` in the repo root; `scripts/dev.py` is gone, and its tests
   moved to `backend/tests/test_start.py`. `setup.py`'s tool checks, cloud-sync warning and install steps are
   imported by `start.py`, not copied.
-- How the address lines are hidden, and why that way: `docs/decisions.md`, 2026-11-19. In short, `start.py`
-  reads both servers' output through a pipe and drops only the address lines, which task 0028 builds on.
+- How the address lines are hidden, and why that way: `docs/decisions.md`, 2026-11-19. In short, each server's
+  own settings turn its start-up lines off (`backend/dev_logging.json` for uvicorn, `--logLevel warn` for Vite),
+  and their output goes straight to the terminal. A first version read the output through a pipe instead; Jake
+  chose this simpler way on review.
 - Measured here (Linux, in a cloud container): with nothing to install, `scripts/dev.py` was ready in 1.4 s and
   `uv run start.py` in 1.8 s (three runs each; the extra 0.4 s is the quiet `uv sync --locked`, which now runs
   every time). A fresh clone was ready in 9 s; a changed `package-lock.json` in 7 s. A busy port stopped it in
@@ -270,8 +272,11 @@ The questions for Jake, each with Claude's recommended pick.
   could leave Vite running, as `dev.py` did (it exited with code 130 in the timing runs). `start.py` acts on the
   first Ctrl+C only. Stopping a server asks first, then forces it after 10 seconds, and signals the server's
   whole process group even when npm or uv has already ended.
-- `setup.py` leaves the same "installed for this lock file" markers as `start.py`, so a start straight after
+- `setup.py` leaves the same "installed for this lock file" fingerprint as `start.py`, so a start straight after
   `uv run setup.py` installs nothing more.
+- The test browser is installed after each front-end install. If that download fails, the app still starts, and
+  `uv run setup.py` tries it again; `start.py` doesn't retry it until the lock file next changes.
+- With `--logLevel warn`, Vite no longer prints "page reloaded" notes while you work. The page still reloads.
 - The back end's sync on later starts is quiet: a pulled change to `uv.lock` is installed without a list of what
   changed (errors still show).
 - Vite stops by itself when its keyboard input closes, so `uv run start.py < /dev/null` stops at once. This is

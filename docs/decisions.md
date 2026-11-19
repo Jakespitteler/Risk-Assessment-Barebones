@@ -7,24 +7,29 @@ Newest first. One short entry per non-obvious decision.
 - Decision: `uv run start.py` in the repo root replaces `scripts/dev.py`. It stops if port 8000 or 5173 already
   answers (on IPv4 or IPv6), before installing anything; checks git and Node.js with `setup.py`'s checks; runs
   `uv sync --locked` every time; runs `npm ci` only when `package-lock.json` differs from the fingerprint kept in
-  `node_modules` after the last install; installs the test browser after a front-end install, warning and carrying
-  on if that fails; then starts both halves and prints one ready line with the app's address (the forwarded one in
-  a Codespace). `setup.py` and `check.py` move to the root beside it, and a new `test.py` runs the tests (all, or
-  `backend`, `frontend` or `e2e` with the rest of the line passed on). `check.py --fix` runs the formatters, the
-  lint tools' own fixes and the API types. CI, the reviewer's instructions and Claude's allow list name the new
-  commands.
+  `node_modules` after the last install (`setup.py` writes it too); installs the test browser after each front-end
+  install, warning and carrying on if that fails; then starts both halves and prints one ready line with the app's
+  address (the forwarded one in a Codespace). `setup.py` and `check.py` move to the root beside it, and a new
+  `test.py` runs the tests (all, or `backend`, `frontend` or `e2e` with the rest of the line passed on).
+  `check.py --fix` runs the formatters, the lint tools' own fixes and the API types. CI, the reviewer's instructions and
+  Claude's allow list name the new commands.
 - Why: Jake asked for one command that sets up, updates the installs and prints only the right address, and for
   no `cd` before everyday commands. He took the recommended answers, except that the API gets no page at `/` and
   its address is never printed. Installing only the locked versions means a start never brings in a version the
   repo wasn't tested with.
-- How the address lines are hidden: `start.py` reads each server's output through a pipe and passes every line
-  on except uvicorn's "Uvicorn running on" line and Vite's banner (and the blank lines it leaves), with colours
-  forced back on when it prints to a terminal. This keeps dev-only code out of the back-end package and the Vite
-  config, handles both servers in one place, and is the reader task 0028 needs to label each line. Vite's
-  `clearScreen` is off, so `npm run dev` alone doesn't clear earlier output either.
+- How the address lines are hidden: in each server's own settings, and their output goes straight to the
+  terminal. Uvicorn gets `--log-config backend/dev_logging.json`: its default log settings with the
+  `uvicorn.error` logger at warnings, which drops "Uvicorn running on ..." and its other start-up lines but keeps
+  requests, reload notices, errors and the app's own lines. Vite gets `--logLevel warn`, which drops its address
+  box (and its "page reloaded" notes) but keeps warnings and errors. Vite's `clearScreen` is off, so `npm run dev`
+  alone doesn't clear earlier output either.
+- Why not a pipe: the first version read both servers' output through a pipe and dropped the address lines. It
+  worked, but needed reader threads, colours forced back on, UTF-8 forced on Windows, and waiting for the last
+  lines before exiting, which was about 250 lines with tests and where most review findings were. Jake chose the
+  settings approach on review. Task 0028 can add a pipe if labelling each line still needs one.
 - Not chosen: `uv run app.py` (clashes with the back end's `app.py`); a task runner, `make` or a root
   `package.json` (another tool on every computer, or no Windows `make`); a uv workspace (moves `.venv` and the lock
-  file); upgrading packages on start; a uvicorn `--log-config` filter class plus a Vite custom logger; a port
+  file); upgrading packages on start; reading the servers' output through a pipe (above); a port
   check that binds the port (a socket waiting to close after a restart would read as busy).
 - Also: Claude's format hook now formats a `.py` file in the repo root too, the hook change question 1 (a)
   named. A root `setup.py` is, by an old convention, a Python package build file, so `pip install -e .` in the root

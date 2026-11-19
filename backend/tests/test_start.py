@@ -1,10 +1,11 @@
 """Tests for `start.py`: checking, installing what changed, and starting both halves."""
 
-import io
+import json
 import signal
 import socket
 import subprocess
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, call, patch
 from urllib.error import URLError
 
@@ -43,7 +44,7 @@ def make_frontend(folder: Path, lock_text: str = '{"lockfileVersion": 3}') -> Pa
 
 
 def mark_installed(frontend: Path) -> None:
-    """Make the front end look installed for its current lock file, with the browser.
+    """Make the front end look installed for its current lock file.
 
     Args:
         frontend: The stand-in front-end folder.
@@ -54,7 +55,6 @@ def mark_installed(frontend: Path) -> None:
         start.setup.lock_fingerprint(frontend),
         encoding="utf-8",
     )
-    (node_modules / start.setup.BROWSER_MARKER).touch()
 
 
 def only_the_app_port_is_busy(port: int) -> bool:
@@ -179,7 +179,6 @@ def test_a_front_end_installed_for_this_lock_file_needs_nothing(
     mark_installed(frontend)
 
     assert not start.frontend_needs_install(frontend)
-    assert not start.browser_needs_install(frontend)
 
 
 def test_a_changed_lock_file_needs_installing(tmp_path: Path) -> None:
@@ -230,7 +229,7 @@ def test_the_first_back_end_install_shows_its_progress(tmp_path: Path) -> None:
 def test_a_changed_lock_file_installs_the_front_end_then_the_browser(
     tmp_path: Path,
 ) -> None:
-    """`npm ci` (exact versions), then the browser; both are remembered after."""
+    """`npm ci` (exact versions), then the test browser; the install is remembered."""
     frontend: Path = make_frontend(tmp_path)
 
     def install_succeeds(steps: list[object], rerun_command: str) -> int:
@@ -255,7 +254,6 @@ def test_a_changed_lock_file_installs_the_front_end_then_the_browser(
     ]
     assert start.FRONTEND_INSTALL.command[1:] == ["ci", "--engine-strict"]
     assert not start.frontend_needs_install(frontend)
-    assert not start.browser_needs_install(frontend)
 
 
 def test_installs_never_upgrade_a_package() -> None:
@@ -311,70 +309,6 @@ def test_a_failed_back_end_sync_stops_it(
     install.assert_not_called()
 
 
-def test_a_failed_browser_install_warns_and_the_app_still_starts(
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    """The app doesn't need the test browser; the next start tries it again."""
-    frontend: Path = make_frontend(tmp_path)
-    mark_installed(frontend)
-    (frontend / "node_modules" / start.setup.BROWSER_MARKER).unlink()
-    with (
-        patch.object(
-            start.subprocess,
-            "run",
-            return_value=subprocess.CompletedProcess([], 0),
-        ),
-        patch.object(start.setup, "install", return_value=1),
-    ):
-        exit_code: int = start.install_what_changed(make_backend(tmp_path), frontend)
-
-    assert exit_code == 0
-    assert "it starts anyway" in capsys.readouterr().out
-    assert start.browser_needs_install(frontend)
-
-
-def test_the_servers_own_address_lines_are_hidden() -> None:
-    """Uvicorn's and Vite's addresses go; requests, the app's lines and errors stay."""
-    server_output: list[bytes] = [
-        b"\x1b[32mINFO\x1b[0m:     Will watch for changes in these directories\n",
-        b"\x1b[32mINFO\x1b[0m:     Uvicorn running on \x1b[1mhttp://127.0.0.1:8000"
-        b"\x1b[0m (Press CTRL+C to quit)\n",
-        b"INFO:     risk_assessment.api.app: No AI key is set.\n",
-        b"\n",
-        b"  VITE v8.3.8  ready in 197 ms\n",
-        b"\n",
-        "  ➜  Local:   http://localhost:5173/\n".encode(),
-        "  ➜  Network: use --host to expose\n".encode(),
-        "  ➜  press h + enter to show help\n".encode(),
-        b"\n",
-        b'INFO:     127.0.0.1:46080 - "GET /api/take5s HTTP/1.1" 200 OK\n',
-        b"ERROR:    Exception in ASGI application\n",
-    ]
-    terminal: io.BytesIO = io.BytesIO()
-
-    start.pass_on_output(server_output, terminal)
-
-    assert terminal.getvalue().decode().splitlines() == [
-        "\x1b[32mINFO\x1b[0m:     Will watch for changes in these directories",
-        "INFO:     risk_assessment.api.app: No AI key is set.",
-        "",
-        'INFO:     127.0.0.1:46080 - "GET /api/take5s HTTP/1.1" 200 OK',
-        "ERROR:    Exception in ASGI application",
-    ]
-
-
-def test_the_servers_keep_their_colours_when_printing_to_a_terminal() -> None:
-    """Through a pipe Vite drops its colours unless told; uv's own venv is left out."""
-    in_colour: dict[str, str] = start.server_environment(in_colour=True)
-    plain: dict[str, str] = start.server_environment(in_colour=False)
-
-    assert in_colour["FORCE_COLOR"] == "1"
-    assert "FORCE_COLOR" not in plain
-    assert "VIRTUAL_ENV" not in in_colour
-    assert in_colour["PYTHONUNBUFFERED"] == "1"
-
-
 def test_the_wait_retries_until_the_server_answers() -> None:
     """A refused connection while starting is tried again."""
     server = MagicMock(spec=subprocess.Popen)
@@ -422,23 +356,21 @@ def test_the_back_end_starts_first_and_the_ready_line_comes_last() -> None:
     backend.poll.return_value = 0
     events.start.side_effect = [backend, frontend]
     with (
-        patch.object(start.sys.stdout, "isatty", return_value=False),
         patch.object(start, "start", events.start),
         patch.object(start, "wait_until_ready", events.ready),
-        patch.object(start, "say", events.say),
+        patch.object(start, "print", events.print, create=True),
         patch.object(start, "stop", events.stop),
         patch.object(start.signal, "signal"),
     ):
         exit_code: int = start.run_servers("http://localhost:5173", None)
 
-    environment: dict[str, str] = start.server_environment(in_colour=False)
     assert exit_code == 1
     assert events.mock_calls[:5] == [
-        call.start(start.BACKEND_COMMAND, "backend", environment),
+        call.start(start.BACKEND_COMMAND, "backend"),
         call.ready(backend, start.BACKEND_READY_URL, "back end"),
-        call.start(start.FRONTEND_COMMAND, "frontend", environment),
+        call.start(start.FRONTEND_COMMAND, "frontend"),
         call.ready(frontend, start.LOCAL_APP_URL, "front end"),
-        call.say(start.ready_message("http://localhost:5173")),
+        call.print(start.ready_message("http://localhost:5173"), flush=True),
     ]
     assert events.mock_calls[-2:] == [call.stop(backend), call.stop(frontend)]
 
@@ -452,7 +384,7 @@ def test_a_server_that_stops_by_itself_is_named_with_its_exit_code() -> None:
     with (
         patch.object(start, "start", side_effect=[backend, frontend]),
         patch.object(start, "wait_until_ready"),
-        patch.object(start, "say") as say,
+        patch.object(start, "print", create=True) as say,
         patch.object(start, "stop") as stop,
         patch.object(start.signal, "signal"),
     ):
@@ -473,7 +405,7 @@ def test_a_back_end_that_never_answers_is_stopped_and_vite_never_starts() -> Non
             "wait_until_ready",
             side_effect=TimeoutError("The back end did not become ready."),
         ),
-        patch.object(start, "say") as say,
+        patch.object(start, "print", create=True) as say,
         patch.object(start, "stop") as stop,
         patch.object(start.signal, "signal"),
     ):
@@ -493,7 +425,7 @@ def test_the_cloud_sync_warning_shows_again_under_the_ready_line() -> None:
     with (
         patch.object(start, "start", return_value=backend),
         patch.object(start, "wait_until_ready"),
-        patch.object(start, "say") as say,
+        patch.object(start, "print", create=True) as say,
         patch.object(start, "stop"),
         patch.object(start.signal, "signal"),
     ):
@@ -505,33 +437,12 @@ def test_the_cloud_sync_warning_shows_again_under_the_ready_line() -> None:
 
 
 def test_a_start_after_setup_installs_nothing_more(tmp_path: Path) -> None:
-    """`setup.py` leaves the same markers, so its reinstall isn't done twice."""
+    """`setup.py` leaves the same fingerprint, so its reinstall isn't done twice."""
     frontend: Path = make_frontend(tmp_path)
     (frontend / "node_modules").mkdir()
     start.setup.remember_frontend_install(frontend)
-    start.setup.remember_browser_install(frontend)
 
     assert not start.frontend_needs_install(frontend)
-    assert not start.browser_needs_install(frontend)
-
-
-def test_the_back_end_keeps_its_colours_when_printing_to_a_terminal() -> None:
-    """Uvicorn is told to use colours, since through a pipe it would drop them."""
-    backend = MagicMock(spec=subprocess.Popen)
-    backend.poll.return_value = 0
-    with (
-        patch.object(start.sys.stdout, "isatty", return_value=True),
-        patch.object(start, "start", return_value=backend) as start_server,
-        patch.object(start, "wait_until_ready"),
-        patch.object(start, "say"),
-        patch.object(start, "stop"),
-        patch.object(start.signal, "signal"),
-    ):
-        start.run_servers("http://localhost:5173", None)
-
-    first_command: list[str] = start_server.call_args_list[0].args[0]
-    assert first_command == [*start.BACKEND_COMMAND, "--use-colors"]
-    assert start_server.call_args_list[0].args[2]["FORCE_COLOR"] == "1"
 
 
 def test_ctrl_c_stops_both_servers_and_ends_quietly() -> None:
@@ -543,7 +454,7 @@ def test_ctrl_c_stops_both_servers_and_ends_quietly() -> None:
     with (
         patch.object(start, "start", side_effect=[backend, frontend]),
         patch.object(start, "wait_until_ready"),
-        patch.object(start, "say"),
+        patch.object(start, "print", create=True),
         patch.object(start.time, "sleep", side_effect=KeyboardInterrupt),
         patch.object(start, "stop") as stop,
         patch.object(start.signal, "signal"),
@@ -623,24 +534,50 @@ def test_stopping_on_windows_ends_the_whole_tree() -> None:
     )
 
 
-def test_a_server_that_stops_has_its_last_lines_printed_before_why() -> None:
-    """Its traceback is waited for, so the message under it isn't printed first."""
-    events = MagicMock()
-    backend = MagicMock(spec=subprocess.Popen)
-    backend.poll.return_value = 1
-    with (
-        patch.object(start, "start", return_value=backend),
-        patch.object(start, "wait_until_ready"),
-        patch.object(start, "wait_for_output", events.wait_for_output),
-        patch.object(start, "say", events.say),
-        patch.object(start, "stop"),
-        patch.object(start.signal, "signal"),
-    ):
-        start.run_servers("http://localhost:5173", None)
+def test_a_failed_browser_install_warns_and_the_app_still_starts(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The app doesn't need the test browser; `setup.py` can try it again later."""
+    frontend: Path = make_frontend(tmp_path)
 
-    stopped_at: int = next(
-        index
-        for index, event in enumerate(events.mock_calls)
-        if event[0] == "say" and "stopped (exit code 1)" in event.args[0]
-    )
-    assert events.mock_calls[stopped_at - 1] == call.wait_for_output([backend])
+    def front_end_works_browser_fails(steps: list[object], rerun_command: str) -> int:
+        """Stand in for the installs: npm works, the browser download doesn't."""
+        (frontend / "node_modules").mkdir(exist_ok=True)
+        return 0 if steps == [start.FRONTEND_INSTALL] else 1
+
+    with (
+        patch.object(
+            start.subprocess,
+            "run",
+            return_value=subprocess.CompletedProcess([], 0),
+        ),
+        patch.object(start.setup, "install", side_effect=front_end_works_browser_fails),
+    ):
+        exit_code: int = start.install_what_changed(make_backend(tmp_path), frontend)
+
+    assert exit_code == 0
+    assert "starts anyway. Run `uv run setup.py` later" in capsys.readouterr().out
+    assert not start.frontend_needs_install(frontend)
+
+
+def test_the_uvicorn_settings_turn_down_only_its_start_up_lines() -> None:
+    """Uvicorn's "running on" line is `uvicorn.error` info; requests still show.
+
+    The file is uvicorn's own default log settings with that one logger at warnings,
+    so its errors, reload notices and tracebacks still reach the terminal.
+    """
+    settings_file: Path = start.BACKEND / "dev_logging.json"
+    settings: dict[str, Any] = json.loads(settings_file.read_text(encoding="utf-8"))
+    flag_at: int = start.BACKEND_COMMAND.index("--log-config")
+
+    assert start.BACKEND_COMMAND[flag_at + 1] == settings_file.name
+    assert settings["loggers"]["uvicorn.error"]["level"] == "WARNING"
+    assert settings["loggers"]["uvicorn.access"]["level"] == "INFO"
+    assert settings["loggers"]["uvicorn"]["level"] == "INFO"
+    assert settings["disable_existing_loggers"] is False
+
+
+def test_vite_prints_warnings_and_errors_but_not_its_address_box() -> None:
+    """Vite's address box is info; `--logLevel warn` reaches Vite through npm's `--`."""
+    assert start.FRONTEND_COMMAND[1:] == ["run", "dev", "--", "--logLevel", "warn"]

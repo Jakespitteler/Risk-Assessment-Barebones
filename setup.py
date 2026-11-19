@@ -99,10 +99,9 @@ INSTALL_STEPS: list[InstallStep] = [
 
 
 # Kept inside node_modules, which `npm ci` deletes before it installs, so an install
-# that was stopped part way leaves neither behind. `start.py` reads them to tell whether
-# the front end, and then the test browser, need installing.
+# that was stopped part way leaves none behind. `start.py` reads it to tell whether the
+# front end needs installing.
 FRONTEND_FINGERPRINT: str = ".take5-installed-lock"
-BROWSER_MARKER: str = ".take5-installed-browser"
 
 
 def lock_fingerprint(frontend: Path) -> str:
@@ -127,15 +126,6 @@ def remember_frontend_install(frontend: Path) -> None:
         lock_fingerprint(frontend),
         encoding="utf-8",
     )
-
-
-def remember_browser_install(frontend: Path) -> None:
-    """Note that the test browser was installed for these front-end packages.
-
-    Args:
-        frontend: The front end's folder, after a successful Playwright install.
-    """
-    (frontend / "node_modules" / BROWSER_MARKER).touch()
 
 
 def cloud_sync_service(folder: PurePath) -> str | None:
@@ -316,7 +306,6 @@ def set_up() -> int:
     if install_exit_code != 0:
         return install_exit_code
     remember_frontend_install(REPO_ROOT / "frontend")
-    remember_browser_install(REPO_ROOT / "frontend")
     print_summary(cloud_service)
     return 0
 

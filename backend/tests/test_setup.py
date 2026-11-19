@@ -128,7 +128,6 @@ def test_installs_run_in_order_from_their_folders() -> None:
     with (
         patch.object(setup, "missing_tools", return_value=[]),
         patch.object(setup, "remember_frontend_install"),
-        patch.object(setup, "remember_browser_install"),
         patch.object(
             setup.subprocess,
             "run",
@@ -173,7 +172,6 @@ def test_synced_folder_warns_at_start_and_end_and_carries_on(
     """In a OneDrive folder set-up still installs, warns twice and lists what it did."""
     with (
         patch.object(setup, "remember_frontend_install"),
-        patch.object(setup, "remember_browser_install"),
         patch.object(setup, "cloud_sync_service", return_value="OneDrive"),
         patch.object(setup, "missing_tools", return_value=[]),
         patch.object(
@@ -213,15 +211,13 @@ def test_a_failed_install_says_which_command_to_run_again(
 
 
 def test_a_finished_set_up_is_remembered_so_start_installs_nothing_more() -> None:
-    """After every install works, the front end and the browser are marked installed."""
+    """Once every install works, the front end is marked installed for its lock file."""
     with (
         patch.object(setup, "missing_tools", return_value=[]),
         patch.object(setup, "install", return_value=0),
         patch.object(setup, "remember_frontend_install") as remember_frontend,
-        patch.object(setup, "remember_browser_install") as remember_browser,
     ):
         exit_code: int = setup.set_up()
 
     assert exit_code == 0
     remember_frontend.assert_called_once_with(setup.REPO_ROOT / "frontend")
-    remember_browser.assert_called_once_with(setup.REPO_ROOT / "frontend")
