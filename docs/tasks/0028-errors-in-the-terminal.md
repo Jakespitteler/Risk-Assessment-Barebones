@@ -141,6 +141,8 @@ These follow the recommended picks; they change with Jake's answers.
   Task 0029 may add that reading to hide start-up lines, or may use a logging filter instead; if output still
   passes straight through, this task adds the reading. 0029 may also replace `scripts/dev.py` with a root
   `start.py`. Build on whichever script 0029 leaves.
+  (0029, built 2026-11-19: the root `start.py` reads each server's output through a pipe, in
+  `pass_on_output`, and already names a server that stops with its exit code. No `--log-config` is used.)
 - Logging stays standard library `logging`. Uvicorn's reloader prints from its own process, before the app is
   built, so a set-up function inside the app can't reach it. A log settings file in `backend/`, handed to uvicorn
   with `--log-config` by the start script, can: it configures the `risk_assessment` and `uvicorn` loggers
