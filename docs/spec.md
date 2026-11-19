@@ -4,13 +4,38 @@ Status: **version 1** (task 0001). The human owns product decisions; agents prop
 product decision in this version was made by Jake and is listed under [Decisions made](#decisions-made). Merging
 task 0001's pull request is his sign-off of the wording.
 
+## Goal
+
+Agreed by Jake on 2026-11-19 (task 0030, decisions D64 to D68). Every feature, and every bit of polish, is judged
+against it.
+
+> **Make a mine site safer by making every Take 5 count.**
+>
+> 1. **Filling one in:** on a phone or a desktop, the worker has to actually think about today's job instead of
+>    ticking boxes. It stays quick and pleasant enough that crews want to use it, because an app people avoid
+>    makes no one safer.
+> 2. **Finding the weak ones:** a batch of paper cards can be photographed. The AI fills in each one as a normal
+>    saved Take 5, marked "from paper", and a person confirms it beside the photo before it's saved. Any set of
+>    Take 5s (a scanned batch, or everything from today) can be ranked worst first. "Worst" weighs how risky the
+>    job is against how little thought the answers show, with one line saying why. Anyone can do this; there's
+>    no sign-in.
+>
+> **The AI is used wherever it makes a Take 5 safer.** A worker can always finish a Take 5 without it. Scanning
+> and ranking need it, and that's fine because no worker waits on them.
+>
+> **How we judge it:** by feel in demos, for both safety people and crews. There's no fixed time target. Every
+> feature, and every bit of polish, has to earn its place against this goal.
+
+This app is a proof of concept: it should be really nice to use, and as simple as possible.
+
 ## Purpose
 
 A Take 5 is the short personal risk assessment a mine-site worker does before starting a task. On paper it is a
-card of tick boxes, and tick boxes get ticked without thinking. This app is a Take 5 for a phone that cannot be
-finished on autopilot: the worker has to say, in their own words, what could hurt someone on this job today and
+card of tick boxes, and tick boxes get ticked without thinking. This app is a Take 5 for a phone or a desktop that
+cannot be finished on autopilot: the worker has to say, in their own words, what could hurt someone on this job today and
 what will stop it, the app pushes back when the answer is thin, and before the result it asks one question
-about the weakest part of what they wrote.
+about the weakest part of what they wrote. Paper cards can be photographed into the app too, and any set of
+Take 5s can be ranked so the weakest are looked at first (see the Goal).
 
 This repo is a rebuild of the one core feature of the larger Risk-Assessment app. The rule of thumb for every
 design choice: **if the app is boring and can be used without thinking, people will use it without thinking.**
@@ -26,12 +51,12 @@ phone remembers it.
 
 Where and when it is used (confirmed by Jake for task 0004):
 
-- On the worker's own phone, standing at the job, just before starting.
+- On the worker's own phone, standing at the job, just before starting. It also works on a desktop (decision
+  D65; the layout is task 0031).
 - Often with gloves on, in bright sun, with a weak signal. So: big tap targets, high contrast, and screens that
   load fast.
-- It has to be quick enough that it is not resented. Target (to be confirmed, see Open questions): a job with two
-  hazards takes under
-  three minutes.
+- It has to be quick enough that it is not resented. There is no fixed time target; it is judged by feel in demos
+  (decision D68).
 
 ## Core workflow
 
@@ -563,11 +588,13 @@ The first four screens of the core workflow, saved when the worker submits.
 
 ## Out of scope (for now)
 
-- Any other use of AI than the challenge question and judging vague hazards (T6): marking the worker's answer,
-  follow-up questions, suggesting hazards or controls, rewording a hazard, or an AI verdict. Suggesting hazards in
-  particular would undo "own words first".
-- Sign-in, supervisors, crews and approvals.
-- Scanning a filled-in paper card, photos of the job, PDFs of a Take 5, and admin tools.
+- AI that does the worker's thinking while they fill in a Take 5: marking their answer, follow-up questions,
+  suggesting hazards or controls, rewording a hazard, or an AI verdict. Suggesting hazards in particular would
+  undo "own words first". The AI is used wherever it makes a Take 5 safer (decision D67): today the challenge
+  question and judging vague hazards (T6), and next reading paper cards (task 0033) and ranking Take 5s
+  (task 0032).
+- Sign-in, supervisors, crews and approvals. Scanning and ranking are open to anyone (decision D66).
+- Photos of the job, PDFs of a Take 5, and admin tools.
 - Working with no signal.
 - Drafts kept on the server, or more than one draft at a time (decisions D20 and D23).
 - Starting a Take 5 from an earlier one, except to fix a Don't start yet (F3). Copying is the fastest way to stop
@@ -660,11 +687,15 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D61 | Which model judges vague hazards (2026-11-19) | Its own setting, `TAKE5_AI_HAZARD_MODEL`; by default the provider's quick model, Claude Haiku 5.5: a yes or no call, made mid-form | The challenge question's model, Opus 5.5 (about 40 times the cost) |
 | D62 | Tell the worker when the word rule decided (2026-11-19) | No, as D50; the server log says which decided | A line saying the check was simpler |
 | D63 | Tell the worker hazards go to the AI before Submit (2026-11-19) | One line on the hazard check page, under "Did you miss any of these?", when an AI is set up | Only the line above Submit (D52), which comes after the hazards were sent |
+| D64 | The app's goal (2026-11-19) | Make a mine site safer by making every Take 5 count: one that makes the worker think, quick and pleasant enough to be used, and a way to find the weak ones (see Goal) | A narrower goal about filling one in only |
+| D65 | Where it is used (2026-11-19) | A phone or a desktop | A phone only |
+| D66 | Scanning paper cards and ranking Take 5s (2026-11-19) | Both in scope. A photographed card becomes a normal saved Take 5, marked "from paper", after a person confirms it beside the photo. One AI ranking, worst first, serves a scanned batch and "worst of the day". Worst weighs risk against how little thought the answers show. Anyone can use both; no sign-in | Out of scope, as in version 1; a supervisor role; saving scans without a check |
+| D67 | Where the AI is used (2026-11-19) | Wherever it makes a Take 5 safer. A worker can always finish a Take 5 without it | Only the challenge question and vague hazards |
+| D68 | How speed is judged (2026-11-19) | By feel in demos, for safety people and crews alike | A fixed target, such as two hazards in under three minutes |
 
 ## Open questions
 
 - How and where will this be hosted, and for how many people? It only runs on a developer's computer for now.
-- Is the three minute target right for a typical job?
 - T3 could be gamed by picking "Barricade the hazard" for a control that isn't one. Fixed rules can't catch
   that. The challenge question is the place it is most likely to be picked up.
 - Is a monthly limit on AI spending needed in the app, or is the provider's console enough? Task 0009 measured

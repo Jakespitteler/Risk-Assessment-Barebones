@@ -1,7 +1,7 @@
 ---
 id: 0030
 title: Put the agreed goal at the top of the spec, and plan the work it needs
-status: in-progress
+status: review
 owner: claude
 branch: claude/0030-goal-and-plan (stacked on task 0013's second pull request, #54)
 ---
@@ -32,19 +32,19 @@ The goal, as agreed:
 
 ## Acceptance criteria
 
-- [ ] `docs/spec.md` starts with the goal, word for word as above, and its Purpose agrees with it.
-- [ ] The spec's "Out of scope" no longer rules out scanning paper cards or AI ranking, and still rules out
+- [x] `docs/spec.md` starts with the goal, word for word as above, and its Purpose agrees with it.
+- [x] The spec's "Out of scope" no longer rules out scanning paper cards or AI ranking, and still rules out
   sign-in, supervisors and crews. The three-minute target is gone from "Where and when it is used" and from
   Open questions, since Jake chose no fixed number.
-- [ ] The spec says the app is used on a phone or a desktop; the desktop layout itself is task 0031's.
-- [ ] `AGENTS.md` says to judge every task against the goal and keep the app as simple as possible.
-- [ ] `docs/decisions.md` records Jake's answers of 2026-11-19 that shaped the goal.
-- [ ] Task files exist for 0031 (desktop layout), 0032 (rank Take 5s worst first) and 0033 (photograph paper
+- [x] The spec says the app is used on a phone or a desktop; the desktop layout itself is task 0031's.
+- [x] `AGENTS.md` says to judge every task against the goal and keep the app as simple as possible.
+- [x] `docs/decisions.md` records Jake's answers of 2026-11-19 that shaped the goal.
+- [x] Task files exist for 0031 (desktop layout), 0032 (rank Take 5s worst first) and 0033 (photograph paper
   cards into Take 5s), each with its goal, its questions for Jake with a recommendation each, and acceptance
   criteria that follow the recommendations.
-- [ ] `docs/tasks/README.md` orders the work: 0028, then 0031, 0032 and 0033; 0024 is the other agent's; 0021 is
+- [x] `docs/tasks/README.md` orders the work: 0028, then 0031, 0032 and 0033; 0024 is the other agent's; 0021 is
   parked.
-- [ ] All checks pass.
+- [x] All checks pass.
 
 ## Out of scope
 
@@ -55,7 +55,7 @@ The goal, as agreed:
 
 Jake's answers, 2026-11-19, in chat:
 
-- The goal above, workshopped over several messages until both agreed it.
+- The goal above, worked out over several messages until both agreed it.
 - "Scan existing Take 5s" means photographing paper cards, which the AI fills in as normal saved Take 5s, marked
   "from paper"; a person confirms each beside its photo before it is saved.
 - The AI ranks a set of Take 5s worst first, and the same ranking serves a scanned batch and "worst of the day".
