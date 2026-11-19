@@ -8,9 +8,10 @@ Recommended by Claude on 2026-11-13, agreed by Jake the same day. Tasks 0015 to 
 0029 on 2026-11-19; Jake can move them. Last brought up to date on 2026-11-19, in task 0013's pull request,
 after Jake merged the one for 0027.
 
-Complete: 0001 to 0020, 0022, 0023, 0025 and 0026. Task 0027 is merged, but stays `review` until Jake's
-measurement of the AI's verdicts is in its pull request, as its last criterion asks. Task 0018 decided to keep the
-built-in `sqlite3` for now (`docs/decisions.md`, 2026-11-14), so no task to switch storage is in the order below.
+Complete: 0001 to 0012, 0014 to 0020, 0022, 0023, 0025 and 0026. Task 0013 is in review. Task 0027 is merged, but
+stays `review` until Jake's measurement of the AI's verdicts is in its pull request, as its last criterion asks.
+Task 0018 decided to keep the built-in `sqlite3` for now (`docs/decisions.md`, 2026-11-14), so no task to switch
+storage is in the order below.
 
 1. **0029, one command to set up, update and start the app, and every command from the repo root.** Jake asked
    for it "soon" on 2026-11-19, after opening the API's address instead of the app's. It depends on no other task.

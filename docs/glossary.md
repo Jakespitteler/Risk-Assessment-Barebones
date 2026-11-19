@@ -2,7 +2,7 @@
 
 One name for one thing. Each row is a term from `docs/spec.md`: what it means, what the code calls it, and the
 spec rules about it. Use these names in code, tests and docs. Where the code's name differs from the spec's word,
-the mismatch is listed in task 0013's file for Jake to decide; nothing has been renamed.
+both stay: Jake chose that on 2026-11-19, and task 0013's file lists the differences.
 
 Rule numbers (R1, V2, T3, C4, K1 and so on) are the bold definitions in the spec. Every one must be in a
 back-end test's docstring or a front-end test's name: `backend/tests/test_spec_rules.py` fails with the numbers
