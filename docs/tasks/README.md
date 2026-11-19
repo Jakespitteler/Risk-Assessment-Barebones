@@ -16,10 +16,10 @@ built-in `sqlite3` for now (`docs/decisions.md`, 2026-11-14), so no task to swit
    on 2026-11-19 (spec D56 to D63), stacked on 0009's pull request; it waits on Jake's measurement, as 0009 does.
 3. **0013, glossary and rule tracing.** Last of these, because its test fails for any spec rule with no test yet, and
    most of those rules arrive in 0005 to 0008.
-4. **0029, one command to set up, update and start the app.** Jake asked for it "soon" on 2026-11-19, after
-   opening the API's address instead of the app's. It depends on no other task. Recommended next after 0013;
-   Jake can start it sooner, since it barely overlaps the open pull requests. Its questions are answered when it
-   starts.
+4. **0029, one command to set up, update and start the app, and every command from the repo root.** Jake asked
+   for it "soon" on 2026-11-19, after opening the API's address instead of the app's. It depends on no other task.
+   Recommended next after 0013; Jake can start it sooner, since it barely overlaps the open pull requests. Its
+   questions are answered when it starts.
 5. **0024, dark mode.** Jake asked for it on 2026-11-18. It depends on no other task and makes no one think
    harder about a risk, so it comes after the tasks that do; Jake can move it. Its questions are answered when it
    starts.
