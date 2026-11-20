@@ -4,8 +4,10 @@ import logging
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, ClassVar
 from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict
 
 from risk_assessment.domain.take5.challenge import (
     AI_TIME_LIMIT_SECONDS,
@@ -35,8 +37,28 @@ from risk_assessment.services.ports import ChallengeAsker, HazardJudge, Take5Rep
 
 _logger: logging.Logger = logging.getLogger(__name__)
 
+# How many saved Take 5s the list shows at a time (spec D18 and D75).
+SAVED_LIST_PAGE_SIZE: int = 50
+
 # The fields that differ between two saves of the same answers.
 _SAVE_DETAILS: set[str] = {"id", "created_at", "finished_at", "verdict", "challenge"}
+
+
+class SavedListPage(BaseModel):
+    """One page of the saved list, newest first.
+
+    Attributes:
+        take5s: Up to `SAVED_LIST_PAGE_SIZE` saved Take 5s, newest first.
+        fixed_ids: Which of them a newer Take 5 fixes, wherever that fix is listed.
+        next_older_than: The last one's ID, to ask for the page after it, or None
+            when there are no more.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    take5s: tuple[SavedTake5, ...]
+    fixed_ids: frozenset[UUID]
+    next_older_than: UUID | None
 
 
 class InvalidDraftError(ValueError):
@@ -297,15 +319,29 @@ class Take5Service:
         saved: SavedTake5 | None = self._repository.get(take5_id)
         return self._with_question(saved, ask_ai=False) if saved is not None else None
 
-    def list_newest_first(self) -> tuple[SavedTake5, ...]:
-        """Get every saved Take 5 as it was saved, the newest first.
+    def saved_list_page(self, older_than: UUID | None = None) -> SavedListPage:
+        """Get one page of saved Take 5s as they were saved, the newest first.
 
-        Everyone using the app sees the same list (spec decision D8).
+        Everyone using the app sees the same list (spec decision D8). One more than a
+        page is read, only to learn whether another page follows.
+
+        Args:
+            older_than: The last Take 5 already shown, or None for the first page.
 
         Returns:
-            The saved Take 5s, newest first.
+            The page, which of its Take 5s are fixed, and where the next page starts.
         """
-        return self._repository.list_newest_first()
+        read: tuple[SavedTake5, ...] = self._repository.list_newest_first(
+            older_than,
+            SAVED_LIST_PAGE_SIZE + 1,
+        )
+        shown: tuple[SavedTake5, ...] = read[:SAVED_LIST_PAGE_SIZE]
+        more_follow: bool = len(read) > SAVED_LIST_PAGE_SIZE
+        return SavedListPage(
+            take5s=shown,
+            fixed_ids=self._repository.fixed_among([take5.id for take5 in shown]),
+            next_older_than=shown[-1].id if more_follow else None,
+        )
 
     def fixed_by(self, take5_id: UUID) -> UUID | None:
         """Find the newest saved Take 5 that fixes this one.

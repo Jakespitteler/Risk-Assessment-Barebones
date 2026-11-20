@@ -176,6 +176,47 @@ def test_the_list_is_empty_before_anything_is_saved(tmp_path: Path) -> None:
     assert SqliteTake5Repository(tmp_path / "take5.sqlite3").list_newest_first() == ()
 
 
+def test_a_page_carries_on_after_the_one_given_even_on_a_tie(tmp_path: Path) -> None:
+    """`older_than` follows the list's own order, the save order breaking a tie."""
+    repository = SqliteTake5Repository(tmp_path / "take5.sqlite3")
+    oldest: SavedTake5 = sample_saved_take5()
+    tied_first_saved: SavedTake5 = sample_saved_take5().model_copy(
+        update={"created_at": oldest.created_at + timedelta(hours=1)},
+    )
+    tied_last_saved: SavedTake5 = tied_first_saved.model_copy(update={"id": uuid4()})
+    for take5 in (oldest, tied_first_saved, tied_last_saved):
+        repository.add(take5)
+
+    assert repository.list_newest_first(limit=1) == (tied_last_saved,)
+    assert repository.list_newest_first(older_than=tied_last_saved.id, limit=1) == (
+        tied_first_saved,
+    )
+    assert repository.list_newest_first(older_than=tied_first_saved.id) == (oldest,)
+    assert repository.list_newest_first(older_than=oldest.id) == ()
+
+
+def test_nothing_is_listed_after_a_take5_that_is_not_saved(tmp_path: Path) -> None:
+    """An unknown `older_than` gives an empty page, not the whole list."""
+    repository = SqliteTake5Repository(tmp_path / "take5.sqlite3")
+    repository.add(sample_saved_take5())
+
+    assert repository.list_newest_first(older_than=uuid4()) == ()
+
+
+def test_the_fixed_ones_are_found_among_the_ids_given(tmp_path: Path) -> None:
+    """`fixed_among` reads `fixes` from every saved document, not only those given."""
+    repository = SqliteTake5Repository(tmp_path / "take5.sqlite3")
+    fixed: SavedTake5 = sample_saved_take5()
+    not_fixed: SavedTake5 = sample_saved_take5()
+    fix: SavedTake5 = sample_saved_take5().model_copy(update={"fixes": fixed.id})
+    for take5 in (fixed, not_fixed, fix):
+        repository.add(take5)
+
+    assert repository.fixed_among([fixed.id, not_fixed.id]) == {fixed.id}
+    assert repository.fixed_among([not_fixed.id]) == frozenset()
+    assert repository.fixed_among([]) == frozenset()
+
+
 def _unfinished(take5: SavedTake5) -> SavedTake5:
     """Make a saved Take 5 unfinished, as one is before its question is answered.
 
