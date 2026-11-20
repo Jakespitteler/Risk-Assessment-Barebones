@@ -60,9 +60,9 @@ These follow the recommendations; they change with Jake's answers.
 - [ ] Tests cover reading (with a stand-in for the AI), the check, saving and the ranking of a batch.
 - [ ] Its screens are designed for a desktop as well as a phone; the check puts the photo beside the card.
 - [ ] `docs/spec.md` gets the scanning rules, worked examples, a feature section, the exceptions to F2, C6 and
-K2 that the answers need, and anyone can scan in "Users and roles". `docs/architecture.md` gets the new job and
-data, and its paragraph "What the AI is given, and keeping it trustworthy" covers photos as a new way in for
-instructions to the AI, and the AI's text from a scan being sent on to the ranking.
+  K2 that the answers need, and anyone can scan in "Users and roles". `docs/architecture.md` gets the new job and
+  data, and its paragraph "What the AI is given, and keeping it trustworthy" covers photos as a new way in for
+  instructions to the AI, and the AI's text from a scan being sent on to the ranking.
 - [ ] All checks pass.
 
 ## Out of scope

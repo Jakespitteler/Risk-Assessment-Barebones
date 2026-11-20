@@ -25,14 +25,15 @@ Questions for Jake, each with Claude's recommendation. Answered when the task st
    stays useful without an AI (the fixed score still orders them), costs less, and the fixed part can be tested
    exactly. The AI adds what rules can't see, such as copied or generic answers. If Jake picks (a), a new spec
    decision replaces D66's "one AI ranking" with "one ranking, with the AI ordering the top ones", as D30 replaced
-   D15, and the decisions log and task 0030's quote of D66 say so.
+   D15, restating the rest of D66, and the decisions log gets a new entry.
 2. **How many are shown?** Recommended: the worst 5, with "Show all" for the rest in order.
 3. **Where does it live?** Recommended: a "Worst of today" link on the saved list, opening a page with the ranked
    Take 5s, each with its line and a link to the saved Take 5.
-4. **What is "today"?** Recommended: Take 5s done since midnight where the phone is, finished or not, by when
-   the Take 5 was done rather than when it was saved, so that a pile of old paper cards scanned today isn't
-   counted as today's (task 0033). Dates are already shown in the phone's time zone; midnight on a server in
-   another zone would make "today" start at the wrong hour. The page sends its own midnight with the zone, as
+4. **What is "today"?** Recommended: Take 5s filled in since midnight where the phone is, finished or not. For a
+   Take 5 made in the app that is its `started_at`, or its `created_at` when it has none (saved before task 0019);
+   for a scanned card it will be the time written on the card (task 0033), so that a pile of old paper cards
+   scanned today isn't counted as today's. Dates are already shown in the phone's time zone; midnight on a server
+   in another zone would make "today" start at the wrong hour. The page sends its own midnight with the zone, as
    `started_at` already carries one.
 5. **Is the ranking saved?** Recommended: no. It is worked out when the page opens, and remembered only until the
    server restarts, as task 0027's verdicts are. Saving it would change the data model.
