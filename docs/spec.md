@@ -279,6 +279,17 @@ falls back to a fixed rule.
     AI. Your name isn't sent." (decision D63).
   - A worker could write instructions to the AI into a hazard. They are sent as a quoted value and the AI is told
     to ignore them; at worst one skips a nudge, which "Keep it as it is" skips anyway.
+- **T7 Stock or doesn't fit the job.** The same AI, in the same one word, can also say a hazard linked to a Yes is
+  *stock* (wording that would fit almost any job, however long, such as "Slips, trips and falls in the work
+  area") or *unfit* (it plainly can't happen on this job or where it is done, as if made up or copied). The nudge
+  shows the same way, with its own words: "This could be written about any job. What is it about this job that
+  could hurt you?" or "This doesn't seem to fit the job. Is it the right hazard, and is it here?". The worker is
+  never stopped and can still keep the words (D105); every nudge says "If you keep it as it is, it shows in today's
+  review." With no AI, only T6's word rule applies. When the Take 5 is
+  submitted, each hazard still nudged is saved with what was flagged (vague, stock or unfit), as kept by the
+  worker. Submitting uses only verdicts the AI has already given, so kept words are never sent again (D37). A
+  retry of the same submission gets the first save's flags. Take 5s saved before this keep no flags and are not
+  judged again (D110).
 
 ### The challenge question
 
@@ -373,7 +384,7 @@ batch (decisions D91 to D96). The best of the set is found too, as a good exampl
   was saved if it has no start time, finished or not. The ranking isn't saved; it is worked out when the page
   opens, and remembered until the server restarts or a Take 5 is added or finished.
 - **W8 The best.** The best is chosen from the *careful* Take 5s: finished with the question answered, controls on
-  every hazard, and no gap from W2 to W4. A rushed one (W5) can still be the best (D98). The rules shortlist up to
+  every hazard, and no gap from W2 to W4 or W10. A rushed one (W5) can still be the best (D98). The rules shortlist up to
   5 of them: the riskiest job first, then the one that took longest, then the newest. When an AI is set up and
   there are two or more, it picks one and writes a line on what was good, given what W6 gives it and never a name.
   Its reply is JSON with the number and the line, checked as W6 checks a line, with the same name check. Anything
@@ -381,7 +392,11 @@ batch (decisions D91 to D96). The best of the set is found too, as a good exampl
   risk 18 Extreme, with specific hazards, controls that lower each risk and a full answer to the question." With
   none careful there is no best. It is worked out and remembered with the ranking (W7).
 - **W9 The typical time.** The typical time is the median of the minutes each finished Take 5 took, rounded to
-  whole minutes, a half going up. One with no start time, or one started after it was saved, has no time and isn't counted.
+  whole minutes, a half going up. One with no start time, or one started after it was saved, has no time and
+  isn't counted.
+- **W10 Kept after the check.** Each hazard saved as kept after the hazard check flagged it (T7) is a thought
+  gap, unless W2 already counts it for being short, such as "“Slips, trips and falls in the work area” was kept
+  though it could fit any job". It counts against being careful (W8) like W2 to W4 do.
 
 ### Worked examples
 
@@ -557,6 +572,19 @@ both sides and nuts torqued", and was saved 10 minutes after it was started.
 | 108 | Finished ones took 2, 5 and 9 minutes; one unfinished took 30 | Typical 5 minutes | W9 |
 | 109 | A: before Possible / Major (18) with no controls. B as above (8) | B is the best | W8: a hazard with no controls isn't careful |
 | 110 | Finished ones took 3 and 10 minutes | Typical 7 minutes | W9: a half goes up |
+
+Stock and unfit hazards (T7, W10). As T6's examples with the AI, unless the row says otherwise.
+
+| # | Situation | Expected | Why |
+| --- | --- | --- | --- |
+| 111 | The hazard is "Slips, trips and falls in the work area"; the AI replies "stock" | Nudged: "This could be written about any job. What is it about this job that could hurt you?" | T7 |
+| 112 | The hazard is "Drowning in the tailings dam"; the AI replies "unfit" | Nudged: "This doesn't seem to fit the job. Is it the right hazard, and is it here?" | T7 |
+| 113 | Example 111's hazard with no AI | Not nudged: eight words pass the word rule | T7: only an AI says stock or unfit |
+| 114 | Submitted with example 111's nudge still showing, and a second hazard not nudged | The first is saved kept as stock; the second with no flag | T7 |
+| 115 | As 114, through the service, after the phone asked for the nudges | Saved kept as stock; the AI was asked once | T7: submitting sends nothing new |
+| 116 | 115 retried after the AI would now say "specific" | The first save, still kept as stock; no conflict | T7 |
+| 117 | A ranked Take 5 (as the ranking examples) whose hazard was kept as stock | Score 13; "… was kept though it could fit any job."; it can't be the best | W10, W8 |
+| 118 | Its hazard is "Moving wheel", kept as vague | Score 13, not 18 | W10: W2 already counts it |
 
 ## Features
 
@@ -841,6 +869,12 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D102 | When none is careful (2026-11-20) | The card says so | No card |
 | D103 | Telling the worker (2026-11-20) | Not in the proof of concept; noted in `docs/ideas.md` | A message to the worker |
 | D104 | Is the best saved (2026-11-20) | No: worked out and remembered with the ranking (D95) | Saved |
+| D105 | Refuse a made-up or stock hazard, or push back (2026-11-20) | Push back, never refuse: the nudge and "Keep it as it is" stay, and keeping it counts in Today's review (T7, W10) | Refuse until reworded |
+| D106 | How "made up" is told (2026-11-20) | The AI judges whether the hazard fits the job and where it is (T7) | Copied from the worker's last Take 5, which needs sign-in |
+| D107 | What stock wording is (2026-11-20) | The AI's judgement of wording that would fit any job (T7) | A fixed list |
+| D108 | How it fits T6 (2026-11-20) | Part of T6's one AI call and nudge, with its own words; the AI never suggests a hazard (T7) | A separate check |
+| D109 | Is a kept flag saved (2026-11-20) | Yes, on each hazard: a data model change Jake approved (T7) | Not saved, so the review can't count it |
+| D110 | Are older Take 5s judged again (2026-11-20) | No; noted in `docs/ideas.md` for checking the field against new standards later | Re-judge every saved Take 5 |
 
 ## Open questions
 

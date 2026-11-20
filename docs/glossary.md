@@ -60,7 +60,9 @@ helpers, and API types, which come from `src/api/schema.d.ts` through `src/api/t
 | Reason | One line saying why the job is stopped. | `Verdict.reasons` | `VerdictPanel` | V1 to V3 |
 | Warning | On the review, something allowed that will stop the job. | `FieldWarning`; `DraftCheck.warnings` | `ReviewPage`, `Warning` | V1, V2 |
 | Form error | Something missing or not allowed, so the page can't go on. Not a verdict. | `FieldError`, `FormErrors` | `Field`; `FieldError` | T2 to T5 |
-| Nudge | A suggestion under a Yes to make a vague hazard specific. It never stops Continue or Submit. | `Nudge`; `specific_hazard_nudges` | `HazardNudge`; `useHazardNudges` | T6 |
+| Nudge | A suggestion under a Yes to make a vague, stock or unfit hazard specific. It never stops Continue or Submit. | `Nudge`; `specific_hazard_nudges` | `HazardNudge`; `useHazardNudges` | T6, T7 |
+| Stock or unfit hazard | A hazard an AI calls stock (wording that fits any job) or unfit (can't happen on this job). Nudged like a vague one. | `HazardVerdict`, `HazardFlag` | `flag` | T7 |
+| Kept flag | What the hazard check still said about a hazard when it was submitted, so the worker kept it. Counts in today's review. | `Hazard.kept_flag`, `with_kept_flags` | none (the back end keeps it) | T7, W10 |
 | Vague / specific hazard | Whether a hazard says what could hurt and where. The AI judges, or the word rule does. | `HazardVerdict`; `Take5Template.specific_hazard_words`; `HazardJudge` | none (the back end decides) | T6 |
 | Fix | A new Take 5 started from a Don't start yet, with its answers copied. | `SavedTake5.fixes`; `fix.py` | `FixPanel`; `fixDraftOf` | (feature F3) |
 

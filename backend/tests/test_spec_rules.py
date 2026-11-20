@@ -139,16 +139,16 @@ def all_test_texts() -> list[str]:
 
 
 def test_the_spec_rules_are_found() -> None:
-    """All 33 rules are read, so a change to the spec's layout can't empty the check."""
+    """All 35 rules are read, so a change to the spec's layout can't empty the check."""
     rules: list[str] = spec_rule_numbers(SPEC_PATH.read_text(encoding="utf-8"))
 
     assert rules == [
         *(f"R{number}" for number in range(1, 7)),
         *(f"V{number}" for number in range(1, 4)),
-        *(f"T{number}" for number in range(1, 7)),
+        *(f"T{number}" for number in range(1, 8)),
         *(f"C{number}" for number in range(1, 7)),
         *(f"K{number}" for number in range(1, 4)),
-        *(f"W{number}" for number in range(1, 10)),
+        *(f"W{number}" for number in range(1, 11)),
     ]
 
 

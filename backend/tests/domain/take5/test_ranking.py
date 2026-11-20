@@ -24,7 +24,7 @@ from risk_assessment.domain.take5.ranking import (
     worst_score,
 )
 from risk_assessment.domain.take5.saved import SavedTake5
-from risk_assessment.domain.take5.take5 import Hazard
+from risk_assessment.domain.take5.take5 import Hazard, HazardFlag
 from risk_assessment.domain.take5.template import BOOKLET_MATRIX
 from tests.samples import BARRICADE, sample_saved_take5
 
@@ -521,3 +521,36 @@ def test_example_110_a_half_minute_rounds_up() -> None:
     )
 
     assert typical_minutes(take5s) == 7
+
+
+def kept(take5: SavedTake5, flag: HazardFlag) -> SavedTake5:
+    """Mark a Take 5's one hazard as kept after the hazard check flagged it.
+
+    Args:
+        take5: A Take 5 with one hazard.
+        flag: What the check said.
+
+    Returns:
+        The same Take 5 with its hazard flagged.
+    """
+    hazard: Hazard = take5.hazards[0].model_copy(update={"kept_flag": flag})
+    return take5.model_copy(update={"hazards": (hazard,)})
+
+
+def test_example_117_a_kept_stock_hazard_is_a_thought_gap() -> None:
+    """W10: keeping a hazard the check called stock adds 5, and says why."""
+    take5: SavedTake5 = kept(ranked_take5(), HazardFlag.STOCK)
+
+    assert worst_score(take5) == 13
+    assert rule_line(take5) == (
+        f"Highest risk 8 Moderate. “{CAREFUL_HAZARD}” was kept though it could fit "
+        "any job."
+    )
+    assert best_by_rules((take5,)) is None
+
+
+def test_example_118_a_short_kept_hazard_counts_once() -> None:
+    """W10: a hazard W2 already counts for being short isn't counted twice."""
+    take5: SavedTake5 = kept(ranked_take5(description="Moving wheel"), HazardFlag.VAGUE)
+
+    assert worst_score(take5) == 13

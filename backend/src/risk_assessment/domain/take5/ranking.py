@@ -19,7 +19,7 @@ from pydantic import BaseModel, ConfigDict
 
 from risk_assessment.domain.take5.challenge import challenge_text
 from risk_assessment.domain.take5.saved import SavedTake5
-from risk_assessment.domain.take5.take5 import Hazard
+from risk_assessment.domain.take5.take5 import Hazard, HazardFlag
 from risk_assessment.domain.wording import word_count
 
 # A hazard or an answer shorter than this shows little thought (W2, W4). It matches
@@ -37,6 +37,12 @@ LINE_MAX_CHARACTERS: int = 200
 # How many careful Take 5s the AI chooses the best from (W8).
 BEST_SHORTLIST_COUNT: int = 5
 RUSHED_GAP: str = "it was filled in in under 2 minutes"
+# What a hazard kept after the hazard check flagged it says about it (W10).
+_KEPT: dict[HazardFlag, str] = {
+    HazardFlag.VAGUE: "was kept after the check asked for more",
+    HazardFlag.STOCK: "was kept though it could fit any job",
+    HazardFlag.UNFIT: "was kept though it doesn't seem to fit the job",
+}
 
 
 class RankedBy(StrEnum):
@@ -77,7 +83,7 @@ def highest_risk(take5: SavedTake5) -> Hazard:
 
 
 def thought_gaps(take5: SavedTake5) -> tuple[str, ...]:
-    """List each sign that the answers show little thought, in plain words (W2 to W5).
+    """List each sign the answers show little thought, in plain words (W2 to W5, W10).
 
     Args:
         take5: A saved Take 5.
@@ -93,6 +99,12 @@ def thought_gaps(take5: SavedTake5) -> tuple[str, ...]:
     for hazard in take5.hazards:
         if hazard.controls and hazard.after.score == hazard.before.score:
             gaps.append(f"the controls for “{hazard.description}” don't lower its risk")
+    for hazard in take5.hazards:
+        if (
+            hazard.kept_flag is not None
+            and word_count(hazard.description) >= THOUGHTFUL_WORDS
+        ):
+            gaps.append(f"“{hazard.description}” {_KEPT[hazard.kept_flag]}")
     answer: str | None = take5.challenge.answer if take5.challenge else None
     if not take5.is_finished:
         gaps.append("the question was never answered")
@@ -380,7 +392,7 @@ def is_careful(take5: SavedTake5) -> bool:
 
     Returns:
         True when it is finished, its question was answered, every hazard has
-        controls, and W2 to W4 find nothing.
+        controls, and only W5 may find a gap.
     """
     return (
         take5.is_finished

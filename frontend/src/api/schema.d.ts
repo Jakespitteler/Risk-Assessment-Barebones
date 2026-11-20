@@ -381,6 +381,9 @@ export interface components {
          *     is needed. Description, ratings and controls are immutable once constructed.
          *     `covers` holds the IDs of the hazard questions answered Yes that the worker linked
          *     to this hazard (T5); it is empty for a Take 5 saved before links were kept.
+         *     `kept_flag` is what the hazard check still said about its words when the Take 5
+         *     was submitted, so the worker kept them after the nudge (T6, task 0037); None when
+         *     nothing was flagged, or for a Take 5 saved before flags were kept.
          */
         Hazard: {
             /** Description */
@@ -399,6 +402,7 @@ export interface components {
              * @default []
              */
             covers: string[];
+            kept_flag?: components["schemas"]["HazardFlag"] | null;
         };
         /**
          * HazardDraft
@@ -438,6 +442,12 @@ export interface components {
             covers: string[];
         };
         /**
+         * HazardFlag
+         * @description What the hazard check (T6) said was wrong with a hazard's words.
+         * @enum {string}
+         */
+        HazardFlag: "vague" | "stock" | "unfit";
+        /**
          * LevelGuidance
          * @description What one level of a scale means, in the card's own words.
          *
@@ -460,6 +470,7 @@ export interface components {
          *         message: The suggestion, in plain words.
          *         question_id: The question to show it under, such as `vehicles`, so the phone
          *             needn't work out where it goes.
+         *         flag: What is wrong with the hazard's words: vague, stock or unfit.
          */
         Nudge: {
             /** Path */
@@ -468,6 +479,7 @@ export interface components {
             message: string;
             /** Question Id */
             question_id: string;
+            flag: components["schemas"]["HazardFlag"];
         };
         /**
          * Question

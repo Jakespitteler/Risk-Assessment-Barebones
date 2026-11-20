@@ -110,12 +110,14 @@ class HazardNudger:
         """Whether an AI judges hazards, not always the word rule."""
         return self._judge is not None
 
-    def nudges(self, draft: Take5Draft) -> tuple[Nudge, ...]:
-        """Find every vague hazard linked to a Yes, and say what to do about it.
+    def nudges(self, draft: Take5Draft, ask_ai: bool = True) -> tuple[Nudge, ...]:
+        """Find every flagged hazard linked to a Yes, and say what to do about it.
 
         Args:
             draft: The worker's answers so far. The worker's name is never sent to the
                 AI: only each hazard, its question, the job and the location are.
+            ask_ai: False to use only the AI's remembered verdicts and the word rule,
+                as on submit: words the worker kept are never sent again (D37).
 
         Returns:
             One nudge for each vague hazard, in the order of the list.
@@ -124,8 +126,10 @@ class HazardNudger:
             hazard.index: hazard_judgement_text(hazard, draft.job, draft.location)
             for hazard in hazards_to_judge(draft, self._template)
         }
-        verdicts: dict[str, HazardVerdict] = self._ai_verdicts(
-            frozenset(texts.values()),
+        verdicts: dict[str, HazardVerdict] = (
+            self._ai_verdicts(frozenset(texts.values()))
+            if ask_ai
+            else self._remembered_verdicts(frozenset(texts.values()))
         )
         return specific_hazard_nudges(
             draft,
@@ -136,6 +140,24 @@ class HazardNudger:
                 if text in verdicts
             },
         )
+
+    def _remembered_verdicts(
+        self,
+        texts: frozenset[str],
+    ) -> dict[str, HazardVerdict]:
+        """Get the AI's remembered verdict on each text, asking it nothing new.
+
+        Args:
+            texts: What the AI would be given about each hazard.
+
+        Returns:
+            The verdict on each text the AI has already judged.
+        """
+        return {
+            text: verdict
+            for text in texts
+            if (verdict := self._remembered.get(text)) is not None
+        }
 
     def _ai_verdicts(self, texts: frozenset[str]) -> dict[str, HazardVerdict]:
         """Get the AI's verdict on each text: remembered, or asked for now.

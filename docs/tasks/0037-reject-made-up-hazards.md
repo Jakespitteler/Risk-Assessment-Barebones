@@ -1,7 +1,7 @@
 ---
 id: 0037
 title: Investigate refusing made-up hazards and stock wording
-status: in-progress
+status: done
 owner: claude
 branch: claude/0037-made-up-hazards
 ---
@@ -39,12 +39,31 @@ Questions for Jake, each with Claude's recommendation. Put to him on 2026-11-20 
 
 ## Acceptance criteria
 
-Written once Jake has answered the questions above.
+Jake took every recommendation on 2026-11-20, including the data model change (spec T7, W10, D105 to D110,
+examples 111 to 118).
+
+- [x] The hazard check's AI can say a hazard is stock or unfit, and the nudge says so in the app's own words; the
+  worker is never stopped.
+- [x] Each hazard still flagged at submit is saved with its flag; a retry gets the first save's flags; submitting
+  sends the AI nothing new.
+- [x] Today's review counts a kept flagged hazard as a thought gap, once, and it can't be the best.
+- [x] The nudge tells the worker that keeping it shows in today's review.
+- [x] Tests cover each worked example; all checks pass.
 
 ## Out of scope
 
-- To be settled when it starts.
+- Judging Take 5s saved before this again (D110; Jake's idea of checking the field against new standards is in
+  `docs/ideas.md`).
+- Spotting a hazard copied from the worker's last Take 5.
 
 ## Notes / assumptions
 
 Added by Claude on 2026-11-20 from Jake's list of things to investigate.
+
+Built by Claude on 2026-11-20. Assumptions:
+
+- The flags are the same AI call as T6's, with its instructions now "vague-hazard-2" (one word: specific, vague,
+  stock or unfit). With no AI, only T6's word rule applies.
+- "Kept" means still nudged when submitted, worked out on the server from the AI's remembered verdicts, so the
+  phone holds no rule. If the server restarted between the nudge and submitting, only the word rule decides.
+- A kept hazard under 6 words is counted once, by W2.

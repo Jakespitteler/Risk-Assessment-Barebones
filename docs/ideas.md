@@ -63,6 +63,8 @@ touches what is already built or decided. It only points at things; it decides n
   out in the field fell through the cracks under the previous calibration.
   - Relates to: the matrix is already data handed to the rating rules (F1), and every saved Take 5 keeps a copy
     of the template it was filled in on. "Each company's own Take 5" is in the spec's Planned for later.
+  - Jake, 2026-11-20: older Take 5s could be judged again, for example by the hazard check that task 0037 adds,
+    to see whether anything out in the field breaks a new safety standard.
 - **Compare with past Take 5s and public incidents.** Compare against previous Take 5s in our system, and against
   publicly reported incidents, like those in the WA
   [Safety Regulation System publication search](https://srs.dmp.wa.gov.au/SRS/Public/PublicationSearch?publicationTypeEnum=SbAndSir).

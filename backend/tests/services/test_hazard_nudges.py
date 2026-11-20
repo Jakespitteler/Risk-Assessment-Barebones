@@ -6,6 +6,7 @@ fails, or takes too long.
 
 import threading
 import time
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -16,9 +17,13 @@ from risk_assessment.domain.take5.hazard_nudges import (
     HazardVerdict,
     Nudge,
 )
+from risk_assessment.domain.take5.saved import SavedTake5
+from risk_assessment.domain.take5.take5 import HazardFlag
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE, Take5Template
 from risk_assessment.services.hazard_nudges import HazardNudger, RememberedVerdicts
+from risk_assessment.services.take5s import Take5Service
 from tests.samples import sample_answers, sample_draft, sample_hazard_draft
+from tests.services.test_take5s import MemoryRepository
 
 # Long enough for the test to see the nudger give up, short enough to keep it fast.
 SHORT_TIME_LIMIT_SECONDS: float = 0.05
@@ -340,3 +345,64 @@ def test_the_oldest_verdict_is_forgotten_past_the_limit() -> None:
 def test_the_ai_has_five_seconds() -> None:
     """Decision D57: the word rule decides after 5 seconds."""
     assert HAZARD_AI_TIME_LIMIT_SECONDS == 5
+
+
+def _stock_draft() -> Take5Draft:
+    """Make a draft whose one hazard, linked to the vehicles Yes, is stock wording.
+
+    Returns:
+        The draft, ready to submit.
+    """
+    hazard: HazardDraft = sample_hazard_draft().model_copy(
+        update={
+            "description": "Slips, trips and falls in the work area",
+            "covers": ("vehicles",),
+        },
+    )
+    return sample_draft(hazard).model_copy(
+        update={"answers": sample_answers(vehicles=Answer.YES)},
+    )
+
+
+def test_example_115_a_hazard_kept_after_the_nudge_is_saved_flagged() -> None:
+    """T7: submitting with a stock hazard still nudged saves it as kept.
+
+    The phone asked for the nudges first, as it does, so the AI's verdict is
+    remembered; submitting asks the AI nothing new (D37).
+    """
+    judge = StandInJudge("stock")
+    service = Take5Service(
+        MemoryRepository(),
+        BOOKLET_TEMPLATE,
+        hazard_judge=judge,
+        hazard_ai_time_limit_seconds=PLENTY_OF_TIME_SECONDS,
+    )
+    service.nudges(_stock_draft())
+
+    saved: SavedTake5 = service.submit(_stock_draft(), uuid4())
+
+    assert saved.hazards[0].kept_flag is HazardFlag.STOCK
+    assert len(judge.texts_given) == 1
+
+
+def test_example_116_a_retry_keeps_the_first_saves_flags() -> None:
+    """T7: a retry after the AI changed its mind gets the first save, not a conflict."""
+    repository = MemoryRepository()
+    submission_id: UUID = uuid4()
+    first = Take5Service(
+        repository,
+        BOOKLET_TEMPLATE,
+        hazard_judge=StandInJudge("stock"),
+        hazard_ai_time_limit_seconds=PLENTY_OF_TIME_SECONDS,
+    )
+    first.nudges(_stock_draft())
+    first.submit(_stock_draft(), submission_id)
+
+    retried: SavedTake5 = Take5Service(
+        repository,
+        BOOKLET_TEMPLATE,
+        hazard_judge=StandInJudge("specific"),
+        hazard_ai_time_limit_seconds=PLENTY_OF_TIME_SECONDS,
+    ).submit(_stock_draft(), submission_id)
+
+    assert retried.hazards[0].kept_flag is HazardFlag.STOCK

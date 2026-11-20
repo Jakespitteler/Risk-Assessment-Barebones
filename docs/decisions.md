@@ -2,6 +2,18 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-20: Push back on stock and made-up hazards, and count what is kept (task 0037)
+
+- Decision: the hazard check's AI can also call a hazard linked to a Yes *stock* (fits any job) or *unfit* (can't
+  happen on this job), and the nudge says so in the app's own words. The worker is never stopped. A hazard still
+  flagged when the Take 5 is submitted is saved with its flag, a new `kept_flag` on each hazard, and Today's review
+  counts it as a thought gap (spec T7, W10, D105 to D110). Submitting asks the AI nothing new.
+- Why: stock wording passes the word rule however little thought it shows, and a refusal on site would block a
+  worker whenever the AI is wrong. Jake took every recommendation on 2026-11-20, including the data model change.
+- Not chosen: refusing until reworded; a fixed list of stock phrases; spotting a hazard copied from the worker's
+  last Take 5 (needs sign-in); judging older Take 5s again (in `docs/ideas.md`).
+- Decided by: human.
+
 ## 2026-11-20: The best Take 5 of the day, beside the worst (task 0036)
 
 - Decision: the ranking page, renamed "Today's review", shows the best Take 5 above the worst-first list.

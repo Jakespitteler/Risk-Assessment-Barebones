@@ -765,6 +765,16 @@
             "type": "array",
             "title": "Covers",
             "default": []
+          },
+          "kept_flag": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HazardFlag"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -775,7 +785,7 @@
           "after"
         ],
         "title": "Hazard",
-        "description": "One hazard rated before and after controls, using ratings from `rate()`.\n\nWithout controls, reuse the before rating as the after rating; no second rating\nis needed. Description, ratings and controls are immutable once constructed.\n`covers` holds the IDs of the hazard questions answered Yes that the worker linked\nto this hazard (T5); it is empty for a Take 5 saved before links were kept."
+        "description": "One hazard rated before and after controls, using ratings from `rate()`.\n\nWithout controls, reuse the before rating as the after rating; no second rating\nis needed. Description, ratings and controls are immutable once constructed.\n`covers` holds the IDs of the hazard questions answered Yes that the worker linked\nto this hazard (T5); it is empty for a Take 5 saved before links were kept.\n`kept_flag` is what the hazard check still said about its words when the Take 5\nwas submitted, so the worker kept them after the nudge (T6, task 0037); None when\nnothing was flagged, or for a Take 5 saved before flags were kept."
       },
       "HazardDraft": {
         "properties": {
@@ -816,6 +826,16 @@
         "title": "HazardDraft",
         "description": "A hazard while the worker is still rating it and writing its controls.\n\nAttributes:\n    description: The hazard in the worker's own words.\n    before: The rating before controls.\n    controls: The controls, possibly none.\n    after: The rating after controls. Ignored when there are no controls (R6).\n    weak_controls_reason: Why stronger controls aren't possible, when T3 asks.\n    covers: The IDs of the hazard questions the worker linked to this hazard (T5),\n        whether it was added from a Yes or picked from the list."
       },
+      "HazardFlag": {
+        "type": "string",
+        "enum": [
+          "vague",
+          "stock",
+          "unfit"
+        ],
+        "title": "HazardFlag",
+        "description": "What the hazard check (T6) said was wrong with a hazard's words."
+      },
       "LevelGuidance": {
         "properties": {
           "level": {
@@ -848,16 +868,20 @@
           "question_id": {
             "type": "string",
             "title": "Question Id"
+          },
+          "flag": {
+            "$ref": "#/components/schemas/HazardFlag"
           }
         },
         "type": "object",
         "required": [
           "path",
           "message",
-          "question_id"
+          "question_id",
+          "flag"
         ],
         "title": "Nudge",
-        "description": "A suggestion to look again at an answer. It never stops submitting.\n\nAttributes:\n    path: The answer's dotted field path, such as `hazards.0.description`.\n    message: The suggestion, in plain words.\n    question_id: The question to show it under, such as `vehicles`, so the phone\n        needn't work out where it goes."
+        "description": "A suggestion to look again at an answer. It never stops submitting.\n\nAttributes:\n    path: The answer's dotted field path, such as `hazards.0.description`.\n    message: The suggestion, in plain words.\n    question_id: The question to show it under, such as `vehicles`, so the phone\n        needn't work out where it goes.\n    flag: What is wrong with the hazard's words: vague, stock or unfit."
       },
       "Question": {
         "properties": {
