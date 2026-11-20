@@ -117,7 +117,7 @@ function BestCard({
  * Today's best Take 5, then all of them worst first, each with one line saying why
  * (spec W1 to W9). The worst 5 show first, then "Show all" for the rest in order.
  */
-export function BestAndWorstScreen() {
+export function ReviewTodayScreen() {
   const [since] = useState(midnightToday);
   const ranking = useRankedTake5s(since);
   const [showAll, setShowAll] = useState(false);
@@ -156,7 +156,7 @@ export function BestAndWorstScreen() {
         {ranking.data && (
           <>
             <h1 tabIndex={-1} className={HEADING}>
-              Best and worst of today
+              Today’s review
             </h1>
             {take5s.length === 0 ? (
               <Card>

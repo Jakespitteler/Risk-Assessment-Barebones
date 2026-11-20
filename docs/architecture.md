@@ -158,7 +158,7 @@ frontend/
                            the risk band colours in RiskBadge.tsx are fixed, the same in both modes
         features/take5/    the Take 5's screens: the four parts of the form, the question, the result, and
                            the list of saved Take 5s (SavedTake5sScreen.tsx), and today's best and
-                           worst first (BestAndWorstScreen.tsx, spec F8). formatDateTime.ts writes
+                           worst first (ReviewTodayScreen.tsx, spec F8). formatDateTime.ts writes
                            every date the one way the spec sets (D17)
                            stage.ts is which page shows (kept in the URL); useTake5Draft.ts keeps the one
                            draft on the phone (localStorage), with its start time, the page it was left on and

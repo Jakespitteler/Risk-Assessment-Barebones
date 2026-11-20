@@ -168,7 +168,7 @@ Finding the weak ones and acting on them:
 
 - **A supervisor's "Today" page:** "Don't start yet" Take 5s, who in the crew has done one today, and what waits
   for their approval.
-  - Relates to: "Best and worst of today" (F8) is a first step that needs no sign-in.
+  - Relates to: "Today's review" (F8) is a first step that needs no sign-in.
 - **Told when something needs you**, on the home page, by email or in a Teams channel.
 - **An end-of-shift summary** (its issue #83).
 - **Crew feedback on the AI ("Helpful?")**, grouped by the AI into the same problem, and turned into backlog

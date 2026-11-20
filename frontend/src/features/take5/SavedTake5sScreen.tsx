@@ -199,8 +199,8 @@ export function SavedTake5sScreen({
               </a>
             )}
             {take5s.length > 0 && (
-              <a className={TODAY_LINK} href="/best-and-worst">
-                Best and worst of today
+              <a className={TODAY_LINK} href="/review-today">
+                Today’s review
               </a>
             )}
             {take5s.length === 0 ? (

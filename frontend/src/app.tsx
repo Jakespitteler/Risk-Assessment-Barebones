@@ -11,7 +11,7 @@ import { NewTake5Screen } from "./features/take5/NewTake5Screen";
 import { RateRiskScreen } from "./features/take5/RateRiskScreen";
 import { SavedTake5sScreen } from "./features/take5/SavedTake5sScreen";
 import { Take5ResultScreen } from "./features/take5/Take5ResultScreen";
-import { BestAndWorstScreen } from "./features/take5/BestAndWorstScreen";
+import { ReviewTodayScreen } from "./features/take5/ReviewTodayScreen";
 import type { StoredDraft } from "./features/take5/useTake5Draft";
 import {
   keepFixDraft,
@@ -141,7 +141,7 @@ const router = createBrowserRouter([
   { path: "/", element: <NewTake5Route /> },
   { path: "/take5s", element: <SavedTake5sRoute /> },
   { path: "/take5s/:id", element: <SavedTake5Route /> },
-  { path: "/best-and-worst", element: <BestAndWorstScreen /> },
+  { path: "/review-today", element: <ReviewTodayScreen /> },
   { path: "/rate-risk", element: <RateRiskScreen /> },
 ]);
 

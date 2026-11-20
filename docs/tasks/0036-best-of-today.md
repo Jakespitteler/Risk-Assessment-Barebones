@@ -41,7 +41,7 @@ D104, W8 and W9, examples 101 to 110.
 
 - [x] The rules shortlist up to 5 careful Take 5s, and an AI picks the best with one line, never seeing names;
   the rules decide when it fails or isn't set up.
-- [x] A "Best of today" card on the renamed "Best and worst of today" page shows the best, what was good, and
+- [x] A "Best of today" card on the renamed "Today's review" page shows the best, what was good, and
   how long it took beside today's typical time, or says none was careful.
 - [x] Tests cover the shortlist, the AI's pick and its checks, the typical time, and the card.
 - [x] `docs/ideas.md` holds every good idea so far, including the original Risk-Assessment app's.
@@ -62,6 +62,6 @@ Built by Claude on 2026-11-20. Assumptions:
   after the reviewer found a Take 5 with no controls could win). Shortlist order: riskiest job, then longest time,
   then newest. With one careful Take 5 it is the best without asking the AI.
 - The AI's two jobs (order the worst, pick the best) run side by side within the same 20 seconds.
-- The page's name is "Best and worst of today", at `/best-and-worst`; the route `GET /api/ranked-take5s` keeps its
+- The page's name is "Today's review", at `/review-today`; the route `GET /api/ranked-take5s` keeps its
   name and gains `best` and `typical_minutes`.
 - A time under a minute reads "under a minute", not "0 minutes".

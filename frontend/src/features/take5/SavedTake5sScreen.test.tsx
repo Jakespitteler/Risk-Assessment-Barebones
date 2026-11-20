@@ -135,9 +135,7 @@ it("says when nothing has been saved yet, and offers a new Take 5", async () => 
     await screen.findByText("No Take 5s have been saved yet."),
   ).toBeTruthy();
   expect(screen.queryByRole("list")).toBeNull();
-  expect(
-    screen.queryByRole("link", { name: "Best and worst of today" }),
-  ).toBeNull();
+  expect(screen.queryByRole("link", { name: "Today’s review" })).toBeNull();
   expect(
     screen
       .getByRole("link", { name: "Start a new Take 5" })
@@ -379,7 +377,7 @@ it("links to today's ranking once anything is saved (W7)", async () => {
   stubApi({ "GET /api/take5s": { status: 200, body: PAGE } });
   renderWithApi(<SavedTake5sScreen />);
   const link = await screen.findByRole("link", {
-    name: "Best and worst of today",
+    name: "Today’s review",
   });
-  expect(link.getAttribute("href")).toBe("/best-and-worst");
+  expect(link.getAttribute("href")).toBe("/review-today");
 });

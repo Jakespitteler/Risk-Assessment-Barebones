@@ -683,12 +683,12 @@ sent to the server (decisions D69 to D79).
   on every screen the whole-app tests visit, checked by axe.
 - Acceptance: a phone set to dark never shows a white page while the app starts.
 
-### F8: Best and worst of today
+### F8: Today's review
 
 Today's Take 5s, worst first, each with one line saying why (W1 to W7), and the best one (W8). For whoever looks
 through a day's Take 5s, on a phone or a desktop.
 
-- Acceptance: the saved list has "Best and worst of today" once anything is saved. It opens the ranking, numbered
+- Acceptance: the saved list has "Today's review" once anything is saved. It opens the ranking, numbered
   from 1, each with its verdict, job, line, worker's name and time, and a link to the saved Take 5.
 - Acceptance: a "Best of today" card above the ranking shows the best with its verdict, job, line, worker's name
   and how long it took beside today's typical time (W9), such as "Took 9 minutes. Today's typical Take 5 took 3
@@ -829,14 +829,14 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D90 | The "5" logo (2026-11-20) | A link to the start page, named "Take 5 home", which carries on the kept draft rather than throwing it away | Plain picture; a link that asks to start afresh |
 | D91 | Who orders a ranking (2026-11-20) | Fixed rules score every Take 5 (W1 to W5), then an AI reorders the worst 10 and writes their lines (W6). Replaces D66's "one AI ranking"; the rest of D66 stands | The AI orders them all |
 | D92 | How many are shown (2026-11-20) | The worst 5, then "Show all" | All of them; the worst 10 |
-| D93 | Where the ranking lives (2026-11-20) | "Worst of today" on the saved list, renamed "Best and worst of today" by D100 | Its own button on the first screen |
+| D93 | Where the ranking lives (2026-11-20) | "Worst of today" on the saved list, renamed "Today's review" by D100 | Its own button on the first screen |
 | D94 | What "today" is (2026-11-20) | Since midnight where the phone is, by when a Take 5 was started, finished or not (W7) | Midnight on the server; finished ones only |
 | D95 | Is a ranking saved (2026-11-20) | No: worked out when the page opens, remembered until the server restarts | Saved, which changes the data model |
 | D96 | What the AI is given (2026-11-20) | What the challenge question gets (C1), plus the question, answer and minutes taken; never the name | Everything saved, name included |
 | D97 | The focus outline on the undo bar (2026-11-20) | The bar's own text colour (white on the dark bar in light mode, near-black on the light bar in dark mode), so it stands out | The blue used elsewhere, at about 2.3 to 1 on the bar |
 | D98 | What makes the best (2026-11-20) | The rules shortlist up to 5 finished Take 5s, answered, with controls on every hazard and no gap from W2 to W4, and an AI picks one and writes why (W8). A rushed one can still be best: good answers are good however quick (Jake) | The rules alone; rushed ones left out |
 | D99 | How many are best (2026-11-20) | One | The best 3 |
-| D100 | Where the best shows (2026-11-20) | A card above the ranking, on the same page, renamed "Best and worst of today" | Its own page |
+| D100 | Where the best shows (2026-11-20) | A card above the ranking, on the same page, renamed "Today's review" (Jake's pick from four names) | Its own page |
 | D101 | Showing how long it takes (2026-11-20) | The time the best took beside the day's typical time, the median (W9) | Its time alone |
 | D102 | When none is careful (2026-11-20) | The card says so | No card |
 | D103 | Telling the worker (2026-11-20) | Not in the proof of concept; noted in `docs/ideas.md` | A message to the worker |

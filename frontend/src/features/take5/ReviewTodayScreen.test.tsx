@@ -2,7 +2,7 @@ import { fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { BestTake5Line, RankedTake5Line } from "../../api/take5";
 import { renderWithApi, stubApi } from "../../test-utils";
-import { BestAndWorstScreen } from "./BestAndWorstScreen";
+import { ReviewTodayScreen } from "./ReviewTodayScreen";
 
 // 2:30 pm on 20 Nov 2026 where the tests run; the ranking starts at that midnight.
 const NOW = new Date(2026, 10, 20, 14, 30);
@@ -42,9 +42,9 @@ it("asks for today's Take 5s from midnight where the phone is (W7)", async () =>
       body: { take5s: [], best: null, typical_minutes: null },
     },
   });
-  renderWithApi(<BestAndWorstScreen />);
+  renderWithApi(<ReviewTodayScreen />);
   expect(
-    await screen.findByRole("heading", { name: "Best and worst of today" }),
+    await screen.findByRole("heading", { name: "Today’s review" }),
   ).toBeTruthy();
   expect(calls).toEqual([RANKING_URL]);
   expect(screen.getByText("No Take 5s have been started today.")).toBeTruthy();
@@ -61,8 +61,8 @@ it("lists them worst first with place, verdict, job, reason and worker (W1)", as
       },
     },
   });
-  renderWithApi(<BestAndWorstScreen />);
-  await screen.findByRole("heading", { name: "Best and worst of today" });
+  renderWithApi(<ReviewTodayScreen />);
+  await screen.findByRole("heading", { name: "Today’s review" });
   const [worst, next] = screen
     .getAllByRole("listitem")
     .map((item) => within(item));
@@ -89,8 +89,8 @@ it("shows the worst 5, then the rest in order on Show all", async () => {
       },
     },
   });
-  renderWithApi(<BestAndWorstScreen />);
-  await screen.findByRole("heading", { name: "Best and worst of today" });
+  renderWithApi(<ReviewTodayScreen />);
+  await screen.findByRole("heading", { name: "Today’s review" });
   expect(screen.getAllByRole("listitem")).toHaveLength(5);
   fireEvent.click(screen.getByRole("button", { name: "Show all 7" }));
   expect(screen.getAllByRole("listitem")).toHaveLength(7);
@@ -109,7 +109,7 @@ it("says when an AI ordered them, and that names aren't sent (W6)", async () => 
       },
     },
   });
-  renderWithApi(<BestAndWorstScreen />);
+  renderWithApi(<ReviewTodayScreen />);
   expect(
     await screen.findByText(
       "An AI helped choose these and wrote their reasons. Names aren’t sent to it.",
@@ -127,7 +127,7 @@ it("says while it ranks, and offers Try again when it can't (W6)", async () => {
       },
     ],
   });
-  renderWithApi(<BestAndWorstScreen />);
+  renderWithApi(<ReviewTodayScreen />);
   expect(
     screen.getByRole("heading", { name: "Ranking today’s Take 5s…" }),
   ).toBeTruthy();
@@ -138,7 +138,7 @@ it("says while it ranks, and offers Try again when it can't (W6)", async () => {
   ).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
   expect(
-    await screen.findByRole("heading", { name: "Best and worst of today" }),
+    await screen.findByRole("heading", { name: "Today’s review" }),
   ).toBeTruthy();
   expect(screen.getByText("Reason 1.")).toBeTruthy();
 });
@@ -161,7 +161,7 @@ it("shows the best of today with why and how long it took (W8, W9)", async () =>
       body: { take5s: [ranked(1)], best: BEST, typical_minutes: 3 },
     },
   });
-  renderWithApi(<BestAndWorstScreen />);
+  renderWithApi(<ReviewTodayScreen />);
   const best = within(
     await screen.findByRole("region", { name: "Best of today" }),
   );
@@ -187,7 +187,7 @@ it("says under a minute rather than 0 minutes (W9)", async () => {
       },
     },
   });
-  renderWithApi(<BestAndWorstScreen />);
+  renderWithApi(<ReviewTodayScreen />);
   expect(
     await screen.findByText(
       "Took under a minute. Today’s typical Take 5 took 1 minute.",
@@ -202,7 +202,7 @@ it("says when no Take 5 today was careful enough to be the best (W8)", async () 
       body: { take5s: [ranked(1)], best: null, typical_minutes: null },
     },
   });
-  renderWithApi(<BestAndWorstScreen />);
+  renderWithApi(<ReviewTodayScreen />);
   expect(
     await screen.findByText(
       "No Take 5 today was free of signs of little thought.",

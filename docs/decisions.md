@@ -4,14 +4,14 @@ Newest first. One short entry per non-obvious decision.
 
 ## 2026-11-20: The best Take 5 of the day, beside the worst (task 0036)
 
-- Decision: the ranking page, renamed "Best and worst of today", shows the best Take 5 above the worst-first list.
+- Decision: the ranking page, renamed "Today's review", shows the best Take 5 above the worst-first list.
   The rules shortlist up to 5 finished Take 5s with no gap from W2 to W4; a rushed one can still be best, as
   good answers are good however quick. An AI picks one and says what was good, never seeing names, checked as the
   worst's lines are, with the rules' first pick when it fails. The card shows how long it took beside the day's
   median time. Nothing is saved; it is remembered with the ranking (spec D98 to D104, W8, W9). Telling the worker
   waits for later, in `docs/ideas.md`.
 - Why: a good example to point at, not only things to fix, and how long a good Take 5 takes. Jake took every
-  recommendation on 2026-11-20 except that rushed ones count, and the page's new name.
+  recommendation on 2026-11-20 except that rushed ones count, and picked the page's new name, "Today's review", from four.
 - Not chosen: the rules alone (can't tell specific answers from long stock wording); its own page.
 - Decided by: human.
 
