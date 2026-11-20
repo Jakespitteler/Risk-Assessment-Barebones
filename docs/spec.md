@@ -372,16 +372,16 @@ batch (decisions D91 to D96). The best of the set is found too, as a good exampl
 - **W7 Today.** "Today" is from midnight where the phone is: a Take 5 counts from when it was started, or when it
   was saved if it has no start time, finished or not. The ranking isn't saved; it is worked out when the page
   opens, and remembered until the server restarts or a Take 5 is added or finished.
-- **W8 The best.** The best is chosen from the *careful* Take 5s: finished, with no gap from W2 to W4. A rushed
-  one (W5) can still be the best (D98). The rules shortlist up to 5 of them: the riskiest job first, then the one
-  that took longest, then the newest. When an AI is set up and there are two or more, it picks one and writes a
-  line on what was good, given what W6 gives it and never a name. Its reply is JSON with the number and the line,
-  checked as W6 checks a line, with the same name check. Anything else, an error or no answer in the same 20
-  seconds, and the shortlist's first wins with the rules' line: "Highest risk 18 Extreme, with specific hazards,
-  controls that lower each risk and a full answer to the question." With none careful there is no best. It is
-  worked out and remembered with the ranking (W7).
+- **W8 The best.** The best is chosen from the *careful* Take 5s: finished with the question answered, controls on
+  every hazard, and no gap from W2 to W4. A rushed one (W5) can still be the best (D98). The rules shortlist up to
+  5 of them: the riskiest job first, then the one that took longest, then the newest. When an AI is set up and
+  there are two or more, it picks one and writes a line on what was good, given what W6 gives it and never a name.
+  Its reply is JSON with the number and the line, checked as W6 checks a line, with the same name check. Anything
+  else, an error or no answer in the same 20 seconds, and the shortlist's first wins with the rules' line: "Highest
+  risk 18 Extreme, with specific hazards, controls that lower each risk and a full answer to the question." With
+  none careful there is no best. It is worked out and remembered with the ranking (W7).
 - **W9 The typical time.** The typical time is the median of the minutes each finished Take 5 took, rounded to
-  whole minutes. One with no start time, or one started after it was saved, has no time and isn't counted.
+  whole minutes, a half going up. One with no start time, or one started after it was saved, has no time and isn't counted.
 
 ### Worked examples
 
@@ -555,6 +555,8 @@ both sides and nuts torqued", and was saved 10 minutes after it was started.
 | 106 | Two careful; the AI picks number 3 | Thrown away; the shortlist's first wins | W8 |
 | 107 | Two careful; the AI's line is "Sam took real care." | Its pick stands with the rules' line | W8: names never come back |
 | 108 | Finished ones took 2, 5 and 9 minutes; one unfinished took 30 | Typical 5 minutes | W9 |
+| 109 | A: before Possible / Major (18) with no controls. B as above (8) | B is the best | W8: a hazard with no controls isn't careful |
+| 110 | Finished ones took 3 and 10 minutes | Typical 7 minutes | W9: a half goes up |
 
 ## Features
 
@@ -832,7 +834,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D95 | Is a ranking saved (2026-11-20) | No: worked out when the page opens, remembered until the server restarts | Saved, which changes the data model |
 | D96 | What the AI is given (2026-11-20) | What the challenge question gets (C1), plus the question, answer and minutes taken; never the name | Everything saved, name included |
 | D97 | The focus outline on the undo bar (2026-11-20) | The bar's own text colour (white on the dark bar in light mode, near-black on the light bar in dark mode), so it stands out | The blue used elsewhere, at about 2.3 to 1 on the bar |
-| D98 | What makes the best (2026-11-20) | The rules shortlist up to 5 finished Take 5s with no gap from W2 to W4, and an AI picks one and writes why (W8). A rushed one can still be best: good answers are good however quick (Jake) | The rules alone; rushed ones left out |
+| D98 | What makes the best (2026-11-20) | The rules shortlist up to 5 finished Take 5s, answered, with controls on every hazard and no gap from W2 to W4, and an AI picks one and writes why (W8). A rushed one can still be best: good answers are good however quick (Jake) | The rules alone; rushed ones left out |
 | D99 | How many are best (2026-11-20) | One | The best 3 |
 | D100 | Where the best shows (2026-11-20) | A card above the ranking, on the same page, renamed "Best and worst of today" | Its own page |
 | D101 | Showing how long it takes (2026-11-20) | The time the best took beside the day's typical time, the median (W9) | Its time alone |

@@ -488,3 +488,36 @@ def test_example_108_the_typical_time_is_the_median_of_finished_ones() -> None:
 def test_with_no_times_there_is_no_typical_time() -> None:
     """W9: nothing to measure gives no typical time."""
     assert typical_minutes((ranked_take5(minutes_taken=None),)) is None
+
+
+def test_example_109_a_hazard_with_no_controls_is_never_careful() -> None:
+    """W8: the riskiest Take 5 isn't the best when a hazard has no controls."""
+    careful: SavedTake5 = ranked_take5()
+    risky: SavedTake5 = ranked_take5(before=("Possible", "Major"))
+    uncontrolled: SavedTake5 = risky.model_copy(
+        update={
+            "hazards": (risky.hazards[0].model_copy(update={"controls": ()}),),
+        },
+    )
+
+    best: BestTake5 | None = best_by_rules((careful, uncontrolled))
+
+    assert best is not None
+    assert best.take5.id == careful.id
+
+
+def test_a_take5_with_no_question_is_never_careful() -> None:
+    """W8: one finished before questions were asked has no answer to judge."""
+    take5: SavedTake5 = ranked_take5().model_copy(update={"challenge": None})
+
+    assert best_by_rules((take5,)) is None
+
+
+def test_example_110_a_half_minute_rounds_up() -> None:
+    """W9: the median of 3 and 10 minutes is 6.5, shown as 7."""
+    take5s: tuple[SavedTake5, ...] = (
+        ranked_take5(minutes_taken=3),
+        ranked_take5(minutes_taken=10),
+    )
+
+    assert typical_minutes(take5s) == 7

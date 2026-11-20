@@ -1,7 +1,7 @@
 ---
 id: 0036
 title: Find the best Take 5 of the day as well as the worst
-status: review
+status: done
 owner: claude
 branch: claude/0036-best-of-today
 ---
@@ -37,7 +37,7 @@ Questions for Jake, each with Claude's recommendation. Put to him on 2026-11-20 
 
 Jake took every recommendation on 2026-11-20, except: a rushed Take 5 can still be the best (1), the page gets a
 more fitting name (3), and telling the worker is noted for later with every other good idea (6). Spec D98 to
-D104, W8 and W9, examples 101 to 108.
+D104, W8 and W9, examples 101 to 110.
 
 - [x] The rules shortlist up to 5 careful Take 5s, and an AI picks the best with one line, never seeing names;
   the rules decide when it fails or isn't set up.
@@ -58,8 +58,9 @@ Added by Claude on 2026-11-20 from Jake's list of things to investigate. Builds 
 
 Built by Claude on 2026-11-20. Assumptions:
 
-- "Careful" means finished, with no gap from W2 to W4. Shortlist order: riskiest job, then longest time, then
-  newest. With one careful Take 5 it is the best without asking the AI.
+- "Careful" means finished with the question answered, controls on every hazard and no gap from W2 to W4 (added
+  after the reviewer found a Take 5 with no controls could win). Shortlist order: riskiest job, then longest time,
+  then newest. With one careful Take 5 it is the best without asking the AI.
 - The AI's two jobs (order the worst, pick the best) run side by side within the same 20 seconds.
 - The page's name is "Best and worst of today", at `/best-and-worst`; the route `GET /api/ranked-take5s` keeps its
   name and gains `best` and `typical_minutes`.

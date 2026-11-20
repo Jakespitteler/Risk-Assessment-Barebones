@@ -339,7 +339,7 @@ def test_the_ai_picks_the_best_of_the_careful_ones(
     assert today.best is not None
     assert today.best.take5.id == quick.id
     assert today.best.line == "Exact chock points."
-    assert today.typical_minutes == 6  # The median of 10 and 3 is 6.5, rounded.
+    assert today.typical_minutes == 7  # The median of 10 and 3 is 6.5, rounded up.
 
 
 def test_a_failed_ai_pick_leaves_the_rules_best_and_is_asked_again(
@@ -388,3 +388,23 @@ def test_one_careful_take5_is_the_best_without_asking_the_ai(
     assert ranker.best_texts == []
     assert today.best is not None
     assert today.best.take5.id == careful.id
+
+
+def test_both_ai_jobs_share_one_time_limit(
+    repository: SqliteTake5Repository,
+) -> None:
+    """W6, W8: ordering and picking run side by side, so a slow AI costs one limit."""
+    two_careful_today(repository)
+    service = Take5RankingService(
+        repository,
+        StandInRanker(SWAPPED, delay_seconds=2),
+        ai_time_limit_seconds=0.5,
+    )
+
+    started: float = time.monotonic()
+    today: BestAndWorst = service.since(MIDNIGHT_IN_PERTH)
+    took: float = time.monotonic() - started
+
+    assert took < 0.9
+    assert today.best is not None
+    assert today.best.picked_by is RankedBy.RULES

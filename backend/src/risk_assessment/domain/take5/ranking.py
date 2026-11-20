@@ -7,6 +7,7 @@ given and checks what it sends back, so a bad reply never reaches the page.
 """
 
 import json
+import math
 import re
 import statistics
 from collections.abc import Sequence
@@ -369,7 +370,7 @@ class BestTake5(BaseModel):
 
 
 def is_careful(take5: SavedTake5) -> bool:
-    """Say whether a Take 5 is finished with no thought gap but haste (W8).
+    """Say whether a Take 5 is careful enough to be the best (W8).
 
     A rushed Take 5 can still be the best: Jake chose on 2026-11-20 that a Take 5
     with good answers is good however quickly it was done.
@@ -378,9 +379,16 @@ def is_careful(take5: SavedTake5) -> bool:
         take5: A saved Take 5.
 
     Returns:
-        True when it is finished, and W2 to W4 find nothing.
+        True when it is finished, its question was answered, every hazard has
+        controls, and W2 to W4 find nothing.
     """
-    return take5.is_finished and all(gap == RUSHED_GAP for gap in thought_gaps(take5))
+    return (
+        take5.is_finished
+        and take5.challenge is not None
+        and take5.challenge.answer is not None
+        and all(hazard.controls for hazard in take5.hazards)
+        and all(gap == RUSHED_GAP for gap in thought_gaps(take5))
+    )
 
 
 def best_shortlist(take5s: Sequence[SavedTake5]) -> tuple[SavedTake5, ...]:
@@ -455,7 +463,7 @@ def minutes_taken(take5: SavedTake5) -> int | None:
         The minutes from its start to its save, or None when that can't be told.
     """
     taken: timedelta | None = time_taken(take5)
-    return round(taken.total_seconds() / 60) if taken is not None else None
+    return _whole(taken.total_seconds() / 60) if taken is not None else None
 
 
 def typical_minutes(take5s: Sequence[SavedTake5]) -> int | None:
@@ -473,7 +481,21 @@ def typical_minutes(take5s: Sequence[SavedTake5]) -> int | None:
         for take5 in take5s
         if take5.is_finished and (taken := time_taken(take5)) is not None
     ]
-    return round(statistics.median(times)) if times else None
+    return _whole(statistics.median(times)) if times else None
+
+
+def _whole(minutes: float) -> int:
+    """Round minutes to a whole number, a half going up, as people expect (W9).
+
+    Python's `round()` sends a half to the even number, so 6.5 would be 6.
+
+    Args:
+        minutes: The minutes, never negative.
+
+    Returns:
+        The nearest whole minute.
+    """
+    return math.floor(minutes + 0.5)
 
 
 def best_text(shortlist: Sequence[SavedTake5]) -> str:

@@ -154,7 +154,7 @@ export interface paths {
          *
          *     Args:
          *         since: The moment, with its time zone, such as midnight where the phone
-         *             is for "Worst of today".
+         *             is for "Best and worst of today".
          */
         get: operations["ranked_take5s_api_ranked_take5s_get"];
         put?: never;

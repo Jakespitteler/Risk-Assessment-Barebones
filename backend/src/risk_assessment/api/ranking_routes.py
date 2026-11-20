@@ -42,7 +42,7 @@ def create_ranking_router(service: Take5RankingService) -> APIRouter:
 
         Args:
             since: The moment, with its time zone, such as midnight where the phone
-                is for "Worst of today".
+                is for "Best and worst of today".
         """
         today: BestAndWorst = service.since(since)
         return RankedTake5s(

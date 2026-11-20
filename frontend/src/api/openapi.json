@@ -350,7 +350,7 @@
           "ranking"
         ],
         "summary": "Ranked Take5S",
-        "description": "Rank the Take 5s started since a moment, and find the best (W1 to W9).\n\nArgs:\n    since: The moment, with its time zone, such as midnight where the phone\n        is for \"Worst of today\".",
+        "description": "Rank the Take 5s started since a moment, and find the best (W1 to W9).\n\nArgs:\n    since: The moment, with its time zone, such as midnight where the phone\n        is for \"Best and worst of today\".",
         "operationId": "ranked_take5s_api_ranked_take5s_get",
         "parameters": [
           {
