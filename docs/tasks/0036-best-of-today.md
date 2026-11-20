@@ -1,9 +1,9 @@
 ---
 id: 0036
 title: Find the best Take 5 of the day as well as the worst
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/0036-best-of-today
 ---
 
 ## Goal
