@@ -9,7 +9,7 @@ Newest first. One short entry per non-obvious decision.
   time. Every colour is named once by its job in `frontend/src/index.css`, with a light and a dark value; the
   risk band colours stay fixed. A few lines in `index.html` set the mode before the app draws. Text reaches 7 to
   1 in both modes, checked by `@axe-core/playwright` on every screenshot the whole-app tests take, and those tests
-  now run twice, on a light phone and a dark one (spec D64 to D74).
+  now run twice, on a light phone and a dark one (spec D69 to D79).
 - Why: Jake took every recommended answer, and added "how it looks" as a reason. Light reads best in full sun,
   so a gloved worker needs a way back without the phone's settings, and a phone that goes dark at sunset should
   take the app with it. Named colours mean a new component gets dark mode for free. axe checks the pages as
@@ -21,6 +21,23 @@ Newest first. One short entry per non-obvious decision.
 - Not chosen: the phone's setting only; a three-way switch; a `dark:` class beside every colour; a Vitest test of
   colour pairs; WCAG AA only.
 - Decided by: human (the product choices), agent (how).
+
+## 2026-11-19: The app's goal, and the work it needs (task 0030)
+
+- Decision: The goal at the top of `docs/spec.md`: make a mine site safer by making every Take 5 count. A Take 5
+  on a phone or a desktop makes the worker think and stays quick and pleasant enough to be used; paper cards
+  can be photographed into normal saved Take 5s, confirmed by a person beside the photo; and any set of Take 5s
+  can be ranked worst first by the AI, weighing risk against how little thought the answers show. Anyone can
+  scan and rank, with no sign-in. The AI is used wherever it makes a Take 5 safer, but a worker never needs it to
+  finish one. Speed is judged by feel in demos, not a fixed target (spec D64 to D68).
+- Why: Jake is proving a point to safety people and crews alike, and an app nobody uses makes no one safer. He
+  wants it simple and focused on one goal, so that usability doesn't distract from what it proves.
+- How: three new tasks, in this order after 0028: 0031 a desktop test (screens already fit a desktop), 0032 rank
+  Take 5s worst first (one ranking for a scanned batch and for "worst of the day", with workers' names shown, as
+  on the saved list), 0033 photograph paper cards into Take 5s. Task 0021 (the saved list 50 at a time) is parked.
+- Not chosen: a phone-only app; a supervisor role for scanning and ranking; saving scans without a person's check;
+  a fixed time target such as two hazards in under three minutes.
+- Decided by: human (Jake and Claude worked on the goal over several messages until both agreed it).
 
 ## 2026-11-19: One command starts the app, and every command runs from the repo root (task 0029)
 

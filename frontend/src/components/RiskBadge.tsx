@@ -1,4 +1,4 @@
-// Colours for the booklet's bands, the same in light and dark (spec D69), with one edge colour
+// Colours for the booklet's bands, the same in light and dark (spec D74), with one edge colour
 // that shows on both pages. A band from another matrix gets the plain style.
 const BAND_STYLES: Record<string, string> = {
   Low: "bg-green-700 text-white",
