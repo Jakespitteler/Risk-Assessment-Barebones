@@ -5,7 +5,8 @@ This file is the single source of truth for how to work here. Keep it under ~150
 
 ## What this is
 
-A risk assessment app. Full product definition lives in `docs/spec.md`.
+A risk assessment app. Full product definition lives in `docs/spec.md`. It is a proof of concept: judge every
+task against the goal at the top of the spec, and keep the app as simple as possible while still nice to use.
 Stack: **a Python 3.13+ FastAPI back end (`backend/`) and a React + TypeScript front end (`frontend/`), with
 SQLite**. The full library list and the reasons are in `docs/architecture.md`.
 
