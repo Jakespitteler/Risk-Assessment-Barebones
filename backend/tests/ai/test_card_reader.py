@@ -76,4 +76,4 @@ def test_the_reader_sends_the_photo_and_hands_back_the_reply_unchecked() -> None
     assert reply == "not even JSON"
     assert (photo, media_type) == (b"photo", "image/png")
     assert instructions == card_reader_instructions(BOOKLET_TEMPLATE)
-    assert CARD_READER_INSTRUCTIONS_VERSION == "card-reader-2"
+    assert CARD_READER_INSTRUCTIONS_VERSION == "card-reader-3"

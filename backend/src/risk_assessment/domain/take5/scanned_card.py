@@ -25,9 +25,6 @@ from risk_assessment.domain.take5.draft import (
 )
 from risk_assessment.domain.take5.template import Take5Template
 
-# A path the page can put beside a field, such as "job" or "hazards.0.before".
-_FIELD_PATH: re.Pattern[str] = re.compile(r"^[a-z_]+(\.[a-z0-9_]+){0,4}$")
-_LONGEST_PATH: int = 60
 # The card's own fields, the first part of any path.
 _CARD_FIELDS: frozenset[str] = frozenset(
     {"worker_name", "job", "location", "filled_in_at", "answers", "hazards"},
@@ -157,51 +154,56 @@ class _Reading:
             path: Where the list is on the card.
 
         Returns:
-            The items, at most `_MOST_ITEMS`.
+            The items, at most `_MOST_ITEMS`. A longer list is cut and marked, so
+            the person checking adds the rest from the photo.
         """
         items: list[object] | None = _items(value)
         if items is not None:
+            if len(items) > _MOST_ITEMS:
+                self.unreadable.append(path)
             return items[:_MOST_ITEMS]
         self.unreadable.append(path)
         return []
 
-    def ai_paths(self, value: object, hazard_count: int) -> None:
+    def ai_paths(self, value: object, draft: Take5Draft) -> None:
         """Add the AI's own list of fields it couldn't read, keeping only real ones.
 
         Args:
             value: The AI's list of paths.
-            hazard_count: How many hazards were read, so a path to a hazard that
-                isn't there is dropped.
+            draft: The card as read, so a path to a field it doesn't have is dropped.
         """
-        ids: set[str] = {question.id for question in self.template.questions}
+        real_paths: set[str] = _card_paths(self.template, draft)
         for path in _items(value) or []:
-            if isinstance(path, str) and _is_card_path(path, ids, hazard_count):
+            if isinstance(path, str) and path in real_paths:
                 self.unreadable.append(path)
 
 
-def _is_card_path(path: str, question_ids: set[str], hazard_count: int) -> bool:
-    """Say whether a path the AI gave names a field this card really has.
+def _card_paths(template: Take5Template, draft: Take5Draft) -> set[str]:
+    """List every path the page can put a mark beside on this card.
 
     Args:
-        path: The path, such as "job" or "hazards.0.description".
-        question_ids: The card's question ids.
-        hazard_count: How many hazards were read.
+        template: The card, with its questions.
+        draft: The card as read, with its hazards and controls.
 
     Returns:
-        True for a short, plain path to one of the card's fields.
+        Each path, such as "job", "answers.scope" or "hazards.0.controls.1.kind".
     """
-    if len(path) > _LONGEST_PATH or not _FIELD_PATH.match(path):
-        return False
-    parts: list[str] = path.split(".")
-    if parts[0] not in _CARD_FIELDS:
-        return False
-    if len(parts) == 1:
-        return True
-    if parts[0] == "hazards":
-        return parts[1].isdigit() and int(parts[1]) < hazard_count
-    if parts[0] == "answers":
-        return parts[1] in question_ids
-    return False
+    paths: set[str] = set(_CARD_FIELDS)
+    paths.update(f"answers.{question.id}" for question in template.questions)
+    for index, hazard in enumerate(draft.hazards):
+        at: str = f"hazards.{index}"
+        paths.update({at, f"{at}.description", f"{at}.controls"})
+        for rating in ("before", "after"):
+            paths.update(
+                {f"{at}.{rating}", f"{at}.{rating}.likelihood"},
+            )
+            paths.add(f"{at}.{rating}.consequence")
+        for control in range(len(hazard.controls)):
+            control_at: str = f"{at}.controls.{control}"
+            paths.update(
+                {control_at, f"{control_at}.description", f"{control_at}.kind"},
+            )
+    return paths
 
 
 def scanned_card(reply: str, template: Take5Template) -> ScannedCard | None:
@@ -235,7 +237,7 @@ def scanned_card(reply: str, template: Take5Template) -> ScannedCard | None:
         ),
     )
     filled_in_at: str | None = _date_time(card.get("filled_in_at", ""), reading)
-    reading.ai_paths(card.get("unreadable"), len(draft.hazards))
+    reading.ai_paths(card.get("unreadable"), draft)
     return ScannedCard(
         draft=draft,
         filled_in_at=filled_in_at,
@@ -363,7 +365,7 @@ def _date_time(written: object, reading: _Reading) -> str | None:
     Returns:
         "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM", or None.
     """
-    if written == "":
+    if isinstance(written, str) and not written.strip():
         return None
     matched: re.Match[str] | None = (
         _DATE_TIME.match(written.strip()) if isinstance(written, str) else None

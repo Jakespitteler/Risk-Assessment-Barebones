@@ -18,7 +18,7 @@ from risk_assessment.domain.take5.template import Take5Template
 
 _logger: logging.Logger = logging.getLogger(__name__)
 
-CARD_READER_INSTRUCTIONS_VERSION: str = "card-reader-2"
+CARD_READER_INSTRUCTIONS_VERSION: str = "card-reader-3"
 
 _INSTRUCTIONS: str = """\
 You read a photo of a paper Take 5 card: the short personal risk assessment a \
@@ -47,7 +47,7 @@ Reply with this JSON, using only those ids and words:
   "worker_name": "the name on the card",
   "job": "the job, as written",
   "location": "where the job is, as written",
-  "filled_in_at": "the date, or date and time, on the card, as ISO 8601, or null",
+  "filled_in_at": "the date, or date and time, on the card, as ISO 8601",
   "answers": {{"<question id>": "<answer>"}},
   "hazards": [
     {{
@@ -57,7 +57,8 @@ Reply with this JSON, using only those ids and words:
       "after": {{"likelihood": "<likelihood>", "consequence": "<consequence>"}}
     }}
   ],
-  "unreadable": ["paths you couldn't read, such as job or hazards.0.description"]
+  "unreadable": ["paths you couldn't read, such as job, answers.<question id>, \
+hazards.0.description, hazards.0.before.likelihood or hazards.0.controls.1.kind"]
 }}
 """
 

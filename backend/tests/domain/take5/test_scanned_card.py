@@ -165,13 +165,25 @@ def test_only_the_ais_paths_that_look_like_fields_are_kept() -> None:
                 "started_at",
                 "hazards.7.description",
                 "answers.not_a_question",
+                "job\n",
+                "hazards.00",
+                "hazards.0.zzz",
+                "answers.scope.x",
+                "hazards.0.controls.5.kind",
+                "hazards.0.controls.0.kind",
+                "answers.scope",
             ],
         ),
         BOOKLET_TEMPLATE,
     )
 
     assert card is not None
-    assert card.unreadable == ("job", "hazards.0.description")
+    assert card.unreadable == (
+        "job",
+        "hazards.0.description",
+        "hazards.0.controls.0.kind",
+        "answers.scope",
+    )
 
 
 def test_a_date_with_no_time_stays_a_date() -> None:
@@ -250,3 +262,31 @@ def test_a_date_in_any_other_form_is_marked(written: str) -> None:
     assert card is not None
     assert card.filled_in_at is None
     assert card.unreadable == ("filled_in_at",)
+
+
+def test_a_date_left_null_is_unreadable_but_left_blank_is_not() -> None:
+    """Null means the AI couldn't read the date; "" or spaces mean there was none."""
+    unread: ScannedCard | None = scanned_card(
+        reading(filled_in_at=None),
+        BOOKLET_TEMPLATE,
+    )
+    blank: ScannedCard | None = scanned_card(
+        reading(filled_in_at="   "),
+        BOOKLET_TEMPLATE,
+    )
+
+    assert unread is not None
+    assert blank is not None
+    assert unread.unreadable == ("filled_in_at",)
+    assert (blank.filled_in_at, blank.unreadable) == (None, ())
+
+
+def test_more_hazards_than_a_card_holds_are_cut_and_marked() -> None:
+    """Twenty are kept, and the list is marked so the rest are added from the photo."""
+    hazards: list[object] = [{"description": f"Hazard {n}"} for n in range(30)]
+
+    card: ScannedCard | None = scanned_card(reading(hazards=hazards), BOOKLET_TEMPLATE)
+
+    assert card is not None
+    assert len(card.draft.hazards) == 20
+    assert card.unreadable == ("hazards",)

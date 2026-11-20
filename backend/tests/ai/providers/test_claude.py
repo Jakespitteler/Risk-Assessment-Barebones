@@ -15,6 +15,7 @@ from risk_assessment.ai.model import LanguageModelError
 from risk_assessment.ai.providers.claude import (
     DEFAULT_MODEL,
     PHOTO_MAX_OUTPUT_TOKENS,
+    PHOTO_TIME_LIMIT_SECONDS,
     ClaudeModel,
 )
 from risk_assessment.domain.take5.challenge import AskedBy, Challenge
@@ -130,6 +131,7 @@ def test_a_photo_is_sent_as_one_image_with_the_instructions() -> None:
     }
     assert ask == {"type": "text", "text": "Read this card."}
     assert request["max_tokens"] == PHOTO_MAX_OUTPUT_TOKENS
+    assert api.read_time_limits == [PHOTO_TIME_LIMIT_SECONDS]
 
 
 def test_a_photo_type_claude_cant_read_is_refused_before_any_call() -> None:
