@@ -137,12 +137,12 @@ class _Reading:
             path: Where the field is on the card.
 
         Returns:
-            The word, or None when it was blank ("") or not one of the card's. Only
+            The word, or None when it was blank ("" or spaces) or not the card's. Only
             a word that isn't the card's is marked unreadable.
         """
         if isinstance(value, str) and value in allowed:
             return value
-        if value != "":
+        if not (isinstance(value, str) and not value.strip()):
             self.unreadable.append(path)
         return None
 

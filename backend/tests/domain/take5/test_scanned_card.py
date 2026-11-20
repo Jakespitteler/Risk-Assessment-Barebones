@@ -202,7 +202,7 @@ def test_a_blank_on_the_card_stays_blank_and_is_not_marked() -> None:
     hazards: list[object] = [
         {
             "description": "Wheel falls",
-            "before": {"likelihood": "", "consequence": ""},
+            "before": {"likelihood": "", "consequence": "  "},
             "controls": [{"description": "Chock it", "kind": ""}],
         },
         {"description": "Pinch point"},
