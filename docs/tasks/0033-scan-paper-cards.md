@@ -3,7 +3,7 @@ id: 0033
 title: Photograph paper Take 5 cards into saved Take 5s, then rank the batch
 status: in-progress
 owner: claude
-branch: claude/0033-scan-paper-cards (stacked on #66)
+branch: claude/0033-photo-reading (#71), claude/0033-reading-the-reply (#72), claude/0033-scan-paper-cards (#68); stacked on #66
 ---
 
 ## Goal
