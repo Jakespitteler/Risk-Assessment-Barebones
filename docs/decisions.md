@@ -12,8 +12,9 @@ Newest first. One short entry per non-obvious decision.
   finish one. Speed is judged by feel in demos, not a fixed target (spec D64 to D68).
 - Why: Jake is proving a point to safety people and crews alike, and an app nobody uses makes no one safer. He
   wants it simple and focused on one goal, so that usability doesn't distract from what it proves.
-- How: three new tasks, in this order after 0028: 0031 desktop layout, 0032 rank Take 5s worst first (one
-  ranking for a scanned batch and for "worst of the day"), 0033 photograph paper cards into Take 5s. Task 0021
+- How: three new tasks, in this order after 0028: 0031 a desktop test (screens already fit a desktop), 0032 rank
+  Take 5s worst first (one ranking for a scanned batch and for "worst of the day", with workers' names shown, as
+  on the saved list), 0033 photograph paper cards into Take 5s. Task 0021
   (the saved list 50 at a time) is parked.
 - Not chosen: a phone-only app; a supervisor role for scanning and ranking; saving scans without a person's check;
   a fixed time target such as two hazards in under three minutes.

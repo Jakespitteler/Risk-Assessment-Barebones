@@ -39,7 +39,7 @@ The goal, as agreed:
 - [x] The spec says the app is used on a phone or a desktop; the desktop layout itself is task 0031's.
 - [x] `AGENTS.md` says to judge every task against the goal and keep the app as simple as possible.
 - [x] `docs/decisions.md` records Jake's answers of 2026-11-19 that shaped the goal.
-- [x] Task files exist for 0031 (desktop layout), 0032 (rank Take 5s worst first) and 0033 (photograph paper
+- [x] Task files exist for 0031 (a desktop test), 0032 (rank Take 5s worst first) and 0033 (photograph paper
   cards into Take 5s), each with its goal, its questions for Jake with a recommendation each, and acceptance
   criteria that follow the recommendations.
 - [x] `docs/tasks/README.md` orders the work: 0028, then 0031, 0032 and 0033; 0024 is the other agent's; 0021 is
@@ -65,3 +65,8 @@ Jake's answers, 2026-11-19, in chat:
   target.
 - This task gets its own file (0030); the new tasks go in the order desktop, ranking, scanning, after 0028; 0021
   is parked.
+- On this task's review: screens already fit a desktop, so 0031 shrinks to a whole-app test at 1280 px, and the
+  review screens of 0032 and 0033 are designed for desktop inside those tasks. The ranked page shows each
+  worker's name, as the saved list does.
+- Outside the quoted goal, the spec says the app is a proof of concept, "really nice to use, and as simple as
+  possible". These are Jake's words from 2026-11-19, the same as the line in AGENTS.md.
