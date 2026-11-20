@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
  */
 export function Warning({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border-2 border-amber-700 bg-amber-50 p-4 font-semibold text-amber-950">
+    <div className="flex flex-col gap-3 rounded-xl border-2 border-caution-line bg-caution-soft p-4 font-semibold text-on-caution-soft">
       {children}
     </div>
   );

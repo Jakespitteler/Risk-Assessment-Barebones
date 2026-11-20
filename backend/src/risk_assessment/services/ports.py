@@ -1,5 +1,6 @@
 """What the Take 5 service needs from the world outside: storage and AI jobs."""
 
+from collections.abc import Collection
 from typing import Protocol
 from uuid import UUID
 
@@ -60,12 +61,33 @@ class Take5Repository(Protocol):
         """
         ...
 
-    def list_newest_first(self) -> tuple[SavedTake5, ...]:
-        """Get every saved Take 5, the newest first.
+    def list_newest_first(
+        self,
+        older_than: UUID | None = None,
+        limit: int | None = None,
+    ) -> tuple[SavedTake5, ...]:
+        """Get saved Take 5s, the newest first.
+
+        Args:
+            older_than: Only those listed after this Take 5, or None to start at the
+                newest. A Take 5 saved since can't shift what comes after it. None
+                are listed after a Take 5 that isn't saved.
+            limit: At most this many, or None for all of them.
 
         Returns:
             The saved Take 5s, newest first. Two saved at the same moment keep the
             order they were saved in, the later one first.
+        """
+        ...
+
+    def fixed_among(self, take5_ids: Collection[UUID]) -> frozenset[UUID]:
+        """Find which of these Take 5s a saved Take 5 fixes.
+
+        Args:
+            take5_ids: The IDs to look for.
+
+        Returns:
+            The ones some saved Take 5 points back at with `fixes`.
         """
         ...
 

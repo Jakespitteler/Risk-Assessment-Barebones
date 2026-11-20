@@ -3,7 +3,39 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f5f5f4" />
     <title>Take 5</title>
+    <script>
+      // Light or dark, set before the app draws so a dark phone never flashes a white page.
+      // The same rule as schemeToShow() in src/theme/colourScheme.ts: the switch's choice
+      // while the phone's setting hasn't changed since it was made, else the phone's.
+      (function () {
+        var phone = matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+        var scheme = phone;
+        try {
+          var choice = JSON.parse(localStorage.getItem("take5-colour-scheme"));
+          if (
+            choice &&
+            choice.phoneWhenChosen === phone &&
+            (choice.chosen === "dark" || choice.chosen === "light")
+          ) {
+            scheme = choice.chosen;
+          }
+        } catch (error) {
+          // No storage: follow the phone.
+        }
+        document.documentElement.dataset.theme = scheme;
+        document.documentElement.style.colorScheme = scheme;
+        if (scheme === "dark") {
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute("content", "#0f172b");
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

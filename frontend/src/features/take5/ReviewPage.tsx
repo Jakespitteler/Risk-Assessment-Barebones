@@ -77,7 +77,7 @@ export function ReviewPage({
   return (
     <div className="flex flex-col gap-4">
       {draft.fixes && (
-        <p className="rounded-xl border-2 border-slate-400 bg-white p-4">
+        <p className="rounded-xl border-2 border-line-strong bg-surface p-4">
           This is a copy of a Take 5 that said Don’t start yet. Fix what it
           said, then finish. The first one stays saved as it was.
         </p>
@@ -110,7 +110,7 @@ export function ReviewPage({
         Read your answers against the job in front of you. Go back if anything
         needs changing.
       </p>
-      {aiNotice && <p className="text-slate-700">{aiNotice}</p>}
+      {aiNotice && <p className="text-ink-muted">{aiNotice}</p>}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import type { Take5Summary } from "../../api/take5";
+import type { Take5ListPage, Take5Summary } from "../../api/take5";
 import {
   COMPLETE_DRAFT,
   PASSING_CHECK,
@@ -37,8 +37,11 @@ const LIST: Take5Summary[] = [
   },
 ];
 
+// The whole list, on one page with nothing after it.
+const PAGE: Take5ListPage = { take5s: LIST, next: null };
+
 it("lists each saved Take 5 in the order sent, with its verdict, job, worker and date", async () => {
-  stubApi({ "GET /api/take5s": { status: 200, body: LIST } });
+  stubApi({ "GET /api/take5s": { status: 200, body: PAGE } });
   renderWithApi(<SavedTake5sScreen />);
   expect(
     await screen.findByRole("heading", { name: "Saved Take 5s" }),
@@ -67,7 +70,12 @@ it("says Not finished for a Take 5 whose question is unanswered", async () => {
     can_start: null,
     fixed: false,
   };
-  stubApi({ "GET /api/take5s": { status: 200, body: [unfinished] } });
+  stubApi({
+    "GET /api/take5s": {
+      status: 200,
+      body: { take5s: [unfinished], next: null },
+    },
+  });
   renderWithApi(<SavedTake5sScreen />);
   const item = within(await screen.findByRole("listitem"));
   expect(item.getByText("Not finished")).toBeTruthy();
@@ -76,14 +84,14 @@ it("says Not finished for a Take 5 whose question is unanswered", async () => {
 });
 
 it("moves the focus to the heading, so a screen reader starts there", async () => {
-  stubApi({ "GET /api/take5s": { status: 200, body: LIST } });
+  stubApi({ "GET /api/take5s": { status: 200, body: PAGE } });
   renderWithApi(<SavedTake5sScreen />);
   const heading = await screen.findByRole("heading", { name: "Saved Take 5s" });
   expect(document.activeElement).toBe(heading);
 });
 
 it("keeps showing the list when a refresh fails", async () => {
-  stubApi({ "GET /api/take5s": [{ status: 200, body: LIST }, "offline"] });
+  stubApi({ "GET /api/take5s": [{ status: 200, body: PAGE }, "offline"] });
   const client = quickClient();
   renderWithApi(<SavedTake5sScreen />, client);
   expect(await screen.findByText("Replace conveyor idler")).toBeTruthy();
@@ -93,7 +101,7 @@ it("keeps showing the list when a refresh fails", async () => {
 });
 
 it("leaves the focus where it was when a refresh fails", async () => {
-  stubApi({ "GET /api/take5s": [{ status: 200, body: LIST }, "offline"] });
+  stubApi({ "GET /api/take5s": [{ status: 200, body: PAGE }, "offline"] });
   const client = quickClient();
   renderWithApi(<SavedTake5sScreen />, client);
   const link = await screen.findByRole("link", {
@@ -108,7 +116,7 @@ it("leaves the focus where it was when a refresh fails", async () => {
 });
 
 it("opens a saved Take 5's result screen from its card", async () => {
-  stubApi({ "GET /api/take5s": { status: 200, body: LIST } });
+  stubApi({ "GET /api/take5s": { status: 200, body: PAGE } });
   renderWithApi(<SavedTake5sScreen />);
   const link = await screen.findByRole("link", {
     name: /Replace conveyor idler/,
@@ -119,7 +127,9 @@ it("opens a saved Take 5's result screen from its card", async () => {
 });
 
 it("says when nothing has been saved yet, and offers a new Take 5", async () => {
-  stubApi({ "GET /api/take5s": { status: 200, body: [] } });
+  stubApi({
+    "GET /api/take5s": { status: 200, body: { take5s: [], next: null } },
+  });
   renderWithApi(<SavedTake5sScreen />);
   expect(
     await screen.findByText("No Take 5s have been saved yet."),
@@ -138,7 +148,7 @@ it("offers to try again when the list can't be loaded", async () => {
       "offline",
       "offline",
       "offline",
-      { status: 200, body: LIST },
+      { status: 200, body: PAGE },
     ],
   });
   renderWithApi(<SavedTake5sScreen />);
@@ -156,7 +166,7 @@ it("shows the phone's unfinished Take 5 at the top, in place of Start a new Take
   localStorage.clear();
   keepSampleDraft();
   stubApi({
-    "GET /api/take5s": { status: 200, body: LIST },
+    "GET /api/take5s": { status: 200, body: PAGE },
     "POST /api/take5s/check": { status: 200, body: PASSING_CHECK },
   });
   renderWithApi(<SavedTake5sScreen />);
@@ -179,7 +189,7 @@ it("throws away an unfinished Take 5 that has run out, and says why", async () =
   localStorage.clear();
   keepSampleDraft();
   stubApi({
-    "GET /api/take5s": { status: 200, body: LIST },
+    "GET /api/take5s": { status: 200, body: PAGE },
     "POST /api/take5s/check": {
       status: 200,
       body: {
@@ -214,7 +224,7 @@ it("offers Undo for a Take 5 just thrown away", async () => {
     draft: COMPLETE_DRAFT,
     submissionId: SAVED.take5.id,
   };
-  stubApi({ "GET /api/take5s": { status: 200, body: LIST } });
+  stubApi({ "GET /api/take5s": { status: 200, body: PAGE } });
   renderWithApi(
     <SavedTake5sScreen
       thrownAway={thrownAway}
@@ -237,7 +247,7 @@ it("ends the Undo once another Take 5 has been started, so it can't be replaced"
     submissionId: SAVED.take5.id,
   };
   stubApi({
-    "GET /api/take5s": { status: 200, body: LIST },
+    "GET /api/take5s": { status: 200, body: PAGE },
     "POST /api/take5s/check": { status: 200, body: PASSING_CHECK },
   });
   renderWithApi(
@@ -254,7 +264,7 @@ it("ends the Undo once another Take 5 has been started, so it can't be replaced"
 it("points to the saved Take 5 when a draft that ran out had been saved already", async () => {
   keepSampleDraft();
   stubApi({
-    "GET /api/take5s": { status: 200, body: LIST },
+    "GET /api/take5s": { status: 200, body: PAGE },
     "POST /api/take5s/check": {
       status: 200,
       body: {
@@ -283,7 +293,7 @@ it("points to the saved Take 5 when a draft that ran out had been saved already"
 it("says when the unfinished Take 5 couldn't be checked", async () => {
   keepSampleDraft();
   stubApi({
-    "GET /api/take5s": { status: 200, body: LIST },
+    "GET /api/take5s": { status: 200, body: PAGE },
     "POST /api/take5s/check": "offline",
   });
   renderWithApi(<SavedTake5sScreen />);
@@ -296,7 +306,7 @@ it("says when the unfinished Take 5 couldn't be checked", async () => {
 it("shows how long the unfinished Take 5 has left", async () => {
   keepSampleDraft();
   stubApi({
-    "GET /api/take5s": { status: 200, body: LIST },
+    "GET /api/take5s": { status: 200, body: PAGE },
     "POST /api/take5s/check": {
       status: 200,
       body: {
@@ -307,4 +317,57 @@ it("shows how long the unfinished Take 5 has left", async () => {
   });
   renderWithApi(<SavedTake5sScreen />);
   expect(await screen.findByText("1 hr 35 min left")).toBeTruthy();
+});
+
+it("shows the next 50 under the ones already shown, then no more", async () => {
+  const [newer, older] = LIST as [Take5Summary, Take5Summary];
+  const calls = stubApi({
+    "GET /api/take5s": {
+      status: 200,
+      body: { take5s: [newer], next: newer.id },
+    },
+    [`GET /api/take5s?before=${newer.id}`]: {
+      status: 200,
+      body: { take5s: [older], next: null },
+    },
+  });
+  renderWithApi(<SavedTake5sScreen />);
+  fireEvent.click(await screen.findByRole("button", { name: "Show more" }));
+  await screen.findByText("Sam Example");
+  expect(screen.getAllByRole("listitem")).toHaveLength(2);
+  expect(screen.getByText("Alex Example")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Show more" })).toBeNull();
+  expect(calls).toContain(`GET /api/take5s?before=${newer.id}`);
+});
+
+it("has no Show more when every saved Take 5 is already shown", async () => {
+  stubApi({ "GET /api/take5s": { status: 200, body: PAGE } });
+  renderWithApi(<SavedTake5sScreen />);
+  await screen.findByRole("heading", { name: "Saved Take 5s" });
+  expect(screen.queryByRole("button", { name: "Show more" })).toBeNull();
+});
+
+it("says when more can't be loaded, keeps the list, and tries again", async () => {
+  const [newer, older] = LIST as [Take5Summary, Take5Summary];
+  stubApi({
+    "GET /api/take5s": {
+      status: 200,
+      body: { take5s: [newer], next: newer.id },
+    },
+    [`GET /api/take5s?before=${newer.id}`]: [
+      "offline",
+      "offline",
+      "offline",
+      { status: 200, body: { take5s: [older], next: null } },
+    ],
+  });
+  renderWithApi(<SavedTake5sScreen />);
+  fireEvent.click(await screen.findByRole("button", { name: "Show more" }));
+  expect((await screen.findByRole("status")).textContent).toBe(
+    "Couldn’t load more. Check your signal and try again.",
+  );
+  expect(screen.getByText("Alex Example")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  await screen.findByText("Sam Example");
+  expect(screen.queryByRole("status")).toBeNull();
 });

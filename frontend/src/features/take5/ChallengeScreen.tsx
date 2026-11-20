@@ -74,7 +74,7 @@ export function ChallengeScreen({
             : "This Take 5 was saved, but its question hasn’t been answered. Only the phone it was done on can answer it."}
         </p>
         <Card>
-          <p className="text-slate-700">
+          <p className="text-ink-muted">
             <span className="font-bold">Job:</span> {take5.job}
           </p>
           {canAnswer ? (

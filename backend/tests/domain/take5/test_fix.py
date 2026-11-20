@@ -9,7 +9,6 @@ from risk_assessment.domain.take5.fix import (
     NOT_FINISHED_MESSAGE,
     NOT_SAVED_MESSAGE,
     NOTHING_TO_FIX_MESSAGE,
-    fixed_ids,
     fixes_error,
     offers_a_fix,
 )
@@ -70,30 +69,3 @@ def test_a_fix_is_offered_only_for_a_dont_start_yet_with_no_fix_yet(
     fixed_by = uuid4() if has_a_fix else None
 
     assert offers_a_fix(sample_saved_take5(verdict), fixed_by) is offered
-
-
-def test_the_take5s_that_others_fix_are_the_fixed_ones() -> None:
-    """A Take 5 is fixed when another one's `fixes` is its ID; the fix itself isn't."""
-    stopped: SavedTake5 = sample_saved_take5(_STOPPED)
-    not_fixed: SavedTake5 = sample_saved_take5(_STOPPED)
-    fix: SavedTake5 = sample_saved_take5().model_copy(update={"fixes": stopped.id})
-
-    assert fixed_ids((fix, not_fixed, stopped)) == {stopped.id}
-
-
-def test_nothing_is_fixed_in_an_empty_list() -> None:
-    """With no Take 5s there is no fix."""
-    assert fixed_ids(()) == frozenset()
-
-
-def test_a_take5_fixed_twice_is_listed_once() -> None:
-    """Two fixes of the same Take 5 mark it fixed once."""
-    stopped: SavedTake5 = sample_saved_take5(_STOPPED)
-    first_fix: SavedTake5 = sample_saved_take5().model_copy(
-        update={"fixes": stopped.id},
-    )
-    second_fix: SavedTake5 = sample_saved_take5().model_copy(
-        update={"fixes": stopped.id},
-    )
-
-    assert fixed_ids((second_fix, first_fix, stopped)) == {stopped.id}

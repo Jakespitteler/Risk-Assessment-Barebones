@@ -10,6 +10,7 @@ from risk_assessment.api.schemas import (
     ErrorMessage,
     FormErrors,
     SubmissionRequest,
+    Take5ListPage,
     Take5Response,
     Take5Summary,
     TemplateResponse,
@@ -18,12 +19,13 @@ from risk_assessment.domain.controls import ControlKind
 from risk_assessment.domain.questions import Answer
 from risk_assessment.domain.take5.challenge import AI_NOTICE
 from risk_assessment.domain.take5.draft import DraftCheck, Take5Draft
-from risk_assessment.domain.take5.fix import fixed_ids, offers_a_fix
+from risk_assessment.domain.take5.fix import offers_a_fix
 from risk_assessment.domain.take5.hazard_nudges import HAZARD_AI_NOTICE, Nudge
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.template import Take5Template
 from risk_assessment.services.take5s import (
     AlreadyAnsweredError,
+    SavedListPage,
     SubmissionConflictError,
     Take5NotFoundError,
     Take5Service,
@@ -122,11 +124,20 @@ def create_router(service: Take5Service) -> APIRouter:
         return _response(finished, service)
 
     @router.get("/api/take5s")
-    def list_take5s() -> tuple[Take5Summary, ...]:
-        """Return every saved Take 5, newest first, each with its saved verdict."""
-        take5s: tuple[SavedTake5, ...] = service.list_newest_first()
-        fixed: frozenset[UUID] = fixed_ids(take5s)
-        return tuple(_summary(saved, saved.id in fixed) for saved in take5s)
+    def list_take5s(before: UUID | None = None) -> Take5ListPage:
+        """Return up to 50 saved Take 5s, newest first, each with its saved verdict.
+
+        Args:
+            before: The last Take 5 already shown, for the page after it, or None
+                for the newest.
+        """
+        page: SavedListPage = service.saved_list_page(before)
+        return Take5ListPage(
+            take5s=tuple(
+                _summary(saved, saved.id in page.fixed_ids) for saved in page.take5s
+            ),
+            next=page.next_older_than,
+        )
 
     @router.get("/api/take5s/{take5_id}", responses=_UNREADABLE | _NOT_FOUND)
     def get(take5_id: UUID) -> Take5Response:

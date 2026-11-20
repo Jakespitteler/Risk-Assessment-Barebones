@@ -1,9 +1,9 @@
 ---
 id: 0024
 title: Dark mode
-status: todo
-owner:
-branch:
+status: done
+owner: claude
+branch: claude/project-thread-ajrmy7
 ---
 
 ## Goal
@@ -97,22 +97,31 @@ The questions for Jake, each with Claude's recommended pick. Jake answers them w
 11. **Where it goes in the order of work.** Recommended: after 0013, before 0021 (which waits for hosting). It
     depends on no other task, so Jake can move it anywhere; it was not put ahead of 0008 without his say.
 
+## Jake's answers (2026-11-19)
+
+"Go with all your recommendations", with two additions: question 1, "that and just for looks"; question 6, "yes,
+choose an accent that looks good on both". So: 1 night shift, phones set to dark, and looks (spec D69); 2 (c)
+(D70); 3 (b) (D71); 4 (a) (D72); 5 on the phone (D73); 6 the same band colours, with one grey edge (slate-400)
+that shows on a light page and a dark one (D74); 7 as recommended (D75); 8 7 to 1 for text, checked by
+`@axe-core/playwright`, a new development dependency he approved (D76); 9 (b), in two stacked pull requests (D77);
+10 as recommended (D78); 11 now (D79).
+
 ## Acceptance criteria
 
-- [ ] With no choice made, the app follows the phone's light or dark setting.
-- [ ] The switch (if Jake picks one) changes the mode at once, is reached by role and label in tests, and the
+- [x] With no choice made, the app follows the phone's light or dark setting.
+- [x] The switch (if Jake picks one) changes the mode at once, is reached by role and label in tests, and the
   choice lasts as question 3 decides, including after a reload.
-- [ ] Every screen and state is readable in both modes, at the contrast question 8 sets, checked as question 8
+- [x] Every screen and state is readable in both modes, at the contrast question 8 sets, checked as question 8
   decides.
-- [ ] Risk bands, verdicts, warnings and problems keep their meaning in both modes, as questions 6 and 7 decide.
-- [ ] No white flash when a dark phone opens the app.
-- [ ] Vitest covers the switch; Playwright covers following the phone (its `colorScheme` setting), the switch,
+- [x] Risk bands, verdicts, warnings and problems keep their meaning in both modes, as questions 6 and 7 decide.
+- [x] No white flash when a dark phone opens the app.
+- [x] Vitest covers the switch; Playwright covers following the phone (its `colorScheme` setting), the switch,
   and the choice surviving a reload.
-- [ ] Phone-width (360 px) screenshots of every screen in both modes are attached to the PR, with dark ones saved
+- [x] Phone-width (360 px) screenshots of every screen in both modes are attached to the PR, with dark ones saved
   under the same names ending in `-dark`.
-- [ ] `docs/spec.md` is updated: "Where and when it is used", a feature entry for light and dark, and the
+- [x] `docs/spec.md` is updated: "Where and when it is used", a feature entry for light and dark, and the
   decisions table. `docs/architecture.md` says where the colours and the switch live.
-- [ ] All checks pass.
+- [x] All checks pass.
 
 ## Out of scope
 
@@ -139,3 +148,27 @@ The questions for Jake, each with Claude's recommended pick. Jake answers them w
 - If task 0013 is done first, any rule this task adds to the spec needs a test named after it to pass 0013's
   check. With the recommended picks it adds a feature entry, not a scoring or thinking rule.
 - Assumption: night shift and phones already set to dark are the reasons (question 1).
+- Built 2026-11-19 in two stacked pull requests. The first (#53, branch `claude/project-thread-ajrmy7`) names
+  every colour by its job and changes nothing on screen except one shade: a text box with a gap now has the same
+  red edge as its message (red-800, was red-700). The second (branch `claude/0024-dark-mode`) adds dark mode.
+- First based on `main`; on 2026-11-19 and 2026-11-20 Jake asked for one stack, so #53 now sits on the other
+  agent's #56 (task 0030), after #51, #52 and #54. #56 took spec D64 to D68, so this task's decisions moved from
+  D64 to D74 to D69 to D79.
+- To reach 7 to 1 in light, a step not yet reached in the step bar now uses the quieter ink, slate-700 (was
+  slate-600, 6.95 to 1). With that, the quietest ink was the same as the quieter one in both modes, so it was
+  dropped.
+- The top bar at 360 px: the switch is 44 px wide and 48 px high, "Saved Take 5s" never wraps, and on the job
+  page "Before you start" wraps onto two lines beside it. Every other screen's name fits on one line.
+- Every browser test now runs twice, on a light phone and a dark one, and every screenshot is checked by axe. It
+  takes about 2.7 minutes instead of 1.2. `@axe-core/playwright` 4.14.0 brings `axe-core` 4.14.1.
+- The rate-a-risk screen (`/rate-risk`, from task 0002) has no top bar, so no switch; it follows the phone, or
+  the last choice.
+- A choice made before the phone changed, while the app was closed, is forgotten when the app opens. A phone whose
+  setting changes twice while the app is closed (dark at sunset, light by morning) can't be told apart from one
+  that never changed, so an old choice can come back then. Accepted: it needs the app closed all night.
+- The focus outline in dark (blue-400) is about 7 to 1 on the page, checked by hand: axe has no rule for the
+  contrast of an outline.
+- Reviewed by a separate reviewer agent on 2026-11-19. Fixed from its findings: axe ran only its contrast rule
+  (now every WCAG 2.2 AA rule as well), the no-flash test could not fail, `/rate-risk` didn't follow the phone
+  while open, the start-up lines read a broken choice differently from the app, a stale choice was kept, and the
+  saved list's hover didn't show in dark.

@@ -4,10 +4,20 @@ import { join } from "node:path";
 
 const isCi = Boolean(process.env.CI);
 
-// The whole app in a real browser, at the width of a small phone (spec F2).
+// The whole app in a real browser, at the width of a small phone (spec F2), once on a phone
+// set to light and once on a phone set to dark (spec F7). The dark run's screenshots end in
+// `-dark`.
 export default defineConfig({
   testDir: "e2e",
   forbidOnly: isCi,
+  projects: [
+    { name: "light", use: { colorScheme: "light" } },
+    {
+      name: "dark",
+      use: { colorScheme: "dark" },
+      testIgnore: "light-and-dark.spec.ts",
+    },
+  ],
   use: {
     baseURL: "http://localhost:5173",
     viewport: { width: 360, height: 780 },

@@ -58,6 +58,7 @@ test("an unanswered Take 5 is kept: the list says so, and opening the app goes b
   page,
   context,
   browser,
+  colorScheme,
 }) => {
   await controlledDraft(page);
   await submit(page);
@@ -71,15 +72,18 @@ test("an unanswered Take 5 is kept: the list says so, and opening the app goes b
   await capture(page, "challenge-not-finished-in-list");
 
   // Another phone sees the question, but can't answer it (decision D47).
-  const otherPhone = await browser.newPage({
+  // A context of its own, as the accessibility check needs, set light or dark as this run is.
+  const otherPhoneContext = await browser.newContext({
     viewport: { width: 360, height: 780 },
     deviceScaleFactor: 2,
+    colorScheme,
   });
+  const otherPhone = await otherPhoneContext.newPage();
   await otherPhone.goto(questionUrl);
   await expect(heading(otherPhone, "Not finished yet")).toBeVisible();
   await expect(otherPhone.getByRole("textbox")).toHaveCount(0);
   await capture(otherPhone, "challenge-other-phone");
-  await otherPhone.close();
+  await otherPhoneContext.close();
 
   // Opening the app again, in a new tab on the same phone, goes back to the question.
   await page.close();

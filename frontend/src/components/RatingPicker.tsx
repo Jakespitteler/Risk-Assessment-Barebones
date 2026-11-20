@@ -44,7 +44,7 @@ export function RatingPicker({
         {cell ? (
           <RiskBadge score={cell.score} band={cell.band} />
         ) : (
-          <p className="text-lg text-slate-700">Pick both to see the score.</p>
+          <p className="text-lg text-ink-muted">Pick both to see the score.</p>
         )}
       </div>
     </div>
@@ -76,14 +76,14 @@ function ScalePicker({
     >
       <legend className="mb-2 text-xl font-bold">{question}</legend>
       {error && (
-        <p id={`${groupName}-error`} className="font-semibold text-red-800">
+        <p id={`${groupName}-error`} className="font-semibold text-danger">
           {error}
         </p>
       )}
       {levels.map((level) => (
         <label
           key={level}
-          className="flex min-h-14 cursor-pointer items-center rounded-xl border-2 border-slate-400 bg-white px-4 text-lg font-medium has-checked:border-slate-900 has-checked:bg-slate-900 has-checked:text-white has-focus-visible:outline-4 has-focus-visible:outline-blue-700"
+          className="flex min-h-14 cursor-pointer items-center rounded-xl border-2 border-line-strong bg-surface px-4 text-lg font-medium has-checked:border-action has-checked:bg-action has-checked:text-on-action hover:not-has-checked:bg-surface-hover has-focus-visible:outline-4 has-focus-visible:outline-focus"
         >
           <input
             type="radio"

@@ -30,7 +30,7 @@ export function AnswerPicker({
     >
       <legend className="mb-3 text-lg font-bold">{question}</legend>
       {error && (
-        <p id={`${name}-error`} className="font-semibold text-red-800">
+        <p id={`${name}-error`} className="font-semibold text-danger">
           {error}
         </p>
       )}
@@ -38,7 +38,7 @@ export function AnswerPicker({
         {choices.map((answer) => (
           <label
             key={answer}
-            className="flex min-h-14 cursor-pointer items-center justify-center rounded-xl border-2 border-slate-400 bg-white px-2 text-lg font-bold has-checked:border-slate-900 has-checked:bg-slate-900 has-checked:text-white has-focus-visible:outline-4 has-focus-visible:outline-blue-700"
+            className="flex min-h-14 cursor-pointer items-center justify-center rounded-xl border-2 border-line-strong bg-surface px-2 text-lg font-bold has-checked:border-action has-checked:bg-action has-checked:text-on-action hover:not-has-checked:bg-surface-hover has-focus-visible:outline-4 has-focus-visible:outline-focus"
           >
             <input
               type="radio"

@@ -5,7 +5,7 @@ export function Notice({ children }: { children: ReactNode }) {
   return (
     <div
       role="alert"
-      className="flex flex-col gap-2 rounded-xl border-2 border-red-800 bg-red-50 p-4 font-semibold text-red-900"
+      className="flex flex-col gap-2 rounded-xl border-2 border-danger bg-danger-soft p-4 font-semibold text-on-danger-soft"
     >
       {children}
     </div>

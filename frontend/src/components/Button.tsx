@@ -3,11 +3,11 @@ import type { ButtonHTMLAttributes } from "react";
 // Every button is at least 56 px high: big enough for a gloved thumb.
 const VARIANTS = {
   primary:
-    "min-h-14 rounded-xl bg-slate-900 px-5 text-lg font-bold text-white hover:bg-slate-700",
+    "min-h-14 rounded-xl bg-action px-5 text-lg font-bold text-on-action hover:bg-action-hover",
   secondary:
-    "min-h-14 rounded-xl border-2 border-slate-900 bg-white px-5 text-lg font-bold text-slate-900 hover:bg-stone-100",
+    "min-h-14 rounded-xl border-2 border-ink bg-surface px-5 text-lg font-bold text-ink hover:bg-surface-hover",
   quiet:
-    "min-h-12 self-start rounded-lg px-2 text-base font-semibold text-slate-900 underline underline-offset-4",
+    "min-h-12 self-start rounded-lg px-2 text-base font-semibold text-ink underline underline-offset-4 hover:decoration-2 hover:bg-surface-hover",
 };
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -24,7 +24,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={`${VARIANTS[variant]} focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-blue-700 disabled:cursor-wait disabled:opacity-60 ${className}`}
+      className={`${VARIANTS[variant]} focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60 ${className}`}
       {...props}
     />
   );

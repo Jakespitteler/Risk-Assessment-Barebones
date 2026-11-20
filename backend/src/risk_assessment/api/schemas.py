@@ -118,6 +118,21 @@ class Take5Summary(BaseModel):
     fixed: bool
 
 
+class Take5ListPage(BaseModel):
+    """One page of the saved Take 5 list, the newest first (spec D18 and D80).
+
+    Attributes:
+        take5s: Up to 50 lines of the list.
+        next: The ID to send as `before` for the next page, or None when there are no
+            more.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    take5s: tuple[Take5Summary, ...]
+    next: UUID | None
+
+
 class ErrorMessage(BaseModel):
     """The reply for a 404 or a 409: one message a person can read.
 

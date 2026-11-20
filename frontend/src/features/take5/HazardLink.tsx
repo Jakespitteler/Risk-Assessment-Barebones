@@ -5,7 +5,7 @@ import { Button } from "../../components/Button";
 import { Warning } from "../../components/Warning";
 
 const CHOICE_STYLE =
-  "flex min-h-14 flex-col items-start justify-center rounded-xl border-2 border-slate-400 bg-white px-4 py-2 text-left text-lg hover:bg-stone-100 focus-visible:outline-4 focus-visible:outline-blue-700";
+  "flex min-h-14 flex-col items-start justify-center rounded-xl border-2 border-line-strong bg-surface px-4 py-2 text-left text-lg hover:bg-surface-hover focus-visible:outline-4 focus-visible:outline-focus";
 
 /** How many other questions a hazard already answers, in words, or null for none. */
 function alsoCovers(hazard: HazardDraft, questionId: string) {
@@ -69,7 +69,7 @@ export function HazardLink({
                   ref={position === 0 ? focusTarget : undefined}
                   tabIndex={-1}
                   data-hazard-link-text
-                  className="font-semibold text-green-800"
+                  className="font-semibold text-success"
                 >
                   <span aria-hidden="true">✓ </span>On your list: {description}
                 </p>

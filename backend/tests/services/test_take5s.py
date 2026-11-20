@@ -1,5 +1,6 @@
 """The submitted verdict and template survive retries and later template changes."""
 
+from collections.abc import Collection
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -20,12 +21,18 @@ from risk_assessment.domain.take5.template import (
     Take5Template,
 )
 from risk_assessment.domain.take5.time_limit import STARTED_AT_PATH, run_out_message
-from risk_assessment.services.take5s import InvalidDraftError, Take5Service
+from risk_assessment.services.take5s import (
+    SAVED_LIST_PAGE_SIZE,
+    InvalidDraftError,
+    SavedListPage,
+    Take5Service,
+)
 from risk_assessment.storage.sqlite import SqliteTake5Repository
 from tests.samples import (
     SAMPLE_ANSWER,
     sample_draft,
     sample_hazard_draft,
+    sample_saved_take5,
     sample_uncontrolled_draft,
 )
 
@@ -58,15 +65,34 @@ class MemoryRepository:
         """Read the document or return nothing."""
         return self.documents.get(take5_id)
 
-    def list_newest_first(self) -> tuple[SavedTake5, ...]:
-        """Return every document, newest first, the last saved first on a tie."""
+    def list_newest_first(
+        self,
+        older_than: UUID | None = None,
+        limit: int | None = None,
+    ) -> tuple[SavedTake5, ...]:
+        """Return documents newest first, the last saved first on a tie.
+
+        None are listed after an ID that isn't saved, as in SQLite.
+        """
         last_saved_first: list[SavedTake5] = list(reversed(self.documents.values()))
-        return tuple(
-            sorted(
-                last_saved_first,
-                key=lambda take5: take5.created_at,
-                reverse=True,
-            ),
+        newest_first: list[SavedTake5] = sorted(
+            last_saved_first,
+            key=lambda take5: take5.created_at,
+            reverse=True,
+        )
+        ids_in_order: list[UUID] = [take5.id for take5 in newest_first]
+        if older_than is not None and older_than not in ids_in_order:
+            return ()
+        start: int = 0 if older_than is None else ids_in_order.index(older_than) + 1
+        end: int | None = None if limit is None else start + limit
+        return tuple(newest_first[start:end])
+
+    def fixed_among(self, take5_ids: Collection[UUID]) -> frozenset[UUID]:
+        """Return the IDs among these that some document's `fixes` points at."""
+        return frozenset(
+            take5.fixes
+            for take5 in self.documents.values()
+            if take5.fixes is not None and take5.fixes in take5_ids
         )
 
     def fixed_by(self, take5_id: UUID) -> UUID | None:
@@ -236,7 +262,7 @@ def test_the_list_is_newest_first_with_each_verdict_as_it_was_saved() -> None:
     stopped: SavedTake5 = _finish(service, sample_uncontrolled_draft())
     good_to_go: SavedTake5 = _finish(service, sample_draft())
 
-    listed: tuple[SavedTake5, ...] = service.list_newest_first()
+    listed: tuple[SavedTake5, ...] = service.saved_list_page().take5s
 
     assert listed == (good_to_go, stopped)
     assert [take5.verdict for take5 in listed] == [
@@ -247,8 +273,110 @@ def test_the_list_is_newest_first_with_each_verdict_as_it_was_saved() -> None:
 
 
 def test_the_list_is_empty_before_anything_is_saved() -> None:
-    """A new app has nothing to list."""
-    assert _service().list_newest_first() == ()
+    """A new app has nothing to list, and no page after it."""
+    page: SavedListPage = _service().saved_list_page()
+
+    assert page.take5s == ()
+    assert page.next_older_than is None
+
+
+def _saved_one_minute_apart(
+    repository: MemoryRepository,
+    count: int,
+) -> list[SavedTake5]:
+    """Save `count` sample Take 5s a minute apart, and return them newest first.
+
+    Args:
+        repository: Where to save them.
+        count: How many.
+
+    Returns:
+        The saved Take 5s, newest first, as the list shows them.
+    """
+    first: SavedTake5 = sample_saved_take5()
+    saved: list[SavedTake5] = [
+        repository.add(
+            sample_saved_take5().model_copy(
+                update={"created_at": first.created_at + timedelta(minutes=minute)},
+            ),
+        )
+        for minute in range(count)
+    ]
+    return saved[::-1]
+
+
+def test_the_list_shows_50_and_says_where_the_next_page_starts() -> None:
+    """With more than a page saved, the first page is the newest 50 (D18)."""
+    repository = MemoryRepository()
+    newest_first: list[SavedTake5] = _saved_one_minute_apart(
+        repository,
+        SAVED_LIST_PAGE_SIZE + 3,
+    )
+    service = Take5Service(repository, BOOKLET_TEMPLATE)
+
+    first_page: SavedListPage = service.saved_list_page()
+    second_page: SavedListPage = service.saved_list_page(first_page.next_older_than)
+
+    assert first_page.take5s == tuple(newest_first[:SAVED_LIST_PAGE_SIZE])
+    assert first_page.next_older_than == newest_first[SAVED_LIST_PAGE_SIZE - 1].id
+    assert second_page.take5s == tuple(newest_first[SAVED_LIST_PAGE_SIZE:])
+    assert second_page.next_older_than is None
+
+
+def test_exactly_one_full_page_has_no_page_after_it() -> None:
+    """50 saved fill one page, so there is nothing to show more of."""
+    repository = MemoryRepository()
+    _saved_one_minute_apart(repository, SAVED_LIST_PAGE_SIZE)
+
+    page: SavedListPage = Take5Service(repository, BOOKLET_TEMPLATE).saved_list_page()
+
+    assert len(page.take5s) == SAVED_LIST_PAGE_SIZE
+    assert page.next_older_than is None
+
+
+def test_a_take5_saved_meanwhile_does_not_shift_the_next_page() -> None:
+    """The next page starts after the last one shown, not 50 from the top."""
+    repository = MemoryRepository()
+    newest_first: list[SavedTake5] = _saved_one_minute_apart(
+        repository,
+        SAVED_LIST_PAGE_SIZE + 1,
+    )
+    service = Take5Service(repository, BOOKLET_TEMPLATE)
+    first_page: SavedListPage = service.saved_list_page()
+    repository.add(
+        sample_saved_take5().model_copy(
+            update={"created_at": newest_first[0].created_at + timedelta(hours=1)},
+        ),
+    )
+
+    second_page: SavedListPage = service.saved_list_page(first_page.next_older_than)
+
+    assert second_page.take5s == (newest_first[-1],)
+
+
+def test_a_dont_start_yet_fixed_on_an_earlier_page_is_still_fixed() -> None:
+    """The fix is newer, so on an earlier page, yet its Take 5 is marked fixed (F5)."""
+    repository = MemoryRepository()
+    newest_first: list[SavedTake5] = _saved_one_minute_apart(
+        repository,
+        SAVED_LIST_PAGE_SIZE + 1,
+    )
+    oldest: SavedTake5 = newest_first[-1]
+    repository.add(
+        sample_saved_take5().model_copy(
+            update={
+                "fixes": oldest.id,
+                "created_at": newest_first[0].created_at + timedelta(hours=1),
+            },
+        ),
+    )
+    service = Take5Service(repository, BOOKLET_TEMPLATE)
+    first_page: SavedListPage = service.saved_list_page()
+
+    last_page: SavedListPage = service.saved_list_page(first_page.next_older_than)
+
+    assert oldest not in first_page.take5s
+    assert last_page.fixed_ids == {oldest.id}
 
 
 STARTED_AT = datetime(2026, 11, 15, 20, 12, tzinfo=UTC)
@@ -293,7 +421,7 @@ def test_a_draft_that_has_run_out_cannot_be_submitted() -> None:
         service.submit(_started_draft(), uuid4())
 
     assert [error.path for error in refusal.value.check.errors] == [STARTED_AT_PATH]
-    assert service.list_newest_first() == ()
+    assert service.saved_list_page().take5s == ()
 
 
 def test_example_62_a_draft_with_no_start_time_is_saved_without_one() -> None:

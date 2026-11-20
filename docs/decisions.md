@@ -2,6 +2,81 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-20: `start.py` restarts the back end itself (task 0034)
+
+- Decision: `start.py` runs uvicorn without `--reload`, watches `backend/src` for saved Python files, and restarts
+  the back end itself. A change that won't start prints its error, and the app waits for the next save.
+- Why: on Windows uvicorn's reloader restarts with a Ctrl+C that Windows gives to every program in the terminal,
+  so `start.py` stopped the whole app on each save, and hid the error of a broken change.
+- Not chosen: a new package such as `watchfiles` (needs approval, and a once-a-second look is enough); ignoring
+  Ctrl+C on Windows while the back end restarts (a real Ctrl+C then can't be told apart).
+- Decided by: human.
+
+## 2026-11-20: A desktop test, and hover and focus on everything clickable (task 0031)
+
+- Decision: one whole-app test runs a Take 5 and the saved list at 1280 by 800. On each screen it checks nothing
+  scrolls sideways, then hovers over everything a person can click and expects its look to change, then tabs
+  through the page and expects the app's own 4 px focus outline on each stop. The gaps it found are filled with
+  a few class names each: a darker fill for buttons and button-like links, a thicker underline for text links, a
+  light fill for choices and the step bar (spec D87 to D89).
+- Why: the goal says a phone or a desktop (D65). Screens already sit in a centred column on a desktop, so no
+  layout change was needed, but a mouse user expects things to react, and some links relied on the browser's own
+  focus ring. Jake took every recommended answer on 2026-11-20.
+- Not chosen: running every test at desktop width too, which doubles the run again for little gain.
+- Decided by: human.
+
+## 2026-11-20: The saved list 50 at a time (task 0021)
+
+- Decision: `GET /api/take5s` sends a page of 50, newest first, as `{take5s, next}`. The next page is asked for
+  with `?before=` the last one shown, which the database compares on the same pair the list sorts by (the time
+  saved, then the save order), so a Take 5 saved meanwhile can't shift or repeat one. "Fixed" is found for each
+  page with one look for fixes of that page's IDs. The list screen adds a "Show more" button (spec D80 to D86).
+- Why: Jake took every recommended answer on 2026-11-20. Sending every Take 5 at once is too slow on a weak signal
+  once hundreds are saved (D18). A cursor rather than "skip 50" is the standard way to page a list that grows at
+  the top.
+- How: the API's reply changes from a list to an object, a change to a public interface that Jake approved. The
+  front end uses TanStack Query's `useInfiniteQuery`. `fixed_ids()` in `domain/take5/fix.py` is gone: it needed
+  every Take 5, and the repository's new `fixed_among()` does the job for one page. No new column or index.
+- Not chosen: skip and take; a total count; loading more on scroll; a page size the phone picks.
+- Decided by: human.
+
+## 2026-11-19: Dark mode, colours named by their job, and axe in the browser tests (task 0024)
+
+- Decision: The app follows the phone's light or dark setting, and a sun or moon button in the top bar overrides
+  it until the phone's own setting next changes. The choice is kept on the phone with the phone's setting at the
+  time. Every colour is named once by its job in `frontend/src/index.css`, with a light and a dark value; the
+  risk band colours stay fixed. A few lines in `index.html` set the mode before the app draws. Text reaches 7 to
+  1 in both modes, checked by `@axe-core/playwright` on every screenshot the whole-app tests take, and those tests
+  now run twice, on a light phone and a dark one (spec D69 to D79).
+- Why: Jake took every recommended answer, and added "how it looks" as a reason. Light reads best in full sun,
+  so a gloved worker needs a way back without the phone's settings, and a phone that goes dark at sunset should
+  take the app with it. Named colours mean a new component gets dark mode for free. axe checks the pages as
+  drawn, not a list of colour pairs someone remembered to write down.
+- How: axe-core is a new development dependency, approved by Jake on 2026-11-19; nothing new reaches the
+  worker's phone. To reach 7 to 1 in light, a step not yet reached now uses the quieter ink (slate-700, was
+  slate-600), and a text box with a gap now has the same red edge as its message (red-800, was red-700). Running
+  every browser test in both modes takes about 2.7 minutes instead of 1.2.
+- Not chosen: the phone's setting only; a three-way switch; a `dark:` class beside every colour; a Vitest test of
+  colour pairs; WCAG AA only.
+- Decided by: human (the product choices), agent (how).
+
+## 2026-11-19: The app's goal, and the work it needs (task 0030)
+
+- Decision: The goal at the top of `docs/spec.md`: make a mine site safer by making every Take 5 count. A Take 5
+  on a phone or a desktop makes the worker think and stays quick and pleasant enough to be used; paper cards
+  can be photographed into normal saved Take 5s, confirmed by a person beside the photo; and any set of Take 5s
+  can be ranked worst first by the AI, weighing risk against how little thought the answers show. Anyone can
+  scan and rank, with no sign-in. The AI is used wherever it makes a Take 5 safer, but a worker never needs it to
+  finish one. Speed is judged by feel in demos, not a fixed target (spec D64 to D68).
+- Why: Jake is proving a point to safety people and crews alike, and an app nobody uses makes no one safer. He
+  wants it simple and focused on one goal, so that usability doesn't distract from what it proves.
+- How: three new tasks, in this order after 0028: 0031 a desktop test (screens already fit a desktop), 0032 rank
+  Take 5s worst first (one ranking for a scanned batch and for "worst of the day", with workers' names shown, as
+  on the saved list), 0033 photograph paper cards into Take 5s. Task 0021 (the saved list 50 at a time) is parked.
+- Not chosen: a phone-only app; a supervisor role for scanning and ranking; saving scans without a person's check;
+  a fixed time target such as two hazards in under three minutes.
+- Decided by: human (Jake and Claude worked on the goal over several messages until both agreed it).
+
 ## 2026-11-19: One command starts the app, and every command runs from the repo root (task 0029)
 
 - Decision: `uv run start.py` in the repo root replaces `scripts/dev.py`. It stops if port 8000 or 5173 already

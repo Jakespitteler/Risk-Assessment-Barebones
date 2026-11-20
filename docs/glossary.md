@@ -84,4 +84,4 @@ helpers, and API types, which come from `src/api/schema.d.ts` through `src/api/t
 | Time limit / run out | How long a draft lasts from the first change: 2 hours on the booklet. Past it, it has run out. | `Take5Template.draft_time_limit_minutes`; `time_limit_error`, `runs_out_at` | `TimeLeft`, `RunOutPanel` | K2 |
 | Start time | When the worker made the draft's first change. | `SavedTake5.started_at` | `started_at` | K2, K3 |
 | Submission ID | The ID the phone makes for a Take 5, so a retry gets the same saved Take 5 back. | `submission_id` | `useSubmitTake5` | K2 |
-| Saved list | Every saved Take 5, newest first. Everyone using the app can see it. | `Take5Summary`; `Take5Repository` | `SavedTake5sScreen` | K1 |
+| Saved list | Every saved Take 5, newest first, 50 at a time with "Show more". Everyone using the app can see it. | `Take5Summary`, `Take5ListPage`, `SavedListPage`; `Take5Repository` | `SavedTake5sScreen` | K1 |

@@ -45,6 +45,7 @@ Front end:
 | Screens and URLs | React Router | The long-standing router for React |
 | API types | openapi-typescript | Generates the TypeScript types from the back end's API description, so the two can't drift apart |
 | Tests | Vitest and React Testing Library for components; Playwright for the whole app in a real browser | Playwright also takes the phone-width screenshots |
+| Accessibility checks | `@axe-core/playwright` (Deque's axe), a development dependency only (task 0024) | The mainstream checker; it checks the screens as drawn, in both modes |
 | Lint and format | ESLint and Prettier | The long-standing pair |
 | Packages | npm | Comes with Node; nothing else to install |
 
@@ -138,7 +139,12 @@ frontend/
         api/               the generated types and a small typed client (the only place TanStack Query is set up)
         components/        pieces any feature can use: rating picker, Yes / No / N/A buttons, risk badge,
                            control editor, button, card, field, guidance, notice, warning, undo bar,
-                           and the screen with its top bar
+                           the screen with its top bar, and the light or dark switch in it (ThemeSwitch.tsx)
+        theme/             light or dark (spec F7): colourScheme.ts decides which to show and keeps the
+                           worker's choice on the phone (localStorage); useColourScheme.ts follows the phone
+        index.css          every colour, named by its job (page, ink, danger and so on), each with a light and
+                           a dark value. Components use these names, never a shade such as `bg-stone-100`; only
+                           the risk band colours in RiskBadge.tsx are fixed, the same in both modes
         features/take5/    the Take 5's screens: the four parts of the form, the question, the result, and
                            the list of saved Take 5s (SavedTake5sScreen.tsx). formatDateTime.ts writes
                            every date the one way the spec sets (D17)
@@ -155,8 +161,10 @@ frontend/
                            its answer on the result; unanswered.ts remembers which unanswered Take 5s this
                            phone submitted, so only it answers them and opening the app goes back to one
         test-utils.tsx     the fake card, drafts and API replies the Vitest tests share
+        test-phone-scheme.ts  a stand-in for the phone's light or dark setting, which Vitest's jsdom lacks
         app.tsx            the routes (the only place React Router is set up)
-    e2e/                   Playwright tests and screenshots
+    index.html             also sets light or dark before the app draws, so a dark phone never flashes white
+    e2e/                   Playwright tests and screenshots, run once on a light phone and once on a dark one
 scripts/
     try_challenge.py       asks the real AI about five made-up Take 5s and prints each question, its time
                            and its cost, to compare models or versions of the instructions
@@ -185,7 +193,7 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 | `POST /api/take5s/nudges` | The T6 nudges for a draft (task 0027): one for each vague hazard linked to a Yes, judged by the AI for up to 5 seconds, then by the word rule. Saves nothing. Its own endpoint, not part of the check, so the phone asks it only when a hazard's words change and Continue never waits for an AI |
 | `POST /api/take5s` | Checks and saves a Take 5, unfinished, then asks the AI (or the fallback) for its question, and returns it with the question. A retry returns what was saved, with the same question |
 | `POST /api/take5s/{id}/answer` | Saves the answer, works out the verdict, and returns the finished Take 5 (task 0008). A short answer is a 422 on `answer`; a different answer to a finished one is a 409; the same answer again returns the finished Take 5 |
-| `GET /api/take5s` | The list, newest first. Each line is a `Take5Summary`: the ID, when it was saved, the worker, the job, the verdict (`can_start`, empty while the question is unanswered) and whether a newer Take 5 fixes it (`fixed`), not the whole card |
+| `GET /api/take5s` | The list, newest first, 50 at a time: a `Take5ListPage` of `take5s` and `next`, the ID to send as `?before=` for the page after it (empty when there are no more). Each line is a `Take5Summary`: the ID, when it was saved, the worker, the job, the verdict (`can_start`, empty while the question is unanswered) and whether a newer Take 5 fixes it (`fixed`), not the whole card |
 | `GET /api/take5s/{id}` | One Take 5, with `fixed_by` (the newest Take 5 that fixes it, if any) and `offers_fix` (whether its result offers a fix) |
 
 Every error reply is declared in the OpenAPI description, so the front end's generated types know it. A 422 is
@@ -365,7 +373,8 @@ cloud account, or a model the company runs itself.
 | Contract | The front end's generated types match the back end | CI regenerates the types and fails if they differ from what is committed |
 | Unit, front end | Each component and screen behaves: nothing pre-selected, errors beside fields, T1 | Vitest and React Testing Library |
 | End to end | A worker fills in every screen in a real browser and reaches the right verdict | Playwright against the real front end and back end, with a stand-in AI |
-| Visual | Each changed screen looks right on a phone | Playwright screenshots at 360 px wide, attached to the PR; checked by eye, not in CI |
+| Visual | Each changed screen looks right on a phone, and on a desktop | Playwright screenshots at 360 px wide, and at 1280 px for `e2e/desktop.spec.ts` (which also checks hover and focus), attached to the PR; checked by eye, not in CI |
+| Accessibility | Every screenshot the whole-app tests take, in both modes, is readable: text contrast to 7 to 1 (spec D76) and axe's other WCAG 2.2 AA rules | `@axe-core/playwright`, Deque's checker, inside the screenshot helper (`capture` in `e2e/helpers.ts`) |
 | AI adapter | The adapter sends what it should and reads the reply, refusals and errors | The real adapter against a stand-in for the provider's API (`tests/ai/fake_anthropic.py`), so nothing leaves the computer |
 | Real AI | The real provider answers with a usable question | `uv run test.py backend -m real_ai`, skipped with no key; plain `pytest` and CI never run it. `scripts/try_challenge.py` measures questions, and `scripts/try_vague_hazard.py` verdicts on hazards, with time and cost |
 

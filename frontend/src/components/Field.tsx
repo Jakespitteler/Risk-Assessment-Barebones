@@ -19,7 +19,7 @@ export function Field({
       </label>
       {children}
       {error && (
-        <p id={`${name}-error`} className="font-semibold text-red-800">
+        <p id={`${name}-error`} className="font-semibold text-danger">
           {error}
         </p>
       )}

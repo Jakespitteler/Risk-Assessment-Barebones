@@ -1,6 +1,7 @@
 """SQLite storage: each Take 5 is kept whole, as one JSON document."""
 
 import sqlite3
+from collections.abc import Collection
 from contextlib import closing
 from pathlib import Path
 from uuid import UUID
@@ -34,9 +35,17 @@ _FINISH: str = (
 # A time with no fraction of a second, such as 07:30:00+00:00, still sorts before
 # 07:30:00.000005+00:00, because "+" sorts before ".". The row ID breaks a tie, so
 # the one saved last comes first.
+# "Older than" compares the same pair the list is sorted by, so a page carries on
+# exactly where the last one stopped. LIMIT -1 means no limit.
 _SELECT_NEWEST_FIRST: str = (
-    "SELECT document FROM take5s ORDER BY created_at DESC, rowid DESC"
+    "SELECT document FROM take5s ORDER BY created_at DESC, rowid DESC LIMIT ?"
 )
+_SELECT_OLDER_THAN: str = (
+    "SELECT document FROM take5s "
+    "WHERE (created_at, rowid) < (SELECT created_at, rowid FROM take5s WHERE id = ?) "
+    "ORDER BY created_at DESC, rowid DESC LIMIT ?"
+)
+_NO_LIMIT: int = -1
 # A fix points back at the Take 5 it fixes from inside its own document, so the first
 # one is never written to again. The newest fix wins if there is more than one.
 _SELECT_NEWEST_FIX: str = (
@@ -126,17 +135,52 @@ class SqliteTake5Repository:
         with closing(self._connect()) as connection:
             return _read(connection, take5_id)
 
-    def list_newest_first(self) -> tuple[SavedTake5, ...]:
-        """Get every saved Take 5, the newest first.
+    def list_newest_first(
+        self,
+        older_than: UUID | None = None,
+        limit: int | None = None,
+    ) -> tuple[SavedTake5, ...]:
+        """Get saved Take 5s, the newest first.
+
+        Args:
+            older_than: Only those listed after this Take 5, or None to start at the
+                newest. None are listed after a Take 5 that isn't saved.
+            limit: At most this many, or None for all of them.
 
         Returns:
             The saved Take 5s, each with the template and verdict it was saved with.
         """
+        row_limit: int = _NO_LIMIT if limit is None else limit
+        with closing(self._connect()) as connection:
+            rows: list[tuple[str]] = (
+                connection.execute(_SELECT_NEWEST_FIRST, (row_limit,)).fetchall()
+                if older_than is None
+                else connection.execute(
+                    _SELECT_OLDER_THAN,
+                    (str(older_than), row_limit),
+                ).fetchall()
+            )
+        return tuple(SavedTake5.model_validate_json(document) for (document,) in rows)
+
+    def fixed_among(self, take5_ids: Collection[UUID]) -> frozenset[UUID]:
+        """Find which of these Take 5s a saved Take 5 fixes.
+
+        Args:
+            take5_ids: The IDs to look for.
+
+        Returns:
+            The ones some saved Take 5 points back at with `fixes`.
+        """
+        if not take5_ids:
+            return frozenset()
+        placeholders: str = ", ".join("?" for _ in take5_ids)
         with closing(self._connect()) as connection:
             rows: list[tuple[str]] = connection.execute(
-                _SELECT_NEWEST_FIRST,
+                "SELECT DISTINCT json_extract(document, '$.fixes') FROM take5s "
+                f"WHERE json_extract(document, '$.fixes') IN ({placeholders})",
+                tuple(str(take5_id) for take5_id in take5_ids),
             ).fetchall()
-        return tuple(SavedTake5.model_validate_json(document) for (document,) in rows)
+        return frozenset(UUID(fixed_id) for (fixed_id,) in rows)
 
     def fixed_by(self, take5_id: UUID) -> UUID | None:
         """Find the newest saved Take 5 that fixes this one.

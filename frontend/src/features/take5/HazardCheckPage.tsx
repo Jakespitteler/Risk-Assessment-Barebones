@@ -50,7 +50,7 @@ export function HazardCheckPage({
         Did you miss any of these? For each Yes, say which hazard on your list
         it is, or add it.
       </p>
-      {aiNotice && <p className="text-slate-700">{aiNotice}</p>}
+      {aiNotice && <p className="text-ink-muted">{aiNotice}</p>}
       {questions.map((question) => {
         const path = `answers.${question.id}`;
         return (
