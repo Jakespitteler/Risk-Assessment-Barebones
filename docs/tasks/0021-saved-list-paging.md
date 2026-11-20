@@ -1,7 +1,7 @@
 ---
 id: 0021
 title: Show the saved Take 5 list 50 at a time (spec D18)
-status: review
+status: done
 owner: claude
 branch: claude/0021-saved-list-paging
 ---
@@ -42,3 +42,8 @@ is fine; if it is not, the summary columns beside each document can be read inst
 - Found while testing: the light and dark runs of `e2e/saved-take5s.spec.ts` saved the same job names at the same
   time, so a test could pick up the other run's Take 5. Each run's jobs now end in its shift ("day shift" or
   "night shift").
+- A separate reviewer agent checked the diff on 2026-11-20 and found no bugs. Fixed from its review: the test
+  stand-in now gives an empty page for an unknown `before`, as SQLite does (with an API test for it); the route
+  says "up to 50"; and this order of work no longer says the task is parked. Left for Jake: decision D18 still
+  says "Until then, all of them", which D80 to D86 now replace. Left as a suggestion: when the last page loads,
+  keyboard focus could move to the first new line instead of the page.

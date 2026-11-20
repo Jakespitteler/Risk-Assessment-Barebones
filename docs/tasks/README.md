@@ -8,7 +8,7 @@ Recommended by Claude on 2026-11-13, agreed by Jake the same day. Tasks 0015 to 
 2026-11-19; Jake can move them. Last brought up to date on 2026-11-19, in task 0024's pull request. Task 0030's set
 it after Jake agreed the app's goal (top of `docs/spec.md`). Every task is judged against that goal.
 
-Complete: 0001 to 0020, 0022 to 0026 and 0030. Jake chose on 2026-11-19 to build 0024 (dark mode) then (spec D79).
+Complete: 0001 to 0026 and 0030. Jake chose on 2026-11-19 to build 0024 (dark mode) then (spec D79).
 Task 0027 is merged, but stays `review` until Jake's measurement of the AI's verdicts is in its pull request, as
 its last criterion asks. Task 0029 stays `review` until Jake tries Ctrl+C on Windows. Task 0018 decided to keep the
 built-in `sqlite3` for now (`docs/decisions.md`, 2026-11-14), so no task to switch storage is in the order below.
@@ -24,7 +24,7 @@ built-in `sqlite3` for now (`docs/decisions.md`, 2026-11-14), so no task to swit
    ranking job that 0033 reuses for a scanned batch.
 4. **0033, photograph paper cards into Take 5s.** The biggest of the three, and it needs 0032's ranking.
 
-Parked, not in the order: **0021, the saved list 50 at a time**, for when the app is hosted for a crew. Jake
-parked it on 2026-11-19: "worst of today" (0032) is a better way to look through many Take 5s for now.
+Built out of the order: **0021, the saved list 50 at a time**. Jake parked it on 2026-11-19, as "worst of today"
+(0032) is a better way to look through many Take 5s for now, then asked for it on 2026-11-20 (spec D80 to D86).
 
 When a task is added, or the human changes the order, update this list in the same pull request.

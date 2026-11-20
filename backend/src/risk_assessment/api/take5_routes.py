@@ -125,7 +125,7 @@ def create_router(service: Take5Service) -> APIRouter:
 
     @router.get("/api/take5s")
     def list_take5s(before: UUID | None = None) -> Take5ListPage:
-        """Return 50 saved Take 5s, newest first, each with its saved verdict.
+        """Return up to 50 saved Take 5s, newest first, each with its saved verdict.
 
         Args:
             before: The last Take 5 already shown, for the page after it, or None

@@ -76,7 +76,7 @@ export interface paths {
         };
         /**
          * List Take5S
-         * @description Return 50 saved Take 5s, newest first, each with its saved verdict.
+         * @description Return up to 50 saved Take 5s, newest first, each with its saved verdict.
          *
          *     Args:
          *         before: The last Take 5 already shown, for the page after it, or None

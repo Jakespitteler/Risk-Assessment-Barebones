@@ -171,7 +171,7 @@
           "take5"
         ],
         "summary": "List Take5S",
-        "description": "Return 50 saved Take 5s, newest first, each with its saved verdict.\n\nArgs:\n    before: The last Take 5 already shown, for the page after it, or None\n        for the newest.",
+        "description": "Return up to 50 saved Take 5s, newest first, each with its saved verdict.\n\nArgs:\n    before: The last Take 5 already shown, for the page after it, or None\n        for the newest.",
         "operationId": "list_take5s_api_take5s_get",
         "parameters": [
           {

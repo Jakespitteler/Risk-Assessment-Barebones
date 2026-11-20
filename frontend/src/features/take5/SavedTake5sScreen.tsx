@@ -104,9 +104,9 @@ function ShowMore({
 /**
  * Every saved Take 5, newest first, 50 at a time, with its date, worker, job and
  * verdict, and whether a Don't start yet has been fixed. Opening one shows its result
- * screen, exactly as it was saved. The phone's unfinished Take 5, if it keeps one, is at the top in place of
- * "Start a new Take 5", since there is only ever one. A draft just thrown away can be
- * put back with Undo, until another one is started.
+ * screen, exactly as it was saved. The phone's unfinished Take 5, if it keeps one, is
+ * at the top in place of "Start a new Take 5", since there is only ever one. A draft
+ * just thrown away can be put back with Undo, until another one is started.
  */
 export function SavedTake5sScreen({
   thrownAway = null,

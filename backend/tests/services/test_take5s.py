@@ -70,7 +70,10 @@ class MemoryRepository:
         older_than: UUID | None = None,
         limit: int | None = None,
     ) -> tuple[SavedTake5, ...]:
-        """Return documents newest first, the last saved first on a tie."""
+        """Return documents newest first, the last saved first on a tie.
+
+        None are listed after an ID that isn't saved, as in SQLite.
+        """
         last_saved_first: list[SavedTake5] = list(reversed(self.documents.values()))
         newest_first: list[SavedTake5] = sorted(
             last_saved_first,
@@ -78,6 +81,8 @@ class MemoryRepository:
             reverse=True,
         )
         ids_in_order: list[UUID] = [take5.id for take5 in newest_first]
+        if older_than is not None and older_than not in ids_in_order:
+            return ()
         start: int = 0 if older_than is None else ids_in_order.index(older_than) + 1
         end: int | None = None if limit is None else start + limit
         return tuple(newest_first[start:end])

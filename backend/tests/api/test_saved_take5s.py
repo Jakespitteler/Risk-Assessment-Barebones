@@ -2,7 +2,7 @@
 
 from datetime import timedelta
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi.testclient import TestClient
 from httpx2 import Response
@@ -163,6 +163,19 @@ def test_show_more_carries_on_after_the_last_one_shown(
 def test_a_before_that_is_not_an_id_is_refused(client: TestClient) -> None:
     """FastAPI checks the ID's shape, so a mistyped link gets 422, not a crash."""
     assert client.get("/api/take5s", params={"before": "not-an-id"}).status_code == 422
+
+
+def test_a_before_that_is_not_saved_gives_an_empty_last_page(
+    client: TestClient,
+    repository: SqliteTake5Repository,
+) -> None:
+    """An unknown `before` lists nothing after it, not the whole list again."""
+    repository.add(sample_saved_take5())
+
+    response: Response = client.get("/api/take5s", params={"before": str(uuid4())})
+
+    assert response.status_code == 200
+    assert response.json() == {"take5s": [], "next": None}
 
 
 def test_no_endpoint_changes_a_saved_take5() -> None:

@@ -70,7 +70,8 @@ class Take5Repository(Protocol):
 
         Args:
             older_than: Only those listed after this Take 5, or None to start at the
-                newest. A Take 5 saved since can't shift what comes after it.
+                newest. A Take 5 saved since can't shift what comes after it. None
+                are listed after a Take 5 that isn't saved.
             limit: At most this many, or None for all of them.
 
         Returns:
