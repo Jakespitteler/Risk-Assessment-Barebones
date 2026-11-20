@@ -39,6 +39,7 @@ from risk_assessment.domain.take5.hazard_nudges import (
     specific_hazard_nudges,
 )
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
+from risk_assessment.services.ai_failures import ai_failure_kind
 from risk_assessment.settings import Settings
 
 # Made up, every one: a hazard, the question it is linked to, the job, where it is,
@@ -201,7 +202,7 @@ def measure(model_name: str, api_key: str, counter: TokenCounter) -> list[str]:
         try:
             reply: str = judge.judge(hazard_judgement_text(judged[0], job, location))
         except Exception as error:  # Show every failure in the table.
-            reply = f"(failed: {type(error.__cause__ or error).__name__})"
+            reply = f"(failed: {ai_failure_kind(error)})"
         seconds: float = time.perf_counter() - started
         verdict: HazardVerdict | None = hazard_verdict(reply)
         says: str = verdict.value if verdict else f"unusable: {reply.strip()}"

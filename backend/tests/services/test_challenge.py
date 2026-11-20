@@ -385,5 +385,6 @@ def test_a_bug_while_asking_the_ai_still_falls_back_but_keeps_its_trace(
     (warning,) = [record for record in caplog.records if record.levelname == "WARNING"]
     assert "(TypeError)" in warning.getMessage()
     assert warning.exc_info is not None
+    assert warning.exc_info[0] is TypeError
     assert saved.challenge is not None
     assert saved.challenge.asked_by == AskedBy.FALLBACK

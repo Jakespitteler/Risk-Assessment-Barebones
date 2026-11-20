@@ -12,8 +12,11 @@ Newest first. One short entry per non-obvious decision.
   failed request instead of a proxy error and stack, through a small custom logger.
 - Why: Jake's answers of 2026-11-19 and 2026-11-20: "it should always be obvious from a glance what/where is
   going wrong". Labels would have brought back the output pipe that task 0029 removed for being complicated.
-- How: a custom logger makes Vite ignore the command line's `--logLevel`, so the logger reads it from the command
-  line itself, which keeps `start.py` and `npm run dev` working as before.
+- How: a custom logger makes Vite ignore the command line's `--logLevel` and `clearScreen`, so the logger reads
+  the level from the command line itself and never clears the screen. Only a time-out or an `AiReplyError` counts
+  as an expected AI failure; anything else while asking the AI is a bug and keeps its trace. So every AI adapter
+  wraps its library's errors in `LanguageModelError` (a kind of `AiReplyError`), keeping each as the cause; the
+  Claude adapter now does.
 - Not chosen: a plugin of our own or `vite-plugin-terminal` for browser errors; labels on each line; a stack trace
   for every AI failure; two quiet 422s; a log file.
 - Decided by: human (the behaviour), agent (how).

@@ -18,7 +18,7 @@ def provider_failure() -> LanguageModelError:
     request = httpx2.Request("POST", "https://api.anthropic.com/v1/messages")
     response = httpx2.Response(401, request=request)
     cause = anthropic.AuthenticationError("bad key", response=response, body=None)
-    error = LanguageModelError("claude-example could not be reached.")
+    error = LanguageModelError("The call to claude-example failed.")
     error.__cause__ = cause
     return error
 

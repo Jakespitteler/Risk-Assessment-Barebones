@@ -376,5 +376,6 @@ def test_a_bug_while_judging_still_leaves_the_word_rule_but_keeps_its_trace(
 
     (warning,) = [record for record in caplog.records if record.levelname == "WARNING"]
     assert "(TypeError)" in warning.getMessage()
-    assert warning.exc_info
+    assert warning.exc_info is not None
+    assert warning.exc_info[0] is TypeError
     assert len(nudges) == 1
