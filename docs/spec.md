@@ -405,17 +405,18 @@ Where the jobs were, and which places keep coming up high risk, so a safety pers
 is a ranked list of areas with a bar for each, not a drawn map yet (decisions D111 to D117).
 
 - **A1 The area.** Take 5s are grouped by where the job is, as typed, ignoring capitals, spaces and punctuation,
-  so "Light vehicle workshop" and "light-vehicle  workshop." are one area. The area is named by the spelling typed
-  most often there, the newest on a tie. A Take 5 whose location has no letters or digits is left out.
+  so "Light vehicle workshop" and "light-vehicle  workshop." are one area, and so are "Pit2" and "Pit 2". The
+  area is named by the spelling typed most often there, the newest on a tie. A Take 5 whose location has no
+  letters or digits is left out.
 - **A2 The last 30 days.** It counts the Take 5s started in the last 30 days, today included: from midnight 29
-  days before today, where the phone is. A Take 5 counts from when it was started, or saved if it has no start
-  time, finished or not, as W7 counts. Nothing is saved: it is worked out when the page opens.
+  days before today, where the phone is, counting 24 hours to a day. A Take 5 counts from when it was started,
+  or saved if it has no start time, finished or not, as W7 counts. Nothing is saved: it is worked out when the page opens.
 - **A3 High risk.** A Take 5 is high risk when a hazard's *before* score needs a JHA on its own card (R3): 11 or
   more on the booklet.
 - **A4 Hottest first.** The area with the most high-risk Take 5s is first. On a tie, the most "Don't start yet"
   verdicts, then the most thought gaps (W2 to W5, W10), then the most Take 5s, then the name from A to Z. An
   unfinished Take 5 has no verdict yet, so it never counts as "Don't start yet". Each area's bar is its
-  high-risk count beside the hottest area's.
+  high-risk count beside the hottest area's, and the page says so; with no high-risk Take 5 there are no bars.
 - **A5 What comes up there.** Each area shows its high-risk count out of its Take 5s, its highest *before* score
   and band, its "Don't start yet" count, its thought gaps, and up to 3 hazard questions answered Yes most often
   there, most first and in the card's order on a tie, each with how many times. No AI is used.
@@ -770,10 +771,10 @@ through a day's Take 5s, on a phone or a desktop.
 
 The last 30 days of Take 5s grouped by area, hottest first (A1 to A5). For a safety person deciding where to go.
 
-- Acceptance: the saved list has "Risk by area" once anything is saved, beside "Today's review".
+- Acceptance: the saved list has "Risk by area" once anything is saved, below "Today's review".
 - Acceptance: each area shows its name, a bar, "2 of 3 Take 5s high risk", its highest risk, its "Don't start
   yet" count, its thought gaps and the questions answered Yes most often there.
-- Acceptance: with nothing in the last 30 days it says so.
+- Acceptance: with nothing in the last 30 days it says "No Take 5s with a location in the last 30 days."
 
 ## Out of scope (for now)
 

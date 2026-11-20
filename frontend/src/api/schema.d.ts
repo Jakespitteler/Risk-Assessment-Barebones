@@ -217,7 +217,7 @@ export interface components {
          *         name: The area, as it was typed most often (A1).
          *         take5_count: How many Take 5s were done there.
          *         high_risk_count: How many had a hazard that needed a JHA before controls (A3).
-         *         dont_start_count: How many got "Don't start yet". An unfinished one has no
+         *         stopped_count: How many got "Don't start yet". An unfinished one has no
          *             verdict yet, so it isn't counted.
          *         thought_gap_count: How many thought gaps they had between them (W2 to W5, W10).
          *         highest_score: The highest before-controls score of any hazard there.
@@ -231,8 +231,8 @@ export interface components {
             take5_count: number;
             /** High Risk Count */
             high_risk_count: number;
-            /** Dont Start Count */
-            dont_start_count: number;
+            /** Stopped Count */
+            stopped_count: number;
             /** Thought Gap Count */
             thought_gap_count: number;
             /** Highest Score */
@@ -654,15 +654,9 @@ export interface components {
          * @description Every area with a Take 5 in the last 30 days, hottest first (A1 to A5).
          *
          *     Attributes:
-         *         since: Where the 30 days start: midnight, 29 days before today (A2).
          *         areas: Each area and what its Take 5s show, hottest first.
          */
         RiskByArea: {
-            /**
-             * Since
-             * Format: date-time
-             */
-            since: string;
             /** Areas */
             areas: components["schemas"]["AreaRisk"][];
         };

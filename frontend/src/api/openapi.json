@@ -473,9 +473,9 @@
             "type": "integer",
             "title": "High Risk Count"
           },
-          "dont_start_count": {
+          "stopped_count": {
             "type": "integer",
-            "title": "Dont Start Count"
+            "title": "Stopped Count"
           },
           "thought_gap_count": {
             "type": "integer",
@@ -502,14 +502,14 @@
           "name",
           "take5_count",
           "high_risk_count",
-          "dont_start_count",
+          "stopped_count",
           "thought_gap_count",
           "highest_score",
           "highest_band",
           "common_yes"
         ],
         "title": "AreaRisk",
-        "description": "What the Take 5s in one area show (A3 to A5).\n\nAttributes:\n    name: The area, as it was typed most often (A1).\n    take5_count: How many Take 5s were done there.\n    high_risk_count: How many had a hazard that needed a JHA before controls (A3).\n    dont_start_count: How many got \"Don't start yet\". An unfinished one has no\n        verdict yet, so it isn't counted.\n    thought_gap_count: How many thought gaps they had between them (W2 to W5, W10).\n    highest_score: The highest before-controls score of any hazard there.\n    highest_band: That score's band, such as \"Extreme\".\n    common_yes: Up to 3 hazard questions answered Yes most often there (A5)."
+        "description": "What the Take 5s in one area show (A3 to A5).\n\nAttributes:\n    name: The area, as it was typed most often (A1).\n    take5_count: How many Take 5s were done there.\n    high_risk_count: How many had a hazard that needed a JHA before controls (A3).\n    stopped_count: How many got \"Don't start yet\". An unfinished one has no\n        verdict yet, so it isn't counted.\n    thought_gap_count: How many thought gaps they had between them (W2 to W5, W10).\n    highest_score: The highest before-controls score of any hazard there.\n    highest_band: That score's band, such as \"Extreme\".\n    common_yes: Up to 3 hazard questions answered Yes most often there (A5)."
       },
       "AskedBy": {
         "type": "string",
@@ -1160,11 +1160,6 @@
       },
       "RiskByArea": {
         "properties": {
-          "since": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Since"
-          },
           "areas": {
             "items": {
               "$ref": "#/components/schemas/AreaRisk"
@@ -1175,11 +1170,10 @@
         },
         "type": "object",
         "required": [
-          "since",
           "areas"
         ],
         "title": "RiskByArea",
-        "description": "Every area with a Take 5 in the last 30 days, hottest first (A1 to A5).\n\nAttributes:\n    since: Where the 30 days start: midnight, 29 days before today (A2).\n    areas: Each area and what its Take 5s show, hottest first."
+        "description": "Every area with a Take 5 in the last 30 days, hottest first (A1 to A5).\n\nAttributes:\n    areas: Each area and what its Take 5s show, hottest first."
       },
       "RiskCell": {
         "properties": {

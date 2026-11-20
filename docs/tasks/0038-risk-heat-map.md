@@ -52,6 +52,11 @@ Assumptions:
 
 - Two spellings that differ by more than capitals, spaces and punctuation ("LV workshop" and "Light vehicle
   workshop") are two areas. A fixed list of areas would fix that, and needs Jake's approval as a data model change.
+- The 30 days are 29 days of 24 hours back from the phone's midnight. In a state with daylight saving, for
+  29 days after a clock change the start is an hour off midnight. Sending the phone's named time zone would fix
+  it, a change to the API left for later.
+- A location with only punctuation (" - ") passes the job page but can't be placed, so it is left out, and the
+  empty page says "No Take 5s with a location in the last 30 days."
 - No AI: every number can be checked by hand, and the page costs nothing to open (D116).
 - Each Take 5 is judged on its own card's JHA threshold, so a card with another matrix still works.
 - The bar is drawn beside the hottest area's high-risk count, and only repeats the words, so it is hidden from

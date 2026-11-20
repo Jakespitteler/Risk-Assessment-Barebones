@@ -35,22 +35,23 @@ function AreaItem({ area, hottest }: { area: AreaRisk; hottest: number }) {
   return (
     <li className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-4 [overflow-wrap:anywhere]">
       <h2 className="text-xl font-extrabold">{area.name}</h2>
-      <div
-        aria-hidden="true"
-        className="h-3 overflow-hidden rounded-full bg-surface-subtle"
-      >
+      {hottest > 0 && (
         <div
-          className="h-full rounded-full bg-danger-fill"
-          style={{ width: `${String(Math.round(share * 100))}%` }}
-        />
-      </div>
+          aria-hidden="true"
+          className="h-3 overflow-hidden rounded-full bg-surface-subtle"
+        >
+          <div
+            className="h-full rounded-full bg-danger-fill"
+            style={{ width: `${String(Math.round(share * 100))}%` }}
+          />
+        </div>
+      )}
       <p className="text-lg font-bold">
         {area.high_risk_count} of {take5s(area.take5_count)} high risk
       </p>
       <p>
-        Highest risk {area.highest_score} {area.highest_band}.{" "}
-        {area.dont_start_count} “Don’t start yet”,{" "}
-        {gaps(area.thought_gap_count)}.
+        Highest risk before controls {area.highest_score} {area.highest_band}.{" "}
+        {area.stopped_count} “Don’t start yet”, {gaps(area.thought_gap_count)}.
       </p>
       {area.common_yes.length > 0 && (
         <div className="flex flex-col gap-1">
@@ -108,14 +109,15 @@ export function RiskByAreaScreen() {
             </h1>
             {areas.length === 0 ? (
               <Card>
-                <p>No Take 5s have been started in the last 30 days.</p>
+                <p>No Take 5s with a location in the last 30 days.</p>
               </Card>
             ) : (
               <>
                 <p>
                   Where the jobs were in the last 30 days, as workers typed it,
                   hottest first. A Take 5 is high risk when a hazard needed a
-                  JHA before controls.
+                  JHA before controls. Each bar compares an area’s high-risk
+                  Take 5s with the top area’s.
                 </p>
                 <ol className="flex flex-col gap-3">
                   {areas.map((area) => (

@@ -8,7 +8,6 @@ import { RiskByAreaScreen } from "./RiskByAreaScreen";
 const NOW = new Date(2026, 10, 21, 14, 30);
 const MIDNIGHT = new Date(2026, 10, 21).toISOString();
 const AREAS_URL = `GET /api/risk-by-area?today=${encodeURIComponent(MIDNIGHT)}`;
-const SINCE = new Date(2026, 9, 23).toISOString();
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -25,7 +24,7 @@ function area(name: string, changed: Partial<AreaRisk> = {}): AreaRisk {
     name,
     take5_count: 3,
     high_risk_count: 1,
-    dont_start_count: 0,
+    stopped_count: 0,
     thought_gap_count: 2,
     highest_score: 18,
     highest_band: "Extreme",
@@ -36,7 +35,7 @@ function area(name: string, changed: Partial<AreaRisk> = {}): AreaRisk {
 
 it("asks from midnight where the phone is, and says when there is nothing (A2)", async () => {
   const calls = stubApi({
-    [AREAS_URL]: { status: 200, body: { since: SINCE, areas: [] } },
+    [AREAS_URL]: { status: 200, body: { areas: [] } },
   });
   renderWithApi(<RiskByAreaScreen />);
   expect(
@@ -44,7 +43,7 @@ it("asks from midnight where the phone is, and says when there is nothing (A2)",
   ).toBeTruthy();
   expect(calls).toEqual([AREAS_URL]);
   expect(
-    screen.getByText("No Take 5s have been started in the last 30 days."),
+    screen.getByText("No Take 5s with a location in the last 30 days."),
   ).toBeTruthy();
 });
 
@@ -53,11 +52,10 @@ it("lists the areas hottest first, each with what its Take 5s show (A4, A5)", as
     [AREAS_URL]: {
       status: 200,
       body: {
-        since: SINCE,
         areas: [
           area("Crusher", {
             high_risk_count: 2,
-            dont_start_count: 1,
+            stopped_count: 1,
             common_yes: [
               { question: "Will I be working at heights?", count: 2 },
             ],
@@ -89,7 +87,7 @@ it("lists the areas hottest first, each with what its Take 5s show (A4, A5)", as
   expect(within(crusher).getByText("2 of 3 Take 5s high risk")).toBeTruthy();
   expect(
     within(crusher).getByText(
-      "Highest risk 18 Extreme. 1 “Don’t start yet”, 2 thought gaps.",
+      "Highest risk before controls 18 Extreme. 1 “Don’t start yet”, 2 thought gaps.",
     ),
   ).toBeTruthy();
   expect(
@@ -101,9 +99,38 @@ it("lists the areas hottest first, each with what its Take 5s show (A4, A5)", as
   expect(screen.getByText("0 of 1 Take 5 high risk")).toBeTruthy();
   expect(
     screen.getByText(
-      "Highest risk 8 Moderate. 0 “Don’t start yet”, 1 thought gap.",
+      "Highest risk before controls 8 Moderate. 0 “Don’t start yet”, 1 thought gap.",
     ),
   ).toBeTruthy();
+});
+
+it("draws each bar beside the hottest area's high-risk count (A4)", async () => {
+  stubApi({
+    [AREAS_URL]: {
+      status: 200,
+      body: {
+        areas: [
+          area("Crusher", { high_risk_count: 4 }),
+          area("Workshop", { high_risk_count: 2 }),
+        ],
+      },
+    },
+  });
+  const { container } = renderWithApi(<RiskByAreaScreen />);
+  await screen.findByRole("heading", { name: "Risk by area" });
+  const widths = Array.from(
+    container.querySelectorAll<HTMLElement>("[aria-hidden='true'] > div"),
+  ).map((bar) => bar.style.width);
+  expect(widths).toEqual(["100%", "50%"]);
+});
+
+it("asks only once when the back end answers with an error", async () => {
+  const answered = stubApi({ [AREAS_URL]: { status: 422, body: {} } });
+  renderWithApi(<RiskByAreaScreen />);
+  await screen.findByRole("heading", {
+    name: "Risk by area couldn’t be worked out",
+  });
+  expect(answered).toHaveLength(1);
 });
 
 it("offers to try again when the areas can't be loaded", async () => {
@@ -115,7 +142,7 @@ it("offers to try again when the areas can't be loaded", async () => {
     }),
   ).toBeTruthy();
   stubApi({
-    [AREAS_URL]: { status: 200, body: { since: SINCE, areas: [] } },
+    [AREAS_URL]: { status: 200, body: { areas: [] } },
   });
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
   expect(

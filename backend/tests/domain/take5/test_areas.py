@@ -20,7 +20,7 @@ from tests.domain.take5.test_ranking import SAVED_AT, ranked_take5
 from tests.samples import BARRICADE, sample_answers
 
 WORKSHOP: str = "Light vehicle workshop"
-DONT_START: Verdict = Verdict(can_start=False, reasons=("You don't have a permit.",))
+STOPPED: Verdict = Verdict(can_start=False, reasons=("You don't have a permit.",))
 
 
 def area_take5(
@@ -119,12 +119,12 @@ def test_example_124_more_high_risk_take5s_come_first() -> None:
 def test_example_125_then_more_dont_start_yet_comes_first() -> None:
     """A4: equal high-risk counts, so the area with a "Don't start yet" is hotter."""
     stopped: SavedTake5 = area_take5("Crusher").model_copy(
-        update={"verdict": DONT_START},
+        update={"verdict": STOPPED},
     )
 
     areas: tuple[AreaRisk, ...] = risk_by_area((area_take5(WORKSHOP), stopped))
 
-    assert [(area.name, area.dont_start_count) for area in areas] == [
+    assert [(area.name, area.stopped_count) for area in areas] == [
         ("Crusher", 1),
         (WORKSHOP, 0),
     ]
@@ -186,9 +186,46 @@ def test_example_130_an_unfinished_take5_has_no_dont_start_yet() -> None:
 
     area: AreaRisk = risk_by_area((unfinished,))[0]
 
-    assert (area.high_risk_count, area.dont_start_count) == (1, 0)
+    assert (area.high_risk_count, area.stopped_count) == (1, 0)
 
 
-def test_the_area_key_keeps_only_words() -> None:
-    """A1: the key is the place's words in lower case, one space apart."""
-    assert area_key("  Pit 2, bench-7  ") == "pit 2 bench 7"
+def test_the_area_key_keeps_only_letters_and_digits() -> None:
+    """A1: "Pit2" and "Pit 2, bench-7" lose their spaces and punctuation alike."""
+    assert area_key("  Pit 2, bench-7  ") == "pit2bench7"
+    assert area_key("Pit2") == area_key("pit 2")
+
+
+def test_a_tie_on_gaps_puts_the_area_with_more_take5s_first() -> None:
+    """A4: all else equal, the busier area is first."""
+    areas: tuple[AreaRisk, ...] = risk_by_area(
+        (area_take5("Crusher"), area_take5(WORKSHOP), area_take5(WORKSHOP)),
+    )
+
+    assert [area.name for area in areas] == [WORKSHOP, "Crusher"]
+
+
+def test_a_full_tie_goes_by_name_ignoring_capitals() -> None:
+    """A4: the same in every count, so the name decides, A to Z."""
+    areas: tuple[AreaRisk, ...] = risk_by_area(
+        (area_take5("Workshop"), area_take5("crusher")),
+    )
+
+    assert [area.name for area in areas] == ["crusher", "Workshop"]
+
+
+def test_each_take5_is_judged_on_its_own_cards_jha_threshold() -> None:
+    """A3: a card whose JHA starts at 8 makes the base Take 5's 8 high risk."""
+    take5: SavedTake5 = area_take5()
+    stricter: SavedTake5 = take5.model_copy(
+        update={
+            "template": take5.template.model_copy(
+                update={
+                    "matrix": take5.template.matrix.model_copy(
+                        update={"jha_threshold": 8},
+                    ),
+                },
+            ),
+        },
+    )
+
+    assert (is_high_risk(take5), is_high_risk(stricter)) == (False, True)

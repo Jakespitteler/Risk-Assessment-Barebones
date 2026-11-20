@@ -2,7 +2,7 @@
 
 An area is where the job is, as the worker typed it (A1). An area is hot when many of
 its Take 5s had a hazard that needed a Job Hazard Analysis before controls (A3). It
-needs no AI: every number here can be checked by hand (decision D113).
+needs no AI: every number here can be checked by hand (decision D116).
 """
 
 import re
@@ -18,7 +18,7 @@ from risk_assessment.domain.take5.ranking import highest_risk, thought_gaps
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.take5 import Hazard
 
-# How far back the page looks, today included (A2, decision D112).
+# How far back the page looks, today included (A2, decision D114).
 AREA_DAYS: int = 30
 # How many of an area's most common Yes answers it shows (A5).
 COMMON_YES_COUNT: int = 3
@@ -47,7 +47,7 @@ class AreaRisk(BaseModel):
         name: The area, as it was typed most often (A1).
         take5_count: How many Take 5s were done there.
         high_risk_count: How many had a hazard that needed a JHA before controls (A3).
-        dont_start_count: How many got "Don't start yet". An unfinished one has no
+        stopped_count: How many got "Don't start yet". An unfinished one has no
             verdict yet, so it isn't counted.
         thought_gap_count: How many thought gaps they had between them (W2 to W5, W10).
         highest_score: The highest before-controls score of any hazard there.
@@ -60,7 +60,7 @@ class AreaRisk(BaseModel):
     name: str
     take5_count: int
     high_risk_count: int
-    dont_start_count: int
+    stopped_count: int
     thought_gap_count: int
     highest_score: int
     highest_band: str
@@ -71,15 +71,15 @@ def area_key(location: str) -> str:
     """Write where a job is so that spellings of the same place match (A1).
 
     Capitals, spaces and punctuation are ignored, so "Light vehicle workshop" and
-    "light-vehicle  workshop." are the same area.
+    "light-vehicle  workshop." are the same area, and so are "Pit2" and "Pit 2".
 
     Args:
         location: Where the job is, as the worker typed it.
 
     Returns:
-        The words in lower case, one space apart. Empty when there are none.
+        Its letters and digits in lower case. Empty when there are none.
     """
-    return _NOT_A_LETTER_OR_DIGIT.sub(" ", location.casefold()).strip()
+    return _NOT_A_LETTER_OR_DIGIT.sub("", location.casefold())
 
 
 def area_since(midnight_today: datetime) -> datetime:
@@ -131,7 +131,7 @@ def risk_by_area(take5s: Sequence[SavedTake5]) -> tuple[AreaRisk, ...]:
             areas,
             key=lambda area: (
                 -area.high_risk_count,
-                -area.dont_start_count,
+                -area.stopped_count,
                 -area.thought_gap_count,
                 -area.take5_count,
                 area.name.casefold(),
@@ -157,7 +157,7 @@ def _area(newest_first: Sequence[SavedTake5]) -> AreaRisk:
         name=_most_typed(newest_first),
         take5_count=len(newest_first),
         high_risk_count=sum(is_high_risk(take5) for take5 in newest_first),
-        dont_start_count=sum(
+        stopped_count=sum(
             take5.verdict is not None and not take5.verdict.can_start
             for take5 in newest_first
         ),

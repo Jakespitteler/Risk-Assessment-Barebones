@@ -6,7 +6,6 @@ from fastapi import APIRouter
 from pydantic import AwareDatetime
 
 from risk_assessment.api.schemas import FormErrors, RiskByArea
-from risk_assessment.domain.take5.areas import area_since
 from risk_assessment.services.areas import AreaRiskService
 
 _UNREADABLE: dict[int | str, dict[str, Any]] = {
@@ -32,9 +31,6 @@ def create_area_router(service: AreaRiskService) -> APIRouter:
         Args:
             today: Midnight today where the phone is, with its time zone.
         """
-        return RiskByArea(
-            since=area_since(today),
-            areas=service.last_30_days(today),
-        )
+        return RiskByArea(areas=service.last_30_days(today))
 
     return router

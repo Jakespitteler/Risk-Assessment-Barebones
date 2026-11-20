@@ -33,13 +33,12 @@ def test_each_area_comes_with_its_counts_and_common_yes(
 
     assert response.status_code == 200
     body: dict[str, Any] = response.json()
-    assert datetime.fromisoformat(body["since"]) == MIDNIGHT_TODAY - timedelta(days=29)
     assert body["areas"] == [
         {
             "name": WORKSHOP,
             "take5_count": 1,
             "high_risk_count": 1,
-            "dont_start_count": 0,
+            "stopped_count": 0,
             "thought_gap_count": 0,
             "highest_score": 18,
             "highest_band": "Extreme",

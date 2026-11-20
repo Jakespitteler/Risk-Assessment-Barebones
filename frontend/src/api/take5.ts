@@ -304,7 +304,7 @@ export function useRankedTake5s(since: string) {
 
 /**
  * Every area with a Take 5 in the last 30 days, hottest first (A1 to A5). Midnight
- * today is sent with its time zone, so the 30 days start where the phone is.
+ * today where the phone is is sent, and the back end counts 29 days of 24 hours back.
  */
 export function useRiskByArea(today: string) {
   return useQuery({
@@ -313,6 +313,9 @@ export function useRiskByArea(today: string) {
       request<RiskByArea>(
         `/api/risk-by-area?today=${encodeURIComponent(today)}`,
       ),
+    retry: retryOnNetworkError,
+    // The list doesn't reorder while it is read.
+    refetchOnWindowFocus: false,
     networkMode: NETWORK_MODE,
   });
 }

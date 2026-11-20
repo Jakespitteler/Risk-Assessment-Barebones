@@ -234,11 +234,9 @@ class RiskByArea(BaseModel):
     """Every area with a Take 5 in the last 30 days, hottest first (A1 to A5).
 
     Attributes:
-        since: Where the 30 days start: midnight, 29 days before today (A2).
         areas: Each area and what its Take 5s show, hottest first.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
-    since: datetime
     areas: tuple[AreaRisk, ...]

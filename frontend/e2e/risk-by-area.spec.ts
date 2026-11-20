@@ -15,8 +15,10 @@ test("the saved list opens risk by area, hottest first, with what each shows (A1
     .getByRole("listitem")
     .filter({ has: page.getByRole("heading", { name: "Example workshop" }) });
   await expect(
-    workshop.getByText(/^\d+ of \d+ Take 5s? high risk$/),
+    workshop.getByText(/^[1-9]\d* of \d+ Take 5s? high risk$/),
   ).toBeVisible();
-  await expect(workshop.getByText(/^Highest risk \d+ \w+\./)).toBeVisible();
+  await expect(
+    workshop.getByText(/^Highest risk before controls \d+ \w+/),
+  ).toBeVisible();
   await capture(page, "risk-by-area");
 });
