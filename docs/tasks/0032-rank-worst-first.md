@@ -1,9 +1,9 @@
 ---
 id: 0032
 title: Rank a set of Take 5s worst first, with one line saying why
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/0032-rank-worst-first
 ---
 
 ## Goal
