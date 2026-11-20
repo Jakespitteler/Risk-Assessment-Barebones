@@ -44,10 +44,11 @@ design choice: **if the app is boring and can be used without thinking, people w
 
 | Role | Who | What they can do |
 | --- | --- | --- |
-| Worker | Anyone on a mine-site crew about to start a task | Fill in a Take 5, see its verdict, look back at saved Take 5s |
+| Worker | Anyone on a mine-site crew about to start a task | Fill in a Take 5, see its verdict, look back at saved Take 5s, and see today's ranked worst first (F8) |
 
 There is one role for now. There is no sign-in: the worker types their name and the
-phone remembers it.
+phone remembers it. Anyone can rank Take 5s, and the ranking shows each worker's name, as the saved list does
+(decision D66).
 
 Where and when it is used (confirmed by Jake for task 0004):
 
@@ -344,6 +345,32 @@ keep a draft long enough for a radio call and no longer (decisions D19 to D29).
 - **K3 The start time is kept.** A saved Take 5 keeps when its draft was started, so the time a Take 5 takes can
   be measured.
 
+### Ranking worst first
+
+Any set of Take 5s can be ranked worst first, so the weakest are looked at first. "Worst" weighs how risky the job
+is against how little thought the answers show. Today it ranks a day's Take 5s; task 0033 reuses it for a scanned
+batch (decisions D91 to D96).
+
+- **W1 The score.** Each Take 5 scores its highest *before* controls score, plus 5 for each thought gap that W2
+  to W5 find. The highest score is worst; an equal score puts the one saved last first. With no AI, each gets one
+  line from the rules: its highest risk and the gaps found, such as "Highest risk 8 Moderate. The question was
+  never answered; it was filled in in under 2 minutes.", or "No signs of a rushed Take 5." when there are none.
+- **W2 Short hazards.** Each hazard described in fewer than 6 words is a gap, the same minimum as T6.
+- **W3 Controls that change nothing.** Each hazard with controls whose *after* score is its *before* score is a
+  gap.
+- **W4 The question.** A question never answered is a gap; so is an answer in fewer than 6 words, though C4
+  accepts four.
+- **W5 Rushed.** A Take 5 saved less than 2 minutes after it was started is a gap. Exactly 2 minutes isn't. One
+  with no start time (saved before task 0019) never is.
+- **W6 The AI.** When an AI is set up and there are at least two, the worst 10 by W1 go to it, numbered, with
+  what the challenge question is given (C1), plus the question asked, the answer and the minutes taken. The
+  worker's name is never sent. It replies with JSON giving each number once, worst first, with a line under 200
+  characters on why. Anything else, an error or no answer in 20 seconds, and W1 decides alone. A line that names
+  the worker is replaced by the rule line. The rest follow in W1's order. The page says when an AI ordered them.
+- **W7 Today.** "Today" is from midnight where the phone is: a Take 5 counts from when it was started, or when it
+  was saved if it has no start time, finished or not. The ranking isn't saved; it is worked out when the page
+  opens, and remembered until the server restarts or a Take 5 is added or finished.
+
 ### Worked examples
 
 Each example becomes an automated test, named by its number. Add one for every rule and every boundary.
@@ -489,6 +516,26 @@ Drafts (K2, K3). On the booklet's time limit of 2 hours, unless the row says oth
 | 63 | Started at 8:12 pm, submitted at 8:16 pm | Saved with the start time 8:12 pm | K3 |
 | 64 | Saved at 8:16 pm, then the same submission is sent again at 1:12 am | The Take 5 saved at 8:16 pm comes back | K2: a retry of a Take 5 saved in time |
 
+Ranking (W1 to W7). Unless the row says otherwise, each Take 5 has one hazard, "Wheel rolls off the hub and
+crushes a foot", rated Possible / Minor (8) then Unlikely / Minor (5) with a barricade, the answer "Wheels chocked
+both sides and nuts torqued", and was saved 10 minutes after it was started.
+
+| # | Situation | Expected | Why |
+| --- | --- | --- | --- |
+| 88 | As above | Score 8; "Highest risk 8 Moderate. No signs of a rushed Take 5." | W1: no gaps |
+| 89 | The hazard is "Moving wheel" | Score 13; "Highest risk 8 Moderate. “Moving wheel” is under 6 words." | W2 |
+| 90 | After controls it is still Possible / Minor (8) | Score 13 | W3 |
+| 91 | The question was never answered | Score 13 | W4 |
+| 92 | The answer is "Wheels chocked both sides" | Score 13 | W4: four words pass C4 but are a gap here |
+| 93 | Saved 1 minute 59 seconds after it was started | Score 13 | W5 |
+| 94 | Saved exactly 2 minutes after it was started | Score 8 | W5: on the boundary |
+| 95 | No start time | Score 8 | W5: can't be judged rushed |
+| 96 | A: before Possible / Major (18). B, saved 5 minutes later: "Moving wheel", saved 1 minute after starting | Both score 18; B first | W1: a tie puts the newest first |
+| 97 | A: before Possible / Major (18). B: "Moving wheel", unanswered, saved 1 minute after starting | B 23, then A 18 | W1: little thought outweighs higher risk |
+| 98 | The AI's reply gives number 1 twice | Thrown away; W1's order | W6 |
+| 99 | The AI's line for the worst says "Sam Example skipped the question." | That Take 5 gets its rule line instead | W6: names never come back |
+| 100 | In Perth: one started at 11:53 pm and saved at 12:03 am; one with no start time saved at 12:01 am; one saved at 11:59 pm | Only the one saved at 12:01 am | W7 |
+
 ## Features
 
 ### F1: Rate a risk
@@ -614,13 +661,23 @@ sent to the server (decisions D69 to D79).
   on every screen the whole-app tests visit, checked by axe.
 - Acceptance: a phone set to dark never shows a white page while the app starts.
 
+### F8: Worst of today
+
+Today's Take 5s, worst first, each with one line saying why (W1 to W7). For whoever looks through a day's Take 5s,
+on a phone or a desktop.
+
+- Acceptance: the saved list has "Worst of today" once anything is saved. It opens the ranking, numbered from 1,
+  each with its verdict, job, line, worker's name and time, and a link to the saved Take 5.
+- Acceptance: the worst 5 show first, then "Show all" shows the rest in order (D92).
+- Acceptance: it says when an AI ordered them, and that names aren't sent.
+- Acceptance: with nothing started today it says so.
+
 ## Out of scope (for now)
 
 - AI that does the worker's thinking while they fill in a Take 5: marking their answer, follow-up questions,
   suggesting hazards or controls, rewording a hazard, or an AI verdict. Suggesting hazards in particular would
   undo "own words first". The AI is used wherever it makes a Take 5 safer (decision D67): today the challenge
-  question and judging vague hazards (T6), and next reading paper cards (task 0033) and ranking Take 5s
-  (task 0032).
+  question, judging vague hazards (T6) and ranking Take 5s (W6), and next reading paper cards (task 0033).
 - Sign-in, supervisors, crews and approvals. Scanning and ranking are open to anyone (decision D66).
 - Photos of the job, PDFs of a Take 5, and admin tools.
 - Working with no signal.
@@ -671,7 +728,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D15 | What a Yes shows after a hazard is added from it (2026-11-14) | A tick, "Added to your list", and an "Add another" link. Replaced by D30 | The same reminder without its button; or the reminder and button unchanged |
 | D16 | What each saved Take 5 shows in the list (2026-11-15) | The date, worker, job and verdict, and "Fixed" on a Don't start yet that has been fixed | The location as well |
 | D17 | How dates are written (2026-11-15) | "14 Nov 2026, 6:52 pm" everywhere | Each phone's own format |
-| D18 | How the saved list grows (2026-11-15) | Once hosted for a crew, the newest 50 with "Show more" (task 0021). Until then, all of them | All of them, always |
+| D18 | How the saved list grows (2026-11-15) | Replaced by D80 to D86: the newest 50 with "Show more" (task 0021), built on 2026-11-20 | All of them, always |
 | D19 | What backing out of a Take 5 does (2026-11-15) | Both: Leave keeps it for later or throws it away, with Undo (K1) | Throw away only; keep only |
 | D20 | Where a draft is kept (2026-11-15) | On the phone, since there is no sign-in (D4) | On the server, where a supervisor could see it |
 | D21 | How long a draft lasts (2026-11-15) | 2 hours from its start; the template's limit can be set to none, which turns the check off (K2) | 12 hours (a shift); no limit |
@@ -744,6 +801,13 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D88 | What it checks besides screenshots (2026-11-20) | Nothing scrolls sideways, as at 360 px; and the hover and focus of D89 | Screenshots only |
 | D89 | Hover and focus (2026-11-20) | Everything a person can click changes under the mouse and shows the app's own 4 px focus outline | Leave the gaps, relying on the browser's own focus ring |
 | D90 | The "5" logo (2026-11-20) | A link to the start page, named "Take 5 home", which carries on the kept draft rather than throwing it away | Plain picture; a link that asks to start afresh |
+| D91 | Who orders a ranking (2026-11-20) | Fixed rules score every Take 5 (W1 to W5), then an AI reorders the worst 10 and writes their lines (W6). Replaces D66's "one AI ranking"; the rest of D66 stands | The AI orders them all |
+| D92 | How many are shown (2026-11-20) | The worst 5, then "Show all" | All of them; the worst 10 |
+| D93 | Where the ranking lives (2026-11-20) | "Worst of today" on the saved list | Its own button on the first screen |
+| D94 | What "today" is (2026-11-20) | Since midnight where the phone is, by when a Take 5 was started, finished or not (W7) | Midnight on the server; finished ones only |
+| D95 | Is a ranking saved (2026-11-20) | No: worked out when the page opens, remembered until the server restarts | Saved, which changes the data model |
+| D96 | What the AI is given (2026-11-20) | What the challenge question gets (C1), plus the question, answer and minutes taken; never the name | Everything saved, name included |
+| D97 | The focus outline on the undo bar (2026-11-20) | The bar's own text colour (white on the dark bar in light mode, near-black on the light bar in dark mode), so it stands out | The blue used elsewhere, at about 2.3 to 1 on the bar |
 
 ## Open questions
 

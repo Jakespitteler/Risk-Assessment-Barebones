@@ -157,3 +157,41 @@ class FormErrors(BaseModel):
 
     detail: str
     errors: tuple[FieldError, ...]
+
+
+class RankedTake5Line(BaseModel):
+    """One Take 5 in a ranking, worst first, with why it sits there (spec W1 to W7).
+
+    Attributes:
+        id: The Take 5's ID, to open it.
+        created_at: When it was saved.
+        worker_name: Who did it (decided by Jake, 2026-11-19). Never sent to the AI.
+        job: What the job is.
+        can_start: The verdict it was saved with: True for Good to go, False for
+            Don't start yet, or None while its question is unanswered.
+        line: One line saying why it sits where it does.
+        ranked_by_ai: True when the AI placed it and wrote the line, False when the
+            fixed rules did.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    id: UUID
+    created_at: datetime
+    worker_name: str
+    job: str
+    can_start: bool | None
+    line: str
+    ranked_by_ai: bool
+
+
+class RankedTake5s(BaseModel):
+    """Every Take 5 started since a moment, worst first (spec W7 and D92).
+
+    Attributes:
+        take5s: The ranking. The page shows the first 5, then the rest on request.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    take5s: tuple[RankedTake5Line, ...]

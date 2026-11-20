@@ -248,7 +248,12 @@ export async function expectHoverAndFocus(page: Page) {
         : focused;
       const style = getComputedStyle(shown);
       const probe = document.createElement("div");
-      probe.style.color = "var(--color-focus)";
+      // On the dark undo bar the outline is the bar's text colour (D97).
+      const onDarkBar =
+        shown.parentElement?.closest("[role=status].bg-action") != null;
+      probe.style.color = onDarkBar
+        ? "var(--color-on-action)"
+        : "var(--color-focus)";
       document.body.append(probe);
       const focusColour = getComputedStyle(probe).color;
       probe.remove();
