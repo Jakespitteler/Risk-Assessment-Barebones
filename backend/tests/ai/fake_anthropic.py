@@ -14,6 +14,7 @@ class FakeAnthropicApi:
 
     Attributes:
         requests: The JSON body of every request the adapter sent, in order.
+        read_time_limits: The seconds each request would wait for its answer.
     """
 
     def __init__(
@@ -33,6 +34,7 @@ class FakeAnthropicApi:
         self._stop_reason: str = stop_reason
         self._status_code: int = status_code
         self.requests: list[dict[str, Any]] = []
+        self.read_time_limits: list[float | None] = []
 
     def http_client(self) -> anthropic.DefaultHttpxClient:
         """Make an HTTP client for the adapter that sends every call here.
@@ -54,6 +56,7 @@ class FakeAnthropicApi:
             A Messages API reply, or an error with the set status.
         """
         self.requests.append(json.loads(request.content))
+        self.read_time_limits.append(request.extensions["timeout"]["read"])
         if self._status_code != 200:
             return httpx2.Response(
                 self._status_code,
