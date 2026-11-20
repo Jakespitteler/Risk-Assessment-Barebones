@@ -387,6 +387,58 @@
           }
         }
       }
+    },
+    "/api/scans": {
+      "post": {
+        "tags": [
+          "scanning"
+        ],
+        "summary": "Read Card",
+        "description": "Read a photo of a paper card into a card to check; nothing is saved.\n\nArgs:\n    photo: The photo of one paper card.",
+        "operationId": "read_card_api_scans_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_read_card_api_scans_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScannedCardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Not an accepted photo, too big, or not readable as a card",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormErrors"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No AI is set up to read cards",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMessage"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -423,6 +475,20 @@
         ],
         "title": "AskedBy",
         "description": "Who wrote the question the worker was asked."
+      },
+      "Body_read_card_api_scans_post": {
+        "properties": {
+          "photo": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Photo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "photo"
+        ],
+        "title": "Body_read_card_api_scans_post"
       },
       "Challenge": {
         "properties": {
@@ -1139,6 +1205,40 @@
         ],
         "title": "SavedTake5",
         "description": "A Take 5 as it was saved: what the worker gave, and the verdict they were shown.\n\nIt is saved unfinished, before the challenge question is asked (spec C6). The\nquestion is added once, then the answer and the verdict once, and from then on it\nis never changed, so it always shows the template and verdict the worker was\ngiven, even after the rules change.\n\nAttributes:\n    id: The ID the phone made when the worker started submitting.\n    created_at: When it was saved.\n    worker_name: Who did the Take 5.\n    job: What the job is.\n    location: Where the job is.\n    finished_at: When the challenge question was answered, or None while it is\n        unfinished. A Take 5 saved before task 0008 was finished when it was saved.\n    verdict: The verdict the worker was shown, or None while it is unfinished.\n    fixes: The ID of the saved Take 5 this one fixes, or None. It points back\n        only, so the first Take 5 is never changed when it is fixed.\n    started_at: When the worker started it, by the phone's clock, or None for a\n        Take 5 saved before task 0019.\n    challenge: The question it was asked and the worker's answer, or None until\n        it is asked. A Take 5 finished before task 0008 has none."
+      },
+      "ScannedCardResponse": {
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/Take5Draft"
+          },
+          "filled_in_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filled In At"
+          },
+          "unreadable": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unreadable"
+          }
+        },
+        "type": "object",
+        "required": [
+          "draft",
+          "filled_in_at",
+          "unreadable"
+        ],
+        "title": "ScannedCardResponse",
+        "description": "A paper card as the AI read it, for a person to check (task 0033).\n\nNothing is saved yet: the page keeps the card until the person has checked it.\n\nAttributes:\n    draft: The card as a draft Take 5, with the worker's name as written.\n    filled_in_at: The date and time written on the card, as read, often with no\n        time zone; None when there was none or it couldn't be read.\n    unreadable: The dotted paths of fields left empty because the AI couldn't read\n        them, such as \"job\" or \"hazards.0.before.likelihood\"."
       },
       "SubmissionRequest": {
         "properties": {

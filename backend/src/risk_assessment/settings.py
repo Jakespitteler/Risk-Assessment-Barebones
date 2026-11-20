@@ -35,6 +35,8 @@ class Settings(BaseSettings):
         ai_hazard_model: Which of that provider's models judges vague hazards
             (`TAKE5_AI_HAZARD_MODEL`). None means the provider's quick model
             (decision D61).
+        ai_scan_model: Which of that provider's models reads photos of paper cards
+            (`TAKE5_AI_SCAN_MODEL`, task 0033). None means the provider's own default.
         ai_key: The key for the provider's API (`TAKE5_AI_KEY`). With none, or an
             empty one, no AI is asked: the fixed question is used (spec C3) and the
             word rule judges hazards (spec T6).
@@ -53,6 +55,7 @@ class Settings(BaseSettings):
     ai_provider: AiProvider = AiProvider.CLAUDE
     ai_model: str | None = None
     ai_hazard_model: str | None = None
+    ai_scan_model: str | None = None
     ai_key: SecretStr | None = None
 
     @property

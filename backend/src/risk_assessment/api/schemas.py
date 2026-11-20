@@ -195,3 +195,23 @@ class RankedTake5s(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     take5s: tuple[RankedTake5Line, ...]
+
+
+class ScannedCardResponse(BaseModel):
+    """A paper card as the AI read it, for a person to check (task 0033).
+
+    Nothing is saved yet: the page keeps the card until the person has checked it.
+
+    Attributes:
+        draft: The card as a draft Take 5, with the worker's name as written.
+        filled_in_at: The date and time written on the card, as read, often with no
+            time zone; None when there was none or it couldn't be read.
+        unreadable: The dotted paths of fields left empty because the AI couldn't read
+            them, such as "job" or "hazards.0.before.likelihood".
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    draft: Take5Draft
+    filled_in_at: datetime | None
+    unreadable: tuple[str, ...]

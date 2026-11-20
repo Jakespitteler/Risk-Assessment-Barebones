@@ -165,6 +165,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/scans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read Card
+         * @description Read a photo of a paper card into a card to check; nothing is saved.
+         *
+         *     Args:
+         *         photo: The photo of one paper card.
+         */
+        post: operations["read_card_api_scans_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -192,6 +215,11 @@ export interface components {
          * @enum {string}
          */
         AskedBy: "ai" | "fallback";
+        /** Body_read_card_api_scans_post */
+        Body_read_card_api_scans_post: {
+            /** Photo */
+            photo: string;
+        };
         /**
          * Challenge
          * @description The question a Take 5 was asked, who asked it, and the worker's answer.
@@ -632,6 +660,26 @@ export interface components {
             /** Started At */
             started_at?: string | null;
             challenge?: components["schemas"]["Challenge"] | null;
+        };
+        /**
+         * ScannedCardResponse
+         * @description A paper card as the AI read it, for a person to check (task 0033).
+         *
+         *     Nothing is saved yet: the page keeps the card until the person has checked it.
+         *
+         *     Attributes:
+         *         draft: The card as a draft Take 5, with the worker's name as written.
+         *         filled_in_at: The date and time written on the card, as read, often with no
+         *             time zone; None when there was none or it couldn't be read.
+         *         unreadable: The dotted paths of fields left empty because the AI couldn't read
+         *             them, such as "job" or "hazards.0.before.likelihood".
+         */
+        ScannedCardResponse: {
+            draft: components["schemas"]["Take5Draft"];
+            /** Filled In At */
+            filled_in_at: string | null;
+            /** Unreadable */
+            unreadable: string[];
         };
         /**
          * SubmissionRequest
@@ -1212,6 +1260,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FormErrors"];
+                };
+            };
+        };
+    };
+    read_card_api_scans_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_read_card_api_scans_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScannedCardResponse"];
+                };
+            };
+            /** @description Not an accepted photo, too big, or not readable as a card */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormErrors"];
+                };
+            };
+            /** @description No AI is set up to read cards */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorMessage"];
                 };
             };
         };

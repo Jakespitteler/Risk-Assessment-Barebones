@@ -103,6 +103,8 @@ backend/
                                    the fallback question, the check on the answer         (spec C1 to C4)
                 ranking.py         the fixed score and its line, what the AI is given to rank,
                                    and the check on its order and lines                  (spec W1 to W6)
+                scanned_card.py    ScannedCard: the AI's reading of a paper card, kept to the
+                                   words the card allows, never rewritten       (task 0033)
         services/          what the app does
             take5s.py          Take5Service: check a draft, nudge, submit, answer, get, list. It is
                                given a clock, so tests can set the time
@@ -111,19 +113,26 @@ backend/
             ranking.py         Take5RankingService: today's Take 5s by the fixed rules, then the
                                worst 10 by the AI for up to 20 seconds; remembers a ranking until
                                the server restarts                                   (spec W6, W7)
-            ports.py           Take5Repository, ChallengeAsker, HazardJudge and Take5Ranker (Protocols): what
-                               the service needs from storage and from an AI
+            card_scanning.py   CardScanner: checks a photo's type and size, has the AI read it,
+                               saves nothing                                         (task 0033)
+            ports.py           Take5Repository, ChallengeAsker, HazardJudge, Take5Ranker and
+                               CardReader (Protocols): what the service needs from storage and
+                               from an AI
         storage/           where things are kept
             sqlite.py          SqliteTake5Repository
         ai/                everything that talks to an AI
             model.py           LanguageModel (a Protocol): instructions and text in, text out;
-                               LanguageModelError for a reply with no usable text
+                               PhotoReadingModel, one that also reads a photo; LanguageModelError
+                               for a reply with no usable text
             challenge.py       the challenge question's instructions and their version, and
                                AiChallengeAsker, a ChallengeAsker that works with any LanguageModel
             vague_hazard.py    the vague-hazard instructions and their version, and AiHazardJudge,
                                a HazardJudge that works with any LanguageModel        (spec T6)
             ranking.py         the ranking instructions and their version, and AiTake5Ranker,
                                a Take5Ranker that works with any LanguageModel        (spec W6)
+            card_reader.py     the card-reading instructions, built from the template, and their
+                               version, and AiCardReader, a CardReader for any
+                               PhotoReadingModel                                     (task 0033)
             providers/
                 claude.py          ClaudeModel, the first LanguageModel: one Messages API call, an
                                    11-second network limit and no retries. QUICK_MODEL names the
@@ -205,6 +214,7 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 | `GET /api/take5s` | The list, newest first, 50 at a time: a `Take5ListPage` of `take5s` and `next`, the ID to send as `?before=` for the page after it (empty when there are no more). Each line is a `Take5Summary`: the ID, when it was saved, the worker, the job, the verdict (`can_start`, empty while the question is unanswered) and whether a newer Take 5 fixes it (`fixed`), not the whole card |
 | `GET /api/take5s/{id}` | One Take 5, with `fixed_by` (the newest Take 5 that fixes it, if any) and `offers_fix` (whether its result offers a fix) |
 | `GET /api/ranked-take5s?since=` | Every Take 5 started since a moment (sent with its time zone, such as midnight where the phone is), worst first (task 0032, spec W1 to W7): `RankedTake5s`, each a `RankedTake5Line` with the ID, when it was saved, the worker, the job, the verdict, its `line` and `ranked_by_ai`. Fixed rules in `domain/take5/ranking.py` score them, then `Take5RankingService` gives the worst 10 to the AI in `ai/ranking.py` for up to 20 seconds. Saves nothing; a ranking is remembered in memory until the server restarts. A moment with no time zone is a 422 |
+| `POST /api/scans` | Reads one photo of a paper card (a multipart upload, field `photo`: JPEG, PNG, WebP or GIF, at most 10 MB) into a card for a person to check (task 0033): `ScannedCardResponse`, with the `draft` as written, `filled_in_at` as read (often with no time zone) and the `unreadable` paths. Saves nothing. No AI set up is a 503 `ErrorMessage`; a wrong type, too big, or a photo the AI couldn't read as a card is a 422 on `photo` |
 
 Every error reply is declared in the OpenAPI description, so the front end's generated types know it. A 422 is
 always `FormErrors` (`detail` and a list of field errors, each with its dotted `path`), whether the draft has a
@@ -340,7 +350,7 @@ between Take 5s.
 
 | Risk | What it means | What stops it |
 | --- | --- | --- |
-| Poisoning | Wrong or hostile text gets in and is relied on | C2 checks every reply before it is shown, and W6 checks every ranking: each number once, one short line each, and no line that names the worker. The AI's text is never fed into another AI call and never decides the verdict. A worker could type instructions into the job ("ignore your rules"); the instructions in `ai/challenge.py` tell the model the Take 5 is only data and to ignore any instructions in it (task 0009), and C2 limits any reply to one short question |
+| Poisoning | Wrong or hostile text gets in and is relied on | C2 checks every reply before it is shown, and W6 checks every ranking: each number once, one short line each, and no line that names the worker. A card's photo is a new way in: whatever is written on it is data, which `ai/card_reader.py` says, `scanned_card.py` keeps only the words the card allows, and a person checks every card against its photo before it is saved (task 0033). The AI's text is never fed into another AI call and never decides the verdict. The worker's name is read off a card, but never sent to any other AI call. A worker could type instructions into the job ("ignore your rules"); the instructions in `ai/challenge.py` tell the model the Take 5 is only data and to ignore any instructions in it (task 0009), and C2 limits any reply to one short question |
 | Distraction | Too much in front of the model | Each call sends one Take 5 and nothing builds up, so nothing needs compacting. A ranking sends at most the worst 10, picked by fixed rules (W6) |
 | Confusion | Irrelevant material mixed in | Only that Take 5's own fields are sent (C1). A ranking sends the same for each, plus its question, answer and minutes taken, and never a worker's name (W6) |
 | Clash | Sources that disagree | One source today. When company standards arrive, `StandardsSource` picks only the sections that matter. What happens when a standard and the card disagree is a product decision for then |

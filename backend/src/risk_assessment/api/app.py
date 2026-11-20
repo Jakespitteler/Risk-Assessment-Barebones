@@ -7,17 +7,21 @@ from typing import ClassVar
 from fastapi import FastAPI
 from pydantic import BaseModel, ConfigDict
 
+from risk_assessment.ai.card_reader import AiCardReader
 from risk_assessment.ai.challenge import AiChallengeAsker
-from risk_assessment.ai.model import LanguageModel
+from risk_assessment.ai.model import LanguageModel, PhotoReadingModel
 from risk_assessment.ai.providers import claude
 from risk_assessment.ai.ranking import AiTake5Ranker
 from risk_assessment.ai.vague_hazard import AiHazardJudge
 from risk_assessment.api.errors import add_error_handlers
 from risk_assessment.api.ranking_routes import create_ranking_router
+from risk_assessment.api.scan_routes import create_scan_router
 from risk_assessment.api.take5_routes import create_router
 from risk_assessment.domain.take5.ranking import AI_RANKING_TIME_LIMIT_SECONDS
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
+from risk_assessment.services.card_scanning import CardScanner
 from risk_assessment.services.ports import (
+    CardReader,
     ChallengeAsker,
     HazardJudge,
     Take5Ranker,
@@ -39,12 +43,15 @@ class _ProviderModels(BaseModel):
             provider's default), and takes `network_time_limit_seconds` for a job
             that waits longer than usual.
         quick_model: The provider's fastest model, for short jobs (decision D61).
+        build_photo_reader: Builds a model that also reads photos, as `build` does,
+            or None when the provider's adapter can't read one (task 0033).
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     build: Callable[..., LanguageModel]
     quick_model: str
+    build_photo_reader: Callable[..., PhotoReadingModel] | None = None
 
 
 # Adding a provider is one adapter file and one line here.
@@ -52,6 +59,7 @@ _PROVIDERS: dict[AiProvider, _ProviderModels] = {
     AiProvider.CLAUDE: _ProviderModels(
         build=claude.ClaudeModel,
         quick_model=claude.QUICK_MODEL,
+        build_photo_reader=claude.ClaudeModel,
     ),
 }
 
@@ -62,6 +70,7 @@ def create_app(
     challenge_asker: ChallengeAsker | None = None,
     hazard_judge: HazardJudge | None = None,
     take5_ranker: Take5Ranker | None = None,
+    card_reader: CardReader | None = None,
 ) -> FastAPI:
     """Build the API.
 
@@ -78,6 +87,9 @@ def create_app(
         take5_ranker: What reorders the worst Take 5s. Tests pass a stand-in. By
             default it is the AI named in the settings, or none when no key is set,
             so the fixed rules rank them alone (spec W6).
+        card_reader: What reads photos of paper cards. Tests pass a stand-in. By
+            default it is the AI named in the settings, or none when no key is set,
+            so scanning replies that it needs an AI (task 0033).
 
     Returns:
         The FastAPI app.
@@ -111,6 +123,11 @@ def create_app(
         take5_ranker if take5_ranker is not None else build_take5_ranker(app_settings),
     )
     app.include_router(create_ranking_router(ranking_service))
+    scanner = CardScanner(
+        card_reader if card_reader is not None else build_card_reader(app_settings),
+        BOOKLET_TEMPLATE,
+    )
+    app.include_router(create_scan_router(scanner))
     return app
 
 
@@ -195,3 +212,28 @@ def build_take5_ranker(settings: Settings) -> Take5Ranker | None:
     )
     _logger.info("Take 5s are ranked by %s.", model.name)
     return AiTake5Ranker(model)
+
+
+def build_card_reader(settings: Settings) -> CardReader | None:
+    """Build the AI that reads photos of paper cards, if a key is set (task 0033).
+
+    It uses the provider's own default model, or the one `TAKE5_AI_SCAN_MODEL` names:
+    reading handwriting needs a strong model.
+
+    Args:
+        settings: The provider, model and key to use.
+
+    Returns:
+        A reader for the provider's model, or None when no key is set or the
+        provider's adapter can't read photos.
+    """
+    ai_key: str | None = settings.usable_ai_key
+    build: Callable[..., PhotoReadingModel] | None = _PROVIDERS[
+        settings.ai_provider
+    ].build_photo_reader
+    if ai_key is None or build is None:
+        _logger.info("No AI can read photos, so paper cards can't be scanned.")
+        return None
+    model: PhotoReadingModel = build(ai_key, settings.ai_scan_model)
+    _logger.info("Paper cards are read by %s.", model.name)
+    return AiCardReader(model)

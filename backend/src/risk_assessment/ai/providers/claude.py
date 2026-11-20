@@ -4,11 +4,18 @@ This file knows nothing about Take 5s. It turns instructions and text into one c
 to Anthropic's Messages API and hands back the text of the reply.
 """
 
+import base64
 import logging
 from typing import Literal
 
 import anthropic
-from anthropic.types import Message, TextBlock
+from anthropic.types import (
+    ImageBlockParam,
+    Message,
+    MessageParam,
+    TextBlock,
+    TextBlockParam,
+)
 
 from risk_assessment.ai.model import LanguageModelError
 
@@ -25,6 +32,18 @@ QUICK_MODEL: str = "claude-haiku-5-5"
 NETWORK_TIME_LIMIT_SECONDS: float = 11
 # Room for the model's thinking as well as a short reply.
 MAX_OUTPUT_TOKENS: int = 2000
+type PhotoType = Literal["image/jpeg", "image/png", "image/gif", "image/webp"]
+# The photo types Claude reads, by the media type the app was sent.
+PHOTO_TYPES: dict[str, PhotoType] = {
+    "image/jpeg": "image/jpeg",
+    "image/png": "image/png",
+    "image/gif": "image/gif",
+    "image/webp": "image/webp",
+}
+# Reading a handwritten card takes longer than a short text job (task 0033).
+PHOTO_TIME_LIMIT_SECONDS: float = 60
+# Room for a whole card written out as JSON, as well as the model's thinking.
+PHOTO_MAX_OUTPUT_TOKENS: int = 4000
 
 
 class ClaudeModel:
@@ -77,11 +96,79 @@ class ClaudeModel:
             LanguageModelError: When Claude refuses or sends back no text.
             anthropic.APIError: When the call fails or takes too long.
         """
-        message: Message = self._client.messages.create(
+        return self._send(instructions, text, MAX_OUTPUT_TOKENS, None)
+
+    def read_photo(self, instructions: str, photo: bytes, media_type: str) -> str:
+        """Send Claude the instructions and one photo, and get its reply.
+
+        Args:
+            instructions: What Claude is to do, sent as the system prompt.
+            photo: The photo's bytes, sent as an image.
+            media_type: The photo's type, such as "image/jpeg".
+
+        Returns:
+            The text of Claude's reply.
+
+        Raises:
+            LanguageModelError: When the photo's type isn't one Claude reads, or
+                Claude refuses or sends back no text.
+            anthropic.APIError: When the call fails or takes longer than
+                `PHOTO_TIME_LIMIT_SECONDS`.
+        """
+        photo_type: PhotoType | None = PHOTO_TYPES.get(media_type)
+        if photo_type is None:
+            raise LanguageModelError(f"{self.name} can't read a {media_type} photo.")
+        image: ImageBlockParam = {
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": photo_type,
+                "data": base64.b64encode(photo).decode("ascii"),
+            },
+        }
+        ask: TextBlockParam = {"type": "text", "text": "Read this card."}
+        content: list[ImageBlockParam | TextBlockParam] = [image, ask]
+        return self._send(
+            instructions,
+            content,
+            PHOTO_MAX_OUTPUT_TOKENS,
+            PHOTO_TIME_LIMIT_SECONDS,
+        )
+
+    def _send(
+        self,
+        instructions: str,
+        content: str | list[ImageBlockParam | TextBlockParam],
+        max_tokens: int,
+        time_limit_seconds: float | None,
+    ) -> str:
+        """Make one call to the Messages API and hand back the reply's text.
+
+        Args:
+            instructions: The system prompt.
+            content: The one user message: text, or blocks such as an image.
+            max_tokens: The most the reply may hold, thinking included.
+            time_limit_seconds: How long this call may take, or None for the
+                client's own limit.
+
+        Returns:
+            The text of Claude's reply.
+
+        Raises:
+            LanguageModelError: When Claude refuses or sends back no text.
+            anthropic.APIError: When the call fails or takes too long.
+        """
+        client: anthropic.Anthropic = (
+            self._client
+            if time_limit_seconds is None
+            else self._client.with_options(timeout=time_limit_seconds)
+        )
+        user_message: MessageParam = {"role": "user", "content": content}
+        message: Message = client.messages.create(
             model=self.name,
-            max_tokens=MAX_OUTPUT_TOKENS,
+            max_tokens=max_tokens,
             system=instructions,
-            messages=[{"role": "user", "content": text}],
+            messages=[user_message],
             output_config={"effort": self._effort},
         )
         _logger.info(

@@ -6,8 +6,12 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from risk_assessment.api.schemas import FormErrors
+from risk_assessment.api.schemas import ErrorMessage, FormErrors
 from risk_assessment.domain.take5.draft import FieldError
+from risk_assessment.services.card_scanning import (
+    CardUnreadableError,
+    ScanningUnavailableError,
+)
 from risk_assessment.services.take5s import InvalidAnswerError, InvalidDraftError
 
 _logger: logging.Logger = logging.getLogger(__name__)
@@ -27,6 +31,35 @@ def add_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(InvalidDraftError, _invalid_draft)
     app.add_exception_handler(InvalidAnswerError, _invalid_answer)
     app.add_exception_handler(RequestValidationError, _unreadable_request)
+    app.add_exception_handler(CardUnreadableError, _unreadable_card)
+    app.add_exception_handler(ScanningUnavailableError, _scanning_unavailable)
+
+
+def _unreadable_card(_request: Request, error: Exception) -> JSONResponse:
+    """Reply 422 beside the photo when it can't be read as a card (task 0033).
+
+    Args:
+        _request: The request that failed.
+        error: The `CardUnreadableError` the scanner raised.
+
+    Returns:
+        A `FormErrors` reply with the message on the `photo` field.
+    """
+    return _form_errors(str(error), (FieldError(path="photo", message=str(error)),))
+
+
+def _scanning_unavailable(_request: Request, error: Exception) -> JSONResponse:
+    """Reply 503 when no AI is set up to read cards (task 0033).
+
+    Args:
+        _request: The request that failed.
+        error: The `ScanningUnavailableError` the scanner raised.
+
+    Returns:
+        An `ErrorMessage` reply.
+    """
+    body = ErrorMessage(detail=str(error))
+    return JSONResponse(status_code=503, content=body.model_dump(mode="json"))
 
 
 def _invalid_draft(_request: Request, error: Exception) -> JSONResponse:

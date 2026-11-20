@@ -73,19 +73,34 @@ Built as three stacked pull requests, one job each: (1) reading a photo into a f
 
 ## Acceptance criteria
 
-These follow the recommendations; they change with Jake's answers.
+Rewritten on 2026-11-20 to follow Jake's answers above.
 
-- [ ] A page takes a batch of photos and reads each into a draft Take 5 marked "from paper".
-- [ ] A person checks each draft beside its photo and saves it; nothing is saved unchecked.
-- [ ] A scanned card is saved as written, with its verdict, never rewritten to pass a rule.
-- [ ] Once the batch is saved, it is ranked worst first with task 0032's job.
-- [ ] Tests cover reading (with a stand-in for the AI), the check, saving and the ranking of a batch.
-- [ ] Its screens are designed for a desktop as well as a phone; the check puts the photo beside the card.
-- [ ] `docs/spec.md` gets the scanning rules, worked examples, a feature section, the exceptions to F2, C6 and
-  K2 that the answers need, and anyone can scan in "Users and roles". `docs/architecture.md` gets the new job and
-  data, and its paragraph "What the AI is given, and keeping it trustworthy" covers photos as a new way in for
-  instructions to the AI, and the AI's text from a scan being sent on to the ranking.
-- [ ] All checks pass.
+Part 1, reading (this pull request):
+
+- [x] `POST /api/scans` takes one photo (JPEG, PNG, WebP or GIF, at most 10 MB) and returns the card as the AI
+  read it, with the fields it couldn't read marked; nothing is saved and the photo is not kept.
+- [x] A word the card doesn't allow (an answer, a level or a control kind) is left empty and marked, and nothing
+  is rewritten to pass a rule.
+- [x] With no AI set up the reply says scanning needs one (503); a wrong type, a too-big photo, or a photo the AI
+  couldn't read is a 422 beside the photo. Never an AI error, and the log never holds the worker's name.
+- [x] The AI interface has one new method for a photo, filled by the Claude adapter; the provider's main model
+  reads photos unless `TAKE5_AI_SCAN_MODEL` names another.
+- [ ] `backend/.env.example` lists `TAKE5_AI_SCAN_MODEL`. Jake adds it: the guard hook keeps agents out of that
+      file.
+  Until then `test_the_settings_template_names_every_setting` fails on this branch.
+- [x] Tests cover the adapter, the instructions, the reading, the scanner and the route.
+
+Part 2, saving (next pull request):
+
+- [ ] A checked card is saved as written, marked "from paper", finished at once with its verdict and no
+  challenge question, with the card's date and time in `started_at`; the spec gets the exceptions to F2, C6 and
+  K2 for scans, and anyone can scan in "Users and roles".
+- [ ] A saved batch is ranked worst first with task 0032's ranking.
+
+Part 3, the page (last pull request):
+
+- [ ] One page takes many photos, reads them, then shows each card beside its photo to check and save, then the
+  batch ranked worst first; designed for a desktop as well as a phone.
 
 ## Out of scope
 

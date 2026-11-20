@@ -9,6 +9,7 @@ dependencies = [
     "fastapi>=0.162",
     "pydantic>=2.14",
     "pydantic-settings>=2.12",
+    "python-multipart>=0.0.34",
     "uvicorn>=0.54",
 ]
 
