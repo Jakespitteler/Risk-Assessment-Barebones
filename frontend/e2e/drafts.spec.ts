@@ -220,3 +220,20 @@ test("a kept Take 5 that can't be checked says so, with when it was started", as
   ).toBeVisible();
   await capture(page, "drafts-no-signal");
 });
+
+test("the 5 at the top, partway through a Take 5, carries on with the same answers (D90)", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await fillJob(page);
+  const permitsQuestion = page.getByRole("group", {
+    name: "Do you have the necessary permits?",
+  });
+  await permitsQuestion.getByText("No", { exact: true }).click();
+  const permits = permitsQuestion.getByRole("radio", { name: "No" });
+  await expect(permits).toBeChecked();
+  await page.getByRole("link", { name: "Take 5 home", exact: true }).click();
+  await expect(heading(page, THINK)).toBeVisible();
+  await expect(page).toHaveURL(/\?page=think$/);
+  await expect(permits).toBeChecked();
+});

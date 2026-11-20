@@ -3,7 +3,7 @@ import { ThemeSwitch } from "./ThemeSwitch";
 
 /**
  * The page every screen sits on, with the app's name at the top. The "5" links to the start
- * page, where a new Take 5 begins or an unfinished one carries on. `aside` goes at the right
+ * page, where a new Take 5 begins or the kept draft carries on. `aside` goes at the right
  * of the top bar, for a link away from the screen, beside the light or dark switch.
  */
 export function Screen({

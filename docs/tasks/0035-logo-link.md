@@ -31,3 +31,9 @@ add one." The "5" in the top bar becomes a link to `/`, the start page.
   home" rather than "Start a new Take 5" for that reason, and so it still fits if a home page is added.
 - On hover the "5" turns a lighter amber, a new `brand-hover` colour (amber-300 in light and dark), so the slate
   "5" on it stays dark on light.
+- A separate reviewer agent checked the diff on 2026-11-20 and found no bugs. It added a whole-app test that the
+  "5" partway through a Take 5 carries on with the same answers, and the spec now says "kept draft" (the
+  glossary's word) instead of "unfinished", which the glossary keeps for a saved Take 5 awaiting its question.
+- Found by the review, not changed: someone who opens the app at the saved list and then presses the "5" (or
+  "Start a new Take 5") is taken to their unanswered question, if they have one, because the app only goes back
+  to it the first time `/` opens in a tab (D46). That was already so before this task.

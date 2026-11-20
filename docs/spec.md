@@ -516,7 +516,7 @@ The first four screens of the core workflow, saved when the worker submits.
   sideways, and everything a person can click changes under the mouse and shows the app's own focus outline
   (D87 to D89).
 - Acceptance: the "5" at the top of every screen with one is a link to the start page, where a new Take 5 begins
-  or an unfinished one carries on (D90).
+  or the kept draft carries on (D90).
 - Acceptance: after listing hazards, the worker assesses one hazard at a time, before controls, then controls,
   then after controls when there are any. The Back button, the phone's back gesture and a reload all keep the
   unsaved answers.
@@ -743,7 +743,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D87 | What the desktop test runs (2026-11-20) | A Take 5 from the job to its saved result, then the saved list, with a screenshot of each screen at 1280 by 800 | Every test at desktop width too |
 | D88 | What it checks besides screenshots (2026-11-20) | Nothing scrolls sideways, as at 360 px; and the hover and focus of D89 | Screenshots only |
 | D89 | Hover and focus (2026-11-20) | Everything a person can click changes under the mouse and shows the app's own 4 px focus outline | Leave the gaps, relying on the browser's own focus ring |
-| D90 | The "5" logo (2026-11-20) | A link to the start page, named "Take 5 home", which carries on an unfinished Take 5 rather than throwing it away | Plain picture; a link that asks to start afresh |
+| D90 | The "5" logo (2026-11-20) | A link to the start page, named "Take 5 home", which carries on the kept draft rather than throwing it away | Plain picture; a link that asks to start afresh |
 
 ## Open questions
 
