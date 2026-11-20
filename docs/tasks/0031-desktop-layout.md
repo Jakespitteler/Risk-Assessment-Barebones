@@ -52,3 +52,12 @@ These follow the recommendations; they change with Jake's answers.
 
 Added by Claude on 2026-11-19 in task 0030. First written as a layout task on the belief that screens stretch
 on a desktop; the review of task 0030 found they don't, and Jake chose to shrink it to this test.
+
+The gaps, listed from the code on 2026-11-20 when Claude claimed the task (stacked on task 0021). The shared
+`Button` gives every button the app's focus outline; its primary and secondary looks also change on hover.
+
+- **Focus but no hover:** the quiet `Button` look (remove, undo-style and "add another" buttons in the form),
+  the step bar's steps, the answer and rating choices, and the plain text links ("Saved Take 5s", "New Take 5" on
+  the saved list, the fix panel's links and the kept draft's link).
+- **Neither, so only the browser's own focus ring:** the undo bar's close "×", the "What do … mean?" help, the old
+  `/rate-risk` screen's button, the save problem's link, and the result screen's "New Take 5" links.
