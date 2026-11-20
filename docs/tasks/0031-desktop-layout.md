@@ -1,9 +1,9 @@
 ---
 id: 0031
 title: Prove the main screens work on a desktop, with a test at 1280 px and even hover and focus
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/0031-desktop-test
 ---
 
 ## Goal
