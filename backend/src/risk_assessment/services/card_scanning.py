@@ -16,10 +16,11 @@ _logger: logging.Logger = logging.getLogger(__name__)
 ACCEPTED_PHOTO_TYPES: frozenset[str] = frozenset(
     {"image/jpeg", "image/png", "image/webp", "image/gif"},
 )
-MAX_PHOTO_BYTES: int = 10 * 1024 * 1024
+# Claude takes an image of up to 10 MB once base64 has made it a third bigger.
+MAX_PHOTO_BYTES: int = 7 * 1024 * 1024
 NO_AI_MESSAGE: str = "Scanning a paper card needs an AI, and none is set up."
 WRONG_TYPE_MESSAGE: str = "Send a photo: a JPEG, PNG, WebP or GIF."
-TOO_BIG_MESSAGE: str = "This photo is too big. Send one under 10 MB."
+TOO_BIG_MESSAGE: str = "This photo is too big. Send one under 7 MB."
 EMPTY_MESSAGE: str = "This photo is empty. Take it again."
 UNREADABLE_MESSAGE: str = (
     "This photo couldn't be read as a Take 5 card. "

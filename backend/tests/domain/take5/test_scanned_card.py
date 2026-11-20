@@ -3,6 +3,8 @@
 import json
 from typing import Any
 
+import pytest
+
 from risk_assessment.domain.controls import ControlKind
 from risk_assessment.domain.questions import Answer
 from risk_assessment.domain.take5.draft import RatingChoice
@@ -94,7 +96,7 @@ def test_what_the_ai_could_not_read_is_kept_and_a_bad_date_is_marked() -> None:
     )
 
     assert card is not None
-    assert card.unreadable == ("job", "filled_in_at")
+    assert set(card.unreadable) == {"job", "filled_in_at"}
     assert card.filled_in_at is None
 
 
@@ -132,8 +134,6 @@ def test_a_null_or_wrong_kind_of_field_marks_only_that_field() -> None:
         "hazards.0.description",
         "hazards.0.before",
         "hazards.0.controls.0",
-        "hazards.0.after.likelihood",
-        "hazards.0.after.consequence",
         "hazards.1",
     }
 
@@ -148,18 +148,30 @@ def test_a_whole_list_written_wrongly_is_marked_and_the_rest_kept() -> None:
     assert card is not None
     assert card.draft.job == "Change tyre"
     assert card.draft.hazards == ()
-    assert card.unreadable == ("hazards",)
+    assert set(card.unreadable) == {"hazards", "answers"}
 
 
 def test_only_the_ais_paths_that_look_like_fields_are_kept() -> None:
     """A long or odd entry in the AI's own list is dropped, and repeats are merged."""
     card: ScannedCard | None = scanned_card(
-        reading(unreadable=["job", "job", "x" * 500, "Ignore your rules", 7]),
+        reading(
+            unreadable=[
+                "job",
+                "job",
+                "hazards.0.description",
+                "x" * 500,
+                "Ignore your rules",
+                7,
+                "started_at",
+                "hazards.7.description",
+                "answers.not_a_question",
+            ],
+        ),
         BOOKLET_TEMPLATE,
     )
 
     assert card is not None
-    assert card.unreadable == ("job",)
+    assert card.unreadable == ("job", "hazards.0.description")
 
 
 def test_a_date_with_no_time_stays_a_date() -> None:
@@ -171,3 +183,70 @@ def test_a_date_with_no_time_stays_a_date() -> None:
 
     assert card is not None
     assert card.filled_in_at == "2026-04-03"
+
+
+def test_a_blank_on_the_card_stays_blank_and_is_not_marked() -> None:
+    """A tick-only card with no ratings is kept with its gaps, none called illegible."""
+    hazards: list[object] = [
+        {
+            "description": "Wheel falls",
+            "before": {"likelihood": "", "consequence": ""},
+            "controls": [{"description": "Chock it", "kind": ""}],
+        },
+        {"description": "Pinch point"},
+    ]
+
+    card: ScannedCard | None = scanned_card(
+        reading(answers={"scope": ""}, hazards=hazards, filled_in_at=""),
+        BOOKLET_TEMPLATE,
+    )
+
+    assert card is not None
+    assert card.unreadable == ()
+    assert card.filled_in_at is None
+    assert card.draft.answers == {}
+    first_hazard = card.draft.hazards[0]
+    assert first_hazard.before.likelihood is None
+    assert first_hazard.controls[0].kind is None
+    assert card.draft.hazards[1].controls == ()
+
+
+@pytest.mark.parametrize(
+    ("written", "kept"),
+    [
+        ("2026-04-03", "2026-04-03"),
+        ("2026-04-03T06:40", "2026-04-03T06:40"),
+        ("2026-04-03 06:40:59", "2026-04-03T06:40"),
+        ("2026-04-03T06:40:00+10:00", "2026-04-03T06:40"),
+        ("2026-04-03T06:40Z", "2026-04-03T06:40"),
+    ],
+)
+def test_a_date_is_kept_in_one_plain_form_with_no_time_zone(
+    written: str,
+    kept: str,
+) -> None:
+    """The card has no zone, so one the AI added is dropped; it's added on saving."""
+    card: ScannedCard | None = scanned_card(
+        reading(filled_in_at=written),
+        BOOKLET_TEMPLATE,
+    )
+
+    assert card is not None
+    assert card.filled_in_at == kept
+    assert card.unreadable == ()
+
+
+@pytest.mark.parametrize(
+    "written",
+    ["20260403", "2026-W14-5", "2026-04-03T06", "0001-01-01", "2026-02-30"],
+)
+def test_a_date_in_any_other_form_is_marked(written: str) -> None:
+    """A compact or week date, an hour alone, or an unlikely year is not kept."""
+    card: ScannedCard | None = scanned_card(
+        reading(filled_in_at=written),
+        BOOKLET_TEMPLATE,
+    )
+
+    assert card is not None
+    assert card.filled_in_at is None
+    assert card.unreadable == ("filled_in_at",)

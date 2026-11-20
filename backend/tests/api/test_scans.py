@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from risk_assessment.api.app import create_app
 from risk_assessment.services.card_scanning import (
+    EMPTY_MESSAGE,
     MAX_PHOTO_BYTES,
     NO_AI_MESSAGE,
     TOO_BIG_MESSAGE,
@@ -81,7 +82,9 @@ def test_a_too_big_upload_is_a_422_beside_the_photo(tmp_path: Path) -> None:
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == TOO_BIG_MESSAGE
+    assert response.json()["errors"] == [
+        {"path": "photo", "message": TOO_BIG_MESSAGE},
+    ]
 
 
 def test_a_type_in_capitals_or_with_extras_is_still_a_photo(tmp_path: Path) -> None:
@@ -110,3 +113,22 @@ def test_an_ai_failure_is_a_422_beside_the_photo_never_an_ai_error(
         {"path": "photo", "message": UNREADABLE_MESSAGE},
     ]
     assert "provider says no" not in response.text
+
+
+def test_an_empty_upload_is_a_422_beside_the_photo(tmp_path: Path) -> None:
+    """A photo with no bytes is asked for again."""
+    response = client_with(tmp_path, StandInReader()).post(
+        "/api/scans",
+        files={"photo": ("card.jpg", b"", "image/jpeg")},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["errors"] == [{"path": "photo", "message": EMPTY_MESSAGE}]
+
+
+def test_a_request_with_no_photo_is_a_422_on_the_photo(tmp_path: Path) -> None:
+    """Forgetting the photo is a form error beside it, as for any form."""
+    response = client_with(tmp_path, StandInReader()).post("/api/scans")
+
+    assert response.status_code == 422
+    assert [error["path"] for error in response.json()["errors"]] == ["photo"]

@@ -77,7 +77,7 @@ Rewritten on 2026-11-20 to follow Jake's answers above.
 
 Part 1, reading (this pull request):
 
-- [x] `POST /api/scans` takes one photo (JPEG, PNG, WebP or GIF, at most 10 MB) and returns the card as the AI
+- [x] `POST /api/scans` takes one photo (JPEG, PNG, WebP or GIF, at most 7 MB) and returns the card as the AI
   read it, with the fields it couldn't read marked; nothing is saved and the photo is not kept.
 - [x] A word the card doesn't allow (an answer, a level or a control kind) is left empty and marked, and nothing
   is rewritten to pass a rule.
@@ -103,6 +103,9 @@ Part 3, the page (last pull request):
 
 - [ ] One page takes many photos, reads them, then shows each card beside its photo to check and save, then the
   batch ranked worst first; designed for a desktop as well as a phone.
+- [ ] The page shrinks each photo before sending it (to about 2576 px on the long edge, the most Claude reads), so
+  a big phone photo is neither refused by the 7 MB limit nor by Claude's 8000 px limit, and sends faster on a
+  site's mobile signal.
 
 ## Out of scope
 
@@ -110,5 +113,10 @@ Part 3, the page (last pull request):
 - Sign-in or a supervisor role.
 
 ## Notes / assumptions
+
+Noted by Claude on 2026-11-20 in part 1, not fixed (outside this task's scope): Starlette stores a whole upload in
+a temporary file before the route reads it, so the 7 MB limit is checked only after a big upload is on the
+server's disk. Fine for a proof of concept with no sign-in on a trusted network; worth a request-size limit in
+front of the app before it is ever put on the internet.
 
 Added by Claude on 2026-11-19 in task 0030, from the goal Jake agreed that day. Depends on task 0032.

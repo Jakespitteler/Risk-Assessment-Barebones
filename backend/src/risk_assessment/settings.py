@@ -36,7 +36,7 @@ class Settings(BaseSettings):
             (`TAKE5_AI_HAZARD_MODEL`). None means the provider's quick model
             (decision D61).
         ai_scan_model: Which of that provider's models reads photos of paper cards
-            (`TAKE5_AI_SCAN_MODEL`, task 0033). None means the provider's own default.
+            (`TAKE5_AI_SCAN_MODEL`, task 0033). None means the main model, `ai_model`.
         ai_key: The key for the provider's API (`TAKE5_AI_KEY`). With none, or an
             empty one, no AI is asked: the fixed question is used (spec C3) and the
             word rule judges hazards (spec T6).

@@ -70,7 +70,7 @@ def test_a_photo_is_read_into_a_card_to_check() -> None:
 
 
 def test_with_no_ai_scanning_says_it_needs_one() -> None:
-    """Scanning is an AI-only feature (spec D67)."""
+    """Scanning is an AI-only feature (spec D66, task 0033)."""
     with pytest.raises(ScanningUnavailableError):
         CardScanner(None, BOOKLET_TEMPLATE).read(b"photo", "image/jpeg")
 

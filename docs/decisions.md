@@ -14,9 +14,12 @@ Newest first. One short entry per non-obvious decision.
   follow in two more pull requests.
 - How: the AI's JSON is untrusted, so `domain/take5/scanned_card.py` reads it field by field, keeps only the
   template's own words and marks the rest unreadable, so one bad field never loses a card, and never rewrites a
-  card to pass a rule. The instructions (`card-reader-2`) say dates are written day first; a date with no time
-  stays a date, and the saving device's time zone is added when the card is saved (part 2). The photo is never
-  kept (Jake didn't approve keeping it).
+  card to pass a rule. A field left out or given as "" is a blank on the card and stays blank, unmarked; only a
+  null, the wrong kind of value or a word the card doesn't have is marked unreadable. The instructions
+  (`card-reader-2`) say dates are written day first; the date comes back as `YYYY-MM-DD` or `YYYY-MM-DDTHH:MM`,
+  with any time zone the AI added dropped, so a missing time isn't read as midnight, and the saving device's
+  zone is added when the card is saved (part 2). A photo can be at most 7 MB, since Claude takes an image of up
+  to 10 MB once base64 has made it a third bigger. The photo is never kept (Jake didn't approve keeping it).
 - Not chosen: changing `reply()` to take images (it would touch every job's types); photos as base64 inside JSON
   (no package, but a third bigger).
 - Decided by: human (the choices above), agent (how).

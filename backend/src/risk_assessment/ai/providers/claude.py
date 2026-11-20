@@ -43,7 +43,7 @@ PHOTO_TYPES: dict[str, PhotoType] = {
 # Reading a handwritten card takes longer than a short text job (task 0033).
 PHOTO_TIME_LIMIT_SECONDS: float = 60
 # Room for a whole card written out as JSON, as well as the model's thinking.
-PHOTO_MAX_OUTPUT_TOKENS: int = 4000
+PHOTO_MAX_OUTPUT_TOKENS: int = 16000
 
 
 class ClaudeModel:
