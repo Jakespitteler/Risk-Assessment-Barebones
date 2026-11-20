@@ -40,6 +40,7 @@ class ClaudeModel:
         model: str | None = None,
         effort: Effort = "low",
         http_client: anthropic.DefaultHttpxClient | None = None,
+        network_time_limit_seconds: float = NETWORK_TIME_LIMIT_SECONDS,
     ) -> None:
         """Set up the client. Nothing is sent until `reply()` is called.
 
@@ -50,12 +51,14 @@ class ClaudeModel:
                 job quick.
             http_client: Tests pass one that never reaches the network. By default
                 the library makes its own.
+            network_time_limit_seconds: How long one call may take before it ends,
+                just over the service's own limit for the job.
         """
         self.name: str = model or DEFAULT_MODEL
         self._effort: Effort = effort
         self._client = anthropic.Anthropic(
             api_key=api_key,
-            timeout=NETWORK_TIME_LIMIT_SECONDS,
+            timeout=network_time_limit_seconds,
             max_retries=0,
             http_client=http_client,
         )

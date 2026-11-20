@@ -273,7 +273,7 @@ def test_the_ai_order_is_used_for_the_worst_and_the_rest_follow() -> None:
 
 
 def test_example_99_an_ai_line_naming_the_worker_gets_the_rule_line() -> None:
-    """W6: a line naming the worker is replaced by the rule line."""
+    """W6: a line naming the worker is replaced by the rule line; the order stands."""
     ranked: tuple[RankedTake5, ...] = rank_by_rules(
         (ranked_take5(answer=None), ranked_take5()),
     )
@@ -291,5 +291,69 @@ def test_example_99_an_ai_line_naming_the_worker_gets_the_rule_line() -> None:
     reordered: tuple[RankedTake5, ...] = with_ai_order(ranked, order)
 
     assert reordered[0].line == ranked[0].line
-    assert reordered[0].ranked_by is RankedBy.RULES
+    assert reordered[0].ranked_by is RankedBy.AI
     assert reordered[1].line == "Careful."
+
+
+def ai_lines(*lines: str) -> tuple[RankedTake5, ...]:
+    """Give two Take 5s by Sam Example the AI's lines, in the rules' order (W6).
+
+    Args:
+        lines: The AI's line for the first, then the second.
+
+    Returns:
+        The two after the AI's order.
+    """
+    ranked: tuple[RankedTake5, ...] = rank_by_rules(
+        (ranked_take5(answer=None), ranked_take5()),
+    )
+    order: tuple[tuple[int, str], ...] = tuple(
+        (number, line) for number, line in enumerate(lines, start=1)
+    )
+    return with_ai_order(ranked, order)
+
+
+def test_a_line_naming_the_worker_by_first_name_alone_gets_the_rule_line() -> None:
+    """W6: any word of the name counts, so "Sam" alone is caught."""
+    reordered: tuple[RankedTake5, ...] = ai_lines("Sam skipped it.", "Careful.")
+
+    assert reordered[0].line.startswith("Highest risk")
+
+
+def test_a_name_inside_another_word_is_not_a_name() -> None:
+    """W6: a worker called Dan doesn't make "danger" a name."""
+    ranked: tuple[RankedTake5, ...] = rank_by_rules(
+        (
+            ranked_take5(answer=None).model_copy(update={"worker_name": "Dan Test"}),
+            ranked_take5(),
+        ),
+    )
+
+    reordered: tuple[RankedTake5, ...] = with_ai_order(
+        ranked,
+        ((1, "Real danger, no answer."), (2, "Careful.")),
+    )
+
+    assert reordered[0].line == "Real danger, no answer."
+
+
+def test_a_phone_clock_that_is_fast_is_never_rushed() -> None:
+    """W5: a start time after the save can't be judged, and no minutes are sent."""
+    take5: SavedTake5 = ranked_take5(minutes_taken=-3)
+
+    assert worst_score(take5) == 8
+    given: dict[str, Any] = json.loads(ranking_text(rank_by_rules((take5,))))
+    assert given["take5s"][0]["minutes_taken"] is None
+
+
+def test_an_ai_reply_in_a_json_fence_is_read() -> None:
+    """W6: a reply wrapped in a ```json fence is still the JSON asked for."""
+    reply: str = (
+        "```json\n"
+        + json.dumps(
+            {"ranking": [{"number": 2, "why": "A."}, {"number": 1, "why": "B."}]},
+        )
+        + "\n```"
+    )
+
+    assert checked_ai_order(reply, 2) == ((2, "A."), (1, "B."))

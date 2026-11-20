@@ -1,6 +1,7 @@
 """Rank the Take 5s started since a moment worst first (spec W1 to W7)."""
 
 import logging
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from uuid import UUID
@@ -50,6 +51,8 @@ class Take5RankingService:
         self._ranker: Take5Ranker | None = ranker
         self._ai_time_limit_seconds: float = ai_time_limit_seconds
         self._remembered: dict[_RankingKey, tuple[RankedTake5, ...]] = {}
+        # Requests run in a pool of threads, so the remembered rankings are locked.
+        self._remembered_lock = threading.Lock()
 
     def worst_since(self, earliest: datetime) -> tuple[RankedTake5, ...]:
         """Rank the Take 5s started at or after a moment, worst first (W7).
@@ -69,7 +72,8 @@ class Take5RankingService:
             if (take5.started_at or take5.created_at) >= earliest
         )
         key: _RankingKey = tuple((take5.id, take5.is_finished) for take5 in take5s)
-        remembered: tuple[RankedTake5, ...] | None = self._remembered.get(key)
+        with self._remembered_lock:
+            remembered: tuple[RankedTake5, ...] | None = self._remembered.get(key)
         if remembered is not None:
             return remembered
         ranked: tuple[RankedTake5, ...] = self._rank(take5s)
@@ -143,6 +147,7 @@ class Take5RankingService:
             key: Which Take 5s were ranked, and whether each was finished.
             ranked: The ranking.
         """
-        self._remembered[key] = ranked
-        while len(self._remembered) > _REMEMBERED_RANKINGS:
-            del self._remembered[next(iter(self._remembered))]
+        with self._remembered_lock:
+            self._remembered[key] = ranked
+            while len(self._remembered) > _REMEMBERED_RANKINGS:
+                del self._remembered[next(iter(self._remembered))]

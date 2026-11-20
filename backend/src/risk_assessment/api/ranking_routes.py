@@ -1,12 +1,18 @@
 """The ranking endpoint. It turns HTTP into a service call and holds no rules."""
 
+from typing import Any
+
 from fastapi import APIRouter
 from pydantic import AwareDatetime
 
-from risk_assessment.api.schemas import RankedTake5Line, RankedTake5s
+from risk_assessment.api.schemas import FormErrors, RankedTake5Line, RankedTake5s
 from risk_assessment.domain.take5.ranking import RankedBy, RankedTake5
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.services.ranking import Take5RankingService
+
+_UNREADABLE: dict[int | str, dict[str, Any]] = {
+    422: {"model": FormErrors, "description": "The moment is missing or has no zone"},
+}
 
 
 def create_ranking_router(service: Take5RankingService) -> APIRouter:
@@ -20,7 +26,7 @@ def create_ranking_router(service: Take5RankingService) -> APIRouter:
     """
     router = APIRouter(tags=["ranking"])
 
-    @router.get("/api/ranked-take5s")
+    @router.get("/api/ranked-take5s", responses=_UNREADABLE)
     def ranked_take5s(since: AwareDatetime) -> RankedTake5s:
         """Rank the Take 5s started since a moment, worst first (spec W1 to W7).
 

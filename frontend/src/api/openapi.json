@@ -376,11 +376,11 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "The moment is missing or has no zone",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/FormErrors"
                 }
               }
             }

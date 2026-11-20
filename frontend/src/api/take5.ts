@@ -291,7 +291,10 @@ export function useRankedTake5s(since: string) {
         undefined,
         RANKING_TIMEOUT_MS,
       ),
-    retry: retryOnNetworkError,
+    // The page says it can take half a minute, so it isn't asked again on its own:
+    // a failure shows "Try again", and the list doesn't reorder while it is read.
+    retry: false,
+    refetchOnWindowFocus: false,
     networkMode: NETWORK_MODE,
   });
 }

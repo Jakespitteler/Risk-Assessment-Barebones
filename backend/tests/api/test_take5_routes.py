@@ -76,6 +76,7 @@ def _responses(path: str, method: str) -> dict[str, Any]:
     ("path", "method", "errors"),
     [
         ("/api/take5s/check", "post", {"422": "FormErrors"}),
+        ("/api/ranked-take5s", "get", {"422": "FormErrors"}),
         ("/api/take5s", "post", {"422": "FormErrors", "409": "ErrorMessage"}),
         (
             "/api/take5s/{take5_id}",

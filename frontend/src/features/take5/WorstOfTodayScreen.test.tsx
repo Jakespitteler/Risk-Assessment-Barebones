@@ -101,3 +101,23 @@ it("says when an AI ordered them, and that names aren't sent (W6)", async () => 
     ),
   ).toBeTruthy();
 });
+
+it("says while it ranks, and offers Try again when it can't (W6)", async () => {
+  stubApi({
+    [RANKING_URL]: ["offline", { status: 200, body: { take5s: [ranked(1)] } }],
+  });
+  renderWithApi(<WorstOfTodayScreen />);
+  expect(
+    screen.getByRole("heading", { name: "Ranking today’s Take 5s…" }),
+  ).toBeTruthy();
+  expect(
+    await screen.findByRole("heading", {
+      name: "Today’s Take 5s couldn’t be ranked",
+    }),
+  ).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  expect(
+    await screen.findByRole("heading", { name: "Worst of today" }),
+  ).toBeTruthy();
+  expect(screen.getByText("Reason 1.")).toBeTruthy();
+});

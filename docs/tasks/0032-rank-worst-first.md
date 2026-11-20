@@ -1,7 +1,7 @@
 ---
 id: 0032
 title: Rank a set of Take 5s worst first, with one line saying why
-status: review
+status: done
 owner: claude
 branch: claude/0032-rank-worst-first
 ---
@@ -73,8 +73,15 @@ W7 and worked examples 88 to 100. Assumptions Claude made, for Jake to check:
   hazard nudge (T6); controls that don't lower a hazard's score; a missing or short answer to the challenge
   question; under 2 minutes from start to save. Each adds 5, so three of them outweigh a careful job one band
   riskier. Jake can change any number in `domain/take5/ranking.py`.
-- **The AI reorders the worst 10** and has 20 seconds; the page waits up to 30. A ranking the rules made because
+- **The AI reorders the worst 10** and has 20 seconds; the page waits up to 30 and doesn't retry on its own. So
+  the call isn't cut off at the other jobs' 11 seconds, `ClaudeModel` now takes its own network time limit, a new
+  optional argument that only the ranking uses. A ranking the rules made because
   the AI failed isn't remembered, so the AI is asked again next time.
+- **A line naming a worker** is caught by any word of any given worker's name (two letters or more), as a whole
+  word, so "Sam" is caught and "danger" isn't caught for Dan. The AI's order still stands.
+- **A phone clock that is fast** gives a start after the save; that Take 5 isn't judged rushed (W5).
+- **Task 0034's and 0035's files** were still `review` after Jake merged them, so this pull request sets them
+  `done`.
 - **Reuse for task 0033:** `rank_by_rules` and `Take5RankingService` take any set of saved Take 5s, so a scanned
   batch only needs its own way to pick them.
 - **Also in this pull request**, as Jake chose on 2026-11-20: the undo bar's focus outline takes the bar's text
