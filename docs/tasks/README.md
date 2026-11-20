@@ -8,7 +8,7 @@ Recommended by Claude on 2026-11-13, agreed by Jake the same day. Tasks 0015 to 
 0033 on 2026-11-19; Jake can move them. Last brought up to date on 2026-11-19, in task 0030's pull request, after
 Jake agreed the app's goal (top of `docs/spec.md`). Every task is judged against that goal.
 
-Complete: 0001 to 0020, 0022, 0023, 0025 and 0026. Task 0030 is in review. Task 0027 is merged, but stays `review`
+Complete: 0001 to 0020, 0022, 0023, 0025, 0026 and 0030. Task 0027 is merged, but stays `review`
 until Jake's measurement of the AI's verdicts is in its pull request, as its last criterion asks. Task 0029 stays
 `review` until Jake tries Ctrl+C on Windows. Task 0018 decided to keep the built-in `sqlite3` for now
 (`docs/decisions.md`, 2026-11-14), so no task to switch storage is in the order below.

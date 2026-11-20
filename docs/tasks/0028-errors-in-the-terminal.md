@@ -58,10 +58,11 @@ this file and `docs/decisions.md`.
 - 5: only failed requests print, every 4xx and 5xx (not option (b)'s two quiet 422s).
 - 7 (a): no log file.
 
-Claude's notes on how, not Jake's words: labels would need back the pipe that 0029 removed; the format goes in
+Claude's notes on how, not Jake's words: labels would bring back the pipe that 0029 removed; the format goes in
 `backend/dev_logging.json`; Vite's lines already start with `[vite]`; the request filter is a small log filter.
-The two changes that "come with the task unless Jake says otherwise" (below) weren't asked about yet; they are
-asked when the task is claimed.
+The two changes that "come with the task unless Jake says otherwise" (below) weren't asked about yet. Task 0029's
+`start.py` already names a server that stops, with its exit code, so mainly the "back end is down" line is left;
+it is asked when the task is claimed.
 
 **The criteria, question 3's sample line and the notes below still follow the original recommendations**, such
 as a label on every line and two quiet 422s. Where they differ from Jake's answers, the answers win; they are

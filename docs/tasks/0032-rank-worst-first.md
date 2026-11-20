@@ -31,10 +31,10 @@ Questions for Jake, each with Claude's recommendation. Answered when the task st
    Take 5s, each with its line and a link to the saved Take 5.
 4. **What is "today"?** Recommended: Take 5s filled in since midnight where the phone is, finished or not. For a
    Take 5 made in the app that is its `started_at`, or its `created_at` when it has none (saved before task 0019);
-   for a scanned card it will be the time written on the card (task 0033), so that a pile of old paper cards
-   scanned today isn't counted as today's. Dates are already shown in the phone's time zone; midnight on a server
-   in another zone would make "today" start at the wrong hour. The page sends its own midnight with the zone, as
-   `started_at` already carries one.
+   for a scanned card it would be the time written on the card, if Jake agrees in task 0033, so that a pile of old
+   paper cards scanned today isn't counted as today's. Dates are already shown in the phone's time zone; midnight
+   on a server in another zone would make "today" start at the wrong hour. The page sends its own midnight with the
+   zone, as `started_at` already carries one.
 5. **Is the ranking saved?** Recommended: no. It is worked out when the page opens, and remembered only until the
    server restarts, as task 0027's verdicts are. Saving it would change the data model.
 6. **What does the AI get?** Recommended: the same as the challenge question (spec C1): the job, where, the

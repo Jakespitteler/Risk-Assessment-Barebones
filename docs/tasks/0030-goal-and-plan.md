@@ -1,7 +1,7 @@
 ---
 id: 0030
 title: Put the agreed goal at the top of the spec, and plan the work it needs
-status: review
+status: done
 owner: claude
 branch: claude/0030-goal-and-plan (stacked on task 0013's second pull request, #54)
 ---
