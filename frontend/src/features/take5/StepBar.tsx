@@ -8,7 +8,7 @@ const STEP_NAMES = ["Job", "Think", "Hazards", "Assess", "Review"];
 // is the amber of the app's "5" badge.
 const STEP_LOOK =
   "flex min-h-12 w-full items-start border-t-4 pt-2 text-left text-sm aria-[current=step]:border-brand aria-[current=step]:font-bold";
-const REACHED_LOOK = `${STEP_LOOK} border-ink font-semibold text-ink hover:bg-surface-hover focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60`;
+const REACHED_LOOK = `${STEP_LOOK} border-ink font-semibold text-ink hover:bg-surface focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60`;
 const SHOWING_LOOK = `${STEP_LOOK} border-ink text-ink`;
 const NOT_REACHED_LOOK = `${STEP_LOOK} border-line text-ink-muted`;
 

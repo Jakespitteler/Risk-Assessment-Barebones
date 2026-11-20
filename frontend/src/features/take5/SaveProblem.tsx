@@ -16,7 +16,7 @@ export function SaveProblem({
         <>
           <p>This Take 5 was already saved with different answers.</p>
           <a
-            className="flex min-h-12 items-center self-start rounded-lg underline underline-offset-4 hover:decoration-2 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus"
+            className="flex min-h-12 items-center rounded-lg underline underline-offset-4 hover:decoration-2 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus"
             href={`/take5s/${submissionId}`}
           >
             Open the saved Take 5

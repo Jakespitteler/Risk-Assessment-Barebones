@@ -1,7 +1,7 @@
 ---
 id: 0031
 title: Prove the main screens work on a desktop, with a test at 1280 px and even hover and focus
-status: review
+status: done
 owner: claude
 branch: claude/0031-desktop-test
 ---
@@ -66,5 +66,12 @@ Built 2026-11-20. `e2e/desktop.spec.ts` runs at 1280 by 800 in the light and dar
 with `desktop-`. `capture()` now checks for sideways scrolling against the test's own screen width, not a fixed
 360 px. The new `expectHoverAndFocus()` in `e2e/helpers.ts` hovers over everything clickable and tabs through the
 page; Claude checked it fails when one fix is taken out (a step bar step's hover, a result screen link's focus).
-The undo bar's close "×" only shows after removing something, so the test doesn't reach it; it has the same
-classes as the rest.
+The test removes the hazard and puts it back, so the undo bar's close "×" is checked too.
+
+The review found the Tab loop started from wherever the focus was and stopped at the page's end, so it skipped
+the top bar, the step bar and the choices on most screens. It now tabs right round the page and fails if
+anything clickable was missed or the outline isn't the app's own. A hover now counts only if what shows changes,
+so a fill the same colour as the page fails: the step bar and the light or dark switch (on the page, where
+`surface-hover` is the page's own colour in light) now fill with `surface` instead.
+Left for Jake from the review: the focus outline on the dark undo bar (the Undo button had it before this task,
+and the new "×" has it too) is about 2.3 to 1 against the bar, below the 3 to 1 usually wanted.

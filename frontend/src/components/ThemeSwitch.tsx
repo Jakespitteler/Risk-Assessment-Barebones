@@ -12,7 +12,7 @@ export function ThemeSwitch() {
       type="button"
       aria-label={`Switch to ${switchingTo}`}
       onClick={switchScheme}
-      className="grid h-12 w-11 shrink-0 place-items-center rounded-lg text-ink hover:bg-surface-hover focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus"
+      className="grid h-12 w-11 shrink-0 place-items-center rounded-lg text-ink hover:bg-surface focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus"
     >
       {switchingTo === "dark" ? <MoonPicture /> : <SunPicture />}
     </button>

@@ -33,6 +33,14 @@ test("on a desktop, a whole Take 5 and the saved list fit the screen and react t
   await page.getByLabel("Hazard 1", { exact: true }).fill(HAZARD);
   await capture(page, "desktop-hazards");
   await expectHoverAndFocus(page);
+  // The undo bar only shows after a removal.
+  await page.getByRole("button", { name: "Remove hazard 1" }).click();
+  await expect(page.getByRole("status")).toContainText("Hazard 1 removed.");
+  await expectHoverAndFocus(page);
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.getByLabel("Hazard 1", { exact: true })).toHaveValue(
+    HAZARD,
+  );
   await next(page);
   await answerAll(page, CHECK, "No");
   await capture(page, "desktop-check");
