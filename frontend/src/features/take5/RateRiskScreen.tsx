@@ -30,7 +30,7 @@ export function RateRiskScreen() {
           <button
             type="button"
             onClick={() => void template.refetch()}
-            className="min-h-14 rounded-xl bg-action px-4 text-lg font-semibold text-on-action"
+            className="min-h-14 rounded-xl bg-action px-4 text-lg font-semibold text-on-action hover:bg-action-hover focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
             Try again
           </button>

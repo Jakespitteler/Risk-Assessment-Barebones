@@ -83,7 +83,7 @@ function ScalePicker({
       {levels.map((level) => (
         <label
           key={level}
-          className="flex min-h-14 cursor-pointer items-center rounded-xl border-2 border-line-strong bg-surface px-4 text-lg font-medium has-checked:border-action has-checked:bg-action has-checked:text-on-action has-focus-visible:outline-4 has-focus-visible:outline-focus"
+          className="flex min-h-14 cursor-pointer items-center rounded-xl border-2 border-line-strong bg-surface px-4 text-lg font-medium has-checked:border-action has-checked:bg-action has-checked:text-on-action hover:not-has-checked:bg-surface-hover has-focus-visible:outline-4 has-focus-visible:outline-focus"
         >
           <input
             type="radio"

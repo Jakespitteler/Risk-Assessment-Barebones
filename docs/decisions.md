@@ -2,6 +2,19 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-20: A desktop test, and hover and focus on everything clickable (task 0031)
+
+- Decision: one whole-app test runs a Take 5 and the saved list at 1280 by 800. On each screen it checks nothing
+  scrolls sideways, then hovers over everything a person can click and expects its look to change, then tabs
+  through the page and expects the app's own 4 px focus outline on each stop. The gaps it found are filled with
+  a few class names each: a darker fill for buttons and button-like links, a thicker underline for text links, a
+  light fill for choices and the step bar (spec D87 to D89).
+- Why: the goal says a phone or a desktop (D65). Screens already sit in a centred column on a desktop, so no
+  layout change was needed, but a mouse user expects things to react, and some links relied on the browser's own
+  focus ring. Jake took every recommended answer on 2026-11-20.
+- Not chosen: running every test at desktop width too, which doubles the run again for little gain.
+- Decided by: human.
+
 ## 2026-11-20: The saved list 50 at a time (task 0021)
 
 - Decision: `GET /api/take5s` sends a page of 50, newest first, as `{take5s, next}`. The next page is asked for

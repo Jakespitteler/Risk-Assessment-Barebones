@@ -23,7 +23,7 @@ export function UndoBar({
         type="button"
         onClick={onDismiss}
         aria-label="Close"
-        className="min-h-12 min-w-12 shrink-0 rounded-lg text-2xl"
+        className="min-h-12 min-w-12 shrink-0 rounded-lg text-2xl hover:bg-action-hover focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus"
       >
         ×
       </button>

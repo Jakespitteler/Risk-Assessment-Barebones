@@ -7,7 +7,7 @@ import { runOutMessage } from "./runOut";
 import { TimeLeft } from "./TimeLeft";
 
 const CARRY_ON_LINK =
-  "flex min-h-14 items-center justify-center rounded-xl bg-action px-5 text-lg font-bold text-on-action focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus";
+  "flex min-h-14 items-center justify-center rounded-xl bg-action px-5 text-lg font-bold text-on-action hover:bg-action-hover focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
 /**
  * The phone's unfinished Take 5, at the top of the saved list, with a button to carry on

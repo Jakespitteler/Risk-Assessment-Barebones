@@ -38,7 +38,7 @@ export function AnswerPicker({
         {choices.map((answer) => (
           <label
             key={answer}
-            className="flex min-h-14 cursor-pointer items-center justify-center rounded-xl border-2 border-line-strong bg-surface px-2 text-lg font-bold has-checked:border-action has-checked:bg-action has-checked:text-on-action has-focus-visible:outline-4 has-focus-visible:outline-focus"
+            className="flex min-h-14 cursor-pointer items-center justify-center rounded-xl border-2 border-line-strong bg-surface px-2 text-lg font-bold has-checked:border-action has-checked:bg-action has-checked:text-on-action hover:not-has-checked:bg-surface-hover has-focus-visible:outline-4 has-focus-visible:outline-focus"
           >
             <input
               type="radio"

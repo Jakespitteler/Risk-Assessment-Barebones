@@ -7,7 +7,7 @@ const VARIANTS = {
   secondary:
     "min-h-14 rounded-xl border-2 border-ink bg-surface px-5 text-lg font-bold text-ink hover:bg-surface-hover",
   quiet:
-    "min-h-12 self-start rounded-lg px-2 text-base font-semibold text-ink underline underline-offset-4",
+    "min-h-12 self-start rounded-lg px-2 text-base font-semibold text-ink underline underline-offset-4 hover:decoration-2 hover:bg-surface-hover",
 };
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

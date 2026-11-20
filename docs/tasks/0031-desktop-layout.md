@@ -1,7 +1,7 @@
 ---
 id: 0031
 title: Prove the main screens work on a desktop, with a test at 1280 px and even hover and focus
-status: in-progress
+status: review
 owner: claude
 branch: claude/0031-desktop-test
 ---
@@ -34,14 +34,14 @@ Questions for Jake, each with Claude's recommendation. Answered when the task st
 
 ## Acceptance criteria
 
-These follow the recommendations; they change with Jake's answers.
+Jake took all three recommendations on 2026-11-20 (spec D87 to D89).
 
-- [ ] A Playwright run of the main flow and the saved list at 1280 px saves a screenshot of each screen and checks
+- [x] A Playwright run of the main flow and the saved list at 1280 px saves a screenshot of each screen and checks
   nothing scrolls sideways.
-- [ ] Everything a person can click changes on hover and shows a focus style of the app's own.
-- [ ] `docs/spec.md` states the desktop acceptance criterion beside the 360 px one.
-- [ ] No screen's layout changes beyond those hover and focus styles.
-- [ ] All checks pass.
+- [x] Everything a person can click changes on hover and shows a focus style of the app's own.
+- [x] `docs/spec.md` states the desktop acceptance criterion beside the 360 px one.
+- [x] No screen's layout changes beyond those hover and focus styles.
+- [x] All checks pass.
 
 ## Out of scope
 
@@ -61,3 +61,10 @@ The gaps, listed from the code on 2026-11-20 when Claude claimed the task (stack
   the saved list, the fix panel's links and the kept draft's link).
 - **Neither, so only the browser's own focus ring:** the undo bar's close "×", the "What do … mean?" help, the old
   `/rate-risk` screen's button, the save problem's link, and the result screen's "New Take 5" links.
+
+Built 2026-11-20. `e2e/desktop.spec.ts` runs at 1280 by 800 in the light and dark runs, and its screenshots start
+with `desktop-`. `capture()` now checks for sideways scrolling against the test's own screen width, not a fixed
+360 px. The new `expectHoverAndFocus()` in `e2e/helpers.ts` hovers over everything clickable and tabs through the
+page; Claude checked it fails when one fix is taken out (a step bar step's hover, a result screen link's focus).
+The undo bar's close "×" only shows after removing something, so the test doesn't reach it; it has the same
+classes as the rest.

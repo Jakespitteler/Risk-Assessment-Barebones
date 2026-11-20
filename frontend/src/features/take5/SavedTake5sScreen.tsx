@@ -12,7 +12,7 @@ import { forgetKeptDraft, keptDraft } from "./useTake5Draft";
 
 const HEADING = "text-3xl font-extrabold focus:outline-none";
 const NEW_TAKE5_LINK =
-  "flex min-h-14 items-center justify-center rounded-xl bg-action px-5 text-lg font-bold text-on-action focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus";
+  "flex min-h-14 items-center justify-center rounded-xl bg-action px-5 text-lg font-bold text-on-action hover:bg-action-hover focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
 /**
  * The verdict as a tag, in the same strong colours as the result screen, or "Not

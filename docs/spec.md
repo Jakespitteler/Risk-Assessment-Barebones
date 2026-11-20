@@ -512,6 +512,9 @@ The first four screens of the core workflow, saved when the worker submits.
 - Acceptance: the Take 5 is saved before the challenge question is asked, so a slow or failed AI never loses it.
 - Acceptance: the phone remembers the worker's name for next time.
 - Acceptance: every screen is usable one-handed on a 360 px wide phone, with tap targets at least 48 px high.
+- Acceptance: on a 1280 px wide desktop every screen of a Take 5 and the saved list fits with nothing scrolling
+  sideways, and everything a person can click changes under the mouse and shows the app's own focus outline
+  (D87 to D89).
 - Acceptance: after listing hazards, the worker assesses one hazard at a time, before controls, then controls,
   then after controls when there are any. The Back button, the phone's back gesture and a reload all keep the
   unsaved answers.
@@ -735,6 +738,9 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D84 | The Show more button (2026-11-20) | An outline button under the list: "Loading…" while it loads, and "Couldn't load more" with Try again if the signal drops | Loading more as the worker scrolls |
 | D85 | A total count, such as "50 of 312" (2026-11-20) | No | A count, at the cost of another query |
 | D86 | Coming back to the list (2026-11-20) | The pages already loaded are kept for a few minutes, and asked for again | Always back to the newest 50 |
+| D87 | What the desktop test runs (2026-11-20) | A Take 5 from the job to its saved result, then the saved list, with a screenshot of each screen at 1280 by 800 | Every test at desktop width too |
+| D88 | What it checks besides screenshots (2026-11-20) | Nothing scrolls sideways, as at 360 px; and the hover and focus of D89 | Screenshots only |
+| D89 | Hover and focus (2026-11-20) | Everything a person can click changes under the mouse and shows the app's own 4 px focus outline | Leave the gaps, relying on the browser's own focus ring |
 
 ## Open questions
 

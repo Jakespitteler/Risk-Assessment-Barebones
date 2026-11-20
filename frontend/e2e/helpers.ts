@@ -151,11 +151,16 @@ export async function expectReadable(page: Page) {
 }
 
 /**
- * Save a 360 px screenshot, and check the page fits a small phone: no sideways scroll,
- * every tap target at least 48 px high, no text smaller than 14 px, and readable to axe.
+ * Save a screenshot, and check the page fits the screen (360 px, a small phone, unless the
+ * test says otherwise): no sideways scroll, every tap target at least 48 px high, no text
+ * smaller than 14 px, and readable to axe.
  */
 export async function capture(page: Page, name: string) {
-  await expect(page.locator("html")).toHaveJSProperty("scrollWidth", 360);
+  const screenWidth = page.viewportSize()?.width ?? 360;
+  await expect(page.locator("html")).toHaveJSProperty(
+    "scrollWidth",
+    screenWidth,
+  );
   await page.screenshot({ path: screenshotPath(name), fullPage: true });
   await expectReadable(page);
   const targets = page.locator(
@@ -186,4 +191,51 @@ export async function capture(page: Page, name: string) {
 /** The heading the focus moved to, so a screen reader starts at the new page. */
 export function focusedHeading(page: Page) {
   return page.locator("h1:focus");
+}
+
+const CLICKABLE =
+  "button:not(:disabled), a, summary, label:has(input[type=radio]:not(:checked))";
+
+/**
+ * Check that everything a person can click on the page changes when the mouse is over it,
+ * and shows the app's own focus outline when the keyboard reaches it (spec F2).
+ */
+export async function expectHoverAndFocus(page: Page) {
+  const look = (element: Element) => {
+    const style = getComputedStyle(element);
+    return `${style.backgroundColor} ${style.textDecorationThickness} ${style.borderColor}`;
+  };
+  for (const target of await page.locator(CLICKABLE).all()) {
+    if (!(await target.isVisible())) continue;
+    await page.mouse.move(0, 0);
+    const before = await target.evaluate(look);
+    await target.hover();
+    const name = await target.evaluate((element) => element.outerHTML);
+    expect(await target.evaluate(look), `${name} changes on hover`).not.toBe(
+      before,
+    );
+  }
+  await page.mouse.move(0, 0);
+  await page.locator("body").focus();
+  const seen = new Set<string>();
+  for (let step = 0; step < 60; step += 1) {
+    await page.keyboard.press("Tab");
+    const outline = await page.evaluate(() => {
+      const focused = document.activeElement;
+      if (!focused || focused === document.body) return null;
+      if (focused.matches("input:not([type=radio]), textarea, select")) {
+        return { name: "", width: "4px" };
+      }
+      const shown = focused.closest("label") ?? focused;
+      return {
+        name: shown.outerHTML,
+        width: getComputedStyle(shown).outlineWidth,
+      };
+    });
+    if (!outline || seen.has(outline.name)) break;
+    if (outline.name) seen.add(outline.name);
+    expect(outline.width, `${outline.name} shows the focus outline`).toBe(
+      "4px",
+    );
+  }
 }
