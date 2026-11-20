@@ -1,9 +1,9 @@
 ---
 id: 0028
 title: Make errors obvious in the terminal that runs the app
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/0028-errors-in-the-terminal
 ---
 
 ## Goal
