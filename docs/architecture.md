@@ -374,7 +374,7 @@ cloud account, or a model the company runs itself.
 | Unit, front end | Each component and screen behaves: nothing pre-selected, errors beside fields, T1 | Vitest and React Testing Library |
 | End to end | A worker fills in every screen in a real browser and reaches the right verdict | Playwright against the real front end and back end, with a stand-in AI |
 | Visual | Each changed screen looks right on a phone | Playwright screenshots at 360 px wide, attached to the PR; checked by eye, not in CI |
-| Accessibility | Every screenshot the whole-app tests take, in both modes, is readable: text contrast to 7 to 1 (spec D71) and axe's other WCAG 2.2 AA rules | `@axe-core/playwright`, Deque's checker, inside the screenshot helper (`capture` in `e2e/helpers.ts`) |
+| Accessibility | Every screenshot the whole-app tests take, in both modes, is readable: text contrast to 7 to 1 (spec D76) and axe's other WCAG 2.2 AA rules | `@axe-core/playwright`, Deque's checker, inside the screenshot helper (`capture` in `e2e/helpers.ts`) |
 | AI adapter | The adapter sends what it should and reads the reply, refusals and errors | The real adapter against a stand-in for the provider's API (`tests/ai/fake_anthropic.py`), so nothing leaves the computer |
 | Real AI | The real provider answers with a usable question | `uv run test.py backend -m real_ai`, skipped with no key; plain `pytest` and CI never run it. `scripts/try_challenge.py` measures questions, and `scripts/try_vague_hazard.py` verdicts on hazards, with time and cost |
 

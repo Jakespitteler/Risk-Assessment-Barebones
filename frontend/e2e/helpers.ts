@@ -138,7 +138,7 @@ export function screenshotPath(name: string): string {
 
 /**
  * Check the page with Deque's axe: every text colour against what it sits on, to 7 to 1
- * (4.5 to 1 for large text) as well as the usual 4.5 to 1 (spec D71), and the rest of axe's
+ * (4.5 to 1 for large text) as well as the usual 4.5 to 1 (spec D76), and the rest of axe's
  * WCAG 2.2 AA rules.
  */
 export async function expectReadable(page: Page) {

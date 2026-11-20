@@ -100,11 +100,11 @@ The questions for Jake, each with Claude's recommended pick. Jake answers them w
 ## Jake's answers (2026-11-19)
 
 "Go with all your recommendations", with two additions: question 1, "that and just for looks"; question 6, "yes,
-choose an accent that looks good on both". So: 1 night shift, phones set to dark, and looks (spec D64); 2 (c)
-(D65); 3 (b) (D66); 4 (a) (D67); 5 on the phone (D68); 6 the same band colours, with one grey edge (slate-400)
-that shows on a light page and a dark one (D69); 7 as recommended (D70); 8 7 to 1 for text, checked by
-`@axe-core/playwright`, a new development dependency he approved (D71); 9 (b), in two stacked pull requests (D72);
-10 as recommended (D73); 11 now (D74).
+choose an accent that looks good on both". So: 1 night shift, phones set to dark, and looks (spec D69); 2 (c)
+(D70); 3 (b) (D71); 4 (a) (D72); 5 on the phone (D73); 6 the same band colours, with one grey edge (slate-400)
+that shows on a light page and a dark one (D74); 7 as recommended (D75); 8 7 to 1 for text, checked by
+`@axe-core/playwright`, a new development dependency he approved (D76); 9 (b), in two stacked pull requests (D77);
+10 as recommended (D78); 11 now (D79).
 
 ## Acceptance criteria
 
@@ -151,8 +151,9 @@ that shows on a light page and a dark one (D69); 7 as recommended (D70); 8 7 to 
 - Built 2026-11-19 in two stacked pull requests. The first (#53, branch `claude/project-thread-ajrmy7`) names
   every colour by its job and changes nothing on screen except one shade: a text box with a gap now has the same
   red edge as its message (red-800, was red-700). The second (branch `claude/0024-dark-mode`) adds dark mode.
-- Based on `main`, not stacked on another agent's open #51 (0013) and #52 (0029): this task touches only the front
-  end and its docs, so they don't overlap.
+- First based on `main`; on 2026-11-19 and 2026-11-20 Jake asked for one stack, so #53 now sits on the other
+  agent's #56 (task 0030), after #51, #52 and #54. #56 took spec D64 to D68, so this task's decisions moved from
+  D64 to D74 to D69 to D79.
 - To reach 7 to 1 in light, a step not yet reached in the step bar now uses the quieter ink, slate-700 (was
   slate-600, 6.95 to 1). With that, the quietest ink was the same as the quieter one in both modes, so it was
   dropped.

@@ -2,7 +2,7 @@
  * Light or dark: which one the screen shows, and the worker's own choice of it.
  *
  * The app follows the phone's light or dark setting. The switch in the top bar can override
- * that, but only until the phone's own setting next changes (spec F7, decision D66). So the
+ * that, but only until the phone's own setting next changes (spec F7, decision D71). So the
  * choice is kept with the phone's setting at the moment it was made: once the phone has
  * changed, the choice is stale and the phone wins again.
  *

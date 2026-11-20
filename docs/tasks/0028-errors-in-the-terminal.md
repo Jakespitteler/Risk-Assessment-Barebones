@@ -50,6 +50,24 @@ end meets should reach that one terminal as a short line that says which half, w
 The questions for Jake, each with Claude's recommended pick. Answer them in chat; Claude writes the answers into
 this file and `docs/decisions.md`.
 
+**Jake's answers, 2026-11-19**, asked as four combined questions after task 0029 removed the output pipe:
+
+- 1 (a) and 2 (b): Vite's own `server.forwardConsole`, passing on crashes, `console.error` and `console.warn`.
+- 3 and 6: no "back end" or "front end" label on each line; a tidier format for the back end's lines.
+- 4 (b): a stack trace only for a bug; a handled AI failure prints one line naming the kind of problem.
+- 5: only failed requests print, every 4xx and 5xx (not option (b)'s two quiet 422s).
+- 7 (a): no log file.
+
+Claude's notes on how, not Jake's words: labels would bring back the pipe that 0029 removed; the format goes in
+`backend/dev_logging.json`; Vite's lines already start with `[vite]`; the request filter is a small log filter.
+The two changes that "come with the task unless Jake says otherwise" (below) weren't asked about yet. Task 0029's
+`start.py` already names a server that stops, with its exit code, so mainly the "back end is down" line is left;
+it is asked when the task is claimed.
+
+**The criteria, question 3's sample line and the notes below still follow the original recommendations**, such
+as a label on every line and two quiet 422s. Where they differ from Jake's answers, the answers win; they are
+rewritten when the task is claimed.
+
 1. **How do front-end errors reach the terminal?** Options:
    - (a) Vite's own `server.forwardConsole: true`, one line in `frontend/vite.config.ts`. No new package. It
      works only while developing, not in a built app. Setting it also means Jake and agents see the same thing.

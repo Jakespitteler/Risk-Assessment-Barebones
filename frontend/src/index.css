@@ -9,7 +9,7 @@
  * Tailwind 4 turns each `--color-<name>` into utilities such as `bg-<name>` and `text-<name>`.
  *
  * Each has a light value here and a dark value below. The risk band colours are not here: they
- * stay in `RiskBadge.tsx`, the same in both (spec D69).
+ * stay in `RiskBadge.tsx`, the same in both (spec D74).
  */
 @theme {
   /* The page and what sits on it. */
@@ -64,7 +64,7 @@
 /*
  * Dark: light text on a very dark slate page (not pure black, which smears for many eyes).
  * The same colour keeps the same meaning: danger is red and success green in both. Every
- * text colour reaches 7 to 1 on what it sits on (spec D71), which the whole-app tests check.
+ * text colour reaches 7 to 1 on what it sits on (spec D76), which the whole-app tests check.
  */
 :root[data-theme="dark"] {
   --color-page: var(--color-slate-900);
