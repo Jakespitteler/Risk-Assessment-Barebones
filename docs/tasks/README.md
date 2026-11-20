@@ -15,9 +15,9 @@ until Jake's measurement of the AI's verdicts is in its pull request, as its las
 
 1. **0028, errors obvious in the terminal.** Jake asked for it on 2026-11-19, after a blank page on Windows whose
    error showed only in the browser. It builds on 0029's start script and makes every later task quicker to
-   debug. Claude owns it. Jake answered its questions on 2026-11-19; they go into the file when it starts.
-2. **0031, every screen on a desktop as well as a phone.** The goal says phone or desktop, and the review screens
-   of 0032 and 0033 are desk work, so the layout comes first. Small, with no new library.
+   debug. Claude takes it next, and writes Jake's answers into its file when it claims it.
+2. **0031, a desktop test.** The goal says phone or desktop. Screens already fit a desktop, so this only adds a
+   whole-app test at 1280 px to keep it so. Small.
 3. **0032, rank Take 5s worst first.** Works on today's Take 5s with nothing new to enter, and builds the one
    ranking job that 0033 reuses for a scanned batch.
 4. **0033, photograph paper cards into Take 5s.** The biggest of the three, and it needs 0032's ranking.

@@ -32,10 +32,10 @@ This app is a proof of concept: it should be really nice to use, and as simple a
 
 A Take 5 is the short personal risk assessment a mine-site worker does before starting a task. On paper it is a
 card of tick boxes, and tick boxes get ticked without thinking. This app is a Take 5 for a phone or a desktop that
-cannot be finished on autopilot: the worker has to say, in their own words, what could hurt someone on this job today and
-what will stop it, the app pushes back when the answer is thin, and before the result it asks one question
-about the weakest part of what they wrote. Paper cards can be photographed into the app too, and any set of
-Take 5s can be ranked so the weakest are looked at first (see the Goal).
+cannot be finished on autopilot: the worker has to say, in their own words, what could hurt someone on this job
+today and what will stop it, the app pushes back when the answer is thin, and before the result it asks one
+question about the weakest part of what they wrote. Next, paper cards will be photographed into the app, and any
+set of Take 5s ranked so the weakest are looked at first (see the Goal; tasks 0032 and 0033).
 
 This repo is a rebuild of the one core feature of the larger Risk-Assessment app. The rule of thumb for every
 design choice: **if the app is boring and can be used without thinking, people will use it without thinking.**
