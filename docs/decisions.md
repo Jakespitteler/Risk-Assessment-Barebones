@@ -2,6 +2,16 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-20: `start.py` restarts the back end itself (task 0034)
+
+- Decision: `start.py` runs uvicorn without `--reload`, watches `backend/src` for saved Python files, and restarts
+  the back end itself. A change that won't start prints its error, and the app waits for the next save.
+- Why: on Windows uvicorn's reloader restarts with a Ctrl+C that Windows gives to every program in the terminal,
+  so `start.py` stopped the whole app on each save, and hid the error of a broken change.
+- Not chosen: a new package such as `watchfiles` (needs approval, and a once-a-second look is enough); ignoring
+  Ctrl+C on Windows while the back end restarts (a real Ctrl+C then can't be told apart).
+- Decided by: human.
+
 ## 2026-11-20: A desktop test, and hover and focus on everything clickable (task 0031)
 
 - Decision: one whole-app test runs a Take 5 and the saved list at 1280 by 800. On each screen it checks nothing

@@ -21,7 +21,10 @@ built-in `sqlite3` for now (`docs/decisions.md`, 2026-11-14), so no task to swit
    ranking job that 0033 reuses for a scanned batch.
 3. **0033, photograph paper cards into Take 5s.** The biggest of the three, and it needs 0032's ranking.
 
-Built out of the order: **0021, the saved list 50 at a time**. Jake parked it on 2026-11-19, as "worst of today"
-(0032) is a better way to look through many Take 5s for now, then asked for it on 2026-11-20 (spec D80 to D86).
+Built out of the order:
+
+- **0021, the saved list 50 at a time.** Jake parked it on 2026-11-19, as "worst of today" (0032) is a better
+  way to look through many Take 5s for now, then asked for it on 2026-11-20 (spec D80 to D86).
+- **0034, keep the app running on Windows when back-end code changes.** A bug Jake hit on 2026-11-20.
 
 When a task is added, or the human changes the order, update this list in the same pull request.

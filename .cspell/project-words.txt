@@ -2,6 +2,7 @@ addopts
 anthropics
 autouse
 Barebones
+basereload
 caplog
 capsys
 charliermarsh
@@ -56,6 +57,7 @@ uvicorn
 venv
 vite
 vitest
+watchfiles
 WCAG
 winget
 xhigh

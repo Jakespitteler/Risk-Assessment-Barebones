@@ -20,6 +20,11 @@ In order, it:
    are turned off in their settings: uvicorn's start-up, restart and shutdown lines in
    `backend/dev_logging.json`, and Vite's address box with `--logLevel warn`. Requests,
    the app's own lines, reload notices, warnings and errors still show.
+5. Restarts the back end itself when a Python file under `backend/src` is saved, rather
+   than using uvicorn's `--reload`. On Windows that reloader restarts by sending Ctrl+C,
+   which Windows gives to every program in the terminal, so it stopped the whole app. A
+   change that breaks the back end prints its error and leaves the front end running,
+   and the next save starts the back end again.
 """
 
 import contextlib
@@ -52,7 +57,6 @@ BACKEND_COMMAND: list[str] = [
     "uvicorn",
     "risk_assessment.api.app:create_app",
     "--factory",
-    "--reload",
     "--port",
     str(API_PORT),
     "--log-config",
@@ -72,6 +76,8 @@ LOCAL_APP_URL: str = f"http://localhost:{APP_PORT}"
 QUIET_BACKEND_INSTALL_STEP: install.InstallStep = install.BACKEND_INSTALL_STEP._replace(
     command=[*install.BACKEND_INSTALL_STEP.command, "--quiet"],
 )
+# The back end's code, watched for saves so the back end can be restarted.
+BACKEND_CODE: Path = BACKEND / "src"
 READY_WAIT_SECONDS: float = 30.0
 STOP_WAIT_SECONDS: float = 10.0
 
@@ -367,6 +373,53 @@ def stop_on_the_first_ctrl_c() -> None:
     signal.signal(signal.SIGINT, on_ctrl_c)
 
 
+def code_stamp(folder: Path) -> frozenset[tuple[str, int]]:
+    """Note each Python file under a folder and when it was last saved.
+
+    Two stamps differ when a file was saved, added, removed or renamed.
+
+    Args:
+        folder: The folder to look in, such as `backend/src`.
+
+    Returns:
+        Each file's path with its last-saved time in nanoseconds.
+    """
+    stamp: set[tuple[str, int]] = set()
+    for path in folder.rglob("*.py"):
+        with contextlib.suppress(OSError):  # Removed while being looked at.
+            stamp.add((str(path), path.stat().st_mtime_ns))
+    return frozenset(stamp)
+
+
+def restart_backend(
+    servers: dict[str, subprocess.Popen[bytes]],
+    timeout: float = READY_WAIT_SECONDS,
+) -> bool:
+    """Stop the back end and start it again with the code just saved.
+
+    Args:
+        servers: The running servers by name; the new back end replaces the old one.
+        timeout: Seconds to wait for the new back end to answer.
+
+    Returns:
+        True when it answers; False when it stopped or didn't answer, after saying so.
+    """
+    print("\nA back-end file changed, so the back end is restarting.", flush=True)
+    stop(servers["back end"])
+    servers["back end"] = start(BACKEND_COMMAND, "backend")
+    try:
+        wait_until_ready(servers["back end"], BACKEND_READY_URL, "back end", timeout)
+    except (RuntimeError, TimeoutError) as problem:
+        print(
+            f"\n{problem} Its error is above. The app is waiting: save a fix and the "
+            "back end starts again.",
+            flush=True,
+        )
+        return False
+    print("The back end is running again.", flush=True)
+    return True
+
+
 def run_servers(url: str, cloud_service: str | None) -> int:
     """Run both servers until either one stops or Ctrl+C is pressed, then stop both.
 
@@ -388,8 +441,16 @@ def run_servers(url: str, cloud_service: str | None) -> int:
         print(ready_message(url), flush=True)
         if cloud_service is not None:
             print(f"{install.cloud_sync_warning(cloud_service)}\n", flush=True)
+        backend_code: frozenset[tuple[str, int]] = code_stamp(BACKEND_CODE)
+        backend_waits_for_a_fix: bool = False
         while True:
+            saved_code: frozenset[tuple[str, int]] = code_stamp(BACKEND_CODE)
+            if saved_code != backend_code:
+                backend_code = saved_code
+                backend_waits_for_a_fix = not restart_backend(servers)
             for name, server in servers.items():
+                if name == "back end" and backend_waits_for_a_fix:
+                    continue
                 exit_code: int | None = server.poll()
                 if exit_code is not None:
                     print(

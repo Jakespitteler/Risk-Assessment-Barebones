@@ -2,6 +2,7 @@
 
 import copy
 import json
+import os
 import signal
 import socket
 import subprocess
@@ -647,3 +648,109 @@ def test_the_uvicorn_settings_turn_down_only_its_status_lines() -> None:
 def test_vite_prints_warnings_and_errors_but_not_its_address_box() -> None:
     """Vite's address box is info; `--logLevel warn` reaches Vite through npm's `--`."""
     assert start.FRONTEND_COMMAND[1:] == ["run", "dev", "--", "--logLevel", "warn"]
+
+
+def test_the_back_end_runs_without_the_uvicorn_reloader() -> None:
+    """Its reloader restarts with a Ctrl+C, which on Windows stopped the whole app."""
+    assert "--reload" not in start.BACKEND_COMMAND
+
+
+def test_the_code_stamp_changes_when_a_file_is_saved_added_or_removed(
+    tmp_path: Path,
+) -> None:
+    """A save, a new file and a removed file change the stamp; other files don't."""
+    module: Path = tmp_path / "app.py"
+    module.write_text("ANSWER = 1\n")
+    first: frozenset[tuple[str, int]] = start.code_stamp(tmp_path)
+    (tmp_path / "notes.txt").write_text("not code")
+    assert start.code_stamp(tmp_path) == first
+
+    module.write_text("ANSWER = 2\n")
+    os.utime(module, ns=(0, 1))
+    saved: frozenset[tuple[str, int]] = start.code_stamp(tmp_path)
+    assert saved != first
+
+    (tmp_path / "package").mkdir()
+    (tmp_path / "package" / "new.py").write_text("")
+    added: frozenset[tuple[str, int]] = start.code_stamp(tmp_path)
+    assert added != saved
+
+    module.unlink()
+    assert start.code_stamp(tmp_path) != added
+
+
+def test_a_saved_back_end_file_restarts_only_the_back_end() -> None:
+    """The old back end stops and a new one starts; the front end keeps running."""
+    old_backend = MagicMock(spec=subprocess.Popen)
+    new_backend = MagicMock(spec=subprocess.Popen)
+    frontend = MagicMock(spec=subprocess.Popen)
+    for server in (old_backend, new_backend, frontend):
+        server.poll.return_value = None
+    with (
+        patch.object(start, "start", side_effect=[old_backend, frontend, new_backend]),
+        patch.object(start, "wait_until_ready") as ready,
+        patch.object(start, "code_stamp", side_effect=["before", "before", "after"]),
+        patch.object(start, "print", create=True) as say,
+        patch.object(start.time, "sleep", side_effect=[None, KeyboardInterrupt]),
+        patch.object(start, "stop") as stop,
+        patch.object(start.signal, "signal"),
+    ):
+        exit_code: int = start.run_servers("http://localhost:5173", None)
+
+    assert exit_code == 0
+    assert ready.call_args_list[-1].args[:3] == (
+        new_backend,
+        start.BACKEND_READY_URL,
+        "back end",
+    )
+    assert call("The back end is running again.", flush=True) in say.mock_calls
+    assert stop.mock_calls == [call(old_backend), call(new_backend), call(frontend)]
+
+
+def test_a_change_that_breaks_the_back_end_waits_for_a_fix() -> None:
+    """The error stays on screen, the app keeps going, and the next save restarts it."""
+    old_backend = MagicMock(spec=subprocess.Popen)
+    broken_backend = MagicMock(spec=subprocess.Popen)
+    fixed_backend = MagicMock(spec=subprocess.Popen)
+    frontend = MagicMock(spec=subprocess.Popen)
+    for server in (old_backend, fixed_backend, frontend):
+        server.poll.return_value = None
+    broken_backend.poll.return_value = 1
+    with (
+        patch.object(
+            start,
+            "start",
+            side_effect=[old_backend, frontend, broken_backend, fixed_backend],
+        ),
+        patch.object(
+            start,
+            "wait_until_ready",
+            side_effect=[
+                None,
+                None,
+                RuntimeError("The back end stopped before it was ready."),
+                None,
+            ],
+        ),
+        patch.object(
+            start,
+            "code_stamp",
+            side_effect=["first", "first", "broken", "fixed"],
+        ),
+        patch.object(start, "print", create=True) as say,
+        patch.object(start.time, "sleep", side_effect=[None, None, KeyboardInterrupt]),
+        patch.object(start, "stop") as stop,
+        patch.object(start.signal, "signal"),
+    ):
+        exit_code: int = start.run_servers("http://localhost:5173", None)
+
+    assert exit_code == 0
+    printed: str = "\n".join(str(each.args[0]) for each in say.call_args_list)
+    assert "save a fix and the back end starts again" in printed
+    assert "so the app was stopped" not in printed
+    assert stop.mock_calls == [
+        call(old_backend),
+        call(broken_backend),
+        call(fixed_backend),
+        call(frontend),
+    ]
