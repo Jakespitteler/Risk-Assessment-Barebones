@@ -136,7 +136,7 @@ def test_show_more_carries_on_after_the_last_one_shown(
     client: TestClient,
     repository: SqliteTake5Repository,
 ) -> None:
-    """The first page is the newest 50; `before` its `next` gets the rest (D18, D75)."""
+    """The first page is the newest 50; `before` its `next` gets the rest (D18, D81)."""
     first: SavedTake5 = sample_saved_take5()
     for minute in range(SAVED_LIST_PAGE_SIZE + 2):
         repository.add(

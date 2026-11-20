@@ -653,7 +653,7 @@ export interface components {
         };
         /**
          * Take5ListPage
-         * @description One page of the saved Take 5 list, the newest first (spec D18 and D75).
+         * @description One page of the saved Take 5 list, the newest first (spec D18 and D80).
          *
          *     Attributes:
          *         take5s: Up to 50 lines of the list.

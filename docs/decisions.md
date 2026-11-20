@@ -2,6 +2,21 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-20: The saved list 50 at a time (task 0021)
+
+- Decision: `GET /api/take5s` sends a page of 50, newest first, as `{take5s, next}`. The next page is asked for
+  with `?before=` the last one shown, which the database compares on the same pair the list sorts by (the time
+  saved, then the save order), so a Take 5 saved meanwhile can't shift or repeat one. "Fixed" is found for each
+  page with one look for fixes of that page's IDs. The list screen adds a "Show more" button (spec D80 to D86).
+- Why: Jake took every recommended answer on 2026-11-20. Sending every Take 5 at once is too slow on a weak signal
+  once hundreds are saved (D18). A cursor rather than "skip 50" is the standard way to page a list that grows at
+  the top.
+- How: the API's reply changes from a list to an object, a change to a public interface that Jake approved. The
+  front end uses TanStack Query's `useInfiniteQuery`. `fixed_ids()` in `domain/take5/fix.py` is gone: it needed
+  every Take 5, and the repository's new `fixed_among()` does the job for one page. No new column or index.
+- Not chosen: skip and take; a total count; loading more on scroll; a page size the phone picks.
+- Decided by: human.
+
 ## 2026-11-19: Dark mode, colours named by their job, and axe in the browser tests (task 0024)
 
 - Decision: The app follows the phone's light or dark setting, and a sun or moon button in the top bar overrides

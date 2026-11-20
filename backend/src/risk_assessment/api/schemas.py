@@ -119,7 +119,7 @@ class Take5Summary(BaseModel):
 
 
 class Take5ListPage(BaseModel):
-    """One page of the saved Take 5 list, the newest first (spec D18 and D75).
+    """One page of the saved Take 5 list, the newest first (spec D18 and D80).
 
     Attributes:
         take5s: Up to 50 lines of the list.

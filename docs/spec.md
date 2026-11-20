@@ -572,6 +572,8 @@ The first four screens of the core workflow, saved when the worker submits.
 - Acceptance: a list of saved Take 5s, newest first, shows the date, worker, job and verdict of each, or "Not
   finished" for one whose question is unanswered. A Don't start yet that a newer Take 5 fixes is marked "Fixed",
   whatever the newer one's verdict, as its result screen says (decision D16).
+- Acceptance: the list shows 50 at a time. "Show more" under the list adds the next 50 below them, and is gone
+  once there are no more (decisions D18 and D80 to D86). A Take 5 on any page is marked "Fixed" when its fix is.
 - Acceptance: every date and time is written as "14 Nov 2026, 6:52 pm", in the phone's own time zone (decision
   D17).
 - Acceptance: opening one shows the same result screen the worker saw, with the verdict saved at the time.
@@ -726,6 +728,13 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D77 | How the colours are written (2026-11-19) | Each colour named once by its job in `index.css`, with a light and a dark value | A `dark:` class beside every colour |
 | D78 | No flash of the wrong mode (2026-11-19) | A few lines in `index.html` set the mode before the app draws | Let the app set it once it has loaded |
 | D79 | When to build dark mode (2026-11-19) | Now, while another agent works on 0013, 0029 and 0028 | After 0028 |
+| D80 | How the API sends the saved list (2026-11-20) | A page: `{take5s, next}`, where `next` asks for the page after it | The whole list, or a total count with each page |
+| D81 | How the next page is asked for (2026-11-20) | Older than the last one shown (`?before=<its ID>`), so a Take 5 saved meanwhile can't shift it | Skip the first 50 |
+| D82 | How many to a page (2026-11-20) | 50, fixed in the back end | Chosen by the phone |
+| D83 | "Fixed" on an older page (2026-11-20) | One look in the database for fixes of that page's Take 5s; no new index or column | Reading every Take 5 to find the fixes |
+| D84 | The Show more button (2026-11-20) | An outline button under the list: "Loading…" while it loads, and "Couldn't load more" with Try again if the signal drops | Loading more as the worker scrolls |
+| D85 | A total count, such as "50 of 312" (2026-11-20) | No | A count, at the cost of another query |
+| D86 | Coming back to the list (2026-11-20) | The pages already loaded are kept for a few minutes, and asked for again | Always back to the newest 50 |
 
 ## Open questions
 

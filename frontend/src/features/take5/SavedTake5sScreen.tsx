@@ -75,7 +75,7 @@ function SavedTake5Item({ take5 }: { take5: Take5Summary }) {
 }
 
 /**
- * The button under the list that loads the next 50 (spec D18 and D79). While they load
+ * The button under the list that loads the next 50 (spec D18 and D84). While they load
  * it says so and can't be pressed again; if the signal drops it says so and tries again.
  */
 function ShowMore({
