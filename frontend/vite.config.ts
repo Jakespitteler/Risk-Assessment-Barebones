@@ -5,9 +5,9 @@ import { startLogger } from "./src/dev/startLogger.ts";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  // Keep what was printed before Vite started, such as start.py's installs and warnings.
-  clearScreen: false,
-  // One short line when the back end isn't answering, in place of a stack per request.
+  // One short line when the back end isn't answering, in place of a stack per request. It
+  // also never clears the screen, so what was printed before Vite started stays; with a
+  // custom logger, Vite's own clearScreen setting does nothing.
   customLogger: startLogger(),
   server: {
     port: 5173,

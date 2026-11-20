@@ -270,7 +270,7 @@ def measure(model_name: str, api_key: str, counter: TokenCounter) -> list[str]:
         try:
             question: str = asker.ask(text).text
         except Exception as error:  # Show every failure in the table.
-            question = f"(failed: {type(error).__name__})"
+            question = f"(failed: {type(error.__cause__ or error).__name__})"
         seconds: float = time.perf_counter() - started
         cost: str = cost_in_cents(counter, prices)
         passes: str = "yes" if checked_question(question) else "no"

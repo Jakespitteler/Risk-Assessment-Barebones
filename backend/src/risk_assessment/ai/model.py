@@ -39,6 +39,9 @@ class LanguageModel(Protocol):
             The model's reply, exactly as it came.
 
         Raises:
-            LanguageModelError: When the model answers without usable text.
+            LanguageModelError: When the model answers without usable text, or the call
+                fails or takes too long. An adapter wraps its library's own errors in
+                it, with that error as the cause, so the app logs a failure in one line
+                and keeps stack traces for bugs (task 0028).
         """
         ...

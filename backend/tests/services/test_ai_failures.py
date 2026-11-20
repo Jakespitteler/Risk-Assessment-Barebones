@@ -40,6 +40,14 @@ def test_the_kind_is_named_but_never_the_errors_own_message(
     assert ai_failure_kind(error) == kind
 
 
+def test_a_bugs_cause_is_not_read_as_an_ai_failure() -> None:
+    """Only an AI error names its cause; a bug names itself, and keeps its trace."""
+    bug = ValueError("a bug")
+    bug.__cause__ = KeyError("the cause")
+
+    assert ai_failure_kind(bug) == "ValueError"
+
+
 def test_only_time_outs_and_the_adapters_errors_are_expected() -> None:
     """Those print one line; anything else is a bug, and keeps its trace."""
     assert is_expected_ai_failure(TimeoutError())

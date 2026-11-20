@@ -83,7 +83,7 @@ class ClaudeModel:
                 output_config={"effort": self._effort},
             )
         except anthropic.APIError as error:
-            raise LanguageModelError(f"{self.name} could not be reached.") from error
+            raise LanguageModelError(f"The call to {self.name} failed.") from error
         _logger.info(
             "%s replied using %d input and %d output tokens.",
             self.name,

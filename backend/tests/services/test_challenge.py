@@ -149,7 +149,7 @@ def test_example_40_the_ais_question_is_asked_and_saved_as_the_ais(
 
 @pytest.mark.parametrize(
     "asker",
-    [StandInAsker(failure=RuntimeError("The AI is down.")), None],
+    [StandInAsker(failure=AiReplyError("The AI is down.")), None],
     ids=["fails", "not_set_up"],
 )
 def test_example_41_the_fallback_is_asked_when_the_ai_fails_or_is_not_set_up(

@@ -29,10 +29,12 @@ def ai_failure_kind(error: BaseException) -> str:
         error: What was raised while asking the AI or waiting for its reply.
 
     Returns:
-        "it took too long" for a time-out; otherwise the kind of the provider's own
-        error when there is one, such as "AuthenticationError", or of the error
-        itself, such as "LanguageModelError" or "TypeError".
+        "it took too long" for a time-out; for an `AiReplyError`, the kind of the
+        provider's own error when there is one, such as "AuthenticationError";
+        otherwise the error's own kind, such as "LanguageModelError" or "TypeError".
     """
     if isinstance(error, TimeoutError):
         return "it took too long"
-    return type(error.__cause__ or error).__name__
+    if isinstance(error, AiReplyError) and error.__cause__ is not None:
+        return type(error.__cause__).__name__
+    return type(error).__name__

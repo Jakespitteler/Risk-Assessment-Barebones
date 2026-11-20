@@ -230,20 +230,20 @@ gap or the request couldn't be read. A 404 or a 409 is `ErrorMessage` (`detail`)
 request that got no answer, never one that did; `POST /api/take5s` is safe to retry because the phone makes its
 ID once and sends it every time.
 
-The check also returns `thinking_questions`: each has the answer's dotted `path` and the question's `message`. A
-question stays present when answered, while an unanswered required question also has a field error. `HazardDraft`
-and saved `Hazard` carry `weak_controls_reason`, defaulting to an empty string for older drafts and documents. The
-phone's draft keeps the answer even if a later edit adds a strong control, so editing never discards the worker's
-words, but the rated `Hazard` (and so the saved Take 5) keeps it only while T3 still asks. It never changes the
-verdict. In the same way `HazardDraft.covers` keeps every question the worker linked to the hazard, and the rated
-`Hazard` keeps only those still answered Yes, each once, in the order the worker linked them (spec T5).
-`POST /api/take5s/nudges` returns the nudges (task 0022, moved off the check by task 0027): each has a dotted
-`path`, a `message` and the `question_id` it shows under, and none ever stops a Take 5 being submitted. For now the
-only one is T6, on `hazards.<n>.description`, under the first Yes in card order that the hazard is linked to. Which
-nudge the worker chose to keep is remembered on the phone, not sent, because it is about what is on the screen. The
-hazard check page asks once for the whole page, again only when the draft changes, and never while the worker types
-in a nudge's box (spec D56). It sends the draft without the links of hazards whose words were kept, so those are
-never judged.
+The check also returns `thinking_questions`: each has the answer's dotted `path` and the question's
+`message`. A question stays present when answered, while an unanswered required question also has a field
+error. `HazardDraft` and saved `Hazard` carry `weak_controls_reason`, defaulting to an empty string for older
+drafts and documents. The phone's draft keeps the answer even if a later edit adds a strong control, so editing
+never discards the worker's words, but the rated `Hazard` (and so the saved Take 5) keeps it only while T3 still
+asks. It never changes the verdict. In the same way `HazardDraft.covers` keeps every question the worker linked to the
+hazard, and the rated `Hazard` keeps only those still answered Yes, each once, in the order the worker linked
+them (spec T5). `POST /api/take5s/nudges` returns the nudges (task 0022, moved off the check by task 0027):
+each has a dotted `path`, a `message` and the `question_id` it shows under, and none ever stops a Take 5 being
+submitted. For now the only one is T6, on `hazards.<n>.description`, under the first Yes in card order that the
+hazard is linked to. Which nudge the worker chose to keep is remembered on the phone, not sent, because it is
+about what is on the screen. The hazard check page asks once for the whole page, again only when the draft
+changes, and never while the worker types in a nudge's box (spec D56). It sends the draft without the links of
+hazards whose words were kept, so those are never judged.
 
 **The front end holds no rules and no card.** It gets the questions and the matrix from
 `GET /api/take5/template`, draws whatever it is sent, and shows a score by looking it up in that matrix. It finds
@@ -257,15 +257,16 @@ has a hazard linked to it (T5), and that the after rating of a hazard with no co
 
 **Drafts (task 0019).** The phone keeps one draft in `localStorage` from the worker's first change, which also
 stamps `Take5Draft.started_at` by the phone's clock (with its time zone; a time without one is a 422). Opening the
-app with no page in the URL carries on from the page the draft was left on. The phone never decides whether a draft
-has run out: it checks the draft once as it opens, on a Continue with changed answers (an unchanged one reuses the
-last answer), and on Submit, and acts on an error whose path is `started_at`. The back end compares `started_at`
-with its own clock against the template's `draft_time_limit_minutes` (`domain/take5/time_limit.py`, with the time
-given by the service). The check only trusts the phone's clock to be roughly right, which phones that set their
-time from the network are. Leave and Undo, carrying on, and asking before a fix replaces the draft are about what
-is on the screen, so they live in the front end. Before saying a draft has run out, the phone looks its submission
-ID up with `GET /api/take5s/{id}`, and opens the saved result if the save went through and only its answer was
-lost. The time left is counted down from the check's `runs_out_at`, which the back end works out.
+app with no page in the URL carries on from the page the draft was left on. The phone never decides whether a
+draft has run out: it checks the draft once as it opens, on a Continue with changed answers (an unchanged one reuses the
+last answer), and on Submit, and acts on an error
+whose path is `started_at`. The back end compares `started_at` with its own clock against the template's
+`draft_time_limit_minutes` (`domain/take5/time_limit.py`, with the time given by the service). The check only
+trusts the phone's clock to be roughly right, which phones that set their time from the network are. Leave and
+Undo, carrying on, and asking before a fix replaces the draft are about what is on the screen, so they live in
+the front end. Before saying a draft has run out, the phone looks its submission ID up with
+`GET /api/take5s/{id}`, and opens the saved result if the save went through and only its answer was lost. The
+time left is counted down from the check's `runs_out_at`, which the back end works out.
 
 While developing, Vite serves the front end and passes `/api` calls on to FastAPI. When hosted, FastAPI serves
 the built front-end files itself, so there is still only one program to run.
@@ -329,7 +330,9 @@ api/app.py is the one exception: it also imports storage, ai and settings, to pl
 Anything outside the app sits behind a Protocol, so it can be replaced without touching its callers. There are
 two: the database (`Take5Repository`) and the AI (`ChallengeAsker` and `HazardJudge`, each filled by any
 `LanguageModel`). Adding ChatGPT, Gemini, or a model a company runs itself means adding one file in
-`ai/providers/`, its library, and one line in `api/app.py` to plug it in; no rule and no job changes.
+`ai/providers/`, its library, and one line in `api/app.py` to plug it in; no rule and no job changes. The
+adapter wraps its library's errors in `LanguageModelError`, keeping each as the cause, so a failed call is logged
+in one line and not as a bug (see Logging).
 
 The worker's name is never passed to an adapter (spec C1). The AI's key lives in the server's environment (or
 `backend/.env` on a developer's computer, copied from the template `backend/.env.example`, which names every

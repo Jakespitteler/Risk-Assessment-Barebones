@@ -201,7 +201,7 @@ def measure(model_name: str, api_key: str, counter: TokenCounter) -> list[str]:
         try:
             reply: str = judge.judge(hazard_judgement_text(judged[0], job, location))
         except Exception as error:  # Show every failure in the table.
-            reply = f"(failed: {type(error).__name__})"
+            reply = f"(failed: {type(error.__cause__ or error).__name__})"
         seconds: float = time.perf_counter() - started
         verdict: HazardVerdict | None = hazard_verdict(reply)
         says: str = verdict.value if verdict else f"unusable: {reply.strip()}"

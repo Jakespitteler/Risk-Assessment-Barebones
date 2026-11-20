@@ -150,7 +150,7 @@ def test_example_79_a_dressed_up_reply_still_counts() -> None:
 @pytest.mark.parametrize(
     "judge",
     [
-        StandInJudge(failure=RuntimeError("The AI is down.")),
+        StandInJudge(failure=AiReplyError("The AI is down.")),
         None,
     ],
     ids=["the AI fails", "no AI is set up"],
@@ -358,3 +358,23 @@ def test_a_failed_ai_judgement_logs_one_line_naming_the_kind_without_a_trace(
         "The AI could not judge a hazard (AiReplyError), so the word rule decided."
     )
     assert not warning.exc_info
+
+
+def test_a_bug_while_judging_still_leaves_the_word_rule_but_keeps_its_trace(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A TypeError is a bug in the app, not an AI failure (task 0028).
+
+    The word rule still decides, and the log keeps the trace so it can be fixed.
+    """
+    judge = StandInJudge(failure=TypeError("a bug"))
+
+    with caplog.at_level(logging.WARNING, logger="risk_assessment"):
+        nudges: tuple[Nudge, ...] = _nudger(judge).nudges(
+            _linked_to_vehicles("Get hit by a car"),
+        )
+
+    (warning,) = [record for record in caplog.records if record.levelname == "WARNING"]
+    assert "(TypeError)" in warning.getMessage()
+    assert warning.exc_info
+    assert len(nudges) == 1
