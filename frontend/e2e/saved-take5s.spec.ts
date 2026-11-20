@@ -11,10 +11,16 @@ import {
   pick,
 } from "./helpers";
 
-// Other tests save Take 5s to the same database, so these two are found by their jobs.
+// Other tests save Take 5s to the same database, so these are found by their jobs. The
+// run on a dark phone saves the same tests at the same time, so each run has its shift.
+function jobForThisRun(job: string): string {
+  const shift = test.info().project.name === "dark" ? "night" : "day";
+  return `${job}, ${shift} shift`;
+}
 const GOOD_JOB = "Check the lights on example water cart WC3";
 const STOPPED_JOB = "Swap the screen deck on example crusher CR1";
 const FIXED_JOB = "Grease the example stacker SK2 slew ring";
+const PAGED_JOB = "Inspect the example reclaimer RC1 bucket wheel";
 // Jake's date format (2026-11-15), such as "14 Nov 2026, 6:52 pm".
 const DATE_TIME = /^\d{1,2}\s[A-Z][a-z]{2}\s\d{4},\s\d{1,2}:\d{2}\s[ap]m$/;
 
@@ -48,9 +54,9 @@ async function saveTake5(page: Page, job: string, controlled: boolean) {
 test("a worker finds saved Take 5s newest first and opens one as it was saved", async ({
   page,
 }) => {
-  await saveTake5(page, GOOD_JOB, true);
+  await saveTake5(page, jobForThisRun(GOOD_JOB), true);
   const goodUrl = page.url();
-  await saveTake5(page, STOPPED_JOB, false);
+  await saveTake5(page, jobForThisRun(STOPPED_JOB), false);
   await capture(page, "saved-result-link");
 
   // The first page of a new Take 5 links to the list.
@@ -63,16 +69,18 @@ test("a worker finds saved Take 5s newest first and opens one as it was saved", 
   await expect(heading(page, "Saved Take 5s")).toBeVisible();
   const items = page.getByRole("listitem");
   // Newest first, so the first match is this run's, even on a retry.
-  const good = items.filter({ hasText: GOOD_JOB }).first();
-  const stopped = items.filter({ hasText: STOPPED_JOB }).first();
+  const good = items.filter({ hasText: jobForThisRun(GOOD_JOB) }).first();
+  const stopped = items.filter({ hasText: jobForThisRun(STOPPED_JOB) }).first();
   await expect(good).toContainText("Good to go");
   await expect(good).toContainText("Alex Example");
   await expect(stopped).toContainText("Don’t start yet");
   await expect(stopped.locator("time")).toHaveText(DATE_TIME);
   await expect(stopped).not.toContainText("Fixed");
   const jobs = await items.allTextContents();
-  expect(jobs.findIndex((text) => text.includes(STOPPED_JOB))).toBeLessThan(
-    jobs.findIndex((text) => text.includes(GOOD_JOB)),
+  expect(
+    jobs.findIndex((text) => text.includes(jobForThisRun(STOPPED_JOB))),
+  ).toBeLessThan(
+    jobs.findIndex((text) => text.includes(jobForThisRun(GOOD_JOB))),
   );
   await capture(page, "saved-list");
 
@@ -81,7 +89,9 @@ test("a worker finds saved Take 5s newest first and opens one as it was saved", 
   await expect(heading(page, "Good to go")).toBeVisible();
   expect(page.url()).toBe(goodUrl);
   await expect(page.locator("time")).toHaveText(DATE_TIME);
-  await expect(page.getByText(GOOD_JOB, { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(jobForThisRun(GOOD_JOB), { exact: true }),
+  ).toBeVisible();
 
   // The result links back to the list.
   await page.getByRole("link", { name: "Saved Take 5s", exact: true }).click();
@@ -91,7 +101,7 @@ test("a worker finds saved Take 5s newest first and opens one as it was saved", 
 test("a Don't start yet that has been fixed is marked Fixed in the list", async ({
   page,
 }) => {
-  await saveTake5(page, FIXED_JOB, false);
+  await saveTake5(page, jobForThisRun(FIXED_JOB), false);
   await page
     .getByRole("button", { name: "Fix this in a new Take 5", exact: true })
     .click();
@@ -108,7 +118,9 @@ test("a Don't start yet that has been fixed is marked Fixed in the list", async 
   await page.getByRole("link", { name: "Saved Take 5s", exact: true }).click();
   await expect(heading(page, "Saved Take 5s")).toBeVisible();
   // The fix copies the job, so the two cards are told apart by their verdicts.
-  const sameJob = page.getByRole("listitem").filter({ hasText: FIXED_JOB });
+  const sameJob = page
+    .getByRole("listitem")
+    .filter({ hasText: jobForThisRun(FIXED_JOB) });
   await expect(
     sameJob.filter({ hasText: "Don’t start yet" }).first(),
   ).toContainText("Fixed");
@@ -120,10 +132,50 @@ test("a Don't start yet that has been fixed is marked Fixed in the list", async 
 
 test("the list says when nothing has been saved yet", async ({ page }) => {
   // The shared database already has Take 5s from other tests, so the reply is faked.
-  await page.route("**/api/take5s", (route) => route.fulfill({ json: [] }));
+  await page.route("**/api/take5s", (route) =>
+    route.fulfill({ json: { take5s: [], next: null } }),
+  );
   await page.goto("/take5s");
   await expect(
     page.getByText("No Take 5s have been saved yet.", { exact: true }),
   ).toBeVisible();
   await capture(page, "saved-list-empty");
+});
+
+test("Show more loads the next page under the ones shown, from the real back end", async ({
+  page,
+}) => {
+  await saveTake5(page, jobForThisRun(PAGED_JOB), true);
+  // 50 would take too long to save, and other tests share the database, so the
+  // first page is cut to just this test's Take 5, with it as "next". Show more then
+  // asks the real back end for everything older than this one.
+  await page.route("**/api/take5s", async (route) => {
+    const response = await route.fetch();
+    const firstPage = (await response.json()) as {
+      take5s: { id: string; job: string }[];
+    };
+    const ours = firstPage.take5s.find(
+      (take5) => take5.job === jobForThisRun(PAGED_JOB),
+    );
+    await route.fulfill({
+      json: { take5s: ours ? [ours] : [], next: ours?.id ?? null },
+    });
+  });
+  await page.goto("/take5s");
+  const items = page.getByRole("listitem");
+  await expect(items).toHaveCount(1);
+  await expect(items.first()).toContainText(jobForThisRun(PAGED_JOB));
+  await capture(page, "saved-list-show-more");
+
+  await page.getByRole("button", { name: "Show more", exact: true }).click();
+  await expect(items.nth(1)).toBeVisible();
+  await expect(items.first()).toContainText(jobForThisRun(PAGED_JOB));
+  // The next page starts after this one, so nothing shows twice.
+  const links = await items
+    .getByRole("link")
+    .evaluateAll((anchors) =>
+      anchors.map((anchor) => anchor.getAttribute("href")),
+    );
+  expect(new Set(links).size).toBe(links.length);
+  await capture(page, "saved-list-shown-more");
 });

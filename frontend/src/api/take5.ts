@@ -1,5 +1,6 @@
 import {
   keepPreviousData,
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -23,6 +24,7 @@ export type Hazard = Schemas["Hazard"];
 export type Take5Response = Schemas["Take5Response"];
 export type SavedTake5 = Schemas["SavedTake5"];
 export type Take5Summary = Schemas["Take5Summary"];
+export type Take5ListPage = Schemas["Take5ListPage"];
 export type Verdict = Schemas["Verdict"];
 export type Challenge = Schemas["Challenge"];
 type FormErrors = Schemas["FormErrors"];
@@ -250,13 +252,22 @@ export function useSavedTake5(id: string) {
 }
 
 /**
- * Every saved Take 5, newest first. Asked for again each time the list opens, so a
- * Take 5 saved since then shows.
+ * The saved Take 5s, newest first, a page of 50 at a time (spec D18). Each page after
+ * the first is asked for with the last one already shown, so a Take 5 saved meanwhile
+ * can't shift it. Asked for again each time the list opens, so a Take 5 saved since
+ * then shows, and the pages already loaded are kept for a few minutes (D81).
  */
 export function useSavedTake5List() {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["take5s"],
-    queryFn: () => request<Take5Summary[]>("/api/take5s"),
+    queryFn: ({ pageParam }) =>
+      request<Take5ListPage>(
+        pageParam === null
+          ? "/api/take5s"
+          : `/api/take5s?before=${encodeURIComponent(pageParam)}`,
+      ),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.next,
     retry: retryOnNetworkError,
     networkMode: NETWORK_MODE,
   });

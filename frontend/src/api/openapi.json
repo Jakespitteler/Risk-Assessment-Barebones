@@ -116,30 +116,6 @@
       }
     },
     "/api/take5s": {
-      "get": {
-        "tags": [
-          "take5"
-        ],
-        "summary": "List Take5S",
-        "description": "Return every saved Take 5, newest first, each with its saved verdict.",
-        "operationId": "list_take5s_api_take5s_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Take5Summary"
-                  },
-                  "type": "array",
-                  "title": "Response List Take5S Api Take5S Get"
-                }
-              }
-            }
-          }
-        }
-      },
       "post": {
         "tags": [
           "take5"
@@ -148,14 +124,14 @@
         "description": "Check and save a Take 5 once, and return it, unfinished, with its question.\n\nA draft with gaps raises `InvalidDraftError`, which `api/errors.py` turns into\na 422.",
         "operationId": "submit_api_take5s_post",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SubmissionRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -184,6 +160,55 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorMessage"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "take5"
+        ],
+        "summary": "List Take5S",
+        "description": "Return 50 saved Take 5s, newest first, each with its saved verdict.\n\nArgs:\n    before: The last Take 5 already shown, for the page after it, or None\n        for the newest.",
+        "operationId": "list_take5s_api_take5s_get",
+        "parameters": [
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Take5ListPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -593,6 +618,19 @@
         ],
         "title": "FormErrors",
         "description": "The reply for every 422: what is missing or wrong, field by field.\n\nAttributes:\n    detail: A summary for the top of the screen.\n    errors: Each problem, with the dotted path of the field it belongs beside."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
       },
       "Hazard": {
         "properties": {
@@ -1099,6 +1137,36 @@
         "title": "Take5Draft",
         "description": "A Take 5 that hasn't been saved, as the phone sends it.\n\nAttributes:\n    worker_name: Who is doing the Take 5.\n    job: What the job is.\n    location: Where the job is.\n    answers: The answers picked so far, by question ID. A question with no\n        answer is left out.\n    hazards: The hazards, in the order the worker listed them.\n    fixes: The ID of the saved Take 5 this one fixes, or None for a fresh one.\n    started_at: When the worker started it, by the phone's clock, or None if the\n        phone didn't say. It must include its time zone."
       },
+      "Take5ListPage": {
+        "properties": {
+          "take5s": {
+            "items": {
+              "$ref": "#/components/schemas/Take5Summary"
+            },
+            "type": "array",
+            "title": "Take5S"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next"
+          }
+        },
+        "type": "object",
+        "required": [
+          "take5s",
+          "next"
+        ],
+        "title": "Take5ListPage",
+        "description": "One page of the saved Take 5 list, the newest first (spec D18 and D75).\n\nAttributes:\n    take5s: Up to 50 lines of the list.\n    next: The ID to send as `before` for the next page, or None when there are no\n        more."
+      },
       "Take5Response": {
         "properties": {
           "take5": {
@@ -1356,6 +1424,46 @@
         ],
         "title": "ThinkingQuestion",
         "description": "A question that applies even once its answer has been filled in.\n\nAttributes:\n    path: The answer's dotted field path.\n    message: The question to show beside the answer."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       },
       "Verdict": {
         "properties": {

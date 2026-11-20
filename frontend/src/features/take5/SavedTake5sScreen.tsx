@@ -75,9 +75,36 @@ function SavedTake5Item({ take5 }: { take5: Take5Summary }) {
 }
 
 /**
- * Every saved Take 5, newest first, with its date, worker, job and verdict, and whether a
- * Don't start yet has been fixed. Opening one shows its result screen, exactly as it was
- * saved. The phone's unfinished Take 5, if it keeps one, is at the top in place of
+ * The button under the list that loads the next 50 (spec D18 and D79). While they load
+ * it says so and can't be pressed again; if the signal drops it says so and tries again.
+ */
+function ShowMore({
+  loading,
+  failed,
+  onShowMore,
+}: {
+  loading: boolean;
+  failed: boolean;
+  onShowMore: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      {failed && !loading && (
+        <p role="status" className="font-semibold text-danger">
+          Couldn’t load more. Check your signal and try again.
+        </p>
+      )}
+      <Button variant="secondary" disabled={loading} onClick={onShowMore}>
+        {loading ? "Loading…" : failed ? "Try again" : "Show more"}
+      </Button>
+    </div>
+  );
+}
+
+/**
+ * Every saved Take 5, newest first, 50 at a time, with its date, worker, job and
+ * verdict, and whether a Don't start yet has been fixed. Opening one shows its result
+ * screen, exactly as it was saved. The phone's unfinished Take 5, if it keeps one, is at the top in place of
  * "Start a new Take 5", since there is only ever one. A draft just thrown away can be
  * put back with Undo, until another one is started.
  */
@@ -91,6 +118,7 @@ export function SavedTake5sScreen({
   onDismissUndo?: () => void;
 }) {
   const list = useSavedTake5List();
+  const take5s = list.data?.pages.flatMap((page) => page.take5s) ?? [];
   const [kept, setKept] = useState(keptDraft);
   const [ranOut, setRanOut] = useState<string | null>(null);
   const [savedAlready, setSavedAlready] = useState<string | null>(null);
@@ -188,16 +216,23 @@ export function SavedTake5sScreen({
                 Start a new Take 5
               </a>
             )}
-            {list.data.length === 0 ? (
+            {take5s.length === 0 ? (
               <Card>
                 <p>No Take 5s have been saved yet.</p>
               </Card>
             ) : (
               <ul className="flex flex-col gap-3">
-                {list.data.map((take5) => (
+                {take5s.map((take5) => (
                   <SavedTake5Item key={take5.id} take5={take5} />
                 ))}
               </ul>
+            )}
+            {list.hasNextPage && (
+              <ShowMore
+                loading={list.isFetchingNextPage}
+                failed={list.isFetchNextPageError}
+                onShowMore={() => void list.fetchNextPage()}
+              />
             )}
           </>
         )}

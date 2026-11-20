@@ -76,7 +76,11 @@ export interface paths {
         };
         /**
          * List Take5S
-         * @description Return every saved Take 5, newest first, each with its saved verdict.
+         * @description Return 50 saved Take 5s, newest first, each with its saved verdict.
+         *
+         *     Args:
+         *         before: The last Take 5 already shown, for the page after it, or None
+         *             for the newest.
          */
         get: operations["list_take5s_api_take5s_get"];
         put?: never;
@@ -299,6 +303,11 @@ export interface components {
             detail: string;
             /** Errors */
             errors: components["schemas"]["FieldError"][];
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
         };
         /**
          * Hazard
@@ -643,6 +652,21 @@ export interface components {
             started_at?: string | null;
         };
         /**
+         * Take5ListPage
+         * @description One page of the saved Take 5 list, the newest first (spec D18 and D75).
+         *
+         *     Attributes:
+         *         take5s: Up to 50 lines of the list.
+         *         next: The ID to send as `before` for the next page, or None when there are no
+         *             more.
+         */
+        Take5ListPage: {
+            /** Take5S */
+            take5s: components["schemas"]["Take5Summary"][];
+            /** Next */
+            next: string | null;
+        };
+        /**
          * Take5Response
          * @description A saved Take 5, with the overall rating the back end worked out for it.
          *
@@ -800,6 +824,19 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
+        };
         /**
          * Verdict
          * @description Whether the job can start, and why not.
@@ -912,7 +949,9 @@ export interface operations {
     };
     list_take5s_api_take5s_get: {
         parameters: {
-            query?: never;
+            query?: {
+                before?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -925,7 +964,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Take5Summary"][];
+                    "application/json": components["schemas"]["Take5ListPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

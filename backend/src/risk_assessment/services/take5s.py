@@ -37,7 +37,7 @@ from risk_assessment.services.ports import ChallengeAsker, HazardJudge, Take5Rep
 
 _logger: logging.Logger = logging.getLogger(__name__)
 
-# How many saved Take 5s the list shows at a time (spec D18 and D75).
+# How many saved Take 5s the list shows at a time (spec D18 and D77).
 SAVED_LIST_PAGE_SIZE: int = 50
 
 # The fields that differ between two saves of the same answers.

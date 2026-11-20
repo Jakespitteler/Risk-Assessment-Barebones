@@ -1,10 +1,9 @@
-"""Which saved Take 5 a new one may fix (spec F3), and which have been fixed (spec F5).
+"""Which saved Take 5 a new one may fix (spec F3), and whether its result offers a fix.
 
 Only a Take 5 that said Don't start yet can be fixed. The fix is a new Take 5 that
 points back at it, so the first one is never changed.
 """
 
-from collections.abc import Iterable
 from uuid import UUID
 
 from risk_assessment.domain.take5.draft import FieldError
@@ -49,21 +48,3 @@ def offers_a_fix(saved: SavedTake5, fixed_by: UUID | None) -> bool:
         True when the result should offer a fix.
     """
     return fixes_error(saved) is None and fixed_by is None
-
-
-def fixed_ids(take5s: Iterable[SavedTake5]) -> frozenset[UUID]:
-    """Find the IDs of the Take 5s that these Take 5s fix.
-
-    A Take 5 counts as fixed whatever the fix's own verdict, as its result screen
-    says, and even while the fix's question is unanswered, so a second fix can't be
-    started beside it. A fix is always saved after the Take 5 it fixes, so given
-    every saved Take 5 this finds every fixed one. Given only some, it can miss a
-    fix that isn't among them.
-
-    Args:
-        take5s: Saved Take 5s.
-
-    Returns:
-        The IDs that one of them fixes.
-    """
-    return frozenset(take5.fixes for take5 in take5s if take5.fixes is not None)
