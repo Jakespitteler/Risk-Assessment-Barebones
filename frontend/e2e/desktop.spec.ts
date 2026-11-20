@@ -71,3 +71,11 @@ test("on a desktop, a whole Take 5 and the saved list fit the screen and react t
   await capture(page, "desktop-saved-list");
   await expectHoverAndFocus(page);
 });
+
+test("the 5 at the top goes back to the start page", async ({ page }) => {
+  await page.goto("/take5s");
+  await expect(heading(page, "Saved Take 5s")).toBeVisible();
+  await page.getByRole("link", { name: "Take 5 home", exact: true }).click();
+  await expect(page).toHaveURL("/");
+  await expect(page.getByLabel("Your name", { exact: true })).toBeVisible();
+});
