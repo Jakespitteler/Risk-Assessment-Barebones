@@ -17,6 +17,28 @@ no sign-in. It should be an efficient workflow for a pile of cards.
 
 Questions for Jake, each with Claude's recommendation. Answered when the task starts.
 
+**Jake's answers, 2026-11-20** (asked as eight combined questions when the task was claimed):
+
+- 1, 2: one page takes many photos in a row (camera on a phone, files on a desktop); the AI reads them all; then
+  the person checks one card at a time, the photo beside the filled-in form, anything unreadable left empty and
+  marked; Save, next card; then the batch is ranked worst first with task 0032's ranking.
+- 3, 7: a scanned card is saved exactly as written, never rewritten to pass a rule, finished at once with its
+  verdict and no challenge question. The gaps count against it in the ranking. The spec gets these exceptions
+  for scans only.
+- 4: **not approved**: the photos are not kept; each is thrown away once its card is saved or dropped.
+- 5, 11: the provider's main model reads photos, with its own setting. The AI reads the worker's name off the card
+  to fill it in; the name is never sent to any other AI call, and the ranking never gets it.
+- 6: the batch waits only in the page that took the photos, in memory; nothing is kept on the server until a card
+  is checked and saved. No change to D20.
+- 8: a separate field for the card's date is **not approved**. The date and time written on the card, as read and
+  checked, goes in the existing `started_at`, so "worst of today" (0032) goes by it; the scan time is `created_at`.
+- 9: **approved**: a "from paper" field on a saved Take 5 (a data model change).
+- 10: **approved**: add `python-multipart`, so FastAPI can take photo uploads.
+- The AI interface gets one new method for a photo, which the Claude adapter fills; other jobs don't change.
+
+Built as three stacked pull requests, one job each: (1) reading a photo into a filled-in card, saving nothing;
+(2) saving a scanned card and ranking a batch; (3) the scan page.
+
 1. **How are photos taken?** Recommended: one page that takes many photos in a row (the phone's camera, or files
    chosen on a desktop), then reads them all.
 2. **What does the person check?** Recommended: one card at a time, the photo beside the filled-in Take 5 on the
