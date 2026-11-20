@@ -50,6 +50,14 @@ end meets should reach that one terminal as a short line that says which half, w
 The questions for Jake, each with Claude's recommended pick. Answer them in chat; Claude writes the answers into
 this file and `docs/decisions.md`.
 
+**Jake's answers, 2026-11-19** (asked as four combined questions after task 0029 removed the output pipe):
+1 (a) and 2 (b): Vite's own `server.forwardConsole`, passing on crashes, `console.error` and `console.warn`. 3
+and 6: no "back end" or "front end" label on each line, since that would bring back the pipe 0029 removed; the
+back end's lines get one plain format through `backend/dev_logging.json`, and Vite's already start with
+`[vite]`. 4 (b): a stack trace only for a bug; a handled AI failure prints one line naming the kind. 5: only
+failed requests print, every 4xx and 5xx, through a small log filter. 7 (a): no log file. The acceptance
+criteria below change to match when the task is claimed.
+
 1. **How do front-end errors reach the terminal?** Options:
    - (a) Vite's own `server.forwardConsole: true`, one line in `frontend/vite.config.ts`. No new package. It
      works only while developing, not in a built app. Setting it also means Jake and agents see the same thing.

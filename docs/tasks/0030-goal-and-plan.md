@@ -36,7 +36,7 @@ The goal, as agreed:
 - [x] The spec's "Out of scope" no longer rules out scanning paper cards or AI ranking, and still rules out
   sign-in, supervisors and crews. The three-minute target is gone from "Where and when it is used" and from
   Open questions, since Jake chose no fixed number.
-- [x] The spec says the app is used on a phone or a desktop; the desktop layout itself is task 0031's.
+- [x] The spec says the app is used on a phone or a desktop; task 0031 adds a desktop test.
 - [x] `AGENTS.md` says to judge every task against the goal and keep the app as simple as possible.
 - [x] `docs/decisions.md` records Jake's answers of 2026-11-19 that shaped the goal.
 - [x] Task files exist for 0031 (a desktop test), 0032 (rank Take 5s worst first) and 0033 (photograph paper

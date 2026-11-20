@@ -23,14 +23,17 @@ Questions for Jake, each with Claude's recommendation. Answered when the task st
    rules first (rating, verdict, weak controls, nudged hazards, short challenge answer), and the AI reads the top
    ones to order them and write the one line. (b) The AI reads them all and orders them. Recommended: (a). It
    stays useful without an AI (the fixed score still orders them), costs less, and the fixed part can be tested
-   exactly. The AI adds what rules can't see, such as copied or generic answers. If Jake picks (a), decision D66's
-   "one AI ranking" is reworded to "one ranking, with the AI ordering the top ones".
+   exactly. The AI adds what rules can't see, such as copied or generic answers. If Jake picks (a), a new spec
+   decision replaces D66's "one AI ranking" with "one ranking, with the AI ordering the top ones", as D30 replaced
+   D15, and the decisions log and task 0030's quote of D66 say so.
 2. **How many are shown?** Recommended: the worst 5, with "Show all" for the rest in order.
 3. **Where does it live?** Recommended: a "Worst of today" link on the saved list, opening a page with the ranked
    Take 5s, each with its line and a link to the saved Take 5.
-4. **What is "today"?** Recommended: Take 5s saved since midnight where the phone is, finished or not. Dates are
-   already shown in the phone's time zone (D17); midnight on a server in another zone would make "today" start
-   at the wrong hour.
+4. **What is "today"?** Recommended: Take 5s done since midnight where the phone is, finished or not, by when
+   the Take 5 was done rather than when it was saved, so that a pile of old paper cards scanned today isn't
+   counted as today's (task 0033). Dates are already shown in the phone's time zone; midnight on a server in
+   another zone would make "today" start at the wrong hour. The page sends its own midnight with the zone, as
+   `started_at` already carries one.
 5. **Is the ranking saved?** Recommended: no. It is worked out when the page opens, and remembered only until the
    server restarts, as task 0027's verdicts are. Saving it would change the data model.
 6. **What does the AI get?** Recommended: the same as the challenge question (spec C1): the job, where, the
@@ -49,7 +52,8 @@ These follow the recommendations; they change with Jake's answers.
 - [ ] The ranked page shows each worker's name beside their Take 5 (decided by Jake, 2026-11-19).
 - [ ] `docs/spec.md` gets the ranking's rules, worked examples and a feature section, and its "Users and roles"
   says anyone can rank. `docs/architecture.md` gets the new job and route, and its section on the AI's risks
-  covers what the ranking sends and how its text is checked.
+  covers what the ranking sends and how its text is checked (the paragraph "What the AI is given, and keeping it
+  trustworthy").
 - [ ] All checks pass.
 
 ## Out of scope

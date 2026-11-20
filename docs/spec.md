@@ -52,7 +52,7 @@ phone remembers it.
 Where and when it is used (confirmed by Jake for task 0004):
 
 - On the worker's own phone, standing at the job, just before starting. It also works on a desktop (decision
-  D65; the layout is task 0031).
+  D65; task 0031 adds a desktop test).
 - Often with gloves on, in bright sun, with a weak signal. So: big tap targets, high contrast, and screens that
   load fast.
 - It has to be quick enough that it is not resented. There is no fixed time target; it is judged by feel in demos

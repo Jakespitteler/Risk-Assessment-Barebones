@@ -36,11 +36,13 @@ Questions for Jake, each with Claude's recommendation. Answered when the task st
 7. **Does a scanned card get a challenge question?** A saved Take 5 has no verdict until its challenge question
    is answered (C6), and the saved list shows it as "Not finished". Recommended: no question. A scanned card is
    finished as it is saved, with its verdict, since nobody is there to answer; the spec gets that exception.
-8. **Which date does a scanned card get?** Recommended: the date and time written on the card, as read and
-   checked, with the scan time kept too. So "worst of today" (0032) doesn't count a pile of old cards as today's,
-   and the draft time limit (K2) doesn't apply to a scan.
-9. **The "from paper" mark.** It is a new field on a saved Take 5, so a data model change, which needs Jake's
-   approval like the photos in question 4. Recommended: approve it; without it a scanned card can't be told apart.
+8. **Which date does a scanned card get?** Recommended: the date and time written on the card, as read and checked,
+   with the scan time kept too (a second time field, so a data model change, like questions 4 and 9). So "worst of
+   today" (0032) doesn't count a pile of old cards as today's, and the draft time limit (K2) doesn't apply to a
+   scan.
+9. **How is the "from paper" mark stored?** D66 already says scanned cards are marked "from paper"; storing it
+   is a new field on a saved Take 5, so a data model change, which needs Jake's approval like the photos in
+   question 4. Recommended: approve it.
 10. **Uploading photos needs a new package.** FastAPI reads uploaded files with `python-multipart`, which isn't a
     dependency yet. Recommended: approve adding it. The alternative is sending each photo as text inside JSON,
     which is a third bigger and needs no package.
@@ -58,9 +60,9 @@ These follow the recommendations; they change with Jake's answers.
 - [ ] Tests cover reading (with a stand-in for the AI), the check, saving and the ranking of a batch.
 - [ ] Its screens are designed for a desktop as well as a phone; the check puts the photo beside the card.
 - [ ] `docs/spec.md` gets the scanning rules, worked examples, a feature section, the exceptions to F2, C6 and
-  K2 that the answers need, and anyone can scan in "Users and roles". `docs/architecture.md` gets the new job
-  and data, and its section on the AI's risks covers photos as a new way in for instructions to the AI, and the
-  AI's text from a scan being sent on to the ranking.
+K2 that the answers need, and anyone can scan in "Users and roles". `docs/architecture.md` gets the new job and
+data, and its paragraph "What the AI is given, and keeping it trustworthy" covers photos as a new way in for
+instructions to the AI, and the AI's text from a scan being sent on to the ranking.
 - [ ] All checks pass.
 
 ## Out of scope
