@@ -150,7 +150,7 @@ export interface paths {
         };
         /**
          * Ranked Take5S
-         * @description Rank the Take 5s started since a moment, worst first (spec W1 to W7).
+         * @description Rank the Take 5s started since a moment, and find the best (W1 to W9).
          *
          *     Args:
          *         since: The moment, with its time zone, such as midnight where the phone
@@ -192,6 +192,46 @@ export interface components {
          * @enum {string}
          */
         AskedBy: "ai" | "fallback";
+        /**
+         * BestTake5Line
+         * @description The best careful Take 5 of the set, with what was good about it (spec W8).
+         *
+         *     Attributes:
+         *         id: The Take 5's ID, to open it.
+         *         created_at: When it was saved.
+         *         worker_name: Who did it. Never sent to the AI.
+         *         job: What the job is.
+         *         can_start: The verdict it was saved with: True for Good to go, False for
+         *             Don't start yet.
+         *         line: One line saying what was good about it.
+         *         picked_by_ai: True when the AI picked it and wrote the line, False when the
+         *             fixed rules did.
+         *         minutes_taken: How many minutes it took, or None when that can't be told.
+         */
+        BestTake5Line: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Worker Name */
+            worker_name: string;
+            /** Job */
+            job: string;
+            /** Can Start */
+            can_start: boolean;
+            /** Line */
+            line: string;
+            /** Picked By Ai */
+            picked_by_ai: boolean;
+            /** Minutes Taken */
+            minutes_taken: number | null;
+        };
         /**
          * Challenge
          * @description The question a Take 5 was asked, who asked it, and the worker's answer.
@@ -499,14 +539,19 @@ export interface components {
         };
         /**
          * RankedTake5s
-         * @description Every Take 5 started since a moment, worst first (spec W7 and D92).
+         * @description Every Take 5 started since a moment worst first, and the best (W7 to W9, D92).
          *
          *     Attributes:
          *         take5s: The ranking. The page shows the first 5, then the rest on request.
+         *         best: The best careful one, or None when none is careful.
+         *         typical_minutes: The median minutes a finished one took, or None.
          */
         RankedTake5s: {
             /** Take5S */
             take5s: components["schemas"]["RankedTake5Line"][];
+            best: components["schemas"]["BestTake5Line"] | null;
+            /** Typical Minutes */
+            typical_minutes: number | null;
         };
         /**
          * RatingChoice

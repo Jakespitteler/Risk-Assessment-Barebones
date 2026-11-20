@@ -1,7 +1,7 @@
 ---
 id: 0036
 title: Find the best Take 5 of the day as well as the worst
-status: in-progress
+status: review
 owner: claude
 branch: claude/0036-best-of-today
 ---
@@ -35,7 +35,17 @@ Questions for Jake, each with Claude's recommendation. Put to him on 2026-11-20 
 
 ## Acceptance criteria
 
-Written once Jake has answered the questions above.
+Jake took every recommendation on 2026-11-20, except: a rushed Take 5 can still be the best (1), the page gets a
+more fitting name (3), and telling the worker is noted for later with every other good idea (6). Spec D98 to
+D104, W8 and W9, examples 101 to 108.
+
+- [x] The rules shortlist up to 5 careful Take 5s, and an AI picks the best with one line, never seeing names;
+  the rules decide when it fails or isn't set up.
+- [x] A "Best of today" card on the renamed "Best and worst of today" page shows the best, what was good, and
+  how long it took beside today's typical time, or says none was careful.
+- [x] Tests cover the shortlist, the AI's pick and its checks, the typical time, and the card.
+- [x] `docs/ideas.md` holds every good idea so far, including the original Risk-Assessment app's.
+- [x] All checks pass.
 
 ## Out of scope
 
@@ -45,3 +55,12 @@ Written once Jake has answered the questions above.
 
 Added by Claude on 2026-11-20 from Jake's list of things to investigate. Builds on `domain/take5/ranking.py` and
 `services/ranking.py` from task 0032.
+
+Built by Claude on 2026-11-20. Assumptions:
+
+- "Careful" means finished, with no gap from W2 to W4. Shortlist order: riskiest job, then longest time, then
+  newest. With one careful Take 5 it is the best without asking the AI.
+- The AI's two jobs (order the worst, pick the best) run side by side within the same 20 seconds.
+- The page's name is "Best and worst of today", at `/best-and-worst`; the route `GET /api/ranked-take5s` keeps its
+  name and gains `best` and `typical_minutes`.
+- A time under a minute reads "under a minute", not "0 minutes".

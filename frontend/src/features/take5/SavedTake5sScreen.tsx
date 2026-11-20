@@ -13,7 +13,7 @@ import { forgetKeptDraft, keptDraft } from "./useTake5Draft";
 
 const HEADING = "text-3xl font-extrabold focus:outline-none";
 // The way to today's ranking (spec W7, decision D93), quieter than starting a Take 5.
-const WORST_LINK =
+const TODAY_LINK =
   "flex min-h-14 items-center justify-center rounded-xl border-2 border-ink bg-surface px-5 text-lg font-bold text-ink hover:bg-surface-hover focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus";
 const NEW_TAKE5_LINK =
   "flex min-h-14 items-center justify-center rounded-xl bg-action px-5 text-lg font-bold text-on-action hover:bg-action-hover focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus";
@@ -199,8 +199,8 @@ export function SavedTake5sScreen({
               </a>
             )}
             {take5s.length > 0 && (
-              <a className={WORST_LINK} href="/worst-of-today">
-                Worst of today
+              <a className={TODAY_LINK} href="/best-and-worst">
+                Best and worst of today
               </a>
             )}
             {take5s.length === 0 ? (

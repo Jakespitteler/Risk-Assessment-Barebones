@@ -149,7 +149,7 @@ class HazardJudge(Protocol):
 
 
 class Take5Ranker(Protocol):
-    """Anything that can rank the worst Take 5s: an AI, or a stand-in in tests."""
+    """Anything that ranks the worst Take 5s and picks the best: an AI or a stand-in."""
 
     def rank(self, take5s_text: str) -> str:
         """Order the worst Take 5s and write one line on each (spec W6).
@@ -160,5 +160,17 @@ class Take5Ranker(Protocol):
 
         Returns:
             The reply, unchecked; `checked_ai_order()` decides whether it is used.
+        """
+        ...
+
+    def pick_best(self, take5s_text: str) -> str:
+        """Pick the best of the careful Take 5s and say what was good (spec W8).
+
+        Args:
+            take5s_text: The Take 5s as `best_text()` writes them out. It never holds
+                a worker's name.
+
+        Returns:
+            The reply, unchecked; `checked_ai_pick()` decides whether it is used.
         """
         ...

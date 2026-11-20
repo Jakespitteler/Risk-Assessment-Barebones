@@ -349,7 +349,7 @@ keep a draft long enough for a radio call and no longer (decisions D19 to D29).
 
 Any set of Take 5s can be ranked worst first, so the weakest are looked at first. "Worst" weighs how risky the job
 is against how little thought the answers show. Today it ranks a day's Take 5s; task 0033 reuses it for a scanned
-batch (decisions D91 to D96).
+batch (decisions D91 to D96). The best of the set is found too, as a good example to point at (D98 to D104).
 
 - **W1 The score.** Each Take 5 scores its highest *before* controls score, plus 5 for each thought gap that W2
   to W5 find. The highest score is worst; an equal score puts the one saved last first. With no AI, each gets one
@@ -372,6 +372,16 @@ batch (decisions D91 to D96).
 - **W7 Today.** "Today" is from midnight where the phone is: a Take 5 counts from when it was started, or when it
   was saved if it has no start time, finished or not. The ranking isn't saved; it is worked out when the page
   opens, and remembered until the server restarts or a Take 5 is added or finished.
+- **W8 The best.** The best is chosen from the *careful* Take 5s: finished, with no gap from W2 to W4. A rushed
+  one (W5) can still be the best (D98). The rules shortlist up to 5 of them: the riskiest job first, then the one
+  that took longest, then the newest. When an AI is set up and there are two or more, it picks one and writes a
+  line on what was good, given what W6 gives it and never a name. Its reply is JSON with the number and the line,
+  checked as W6 checks a line, with the same name check. Anything else, an error or no answer in the same 20
+  seconds, and the shortlist's first wins with the rules' line: "Highest risk 18 Extreme, with specific hazards,
+  controls that lower each risk and a full answer to the question." With none careful there is no best. It is
+  worked out and remembered with the ranking (W7).
+- **W9 The typical time.** The typical time is the median of the minutes each finished Take 5 took, rounded to
+  whole minutes. One with no start time, or one started after it was saved, has no time and isn't counted.
 
 ### Worked examples
 
@@ -518,7 +528,7 @@ Drafts (K2, K3). On the booklet's time limit of 2 hours, unless the row says oth
 | 63 | Started at 8:12 pm, submitted at 8:16 pm | Saved with the start time 8:12 pm | K3 |
 | 64 | Saved at 8:16 pm, then the same submission is sent again at 1:12 am | The Take 5 saved at 8:16 pm comes back | K2: a retry of a Take 5 saved in time |
 
-Ranking (W1 to W7). Unless the row says otherwise, each Take 5 has one hazard, "Wheel rolls off the hub and
+Ranking and the best (W1 to W9). Unless the row says otherwise, each Take 5 has one hazard, "Wheel rolls off the hub and
 crushes a foot", rated Possible / Minor (8) then Unlikely / Minor (5) with a barricade, the answer "Wheels chocked
 both sides and nuts torqued", and was saved 10 minutes after it was started.
 
@@ -537,6 +547,14 @@ both sides and nuts torqued", and was saved 10 minutes after it was started.
 | 98 | The AI's reply gives number 1 twice | Thrown away; W1's order | W6 |
 | 99 | The AI's line for the worst says "Sam Example skipped the question." | That Take 5 gets its rule line instead | W6: names never come back |
 | 100 | In Perth: one started at 11:53 pm and saved at 12:03 am; one with no start time saved at 12:01 am; one saved at 11:59 pm | Only the one saved at 12:01 am | W7 |
+| 101 | A as above (8). B: before Possible / Major (18) | B is the best: "Highest risk 18 Extreme, with specific hazards, controls that lower each risk and a full answer to the question." | W8: riskiest first |
+| 102 | Saved 1 minute after it was started, and nothing else | It is the best | W8: rushed can still be best (D98) |
+| 103 | A: never answered. B: the answer "Wheels chocked both sides" | No best | W8: neither is careful |
+| 104 | A took 3 minutes; B took 10 | B is the best | W8: same risk, longest first |
+| 105 | Two careful; the AI's reply is {"number": 2, "why": "Names the exact chock points."} | The second is the best, with that line, picked by the AI | W8 |
+| 106 | Two careful; the AI picks number 3 | Thrown away; the shortlist's first wins | W8 |
+| 107 | Two careful; the AI's line is "Sam took real care." | Its pick stands with the rules' line | W8: names never come back |
+| 108 | Finished ones took 2, 5 and 9 minutes; one unfinished took 30 | Typical 5 minutes | W9 |
 
 ## Features
 
@@ -663,13 +681,17 @@ sent to the server (decisions D69 to D79).
   on every screen the whole-app tests visit, checked by axe.
 - Acceptance: a phone set to dark never shows a white page while the app starts.
 
-### F8: Worst of today
+### F8: Best and worst of today
 
-Today's Take 5s, worst first, each with one line saying why (W1 to W7). For whoever looks through a day's Take 5s,
-on a phone or a desktop.
+Today's Take 5s, worst first, each with one line saying why (W1 to W7), and the best one (W8). For whoever looks
+through a day's Take 5s, on a phone or a desktop.
 
-- Acceptance: the saved list has "Worst of today" once anything is saved. It opens the ranking, numbered from 1,
-  each with its verdict, job, line, worker's name and time, and a link to the saved Take 5.
+- Acceptance: the saved list has "Best and worst of today" once anything is saved. It opens the ranking, numbered
+  from 1, each with its verdict, job, line, worker's name and time, and a link to the saved Take 5.
+- Acceptance: a "Best of today" card above the ranking shows the best with its verdict, job, line, worker's name
+  and how long it took beside today's typical time (W9), such as "Took 9 minutes. Today's typical Take 5 took 3
+  minutes." ("under a minute" for 0), and a link to it. With none careful it says "No Take 5 today was free of
+  signs of little thought."
 - Acceptance: the worst 5 show first, then "Show all" shows the rest in order (D92).
 - Acceptance: it says when an AI ordered them, and that names aren't sent.
 - Acceptance: with nothing started today it says so.
@@ -805,11 +827,18 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D90 | The "5" logo (2026-11-20) | A link to the start page, named "Take 5 home", which carries on the kept draft rather than throwing it away | Plain picture; a link that asks to start afresh |
 | D91 | Who orders a ranking (2026-11-20) | Fixed rules score every Take 5 (W1 to W5), then an AI reorders the worst 10 and writes their lines (W6). Replaces D66's "one AI ranking"; the rest of D66 stands | The AI orders them all |
 | D92 | How many are shown (2026-11-20) | The worst 5, then "Show all" | All of them; the worst 10 |
-| D93 | Where the ranking lives (2026-11-20) | "Worst of today" on the saved list | Its own button on the first screen |
+| D93 | Where the ranking lives (2026-11-20) | "Worst of today" on the saved list, renamed "Best and worst of today" by D100 | Its own button on the first screen |
 | D94 | What "today" is (2026-11-20) | Since midnight where the phone is, by when a Take 5 was started, finished or not (W7) | Midnight on the server; finished ones only |
 | D95 | Is a ranking saved (2026-11-20) | No: worked out when the page opens, remembered until the server restarts | Saved, which changes the data model |
 | D96 | What the AI is given (2026-11-20) | What the challenge question gets (C1), plus the question, answer and minutes taken; never the name | Everything saved, name included |
 | D97 | The focus outline on the undo bar (2026-11-20) | The bar's own text colour (white on the dark bar in light mode, near-black on the light bar in dark mode), so it stands out | The blue used elsewhere, at about 2.3 to 1 on the bar |
+| D98 | What makes the best (2026-11-20) | The rules shortlist up to 5 finished Take 5s with no gap from W2 to W4, and an AI picks one and writes why (W8). A rushed one can still be best: good answers are good however quick (Jake) | The rules alone; rushed ones left out |
+| D99 | How many are best (2026-11-20) | One | The best 3 |
+| D100 | Where the best shows (2026-11-20) | A card above the ranking, on the same page, renamed "Best and worst of today" | Its own page |
+| D101 | Showing how long it takes (2026-11-20) | The time the best took beside the day's typical time, the median (W9) | Its time alone |
+| D102 | When none is careful (2026-11-20) | The card says so | No card |
+| D103 | Telling the worker (2026-11-20) | Not in the proof of concept; noted in `docs/ideas.md` | A message to the worker |
+| D104 | Is the best saved (2026-11-20) | No: worked out and remembered with the ranking (D95) | Saved |
 
 ## Open questions
 

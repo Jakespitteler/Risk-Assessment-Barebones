@@ -185,13 +185,45 @@ class RankedTake5Line(BaseModel):
     ranked_by_ai: bool
 
 
+class BestTake5Line(BaseModel):
+    """The best careful Take 5 of the set, with what was good about it (spec W8).
+
+    Attributes:
+        id: The Take 5's ID, to open it.
+        created_at: When it was saved.
+        worker_name: Who did it. Never sent to the AI.
+        job: What the job is.
+        can_start: The verdict it was saved with: True for Good to go, False for
+            Don't start yet.
+        line: One line saying what was good about it.
+        picked_by_ai: True when the AI picked it and wrote the line, False when the
+            fixed rules did.
+        minutes_taken: How many minutes it took, or None when that can't be told.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    id: UUID
+    created_at: datetime
+    worker_name: str
+    job: str
+    can_start: bool
+    line: str
+    picked_by_ai: bool
+    minutes_taken: int | None
+
+
 class RankedTake5s(BaseModel):
-    """Every Take 5 started since a moment, worst first (spec W7 and D92).
+    """Every Take 5 started since a moment worst first, and the best (W7 to W9, D92).
 
     Attributes:
         take5s: The ranking. The page shows the first 5, then the rest on request.
+        best: The best careful one, or None when none is careful.
+        typical_minutes: The median minutes a finished one took, or None.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     take5s: tuple[RankedTake5Line, ...]
+    best: BestTake5Line | None
+    typical_minutes: int | None

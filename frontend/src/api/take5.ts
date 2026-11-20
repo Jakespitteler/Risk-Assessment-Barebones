@@ -27,6 +27,7 @@ export type Take5Summary = Schemas["Take5Summary"];
 export type Take5ListPage = Schemas["Take5ListPage"];
 export type RankedTake5s = Schemas["RankedTake5s"];
 export type RankedTake5Line = Schemas["RankedTake5Line"];
+export type BestTake5Line = Schemas["BestTake5Line"];
 export type Verdict = Schemas["Verdict"];
 export type Challenge = Schemas["Challenge"];
 type FormErrors = Schemas["FormErrors"];
@@ -279,7 +280,7 @@ export function useSavedTake5List() {
 }
 
 /**
- * Every Take 5 started since a moment, worst first, each with why (spec W1 to W7). The
+ * Every Take 5 started since a moment, worst first, each with why, and the best (W1 to W9). The
  * moment is sent with its time zone, so "today" starts at midnight where the phone is.
  */
 export function useRankedTake5s(since: string) {

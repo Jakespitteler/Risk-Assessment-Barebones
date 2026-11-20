@@ -7,13 +7,20 @@ from typing import Any
 from risk_assessment.domain.risk import rate
 from risk_assessment.domain.take5.challenge import AskedBy, Challenge
 from risk_assessment.domain.take5.ranking import (
+    BestTake5,
     RankedBy,
     RankedTake5,
+    best_by_rules,
+    best_shortlist,
+    best_text,
     checked_ai_order,
+    checked_ai_pick,
     rank_by_rules,
     ranking_text,
     rule_line,
+    typical_minutes,
     with_ai_order,
+    with_ai_pick,
     worst_score,
 )
 from risk_assessment.domain.take5.saved import SavedTake5
@@ -357,3 +364,127 @@ def test_an_ai_reply_in_a_json_fence_is_read() -> None:
     )
 
     assert checked_ai_order(reply, 2) == ((2, "A."), (1, "B."))
+
+
+BEST_LINE_18: str = (
+    "Highest risk 18 Extreme, with specific hazards, controls that lower each risk "
+    "and a full answer to the question."
+)
+
+
+def test_example_101_the_riskiest_careful_take5_is_the_best() -> None:
+    """W8: among careful Take 5s, the riskiest job comes first."""
+    moderate: SavedTake5 = ranked_take5()
+    extreme: SavedTake5 = ranked_take5(before=("Possible", "Major"))
+
+    best: BestTake5 | None = best_by_rules((moderate, extreme))
+
+    assert best is not None
+    assert best.take5.id == extreme.id
+    assert best.line == BEST_LINE_18
+    assert best.picked_by is RankedBy.RULES
+
+
+def test_example_102_a_rushed_but_careful_take5_can_be_the_best() -> None:
+    """W8: haste alone doesn't rule a Take 5 out (D98)."""
+    rushed: SavedTake5 = ranked_take5(minutes_taken=1)
+
+    best: BestTake5 | None = best_by_rules((rushed,))
+
+    assert best is not None
+    assert best.take5.id == rushed.id
+
+
+def test_example_103_unanswered_or_short_answers_are_never_the_best() -> None:
+    """W8: a Take 5 with a gap from W2 to W4 isn't careful."""
+    unanswered: SavedTake5 = ranked_take5(answer=None)
+    short: SavedTake5 = ranked_take5(answer="Wheels chocked both sides")
+
+    assert best_by_rules((unanswered, short)) is None
+
+
+def test_example_104_on_equal_risk_the_longest_taken_is_best() -> None:
+    """W8: with the same risk, the one that took longest comes first."""
+    quick: SavedTake5 = ranked_take5(minutes_taken=3)
+    slow: SavedTake5 = ranked_take5(minutes_taken=10)
+
+    assert [take5.id for take5 in best_shortlist((quick, slow))] == [
+        slow.id,
+        quick.id,
+    ]
+
+
+def test_example_105_the_ai_picks_the_best_and_writes_why() -> None:
+    """W8: a checked pick makes that Take 5 the best, with the AI's line."""
+    shortlist: tuple[SavedTake5, ...] = best_shortlist(
+        (ranked_take5(minutes_taken=10), ranked_take5(minutes_taken=3)),
+    )
+    reply: str = json.dumps({"number": 2, "why": "Names the exact chock points."})
+    pick: tuple[int, str] | None = checked_ai_pick(reply, len(shortlist))
+    assert pick is not None
+
+    best: BestTake5 = with_ai_pick(shortlist, pick)
+
+    assert best.take5.id == shortlist[1].id
+    assert best.line == "Names the exact chock points."
+    assert best.picked_by is RankedBy.AI
+
+
+def test_example_106_a_pick_outside_the_shortlist_is_thrown_away() -> None:
+    """W8: the AI can only pick a number it was given."""
+    reply: str = json.dumps({"number": 3, "why": "Careful."})
+
+    assert checked_ai_pick(reply, 2) is None
+
+
+def test_ai_picks_that_fail_the_checks_are_thrown_away() -> None:
+    """W8: not JSON, or an empty, long or two-line reason, fails as W6's lines do."""
+    replies: list[str] = [
+        "The first one.",
+        json.dumps({"number": 1, "why": " "}),
+        json.dumps({"number": 1, "why": "x" * 201}),
+        json.dumps({"number": 1, "why": "Two\nlines."}),
+    ]
+
+    assert [checked_ai_pick(reply, 2) for reply in replies] == [None] * 4
+
+
+def test_example_107_an_ai_line_naming_the_worker_gets_the_rule_line() -> None:
+    """W8: the pick stands, but a line naming a worker is replaced."""
+    shortlist: tuple[SavedTake5, ...] = best_shortlist(
+        (ranked_take5(before=("Possible", "Major")), ranked_take5()),
+    )
+
+    best: BestTake5 = with_ai_pick(shortlist, (1, "Sam took real care."))
+
+    assert best.line == BEST_LINE_18
+    assert best.picked_by is RankedBy.AI
+
+
+def test_the_ai_is_given_the_shortlist_without_names() -> None:
+    """W8: the AI gets each careful Take 5 numbered, with no worker's name."""
+    text: str = best_text((ranked_take5(), ranked_take5(minutes_taken=4)))
+
+    given: dict[str, Any] = json.loads(text)
+
+    assert [each["number"] for each in given["take5s"]] == [1, 2]
+    assert given["take5s"][1]["minutes_taken"] == 4
+    assert "Sam Example" not in text
+
+
+def test_example_108_the_typical_time_is_the_median_of_finished_ones() -> None:
+    """W9: unfinished Take 5s and ones with no time don't count."""
+    take5s: tuple[SavedTake5, ...] = (
+        ranked_take5(minutes_taken=2),
+        ranked_take5(minutes_taken=5),
+        ranked_take5(minutes_taken=9),
+        ranked_take5(minutes_taken=None),
+        ranked_take5(answer=None, minutes_taken=30),
+    )
+
+    assert typical_minutes(take5s) == 5
+
+
+def test_with_no_times_there_is_no_typical_time() -> None:
+    """W9: nothing to measure gives no typical time."""
+    assert typical_minutes((ranked_take5(minutes_taken=None),)) is None

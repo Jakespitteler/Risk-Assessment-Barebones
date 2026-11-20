@@ -1,4 +1,4 @@
-"""Rank saved Take 5s worst first, each with one line saying why (spec W1 to W7).
+"""Rank saved Take 5s worst first, and find the best, each with a line (W1 to W9).
 
 "Worst" weighs how risky the job is against how little thought the answers show
 (decision D91). The fixed rules here score every Take 5 and need no AI. An AI may then
@@ -8,6 +8,7 @@ given and checks what it sends back, so a bad reply never reaches the page.
 
 import json
 import re
+import statistics
 from collections.abc import Sequence
 from datetime import timedelta
 from enum import StrEnum
@@ -32,6 +33,9 @@ AI_RANKED_COUNT: int = 10
 AI_RANKING_TIME_LIMIT_SECONDS: float = 20
 # The longest line the page will show from an AI (W6).
 LINE_MAX_CHARACTERS: int = 200
+# How many careful Take 5s the AI chooses the best from (W8).
+BEST_SHORTLIST_COUNT: int = 5
+RUSHED_GAP: str = "it was filled in in under 2 minutes"
 
 
 class RankedBy(StrEnum):
@@ -95,7 +99,7 @@ def thought_gaps(take5: SavedTake5) -> tuple[str, ...]:
         gaps.append(f"the answer to the question is under {THOUGHTFUL_WORDS} words")
     taken: timedelta | None = time_taken(take5)
     if taken is not None and taken < RUSHED_UNDER:
-        gaps.append("it was filled in in under 2 minutes")
+        gaps.append(RUSHED_GAP)
     return tuple(gaps)
 
 
@@ -183,19 +187,32 @@ def ranking_text(worst: Sequence[RankedTake5]) -> str:
     Returns:
         JSON, so everything a worker typed sits inside a quoted value.
     """
+    return json.dumps(
+        {"take5s": _described([ranked.take5 for ranked in worst])},
+        indent=2,
+        ensure_ascii=False,
+    )
+
+
+def _described(take5s: Sequence[SavedTake5]) -> list[dict[str, object]]:
+    """Describe Take 5s for the AI, numbered from 1, without any name (W6, W8).
+
+    Args:
+        take5s: The Take 5s, in the order they are numbered.
+
+    Returns:
+        For each, its number, what the challenge question is given (C1), the
+        question asked, the answer and the minutes taken.
+    """
     described: list[dict[str, object]] = []
-    for number, ranked in enumerate(worst, start=1):
-        take5: SavedTake5 = ranked.take5
+    for number, take5 in enumerate(take5s, start=1):
         entry: dict[str, object] = {"number": number}
         entry.update(json.loads(challenge_text(take5, take5.job, take5.location)))
         entry["question_asked"] = take5.challenge.question if take5.challenge else None
         entry["answer"] = take5.challenge.answer if take5.challenge else None
-        taken: timedelta | None = time_taken(take5)
-        entry["minutes_taken"] = (
-            round(taken.total_seconds() / 60) if taken is not None else None
-        )
+        entry["minutes_taken"] = minutes_taken(take5)
         described.append(entry)
-    return json.dumps({"take5s": described}, indent=2, ensure_ascii=False)
+    return described
 
 
 # A one-letter initial is too common a word to look for.
@@ -242,6 +259,35 @@ def _without_fence(reply: str) -> str:
     return text.strip()
 
 
+def _is_one_good_line(line: str) -> bool:
+    """Check an AI's line is one line, not empty and not too long (W6).
+
+    Args:
+        line: The line, trimmed.
+
+    Returns:
+        True when the page can show it.
+    """
+    return bool(line) and len(line) <= LINE_MAX_CHARACTERS and "\n" not in line
+
+
+def _worker_names(take5s: Sequence[SavedTake5]) -> frozenset[str]:
+    """Collect each word of the workers' names worth looking for in a line (W6).
+
+    Args:
+        take5s: The Take 5s the AI was given.
+
+    Returns:
+        Each word of two letters or more, in lower case.
+    """
+    return frozenset(
+        part
+        for take5 in take5s
+        for part in _words(take5.worker_name)
+        if len(part) >= _SHORTEST_NAME_PART
+    )
+
+
 def checked_ai_order(reply: str, count: int) -> tuple[tuple[int, str], ...] | None:
     """Keep the AI's order and lines only if every one passes W6.
 
@@ -264,7 +310,7 @@ def checked_ai_order(reply: str, count: int) -> tuple[tuple[int, str], ...] | No
     order: list[tuple[int, str]] = []
     for place in parsed.ranking:
         line: str = place.why.strip()
-        if not line or len(line) > LINE_MAX_CHARACTERS or "\n" in line:
+        if not _is_one_good_line(line):
             return None
         order.append((place.number, line))
     return tuple(order)
@@ -288,12 +334,8 @@ def with_ai_order(
     Returns:
         The AI's order for the Take 5s it was given, then the rest by the rules.
     """
-    given: Sequence[RankedTake5] = ranked[: len(ai_order)]
-    names: frozenset[str] = frozenset(
-        part
-        for place in given
-        for part in _words(place.take5.worker_name)
-        if len(part) >= _SHORTEST_NAME_PART
+    names: frozenset[str] = _worker_names(
+        [place.take5 for place in ranked[: len(ai_order)]],
     )
     reordered: list[RankedTake5] = []
     for number, line in ai_order:
@@ -308,3 +350,194 @@ def with_ai_order(
             ),
         )
     return (*reordered, *ranked[len(ai_order) :])
+
+
+class BestTake5(BaseModel):
+    """The best Take 5 of a set, with one line saying what was good about it (W8).
+
+    Attributes:
+        take5: The saved Take 5.
+        line: One line saying what was good about it.
+        picked_by: Whether the AI or the fixed rules picked it and wrote the line.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    take5: SavedTake5
+    line: str
+    picked_by: RankedBy
+
+
+def is_careful(take5: SavedTake5) -> bool:
+    """Say whether a Take 5 is finished with no thought gap but haste (W8).
+
+    A rushed Take 5 can still be the best: Jake chose on 2026-11-20 that a Take 5
+    with good answers is good however quickly it was done.
+
+    Args:
+        take5: A saved Take 5.
+
+    Returns:
+        True when it is finished, and W2 to W4 find nothing.
+    """
+    return take5.is_finished and all(gap == RUSHED_GAP for gap in thought_gaps(take5))
+
+
+def best_shortlist(take5s: Sequence[SavedTake5]) -> tuple[SavedTake5, ...]:
+    """List the careful Take 5s the best is chosen from, best first by the rules (W8).
+
+    Args:
+        take5s: The Take 5s to choose from, in any order.
+
+    Returns:
+        Up to `BEST_SHORTLIST_COUNT` careful Take 5s: the riskiest job first, then
+        the one that took longest, then the newest.
+    """
+    newest_first: list[SavedTake5] = sorted(
+        (take5 for take5 in take5s if is_careful(take5)),
+        key=lambda take5: take5.created_at,
+        reverse=True,
+    )
+    ordered: list[SavedTake5] = sorted(
+        newest_first,
+        key=lambda take5: (
+            highest_risk(take5).before.score,
+            time_taken(take5) or timedelta(0),
+        ),
+        reverse=True,
+    )
+    return tuple(ordered[:BEST_SHORTLIST_COUNT])
+
+
+def best_rule_line(take5: SavedTake5) -> str:
+    """Write the line the fixed rules give the best Take 5 (W8).
+
+    Args:
+        take5: A careful saved Take 5.
+
+    Returns:
+        Such as "Highest risk 18 Extreme, with specific hazards, controls that lower
+        each risk and a full answer to the question."
+    """
+    riskiest: Hazard = highest_risk(take5)
+    return (
+        f"Highest risk {riskiest.before.score} {riskiest.before.band}, with specific "
+        "hazards, controls that lower each risk and a full answer to the question."
+    )
+
+
+def best_by_rules(take5s: Sequence[SavedTake5]) -> BestTake5 | None:
+    """Pick the best Take 5 by the fixed rules alone (W8).
+
+    Args:
+        take5s: The Take 5s to choose from.
+
+    Returns:
+        The first of the shortlist with its rule line, or None when none is careful.
+    """
+    shortlist: tuple[SavedTake5, ...] = best_shortlist(take5s)
+    if not shortlist:
+        return None
+    return BestTake5(
+        take5=shortlist[0],
+        line=best_rule_line(shortlist[0]),
+        picked_by=RankedBy.RULES,
+    )
+
+
+def minutes_taken(take5: SavedTake5) -> int | None:
+    """Say how many whole minutes a Take 5 took, rounded (W5, W9).
+
+    Args:
+        take5: A saved Take 5.
+
+    Returns:
+        The minutes from its start to its save, or None when that can't be told.
+    """
+    taken: timedelta | None = time_taken(take5)
+    return round(taken.total_seconds() / 60) if taken is not None else None
+
+
+def typical_minutes(take5s: Sequence[SavedTake5]) -> int | None:
+    """Find the typical time a finished Take 5 took: the median, in minutes (W9).
+
+    Args:
+        take5s: The Take 5s to look at.
+
+    Returns:
+        The median of the finished ones' times, rounded to whole minutes, or None
+        when none has a time.
+    """
+    times: list[float] = [
+        taken.total_seconds() / 60
+        for take5 in take5s
+        if take5.is_finished and (taken := time_taken(take5)) is not None
+    ]
+    return round(statistics.median(times)) if times else None
+
+
+def best_text(shortlist: Sequence[SavedTake5]) -> str:
+    """Write out what the AI is given to pick the best from (W8).
+
+    Args:
+        shortlist: The careful Take 5s, numbered from 1 in this order.
+
+    Returns:
+        JSON in the same shape as `ranking_text()`, without any worker's name.
+    """
+    return json.dumps(
+        {"take5s": _described(shortlist)},
+        indent=2,
+        ensure_ascii=False,
+    )
+
+
+class _AiPick(BaseModel):
+    """The AI's pick of the best, before it is checked."""
+
+    number: int
+    why: str
+
+
+def checked_ai_pick(reply: str, count: int) -> tuple[int, str] | None:
+    """Keep the AI's pick of the best only if it passes W8.
+
+    Args:
+        reply: The AI's reply, exactly as it came.
+        count: How many Take 5s it was given, numbered 1 to `count`.
+
+    Returns:
+        The number picked, with its line; or None when the reply isn't the expected
+        JSON, picks a number it wasn't given, or its line fails W6's checks.
+    """
+    try:
+        parsed: _AiPick = _AiPick.model_validate_json(_without_fence(reply))
+    except ValueError:
+        return None
+    line: str = parsed.why.strip()
+    if not 1 <= parsed.number <= count or not _is_one_good_line(line):
+        return None
+    return parsed.number, line
+
+
+def with_ai_pick(
+    shortlist: Sequence[SavedTake5],
+    pick: tuple[int, str],
+) -> BestTake5:
+    """Make the AI's pick the best, with its line unless it names a worker (W8).
+
+    Args:
+        shortlist: The careful Take 5s the AI was given, in order.
+        pick: The number picked, from 1, with its line.
+
+    Returns:
+        The best Take 5, picked by the AI.
+    """
+    number, line = pick
+    take5: SavedTake5 = shortlist[number - 1]
+    names_a_worker: bool = not _worker_names(shortlist).isdisjoint(_words(line))
+    return BestTake5(
+        take5=take5,
+        line=best_rule_line(take5) if names_a_worker else line,
+        picked_by=RankedBy.AI,
+    )
