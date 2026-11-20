@@ -14,17 +14,24 @@ good to point at, not only things to fix, and shows how long a good Take 5 takes
 
 ## Decide first
 
-Questions for Jake, each with Claude's first thought. Answered when the task starts.
+Questions for Jake, each with Claude's recommendation. Put to him on 2026-11-20 when the task started.
 
-1. **What makes one the best?** First thought: the reverse of task 0032's score among finished Take 5s: no thought
-   gaps (W2 to W5), then the most time taken, with the AI choosing among the top few as it does for the worst.
-   A low-risk job with nothing to think about shouldn't win just for being safe.
-2. **One, or a few?** First thought: one, with its line saying why it is good.
-3. **Where does it show?** First thought: at the top or bottom of the "Worst of today" page, so one AI call covers
-   both; or its own link on the saved list.
-4. **"See how long it takes":** show the time the best one took, and maybe the day's typical time beside it?
-5. **Does the worker hear about it?** Praise could make the app more worth using (spec goal), but there is no
-   sign-in to reach them by. First thought: not in this task.
+1. **What makes one the best?** Recommended: the rules shortlist up to 5 finished Take 5s with no thought gaps
+   (W2 to W5), riskiest job first, then the most time taken. The AI picks one of them and writes one line saying
+   what was good about it, never seeing names. With no AI, or when it fails, the rules' first pick wins, with a
+   rule line. A low-risk job with nothing to think about doesn't win just for being safe, and the AI can tell
+   specific answers from long stock ones, which the rules can't.
+2. **One, or a few?** Recommended: one.
+3. **Where does it show?** Recommended: a "Best of today" card on the "Worst of today" page, under the heading and
+   above the worst list, with the same look as a ranked Take 5 but a green box for its line. The page's link and
+   heading stay "Worst of today", as fixing things comes first.
+4. **"See how long it takes."** Recommended: the card says how long the best one took, and the typical (median)
+   time of today's finished Take 5s beside it, such as "Took 9 minutes. Today's typical Take 5 took 3."
+5. **When none qualifies?** Recommended: the card says "No Take 5 today was free of signs of a rushed one." so the
+   absence is itself a message.
+6. **Does the worker hear about it?** Recommended: not in this task; there is no sign-in to reach them by.
+7. **Is it saved?** Recommended: no, worked out with the ranking and remembered with it until a Take 5 is added
+   or finished, as D95 does for the worst.
 
 ## Acceptance criteria
 
