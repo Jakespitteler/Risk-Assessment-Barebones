@@ -127,8 +127,10 @@ Rewritten on 2026-11-20 to follow Jake's answers above; the first version follow
   line in the terminal; `console.log` does not (Vite's `server.forwardConsole: true` in `frontend/vite.config.ts`).
 - [x] Every back-end line, uvicorn's and the app's own, has one format: local time, level, message, then where it
   came from in brackets (`backend/dev_logging.json`). No "back end" or "front end" label (Jake's answer 3 and 6).
-- [x] An AI failure the app handles prints one warning line that names the kind of problem and no stack trace;
-  the provider's own message, which can repeat what the AI was sent, is never printed.
+- [x] An AI failure the app handles (a time-out, or the adapter's `AiReplyError`, with the provider's own error as
+  its cause) prints one warning line that names the kind of problem and no stack trace; the provider's own
+  message, which can repeat what the AI was sent, is never printed. Any other error while asking the AI is a bug,
+  so it keeps its trace, and the worker still gets the fallback.
 - [x] An unexpected error in a route prints one line naming the request (method and path, never the body), then
   uvicorn's trace. The reply is the same plain 500 as before.
 - [x] Successful requests print no line; every failed request (4xx or 5xx) prints one.

@@ -19,6 +19,7 @@ from risk_assessment.domain.take5.hazard_nudges import (
 )
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE, Take5Template
 from risk_assessment.services.hazard_nudges import HazardNudger, RememberedVerdicts
+from risk_assessment.services.ports import AiReplyError
 from tests.samples import sample_answers, sample_draft, sample_hazard_draft
 
 # Long enough for the test to see the nudger give up, short enough to keep it fast.
@@ -347,13 +348,13 @@ def test_a_failed_ai_judgement_logs_one_line_naming_the_kind_without_a_trace(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """A handled AI failure is one warning, with no stack trace (task 0028)."""
-    judge = StandInJudge(failure=ConnectionError("Get hit by a car"))
+    judge = StandInJudge(failure=AiReplyError("Get hit by a car"))
 
     with caplog.at_level(logging.WARNING, logger="risk_assessment"):
         _nudger(judge).nudges(_linked_to_vehicles("Get hit by a car"))
 
     (warning,) = [record for record in caplog.records if record.levelname == "WARNING"]
     assert warning.getMessage() == (
-        "The AI could not judge a hazard (ConnectionError), so the word rule decided."
+        "The AI could not judge a hazard (AiReplyError), so the word rule decided."
     )
-    assert warning.exc_info is None
+    assert not warning.exc_info

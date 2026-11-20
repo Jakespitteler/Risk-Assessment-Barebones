@@ -12,7 +12,12 @@ const BACKEND_DOWN_CODES: readonly string[] = ["ECONNREFUSED", "ECONNRESET"];
  * it once a config gives its own logger, so the logger has to read it itself.
  */
 export function cliLogLevel(argv: readonly string[]): LogLevel {
-  const given = argv[argv.indexOf("--logLevel") + 1];
+  let given: string | undefined;
+  argv.forEach((word, index) => {
+    if (word === "--logLevel" || word === "-l") given = argv[index + 1];
+    else if (word.startsWith("--logLevel="))
+      given = word.slice("--logLevel=".length);
+  });
   return LOG_LEVELS.find((level) => level === given) ?? "info";
 }
 
@@ -40,9 +45,19 @@ export function backendDownMessage(
   return `The back end isn't answering ${path}. If it doesn't come back, look for its error above.`;
 }
 
-/** Vite's own logger, at the command line's level, with the one-line proxy error. */
-export function startLogger(argv: readonly string[] = process.argv): Logger {
-  const logger = createLogger(cliLogLevel(argv));
+/**
+ * Vite's own logger, at the command line's level, with the one-line proxy error. It
+ * never clears the screen, so the back end's error stays above the line that points to
+ * it (Vite ignores the config's `clearScreen: false` once a config gives its own logger).
+ */
+export function startLogger(
+  argv: readonly string[] = process.argv,
+  output: Console = globalThis.console,
+): Logger {
+  const logger = createLogger(cliLogLevel(argv), {
+    allowClearScreen: false,
+    console: output,
+  });
   const logError = logger.error.bind(logger);
   logger.error = (message, options) => {
     const short = backendDownMessage(message, options?.error);

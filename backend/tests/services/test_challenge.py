@@ -17,7 +17,7 @@ from risk_assessment.domain.take5.draft import Take5Draft
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
 from risk_assessment.domain.take5.verdict import Verdict
-from risk_assessment.services.ports import ChallengeAsker
+from risk_assessment.services.ports import AiReplyError, ChallengeAsker
 from risk_assessment.services.take5s import (
     AlreadyAnsweredError,
     InvalidAnswerError,
@@ -355,14 +355,35 @@ def test_a_failed_ai_question_logs_one_line_naming_the_kind_without_a_trace(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """A handled AI failure is one warning, with no stack trace (task 0028)."""
-    asker = StandInAsker(failure=ConnectionError("Sam Example's job text"))
+    asker = StandInAsker(failure=AiReplyError("Sam Example's job text"))
 
     with caplog.at_level(logging.WARNING, logger="risk_assessment"):
         _service(tmp_path, asker).submit(_tray_draft(), uuid4())
 
     (warning,) = [record for record in caplog.records if record.levelname == "WARNING"]
     assert warning.getMessage() == (
-        "The AI could not ask a question (ConnectionError), so the fixed one was asked."
+        "The AI could not ask a question (AiReplyError), so the fixed one was asked."
     )
-    assert warning.exc_info is None
+    assert not warning.exc_info
     assert "Sam Example" not in caplog.text
+
+
+def test_a_bug_while_asking_the_ai_still_falls_back_but_keeps_its_trace(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A TypeError is a bug in the app, not an AI failure (task 0028).
+
+    The worker still gets the fixed question, and the log keeps the trace so it can be
+    fixed.
+    """
+    asker = StandInAsker(failure=TypeError("a bug"))
+
+    with caplog.at_level(logging.WARNING, logger="risk_assessment"):
+        saved: SavedTake5 = _service(tmp_path, asker).submit(_tray_draft(), uuid4())
+
+    (warning,) = [record for record in caplog.records if record.levelname == "WARNING"]
+    assert "(TypeError)" in warning.getMessage()
+    assert warning.exc_info is not None
+    assert saved.challenge is not None
+    assert saved.challenge.asked_by == AskedBy.FALLBACK

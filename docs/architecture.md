@@ -108,7 +108,8 @@ backend/
             hazard_nudges.py   HazardNudger: asks the AI about each hazard for up to 5 seconds,
                                remembers its verdicts until the server restarts      (spec T6)
             ports.py           Take5Repository, ChallengeAsker and HazardJudge (Protocols): what
-                               the service needs from storage and from an AI
+                               the service needs from storage and from an AI; AiReplyError, the
+                               AI failures it expects
             ai_failures.py     names the kind of AI failure for its one log line
         storage/           where things are kept
             sqlite.py          SqliteTake5Repository
@@ -199,14 +200,16 @@ What the terminal running `uv run start.py` shows (task 0028). The aim: a glance
   lines (start-up, restarts, shutdown) are turned down to warnings. Its request lines go through
   `api/request_log.py`'s `FailedRequestsOnly`, so only a 4xx or 5xx prints. Without that file, as in the tests,
   `api/app.py` gives the app's own logger a plain handler of its own.
-- **Stack traces only for bugs.** An AI failure is expected and handled (spec C3, T6): it logs one warning naming
-  the kind of problem (`services/ai_failures.py`), never the provider's message, which can repeat what the AI was
-  sent. An unexpected error in a route logs one line naming the method and path (`api/errors.py`), then uvicorn
-  prints its trace.
+- **Stack traces only for bugs.** An AI failure is expected and handled (spec C3, T6): a time-out, or an
+  `AiReplyError` (`services/ports.py`) that the adapter raises with the provider's own error as its cause. It logs
+  one warning naming the kind of problem (`services/ai_failures.py`), never the provider's message, which can
+  repeat what the AI was sent. Any other error while asking the AI is a bug, and keeps its trace. An unexpected
+  error in a route logs one line naming the method and path (`api/errors.py`), then uvicorn prints its trace.
 - **Front end.** `frontend/vite.config.ts` sets `server.forwardConsole: true`, so a crash in the browser,
   `console.error` and `console.warn` print in the terminal; `console.log` doesn't. Its `customLogger`
   (`src/dev/startLogger.ts`) prints one line per request while the back end isn't answering, in place of Vite's
-  proxy error and stack, and keeps the command line's `--logLevel`, which Vite would otherwise ignore.
+  proxy error and stack. A custom logger makes Vite ignore the command line's `--logLevel` and the config's
+  `clearScreen: false`, so it reads the first and never clears the screen.
 - **Never logged:** the worker's name, what they typed, a request's body, or the AI's reply.
 
 ## The API
@@ -227,20 +230,20 @@ gap or the request couldn't be read. A 404 or a 409 is `ErrorMessage` (`detail`)
 request that got no answer, never one that did; `POST /api/take5s` is safe to retry because the phone makes its
 ID once and sends it every time.
 
-The check also returns `thinking_questions`: each has the answer's dotted `path` and the question's
-`message`. A question stays present when answered, while an unanswered required question also has a field
-error. `HazardDraft` and saved `Hazard` carry `weak_controls_reason`, defaulting to an empty string for older
-drafts and documents. The phone's draft keeps the answer even if a later edit adds a strong control, so editing
-never discards the worker's words, but the rated `Hazard` (and so the saved Take 5) keeps it only while T3 still
-asks. It never changes the verdict. In the same way `HazardDraft.covers` keeps every question the worker linked to the
-hazard, and the rated `Hazard` keeps only those still answered Yes, each once, in the order the worker linked
-them (spec T5). `POST /api/take5s/nudges` returns the nudges (task 0022, moved off the check by task 0027):
-each has a dotted `path`, a `message` and the `question_id` it shows under, and none ever stops a Take 5 being
-submitted. For now the only one is T6, on `hazards.<n>.description`, under the first Yes in card order that the
-hazard is linked to. Which nudge the worker chose to keep is remembered on the phone, not sent, because it is
-about what is on the screen. The hazard check page asks once for the whole page, again only when the draft
-changes, and never while the worker types in a nudge's box (spec D56). It sends the draft without the links of
-hazards whose words were kept, so those are never judged.
+The check also returns `thinking_questions`: each has the answer's dotted `path` and the question's `message`. A
+question stays present when answered, while an unanswered required question also has a field error. `HazardDraft`
+and saved `Hazard` carry `weak_controls_reason`, defaulting to an empty string for older drafts and documents. The
+phone's draft keeps the answer even if a later edit adds a strong control, so editing never discards the worker's
+words, but the rated `Hazard` (and so the saved Take 5) keeps it only while T3 still asks. It never changes the
+verdict. In the same way `HazardDraft.covers` keeps every question the worker linked to the hazard, and the rated
+`Hazard` keeps only those still answered Yes, each once, in the order the worker linked them (spec T5).
+`POST /api/take5s/nudges` returns the nudges (task 0022, moved off the check by task 0027): each has a dotted
+`path`, a `message` and the `question_id` it shows under, and none ever stops a Take 5 being submitted. For now the
+only one is T6, on `hazards.<n>.description`, under the first Yes in card order that the hazard is linked to. Which
+nudge the worker chose to keep is remembered on the phone, not sent, because it is about what is on the screen. The
+hazard check page asks once for the whole page, again only when the draft changes, and never while the worker types
+in a nudge's box (spec D56). It sends the draft without the links of hazards whose words were kept, so those are
+never judged.
 
 **The front end holds no rules and no card.** It gets the questions and the matrix from
 `GET /api/take5/template`, draws whatever it is sent, and shows a score by looking it up in that matrix. It finds
@@ -254,16 +257,15 @@ has a hazard linked to it (T5), and that the after rating of a hazard with no co
 
 **Drafts (task 0019).** The phone keeps one draft in `localStorage` from the worker's first change, which also
 stamps `Take5Draft.started_at` by the phone's clock (with its time zone; a time without one is a 422). Opening the
-app with no page in the URL carries on from the page the draft was left on. The phone never decides whether a
-draft has run out: it checks the draft once as it opens, on a Continue with changed answers (an unchanged one reuses the
-last answer), and on Submit, and acts on an error
-whose path is `started_at`. The back end compares `started_at` with its own clock against the template's
-`draft_time_limit_minutes` (`domain/take5/time_limit.py`, with the time given by the service). The check only
-trusts the phone's clock to be roughly right, which phones that set their time from the network are. Leave and
-Undo, carrying on, and asking before a fix replaces the draft are about what is on the screen, so they live in
-the front end. Before saying a draft has run out, the phone looks its submission ID up with
-`GET /api/take5s/{id}`, and opens the saved result if the save went through and only its answer was lost. The
-time left is counted down from the check's `runs_out_at`, which the back end works out.
+app with no page in the URL carries on from the page the draft was left on. The phone never decides whether a draft
+has run out: it checks the draft once as it opens, on a Continue with changed answers (an unchanged one reuses the
+last answer), and on Submit, and acts on an error whose path is `started_at`. The back end compares `started_at`
+with its own clock against the template's `draft_time_limit_minutes` (`domain/take5/time_limit.py`, with the time
+given by the service). The check only trusts the phone's clock to be roughly right, which phones that set their
+time from the network are. Leave and Undo, carrying on, and asking before a fix replaces the draft are about what
+is on the screen, so they live in the front end. Before saying a draft has run out, the phone looks its submission
+ID up with `GET /api/take5s/{id}`, and opens the saved result if the save went through and only its answer was
+lost. The time left is counted down from the check's `runs_out_at`, which the back end works out.
 
 While developing, Vite serves the front end and passes `/api` calls on to FastAPI. When hosted, FastAPI serves
 the built front-end files itself, so there is still only one program to run.

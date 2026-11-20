@@ -649,7 +649,7 @@ def test_the_uvicorn_settings_differ_from_its_defaults_only_on_purpose() -> None
         "%(asctime)s %(levelprefix)s %(message)s  (%(name)s)"
     )
     expected["formatters"]["access"]["fmt"] = (
-        "%(asctime)s %(levelprefix)s %(request_line)s %(status_code)s"
+        "%(asctime)s %(levelprefix)s %(request_line)s %(status_code)s  (%(name)s)"
     )
     for formatter in expected["formatters"].values():
         formatter["datefmt"] = "%H:%M:%S"
