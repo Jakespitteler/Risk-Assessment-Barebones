@@ -1,9 +1,9 @@
 ---
 id: 0033
 title: Photograph paper Take 5 cards into saved Take 5s, then rank the batch
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/0033-scan-paper-cards (stacked on #66)
 ---
 
 ## Goal
