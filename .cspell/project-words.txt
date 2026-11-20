@@ -1,5 +1,6 @@
 addopts
 anthropics
+asctime
 autouse
 Barebones
 basereload
@@ -8,6 +9,7 @@ capsys
 charliermarsh
 conftest
 creationflags
+datefmt
 delenv
 Deque
 describedby

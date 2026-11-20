@@ -98,6 +98,7 @@ newer (24.15 or newer on version 24). Run each from the repo root.
 - **Errors.** `domain/` raises `ValueError` with a message a person can read. Routes turn errors into HTTP
   responses; the worker never sees a stack trace or an AI error.
 - **Logging.** Use `logging.getLogger(__name__)`, never `print`, in the back end. Never log the worker's name.
+  How the terminal's lines are set up is under Logging in `docs/architecture.md`.
 - **Tests.** pytest for the back end; a test's name says what it proves, and a test of a spec worked example is
   named `test_example_<number>_...`. Vitest and React Testing Library find things by role or label, as a
   person would. Playwright runs at 360 px wide and saves screenshots to `frontend/test-results/screenshots/`.

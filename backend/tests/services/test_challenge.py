@@ -4,6 +4,7 @@ Each test uses a stand-in for the AI that sends back whatever the spec's row say
 fails, or takes too long. A real SQLite file in a temporary folder keeps what is saved.
 """
 
+import logging
 import threading
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -347,3 +348,21 @@ def test_answering_a_take5_that_is_not_saved_is_refused(tmp_path: Path) -> None:
     """There is nothing to answer."""
     with pytest.raises(Take5NotFoundError):
         _service(tmp_path).answer(uuid4(), SAMPLE_ANSWER)
+
+
+def test_a_failed_ai_question_logs_one_line_naming_the_kind_without_a_trace(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A handled AI failure is one warning, with no stack trace (task 0028)."""
+    asker = StandInAsker(failure=ConnectionError("Sam Example's job text"))
+
+    with caplog.at_level(logging.WARNING, logger="risk_assessment"):
+        _service(tmp_path, asker).submit(_tray_draft(), uuid4())
+
+    (warning,) = [record for record in caplog.records if record.levelname == "WARNING"]
+    assert warning.getMessage() == (
+        "The AI could not ask a question (ConnectionError), so the fixed one was asked."
+    )
+    assert warning.exc_info is None
+    assert "Sam Example" not in caplog.text

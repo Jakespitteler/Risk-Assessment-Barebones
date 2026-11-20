@@ -2,6 +2,22 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-20: Errors obvious in the terminal that runs the app (task 0028)
+
+- Decision: Browser crashes, `console.error` and `console.warn` print in the terminal through Vite's own
+  `server.forwardConsole`. The back end's lines share one format through `backend/dev_logging.json`, with no
+  "back end" or "front end" label. A handled AI failure logs one line naming its kind, with no trace; a bug in a
+  route logs one line naming the request, then its trace. Only failed requests print, through a small log
+  filter (`api/request_log.py`). No log file. While the back end isn't answering, Vite prints one short line per
+  failed request instead of a proxy error and stack, through a small custom logger.
+- Why: Jake's answers of 2026-11-19 and 2026-11-20: "it should always be obvious from a glance what/where is
+  going wrong". Labels would have brought back the output pipe that task 0029 removed for being complicated.
+- How: a custom logger makes Vite ignore the command line's `--logLevel`, so the logger reads it from the command
+  line itself, which keeps `start.py` and `npm run dev` working as before.
+- Not chosen: a plugin of our own or `vite-plugin-terminal` for browser errors; labels on each line; a stack trace
+  for every AI failure; two quiet 422s; a log file.
+- Decided by: human (the behaviour), agent (how).
+
 ## 2026-11-20: `start.py` restarts the back end itself (task 0034)
 
 - Decision: `start.py` runs uvicorn without `--reload`, watches `backend/src` for saved Python files, and restarts

@@ -76,7 +76,8 @@ publishes it, the front end's types are generated from it, and either half can b
 ```text
 backend/
     pyproject.toml
-    dev_logging.json       uvicorn's log settings for start.py, with its start-up lines turned down
+    dev_logging.json       the back end's log settings for start.py: one line format, uvicorn's
+                           status lines turned down, failed requests only (see Logging)
     src/risk_assessment/
         domain/            the rules, as plain data and pure functions
             risk.py            RiskMatrix (a matrix as data), RiskCell, RiskRating,
@@ -108,6 +109,7 @@ backend/
                                remembers its verdicts until the server restarts      (spec T6)
             ports.py           Take5Repository, ChallengeAsker and HazardJudge (Protocols): what
                                the service needs from storage and from an AI
+            ai_failures.py     names the kind of AI failure for its one log line
         storage/           where things are kept
             sqlite.py          SqliteTake5Repository
         ai/                everything that talks to an AI
@@ -125,7 +127,9 @@ backend/
             app.py             builds the FastAPI app and plugs the pieces together
             take5_routes.py    one function per Take 5 endpoint
             schemas.py         the shapes of requests and responses, including the error replies
-            errors.py          turns errors into the declared error replies
+            errors.py          turns errors into the declared error replies; names the request
+                               of an unexpected error in one log line above its trace
+            request_log.py     FailedRequestsOnly: keeps the server's request lines to failures
         settings.py        settings read from the environment or `backend/.env`, which git ignores
                            (database path, AI provider, AI model, hazard AI model, AI key)
     tests/                 mirrors src/risk_assessment/
@@ -160,6 +164,8 @@ frontend/
                            ChallengeScreen.tsx asks the challenge question; ChallengeSummary.tsx shows it with
                            its answer on the result; unanswered.ts remembers which unanswered Take 5s this
                            phone submitted, so only it answers them and opening the app goes back to one
+        dev/               startLogger.ts: Vite's terminal output while developing (only
+                           vite.config.ts imports it; not part of the app)
         test-utils.tsx     the fake card, drafts and API replies the Vitest tests share
         test-phone-scheme.ts  a stand-in for the phone's light or dark setting, which Vitest's jsdom lacks
         app.tsx            the routes (the only place React Router is set up)
@@ -183,6 +189,25 @@ check.py                   runs every check, as CI does; `--fix` fixes what the 
 The four files directly under `domain/` know nothing about a Take 5. They are the shared building blocks, and
 `domain/take5/` is built from them. The same split is in the front end: `components/` is shared and
 `features/take5/` is not.
+
+## Logging
+
+What the terminal running `uv run start.py` shows (task 0028). The aim: a glance says what went wrong and where.
+
+- **Back end.** `backend/dev_logging.json`, which `start.py` gives uvicorn with `--log-config`, sets one format for
+  uvicorn's lines and the app's own: local time, level, message, then the logger in brackets. Uvicorn's status
+  lines (start-up, restarts, shutdown) are turned down to warnings. Its request lines go through
+  `api/request_log.py`'s `FailedRequestsOnly`, so only a 4xx or 5xx prints. Without that file, as in the tests,
+  `api/app.py` gives the app's own logger a plain handler of its own.
+- **Stack traces only for bugs.** An AI failure is expected and handled (spec C3, T6): it logs one warning naming
+  the kind of problem (`services/ai_failures.py`), never the provider's message, which can repeat what the AI was
+  sent. An unexpected error in a route logs one line naming the method and path (`api/errors.py`), then uvicorn
+  prints its trace.
+- **Front end.** `frontend/vite.config.ts` sets `server.forwardConsole: true`, so a crash in the browser,
+  `console.error` and `console.warn` print in the terminal; `console.log` doesn't. Its `customLogger`
+  (`src/dev/startLogger.ts`) prints one line per request while the back end isn't answering, in place of Vite's
+  proxy error and stack, and keeps the command line's `--logLevel`, which Vite would otherwise ignore.
+- **Never logged:** the worker's name, what they typed, a request's body, or the AI's reply.
 
 ## The API
 

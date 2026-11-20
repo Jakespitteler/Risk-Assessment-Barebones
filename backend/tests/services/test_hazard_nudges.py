@@ -4,6 +4,7 @@ Each test uses a stand-in for the AI that sends back whatever the spec's row say
 fails, or takes too long.
 """
 
+import logging
 import threading
 import time
 
@@ -340,3 +341,19 @@ def test_the_oldest_verdict_is_forgotten_past_the_limit() -> None:
 def test_the_ai_has_five_seconds() -> None:
     """Decision D57: the word rule decides after 5 seconds."""
     assert HAZARD_AI_TIME_LIMIT_SECONDS == 5
+
+
+def test_a_failed_ai_judgement_logs_one_line_naming_the_kind_without_a_trace(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A handled AI failure is one warning, with no stack trace (task 0028)."""
+    judge = StandInJudge(failure=ConnectionError("Get hit by a car"))
+
+    with caplog.at_level(logging.WARNING, logger="risk_assessment"):
+        _nudger(judge).nudges(_linked_to_vehicles("Get hit by a car"))
+
+    (warning,) = [record for record in caplog.records if record.levelname == "WARNING"]
+    assert warning.getMessage() == (
+        "The AI could not judge a hazard (ConnectionError), so the word rule decided."
+    )
+    assert warning.exc_info is None

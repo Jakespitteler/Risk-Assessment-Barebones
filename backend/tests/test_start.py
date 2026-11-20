@@ -628,17 +628,37 @@ def test_a_failed_browser_install_warns_and_the_app_still_starts(
     assert not start.frontend_needs_install(frontend)
 
 
-def test_the_uvicorn_settings_turn_down_only_its_status_lines() -> None:
-    """Uvicorn's "running on" line is `uvicorn.error` info; requests still show.
+def test_the_uvicorn_settings_differ_from_its_defaults_only_on_purpose() -> None:
+    """Each change from uvicorn's own log settings is listed here (tasks 0029, 0028).
 
-    The file is uvicorn's own default log settings, from the installed uvicorn, with
-    that one logger at warnings, so its errors and tracebacks still reach the
-    terminal. A uvicorn upgrade that changes its defaults fails here.
+    Its status lines, such as "Uvicorn running on ...", are turned down to warnings;
+    every line gets the time, level, message and where it came from; only failed
+    requests print; and the app's own lines use the same format. A uvicorn upgrade that
+    changes its defaults fails here.
     """
     settings_file: Path = start.BACKEND / "dev_logging.json"
     settings: dict[str, Any] = json.loads(settings_file.read_text(encoding="utf-8"))
     expected: dict[str, Any] = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)
     expected["loggers"]["uvicorn.error"]["level"] = "WARNING"
+    expected["filters"] = {
+        "failed_requests_only": {
+            "()": "risk_assessment.api.request_log.FailedRequestsOnly",
+        },
+    }
+    expected["formatters"]["default"]["fmt"] = (
+        "%(asctime)s %(levelprefix)s %(message)s  (%(name)s)"
+    )
+    expected["formatters"]["access"]["fmt"] = (
+        "%(asctime)s %(levelprefix)s %(request_line)s %(status_code)s"
+    )
+    for formatter in expected["formatters"].values():
+        formatter["datefmt"] = "%H:%M:%S"
+    expected["handlers"]["access"]["filters"] = ["failed_requests_only"]
+    expected["loggers"]["risk_assessment"] = {
+        "handlers": ["default"],
+        "level": "INFO",
+        "propagate": False,
+    }
     flag_at: int = start.BACKEND_COMMAND.index("--log-config")
 
     assert start.BACKEND_COMMAND[flag_at + 1] == settings_file.name
