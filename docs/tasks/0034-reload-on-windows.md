@@ -1,7 +1,7 @@
 ---
 id: 0034
 title: Keep the app running on Windows when back-end code changes
-status: review
+status: done
 owner: claude
 branch: claude/0034-reload-on-windows
 ---

@@ -203,3 +203,55 @@ def test_one_take5_is_not_sent_to_the_ai(repository: SqliteTake5Repository) -> N
     Take5RankingService(repository, ranker).worst_since(MIDNIGHT_IN_PERTH)
 
     assert ranker.texts == []
+
+
+def test_the_same_take5s_are_ranked_again_once_one_is_finished(
+    repository: SqliteTake5Repository,
+) -> None:
+    """W7: answering an unfinished Take 5's question changes its ranking."""
+    careless, _ = two_today(repository)
+    ranker = StandInRanker(SWAPPED)
+    service = Take5RankingService(repository, ranker)
+
+    service.worst_since(MIDNIGHT_IN_PERTH)
+    finished: SavedTake5 = ranked_take5(
+        minutes_taken=1,
+        saved_at=careless.created_at,
+    ).model_copy(update={"id": careless.id})
+    repository.finish(finished)
+    service.worst_since(MIDNIGHT_IN_PERTH)
+
+    assert len(ranker.texts) == 2
+
+
+def test_only_the_worst_10_go_to_the_ai_and_the_rest_follow(
+    repository: SqliteTake5Repository,
+) -> None:
+    """W6: with 11 Take 5s, the AI orders 10 and the 11th keeps its place by W1."""
+    morning: datetime = MIDNIGHT_IN_PERTH + timedelta(hours=7)
+    for minute in range(10):
+        repository.add(
+            ranked_take5(
+                answer=None,
+                saved_at=morning + timedelta(minutes=minute),
+            ),
+        )
+    careful: SavedTake5 = repository.add(ranked_take5(saved_at=morning))
+    reply: str = json.dumps(
+        {
+            "ranking": [
+                {"number": number, "why": "Unanswered."} for number in range(10, 0, -1)
+            ],
+        },
+    )
+    ranker = StandInRanker(reply)
+
+    ranked: tuple[RankedTake5, ...] = Take5RankingService(
+        repository,
+        ranker,
+    ).worst_since(MIDNIGHT_IN_PERTH)
+
+    assert len(json.loads(ranker.texts[0])["take5s"]) == 10
+    assert ranked[-1].take5.id == careful.id
+    assert ranked[-1].ranked_by is RankedBy.RULES
+    assert [each.ranked_by for each in ranked[:10]] == [RankedBy.AI] * 10

@@ -1205,13 +1205,13 @@ export interface operations {
                     "application/json": components["schemas"]["RankedTake5s"];
                 };
             };
-            /** @description Validation Error */
+            /** @description The moment is missing or has no zone */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["FormErrors"];
                 };
             };
         };

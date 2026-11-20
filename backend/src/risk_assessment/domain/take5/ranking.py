@@ -7,6 +7,7 @@ given and checks what it sends back, so a bad reply never reaches the page.
 """
 
 import json
+import re
 from collections.abc import Sequence
 from datetime import timedelta
 from enum import StrEnum
@@ -92,12 +93,25 @@ def thought_gaps(take5: SavedTake5) -> tuple[str, ...]:
         gaps.append("the question was never answered")
     elif answer is not None and word_count(answer) < THOUGHTFUL_WORDS:
         gaps.append(f"the answer to the question is under {THOUGHTFUL_WORDS} words")
-    if (
-        take5.started_at is not None
-        and take5.created_at - take5.started_at < RUSHED_UNDER
-    ):
+    taken: timedelta | None = time_taken(take5)
+    if taken is not None and taken < RUSHED_UNDER:
         gaps.append("it was filled in in under 2 minutes")
     return tuple(gaps)
+
+
+def time_taken(take5: SavedTake5) -> timedelta | None:
+    """Find how long a Take 5 took, from its start to its save (W5).
+
+    Args:
+        take5: A saved Take 5.
+
+    Returns:
+        The time taken, or None when it has no start time, or a start time after it
+        was saved, as a phone whose clock is fast can send.
+    """
+    if take5.started_at is None or take5.started_at > take5.created_at:
+        return None
+    return take5.created_at - take5.started_at
 
 
 def worst_score(take5: SavedTake5) -> int:
@@ -176,13 +190,28 @@ def ranking_text(worst: Sequence[RankedTake5]) -> str:
         entry.update(json.loads(challenge_text(take5, take5.job, take5.location)))
         entry["question_asked"] = take5.challenge.question if take5.challenge else None
         entry["answer"] = take5.challenge.answer if take5.challenge else None
+        taken: timedelta | None = time_taken(take5)
         entry["minutes_taken"] = (
-            round((take5.created_at - take5.started_at).total_seconds() / 60)
-            if take5.started_at is not None
-            else None
+            round(taken.total_seconds() / 60) if taken is not None else None
         )
         described.append(entry)
     return json.dumps({"take5s": described}, indent=2, ensure_ascii=False)
+
+
+# A one-letter initial is too common a word to look for.
+_SHORTEST_NAME_PART: int = 2
+
+
+def _words(text: str) -> set[str]:
+    """Split text into its words, in lower case, for matching a name.
+
+    Args:
+        text: Any text.
+
+    Returns:
+        Its words, without punctuation.
+    """
+    return {word.casefold() for word in re.findall(r"[^\W\d_]+", text)}
 
 
 class _AiPlace(BaseModel):
@@ -198,6 +227,21 @@ class _AiReply(BaseModel):
     ranking: list[_AiPlace]
 
 
+def _without_fence(reply: str) -> str:
+    """Take off the ```json fence a model sometimes puts round its JSON.
+
+    Args:
+        reply: The AI's reply.
+
+    Returns:
+        The reply without the fence, trimmed.
+    """
+    text: str = reply.strip()
+    if text.startswith("```") and text.endswith("```"):
+        text = text.removeprefix("```json").removeprefix("```").removesuffix("```")
+    return text.strip()
+
+
 def checked_ai_order(reply: str, count: int) -> tuple[tuple[int, str], ...] | None:
     """Keep the AI's order and lines only if every one passes W6.
 
@@ -211,7 +255,7 @@ def checked_ai_order(reply: str, count: int) -> tuple[tuple[int, str], ...] | No
         is empty, over `LINE_MAX_CHARACTERS` or more than one line.
     """
     try:
-        parsed: _AiReply = _AiReply.model_validate_json(reply.strip())
+        parsed: _AiReply = _AiReply.model_validate_json(_without_fence(reply))
     except ValueError:
         return None
     numbers: list[int] = [place.number for place in parsed.ranking]
@@ -232,8 +276,9 @@ def with_ai_order(
 ) -> tuple[RankedTake5, ...]:
     """Put the worst few in the AI's order with its lines; the rest stay as they were.
 
-    A line that names the worker is replaced by the rule line, in case a name typed
-    into a job or hazard reached the AI and came back (W6).
+    A line holding any word of the name of a worker it was given is replaced by the
+    rule line, in case a name typed into a job or hazard reached the AI and came back
+    (W6). The AI's order still stands.
 
     Args:
         ranked: The whole ranking by the fixed rules.
@@ -243,15 +288,23 @@ def with_ai_order(
     Returns:
         The AI's order for the Take 5s it was given, then the rest by the rules.
     """
+    given: Sequence[RankedTake5] = ranked[: len(ai_order)]
+    names: frozenset[str] = frozenset(
+        part
+        for place in given
+        for part in _words(place.take5.worker_name)
+        if len(part) >= _SHORTEST_NAME_PART
+    )
     reordered: list[RankedTake5] = []
     for number, line in ai_order:
         place: RankedTake5 = ranked[number - 1]
-        names_worker: bool = (
-            place.take5.worker_name.casefold().strip() in line.casefold()
-        )
+        names_a_worker: bool = not names.isdisjoint(_words(line))
         reordered.append(
-            place
-            if names_worker
-            else place.model_copy(update={"line": line, "ranked_by": RankedBy.AI}),
+            place.model_copy(
+                update={
+                    "line": place.line if names_a_worker else line,
+                    "ranked_by": RankedBy.AI,
+                },
+            ),
         )
     return (*reordered, *ranked[len(ai_order) :])

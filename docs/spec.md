@@ -361,12 +361,14 @@ batch (decisions D91 to D96).
 - **W4 The question.** A question never answered is a gap; so is an answer in fewer than 6 words, though C4
   accepts four.
 - **W5 Rushed.** A Take 5 saved less than 2 minutes after it was started is a gap. Exactly 2 minutes isn't. One
-  with no start time (saved before task 0019) never is.
+  with no start time (saved before task 0019) never is, nor is one started after it was saved, as a phone whose
+  clock is fast can send.
 - **W6 The AI.** When an AI is set up and there are at least two, the worst 10 by W1 go to it, numbered, with
   what the challenge question is given (C1), plus the question asked, the answer and the minutes taken. The
   worker's name is never sent. It replies with JSON giving each number once, worst first, with a line under 200
-  characters on why. Anything else, an error or no answer in 20 seconds, and W1 decides alone. A line that names
-  the worker is replaced by the rule line. The rest follow in W1's order. The page says when an AI ordered them.
+  characters on why. Anything else, an error or no answer in 20 seconds, and W1 decides alone. A line holding any
+  word of the name of a worker it was given (two letters or more) is replaced by the rule line; the AI's order
+  stands. The rest follow in W1's order. The page says when an AI ordered them.
 - **W7 Today.** "Today" is from midnight where the phone is: a Take 5 counts from when it was started, or when it
   was saved if it has no start time, finished or not. The ranking isn't saved; it is worked out when the page
   opens, and remembered until the server restarts or a Take 5 is added or finished.

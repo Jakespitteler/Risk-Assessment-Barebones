@@ -15,6 +15,7 @@ from risk_assessment.ai.vague_hazard import AiHazardJudge
 from risk_assessment.api.errors import add_error_handlers
 from risk_assessment.api.ranking_routes import create_ranking_router
 from risk_assessment.api.take5_routes import create_router
+from risk_assessment.domain.take5.ranking import AI_RANKING_TIME_LIMIT_SECONDS
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
 from risk_assessment.services.ports import (
     ChallengeAsker,
@@ -35,13 +36,14 @@ class _ProviderModels(BaseModel):
 
     Attributes:
         build: Builds a model from the key and the model's name (None for the
-            provider's default).
+            provider's default), and takes `network_time_limit_seconds` for a job
+            that waits longer than usual.
         quick_model: The provider's fastest model, for short jobs (decision D61).
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
-    build: Callable[[str, str | None], LanguageModel]
+    build: Callable[..., LanguageModel]
     quick_model: str
 
 
@@ -185,6 +187,11 @@ def build_take5_ranker(settings: Settings) -> Take5Ranker | None:
         _logger.info("No AI key is set, so the fixed rules rank Take 5s alone.")
         return None
     provider: _ProviderModels = _PROVIDERS[settings.ai_provider]
-    model: LanguageModel = provider.build(ai_key, settings.ai_model)
+    # The ranking waits longer than the other jobs, so its calls may take as long.
+    model: LanguageModel = provider.build(
+        ai_key,
+        settings.ai_model,
+        network_time_limit_seconds=AI_RANKING_TIME_LIMIT_SECONDS + 1,
+    )
     _logger.info("Take 5s are ranked by %s.", model.name)
     return AiTake5Ranker(model)

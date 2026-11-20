@@ -135,6 +135,7 @@ it("says when nothing has been saved yet, and offers a new Take 5", async () => 
     await screen.findByText("No Take 5s have been saved yet."),
   ).toBeTruthy();
   expect(screen.queryByRole("list")).toBeNull();
+  expect(screen.queryByRole("link", { name: "Worst of today" })).toBeNull();
   expect(
     screen
       .getByRole("link", { name: "Start a new Take 5" })
