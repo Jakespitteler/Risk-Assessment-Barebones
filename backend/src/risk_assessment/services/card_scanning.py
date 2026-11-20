@@ -20,6 +20,7 @@ MAX_PHOTO_BYTES: int = 10 * 1024 * 1024
 NO_AI_MESSAGE: str = "Scanning a paper card needs an AI, and none is set up."
 WRONG_TYPE_MESSAGE: str = "Send a photo: a JPEG, PNG, WebP or GIF."
 TOO_BIG_MESSAGE: str = "This photo is too big. Send one under 10 MB."
+EMPTY_MESSAGE: str = "This photo is empty. Take it again."
 UNREADABLE_MESSAGE: str = (
     "This photo couldn't be read as a Take 5 card. "
     "Try a clearer photo of the whole card."
@@ -59,14 +60,16 @@ class CardScanner:
 
         Raises:
             ScanningUnavailableError: No AI is set up.
-            CardUnreadableError: The photo isn't an accepted type or is too big, or
-                the AI failed, took too long, or its reply wasn't a card. The log
-                names the kind of problem, never the reply.
+            CardUnreadableError: The photo isn't an accepted type, is empty or is too
+                big, or the AI failed, took too long, or its reply wasn't a card. The
+                log names the kind of problem, never the reply.
         """
         if self._reader is None:
             raise ScanningUnavailableError(NO_AI_MESSAGE)
         if media_type not in ACCEPTED_PHOTO_TYPES:
             raise CardUnreadableError(WRONG_TYPE_MESSAGE)
+        if not photo:
+            raise CardUnreadableError(EMPTY_MESSAGE)
         if len(photo) > MAX_PHOTO_BYTES:
             raise CardUnreadableError(TOO_BIG_MESSAGE)
         try:

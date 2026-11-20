@@ -217,8 +217,8 @@ def build_take5_ranker(settings: Settings) -> Take5Ranker | None:
 def build_card_reader(settings: Settings) -> CardReader | None:
     """Build the AI that reads photos of paper cards, if a key is set (task 0033).
 
-    It uses the provider's own default model, or the one `TAKE5_AI_SCAN_MODEL` names:
-    reading handwriting needs a strong model.
+    It uses the main model (`TAKE5_AI_MODEL`), or the one `TAKE5_AI_SCAN_MODEL` names,
+    at medium effort: reading handwriting needs a strong model that takes some care.
 
     Args:
         settings: The provider, model and key to use.
@@ -234,6 +234,11 @@ def build_card_reader(settings: Settings) -> CardReader | None:
     if ai_key is None or build is None:
         _logger.info("No AI can read photos, so paper cards can't be scanned.")
         return None
-    model: PhotoReadingModel = build(ai_key, settings.ai_scan_model)
+    # Reading handwriting is worth more thought than the short jobs (Jake, 2026-11-20).
+    model: PhotoReadingModel = build(
+        ai_key,
+        settings.ai_scan_model or settings.ai_model,
+        effort="medium",
+    )
     _logger.info("Paper cards are read by %s.", model.name)
     return AiCardReader(model)

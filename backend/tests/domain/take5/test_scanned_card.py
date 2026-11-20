@@ -1,7 +1,6 @@
 """Tests for keeping the AI's reading of a paper card to what the card allows (0033)."""
 
 import json
-from datetime import datetime
 from typing import Any
 
 from risk_assessment.domain.controls import ControlKind
@@ -50,7 +49,7 @@ def test_a_whole_card_is_read_as_written_gaps_and_all() -> None:
     (hazard,) = card.draft.hazards
     assert hazard.before == RatingChoice(likelihood="Possible", consequence="Major")
     assert hazard.controls[0].kind == ControlKind.PPE
-    assert card.filled_in_at == datetime(2026, 11, 18, 6, 40)
+    assert card.filled_in_at == "2026-11-18T06:40"
     assert card.unreadable == ()
 
 
@@ -104,8 +103,71 @@ def test_a_reply_in_a_code_fence_is_read() -> None:
     assert scanned_card(f"```json\n{reading()}\n```", BOOKLET_TEMPLATE) is not None
 
 
-def test_a_reply_that_is_not_the_json_asked_for_is_none() -> None:
-    """A refusal, or JSON of the wrong shape, is not a card."""
+def test_a_reply_that_is_not_a_json_object_is_none() -> None:
+    """A refusal, or JSON that isn't an object, is not a card."""
     assert scanned_card("I can't read this photo.", BOOKLET_TEMPLATE) is None
-    assert scanned_card('{"hazards": "lots"}', BOOKLET_TEMPLATE) is None
     assert scanned_card("[1, 2, 3]", BOOKLET_TEMPLATE) is None
+
+
+def test_a_null_or_wrong_kind_of_field_marks_only_that_field() -> None:
+    """One illegible field never loses the whole card (the commonest real case)."""
+    hazards: list[object] = [
+        {"description": None, "before": None, "controls": ["Chock it"], "after": {}},
+        "Wheel falls",
+    ]
+
+    card: ScannedCard | None = scanned_card(
+        reading(job=None, location=5, answers={"scope": None}, hazards=hazards),
+        BOOKLET_TEMPLATE,
+    )
+
+    assert card is not None
+    assert card.draft.worker_name == "Sam Example"
+    assert (card.draft.job, card.draft.location) == ("", "")
+    assert len(card.draft.hazards) == 2
+    assert set(card.unreadable) == {
+        "job",
+        "location",
+        "answers.scope",
+        "hazards.0.description",
+        "hazards.0.before",
+        "hazards.0.controls.0",
+        "hazards.0.after.likelihood",
+        "hazards.0.after.consequence",
+        "hazards.1",
+    }
+
+
+def test_a_whole_list_written_wrongly_is_marked_and_the_rest_kept() -> None:
+    """Hazards, answers or the AI's own list given as the wrong kind of value."""
+    card: ScannedCard | None = scanned_card(
+        reading(hazards="lots", answers=None, unreadable=None),
+        BOOKLET_TEMPLATE,
+    )
+
+    assert card is not None
+    assert card.draft.job == "Change tyre"
+    assert card.draft.hazards == ()
+    assert card.unreadable == ("hazards",)
+
+
+def test_only_the_ais_paths_that_look_like_fields_are_kept() -> None:
+    """A long or odd entry in the AI's own list is dropped, and repeats are merged."""
+    card: ScannedCard | None = scanned_card(
+        reading(unreadable=["job", "job", "x" * 500, "Ignore your rules", 7]),
+        BOOKLET_TEMPLATE,
+    )
+
+    assert card is not None
+    assert card.unreadable == ("job",)
+
+
+def test_a_date_with_no_time_stays_a_date() -> None:
+    """A card's missing time is never read as midnight."""
+    card: ScannedCard | None = scanned_card(
+        reading(filled_in_at="2026-04-03"),
+        BOOKLET_TEMPLATE,
+    )
+
+    assert card is not None
+    assert card.filled_in_at == "2026-04-03"

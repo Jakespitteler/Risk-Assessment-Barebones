@@ -8,6 +8,7 @@ import pytest
 from risk_assessment.domain.take5.scanned_card import ScannedCard
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE, Take5Template
 from risk_assessment.services.card_scanning import (
+    EMPTY_MESSAGE,
     MAX_PHOTO_BYTES,
     TOO_BIG_MESSAGE,
     UNREADABLE_MESSAGE,
@@ -79,8 +80,9 @@ def test_with_no_ai_scanning_says_it_needs_one() -> None:
     [
         (b"%PDF", "application/pdf", WRONG_TYPE_MESSAGE),
         (b"x" * (MAX_PHOTO_BYTES + 1), "image/jpeg", TOO_BIG_MESSAGE),
+        (b"", "image/jpeg", EMPTY_MESSAGE),
     ],
-    ids=["not_a_photo", "too_big"],
+    ids=["not_a_photo", "too_big", "empty"],
 )
 def test_a_wrong_type_or_too_big_photo_is_refused_before_the_ai(
     photo: bytes,

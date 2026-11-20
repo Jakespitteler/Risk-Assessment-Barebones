@@ -6,7 +6,13 @@ from typing import Any
 from fastapi.testclient import TestClient
 
 from risk_assessment.api.app import create_app
-from risk_assessment.services.card_scanning import NO_AI_MESSAGE, WRONG_TYPE_MESSAGE
+from risk_assessment.services.card_scanning import (
+    MAX_PHOTO_BYTES,
+    NO_AI_MESSAGE,
+    TOO_BIG_MESSAGE,
+    UNREADABLE_MESSAGE,
+    WRONG_TYPE_MESSAGE,
+)
 from risk_assessment.storage.sqlite import SqliteTake5Repository
 from tests.services.test_card_scanning import StandInReader
 
@@ -65,3 +71,42 @@ def test_a_file_that_is_not_a_photo_is_a_422_beside_the_photo(tmp_path: Path) ->
     assert response.json()["errors"] == [
         {"path": "photo", "message": WRONG_TYPE_MESSAGE},
     ]
+
+
+def test_a_too_big_upload_is_a_422_beside_the_photo(tmp_path: Path) -> None:
+    """The route reads one byte past the limit, so a big photo is refused."""
+    response = client_with(tmp_path, StandInReader()).post(
+        "/api/scans",
+        files={"photo": ("card.jpg", b"x" * (MAX_PHOTO_BYTES + 1), "image/jpeg")},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == TOO_BIG_MESSAGE
+
+
+def test_a_type_in_capitals_or_with_extras_is_still_a_photo(tmp_path: Path) -> None:
+    """A type such as "IMAGE/JPEG; charset=binary" is read as a JPEG."""
+    response = client_with(tmp_path, StandInReader()).post(
+        "/api/scans",
+        files={"photo": ("card.jpg", b"photo", "IMAGE/JPEG; charset=binary")},
+    )
+
+    assert response.status_code == 200
+
+
+def test_an_ai_failure_is_a_422_beside_the_photo_never_an_ai_error(
+    tmp_path: Path,
+) -> None:
+    """The person is asked to retake the photo; the AI's own message never shows."""
+    reader = StandInReader(failure=ConnectionError("provider says no"))
+
+    response = client_with(tmp_path, reader).post(
+        "/api/scans",
+        files={"photo": ("card.jpg", b"photo", "image/jpeg")},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["errors"] == [
+        {"path": "photo", "message": UNREADABLE_MESSAGE},
+    ]
+    assert "provider says no" not in response.text

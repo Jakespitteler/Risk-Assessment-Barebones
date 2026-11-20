@@ -94,7 +94,9 @@ Part 2, saving (next pull request):
 
 - [ ] A checked card is saved as written, marked "from paper", finished at once with its verdict and no
   challenge question, with the card's date and time in `started_at`; the spec gets the exceptions to F2, C6 and
-  K2 for scans, and anyone can scan in "Users and roles".
+  K2 for scans, with worked examples, and anyone can scan in "Users and roles".
+- [ ] `docs/architecture.md` says a scanned card's text, as the AI read it and the person checked it, goes on to
+  the ranking.
 - [ ] A saved batch is ranked worst first with task 0032's ranking.
 
 Part 3, the page (last pull request):

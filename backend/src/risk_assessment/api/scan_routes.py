@@ -37,7 +37,9 @@ def create_scan_router(scanner: CardScanner) -> APIRouter:
         """
         # One byte over the limit is enough to know it is too big.
         photo_bytes: bytes = photo.file.read(MAX_PHOTO_BYTES + 1)
-        card: ScannedCard = scanner.read(photo_bytes, photo.content_type or "")
+        # "IMAGE/JPEG" or "image/jpeg; charset=binary" is still a JPEG.
+        media_type: str = (photo.content_type or "").split(";")[0].strip().lower()
+        card: ScannedCard = scanner.read(photo_bytes, media_type)
         return ScannedCardResponse(
             draft=card.draft,
             filled_in_at=card.filled_in_at,

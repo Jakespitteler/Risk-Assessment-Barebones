@@ -204,8 +204,9 @@ class ScannedCardResponse(BaseModel):
 
     Attributes:
         draft: The card as a draft Take 5, with the worker's name as written.
-        filled_in_at: The date and time written on the card, as read, often with no
-            time zone; None when there was none or it couldn't be read.
+        filled_in_at: The date, or date and time, written on the card in ISO 8601 as
+            read, with no time zone (such as "2026-04-03T06:40"); None when there was
+            none or it couldn't be read.
         unreadable: The dotted paths of fields left empty because the AI couldn't read
             them, such as "job" or "hazards.0.before.likelihood".
     """
@@ -213,5 +214,5 @@ class ScannedCardResponse(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     draft: Take5Draft
-    filled_in_at: datetime | None
+    filled_in_at: str | None
     unreadable: tuple[str, ...]

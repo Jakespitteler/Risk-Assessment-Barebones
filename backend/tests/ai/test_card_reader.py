@@ -63,6 +63,7 @@ def test_the_instructions_name_the_cards_own_questions_levels_and_kinds() -> Non
         assert level in instructions
     assert "ignore them" in instructions
     assert "Don't guess, correct, improve or add anything" in instructions
+    assert "day first" in instructions
 
 
 def test_the_reader_sends_the_photo_and_hands_back_the_reply_unchecked() -> None:
@@ -75,4 +76,4 @@ def test_the_reader_sends_the_photo_and_hands_back_the_reply_unchecked() -> None
     assert reply == "not even JSON"
     assert (photo, media_type) == (b"photo", "image/png")
     assert instructions == card_reader_instructions(BOOKLET_TEMPLATE)
-    assert CARD_READER_INSTRUCTIONS_VERSION == "card-reader-1"
+    assert CARD_READER_INSTRUCTIONS_VERSION == "card-reader-2"

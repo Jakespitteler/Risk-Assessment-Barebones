@@ -7,14 +7,16 @@ Newest first. One short entry per non-obvious decision.
 - Decision: `POST /api/scans` reads one photo into a card for a person to check, and saves nothing. A new
   `PhotoReadingModel` Protocol (a `LanguageModel` that also has `read_photo`) keeps the text jobs and their
   stand-ins unchanged; the Claude adapter fills it, with its own 60-second limit for slow handwriting. The
-  provider's main model reads photos unless `TAKE5_AI_SCAN_MODEL` names another. `python-multipart` is added, so
-  FastAPI can take the upload.
+  main model (`TAKE5_AI_MODEL`) reads photos, at medium effort, unless `TAKE5_AI_SCAN_MODEL` names another.
+  `python-multipart` is added, so FastAPI can take the upload.
 - Why: Jake's answers of 2026-11-20 (task file): the provider's main model with its own setting, one new method
   on the AI interface, and the package approved. Saving, with the approved `from_paper` field, and the page
   follow in two more pull requests.
-- How: the AI's JSON is untrusted, so `domain/take5/scanned_card.py` keeps only the template's own words and
-  marks the rest unreadable, never rewriting a card to pass a rule. The photo is never kept (Jake didn't approve
-  keeping it).
+- How: the AI's JSON is untrusted, so `domain/take5/scanned_card.py` reads it field by field, keeps only the
+  template's own words and marks the rest unreadable, so one bad field never loses a card, and never rewrites a
+  card to pass a rule. The instructions (`card-reader-2`) say dates are written day first; a date with no time
+  stays a date, and the saving device's time zone is added when the card is saved (part 2). The photo is never
+  kept (Jake didn't approve keeping it).
 - Not chosen: changing `reply()` to take images (it would touch every job's types); photos as base64 inside JSON
   (no package, but a third bigger).
 - Decided by: human (the choices above), agent (how).
