@@ -199,9 +199,14 @@ export function SavedTake5sScreen({
               </a>
             )}
             {take5s.length > 0 && (
-              <a className={TODAY_LINK} href="/review-today">
-                Today’s review
-              </a>
+              <>
+                <a className={TODAY_LINK} href="/review-today">
+                  Today’s review
+                </a>
+                <a className={TODAY_LINK} href="/risk-by-area">
+                  Risk by area
+                </a>
+              </>
             )}
             {take5s.length === 0 ? (
               <Card>

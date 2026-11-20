@@ -44,7 +44,7 @@ design choice: **if the app is boring and can be used without thinking, people w
 
 | Role | Who | What they can do |
 | --- | --- | --- |
-| Worker | Anyone on a mine-site crew about to start a task | Fill in a Take 5, see its verdict, look back at saved Take 5s, and see today's ranked worst first (F8) |
+| Worker | Anyone on a mine-site crew about to start a task | Fill in a Take 5, see its verdict, look back at saved Take 5s, and see today's ranked worst first (F8) and risk by area (F9) |
 
 There is one role for now. There is no sign-in: the worker types their name and the
 phone remembers it. Anyone can rank Take 5s, and the ranking shows each worker's name, as the saved list does
@@ -399,6 +399,27 @@ batch (decisions D91 to D96). The best of the set is found too, as a good exampl
   gap, unless W2 already counts it for being short, such as "“Slips, trips and falls in the work area” was kept
   though it could fit any job". It counts against being careful (W8) like W2 to W4 do.
 
+### Risk by area
+
+Where the jobs were, and which places keep coming up high risk, so a safety person knows where to walk first. It
+is a ranked list of areas with a bar for each, not a drawn map yet (decisions D111 to D117).
+
+- **A1 The area.** Take 5s are grouped by where the job is, as typed, ignoring capitals, spaces and punctuation,
+  so "Light vehicle workshop" and "light-vehicle  workshop." are one area. The area is named by the spelling typed
+  most often there, the newest on a tie. A Take 5 whose location has no letters or digits is left out.
+- **A2 The last 30 days.** It counts the Take 5s started in the last 30 days, today included: from midnight 29
+  days before today, where the phone is. A Take 5 counts from when it was started, or saved if it has no start
+  time, finished or not, as W7 counts. Nothing is saved: it is worked out when the page opens.
+- **A3 High risk.** A Take 5 is high risk when a hazard's *before* score needs a JHA on its own card (R3): 11 or
+  more on the booklet.
+- **A4 Hottest first.** The area with the most high-risk Take 5s is first. On a tie, the most "Don't start yet"
+  verdicts, then the most thought gaps (W2 to W5, W10), then the most Take 5s, then the name from A to Z. An
+  unfinished Take 5 has no verdict yet, so it never counts as "Don't start yet". Each area's bar is its
+  high-risk count beside the hottest area's.
+- **A5 What comes up there.** Each area shows its high-risk count out of its Take 5s, its highest *before* score
+  and band, its "Don't start yet" count, its thought gaps, and up to 3 hazard questions answered Yes most often
+  there, most first and in the card's order on a tie, each with how many times. No AI is used.
+
 ### Worked examples
 
 Each example becomes an automated test, named by its number. Add one for every rule and every boundary.
@@ -587,6 +608,24 @@ Stock and unfit hazards (T7, W10). As T6's examples with the AI, unless the row 
 | 117 | A ranked Take 5 (as the ranking examples) whose hazard was kept as stock | Score 13; "… was kept though it could fit any job."; it can't be the best | W10, W8 |
 | 118 | Its hazard is "Moving wheel", kept as vague | Score 13, not 18 | W10: W2 already counts it |
 
+Risk by area (A1 to A5). Unless the row says otherwise, each Take 5 is the ranking examples' careful one, in the
+"Light vehicle workshop", with every hazard question No.
+
+| # | Situation | Expected | Why |
+| --- | --- | --- | --- |
+| 119 | Typed "Light vehicle workshop" twice and "light-vehicle  workshop." once | One area of 3, "Light vehicle workshop" | A1 |
+| 120 | "LV workshop", then later "lv  WORKSHOP" | One area, "lv  WORKSHOP" | A1: the newest on a tie |
+| 121 | The location is " - " | Left out | A1 |
+| 122 | Its hazard is Almost Certain / Low (11) before controls | High risk | A3: 11 needs a JHA |
+| 123 | Its hazard is Rare / Major (10) | Not high risk | A3 |
+| 124 | One in "Crusher" at Possible / Major (18); three in the workshop | Crusher first: 1 high risk, highest 18 Extreme | A4 |
+| 125 | One in each; the Crusher one got "Don't start yet" | Crusher first | A4 |
+| 126 | One in each; the Crusher one's question was never answered | Crusher first, with 1 thought gap | A4 |
+| 127 | Three with vehicles Yes; one each also has other, heights or guards Yes | Vehicles (3), guards (1), heights (1) | A5: card order on a tie |
+| 128 | Midnight today is 21 Nov | The 30 days start at midnight on 23 Oct | A2 |
+| 129 | One started at midnight on 23 Oct, one a minute before | Only the first counts | A2 |
+| 130 | An unfinished one at Possible / Major | 1 high risk, 0 "Don't start yet" | A4 |
+
 ## Features
 
 ### F1: Rate a risk
@@ -727,6 +766,15 @@ through a day's Take 5s, on a phone or a desktop.
 - Acceptance: it says when an AI ordered them, and that names aren't sent.
 - Acceptance: with nothing started today it says so.
 
+### F9: Risk by area
+
+The last 30 days of Take 5s grouped by area, hottest first (A1 to A5). For a safety person deciding where to go.
+
+- Acceptance: the saved list has "Risk by area" once anything is saved, beside "Today's review".
+- Acceptance: each area shows its name, a bar, "2 of 3 Take 5s high risk", its highest risk, its "Don't start
+  yet" count, its thought gaps and the questions answered Yes most often there.
+- Acceptance: with nothing in the last 30 days it says so.
+
 ## Out of scope (for now)
 
 - AI that does the worker's thinking while they fill in a Take 5: marking their answer, follow-up questions,
@@ -753,6 +801,8 @@ under "Ready for later".
 - **JHAs, hazard report cards and journey plans.** They may or may not be added. The Take 5's building blocks
   (the matrix, controls, Yes / No questions, the wording checks, the challenge question) are kept separate from
   the Take 5 itself so that they can be reused. Until then the app only says when a JHA is needed.
+- **Areas from a fixed list, GPS or a site plan.** Risk by area (A1) groups the typed names. A company's own
+  list of areas, the phone's position, or a heat map drawn on a site plan can come later (D111, D112).
 - **The company's risk standards given to the AI**, so its question can draw on them.
 - **An AI the company keeps private**, so that company information stays in house.
 - **Feedback on the AI's questions.** Workers rate a question as useful or not, and those ratings are used to
@@ -876,6 +926,13 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D108 | How it fits T6 (2026-11-20) | Part of T6's one AI call and nudge, with its own words; the AI never suggests a hazard (T7) | A separate check |
 | D109 | Is a kept flag saved (2026-11-20) | Yes, on each hazard: a data model change Jake approved (T7) | Not saved, so the review can't count it |
 | D110 | Are older Take 5s judged again (2026-11-20) | No; noted in `docs/ideas.md` for checking the field against new standards later | Re-judge every saved Take 5 |
+| D111 | Where the area comes from (2026-11-21) | The location as typed, ignoring capitals, spaces and punctuation (A1); no data model change | A site's fixed list of areas; the phone's GPS; an AI grouping the names |
+| D112 | What the map is drawn on (2026-11-21) | A ranked list of areas, each with a bar (F9) | A site plan image; a real map |
+| D113 | What makes an area hot (2026-11-21) | High-risk Take 5s (a hazard needing a JHA before controls), then "Don't start yet", then thought gaps (A3, A4) | The sum of scores, which favours busy areas; incidents, which the app doesn't record |
+| D114 | Over what time (2026-11-21) | The last 30 days, today included (A2) | Today only; a choice of spans |
+| D115 | Which relationships show (2026-11-21) | The hazard questions answered Yes most often in each area (A5) | Ratings over time per area, left for task 0039 |
+| D116 | Is an AI used (2026-11-21) | No: every number can be checked by hand | An AI summary of each area |
+| D117 | Where the page is (2026-11-21) | "Risk by area" at `/risk-by-area`, linked from the saved list beside "Today's review" | A new tab bar |
 
 ## Open questions
 

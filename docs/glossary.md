@@ -99,3 +99,12 @@ helpers, and API types, which come from `src/api/schema.d.ts` through `src/api/t
 | Best of today | The best careful Take 5: finished and answered, controls on every hazard, no gap from W2 to W4 (rushed is allowed). The rules shortlist 5, the AI picks one and says what was good. | `BestTake5`, `is_careful`, `best_shortlist`, `best_by_rules`, `checked_ai_pick`, `with_ai_pick` | `ReviewTodayScreen`; type `BestTake5Line` | W8 |
 | Typical time | The median minutes today's finished Take 5s took, shown beside the best's time. | `typical_minutes`, `minutes_taken` | `typical_minutes` | W9 |
 | AI ranking | The AI reorders the worst 10 and writes their lines, never seeing a name. Its reply is checked, and the rules decide when it fails. | `Take5Ranker`, `AiTake5Ranker`, `checked_ai_order`, `with_ai_order`; `RankedBy` | `ranked_by_ai` | W6 |
+
+## Risk by area
+
+| Term | Meaning | Back end | Front end | Rules |
+| --- | --- | --- | --- | --- |
+| Risk by area | The last 30 days of Take 5s grouped by where the job is, hottest first. Opened from the saved list. | `AreaRiskService`, `risk_by_area`, `AreaRisk`, `area_since` | `RiskByAreaScreen`, `useRiskByArea`; types `RiskByArea`, `AreaRisk` | A2, A4 |
+| Area | Where the job is, as typed, ignoring capitals, spaces and punctuation; named by the spelling typed most. | `area_key` | `name` | A1 |
+| High risk | A Take 5 with a hazard whose before score needs a JHA on its card (11 or more on the booklet). | `is_high_risk` | `high_risk_count` | A3 |
+| Common Yes | A hazard question answered Yes often in an area, with how many times; up to 3 per area. | `CommonYes` | `common_yes` | A5 |

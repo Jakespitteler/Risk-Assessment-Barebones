@@ -105,6 +105,7 @@ backend/
                 ranking.py         the fixed score and its line, what the AI is given to rank,
                                    and the check on its order and lines; the best's shortlist,
                                    its line and the check on the AI's pick; the typical time (spec W1 to W9)
+                areas.py           Take 5s grouped by area, hottest first; no AI        (spec A1 to A5)
         services/          what the app does
             take5s.py          Take5Service: check a draft, nudge, submit, answer, get, list. It is
                                given a clock, so tests can set the time
@@ -114,6 +115,7 @@ backend/
                                worst 10 ordered and the best picked by the AI, side by side, for
                                up to 20 seconds; remembers the result until the server restarts
                                                                                       (spec W6 to W9)
+            areas.py           AreaRiskService: the last 30 days by area             (spec A2)
             ports.py           Take5Repository, ChallengeAsker, HazardJudge and Take5Ranker (Protocols): what
                                the service needs from storage and from an AI
         storage/           where things are kept
@@ -137,6 +139,7 @@ backend/
             app.py             builds the FastAPI app and plugs the pieces together
             take5_routes.py    one function per Take 5 endpoint
             ranking_routes.py  the ranking endpoint                                   (spec W1 to W9)
+            area_routes.py     the risk-by-area endpoint                              (spec A1 to A5)
             schemas.py         the shapes of requests and responses, including the error replies
             errors.py          turns errors into the declared error replies
         settings.py        settings read from the environment or `backend/.env`, which git ignores
@@ -160,7 +163,8 @@ frontend/
                            the risk band colours in RiskBadge.tsx are fixed, the same in both modes
         features/take5/    the Take 5's screens: the four parts of the form, the question, the result, and
                            the list of saved Take 5s (SavedTake5sScreen.tsx), and today's best and
-                           worst first (ReviewTodayScreen.tsx, spec F8). formatDateTime.ts writes
+                           worst first (ReviewTodayScreen.tsx, spec F8), and risk by area
+                           (RiskByAreaScreen.tsx, spec F9). formatDateTime.ts writes
                            every date the one way the spec sets (D17)
                            stage.ts is which page shows (kept in the URL); useTake5Draft.ts keeps the one
                            draft on the phone (localStorage), with its start time, the page it was left on and
@@ -210,6 +214,7 @@ The four files directly under `domain/` know nothing about a Take 5. They are th
 | `GET /api/take5s` | The list, newest first, 50 at a time: a `Take5ListPage` of `take5s` and `next`, the ID to send as `?before=` for the page after it (empty when there are no more). Each line is a `Take5Summary`: the ID, when it was saved, the worker, the job, the verdict (`can_start`, empty while the question is unanswered) and whether a newer Take 5 fixes it (`fixed`), not the whole card |
 | `GET /api/take5s/{id}` | One Take 5, with `fixed_by` (the newest Take 5 that fixes it, if any) and `offers_fix` (whether its result offers a fix) |
 | `GET /api/ranked-take5s?since=` | Every Take 5 started since a moment (sent with its time zone, such as midnight where the phone is), worst first (task 0032, spec W1 to W7): `RankedTake5s`, each a `RankedTake5Line` with the ID, when it was saved, the worker, the job, the verdict, its `line` and `ranked_by_ai`. Fixed rules in `domain/take5/ranking.py` score them, then `Take5RankingService` gives the worst 10 to the AI in `ai/ranking.py` for up to 20 seconds. It also sends the `best` careful one as a `BestTake5Line` (or null), picked by the AI from up to 5 shortlisted by the rules, with `picked_by_ai` and `minutes_taken`, and `typical_minutes`, the median (task 0036, spec W8, W9). Saves nothing; a result is remembered in memory until the server restarts. A moment with no time zone is a 422 |
+| `GET /api/risk-by-area?today=` | Every area with a Take 5 started in the last 30 days, hottest first (task 0038, spec A1 to A5). `today` is midnight where the phone is, with its time zone; the reply is `RiskByArea`: `since` (midnight 29 days before) and `areas`, each an `AreaRisk` with its name, counts, highest score and band, and `common_yes`. Worked out by the fixed rules in `domain/take5/areas.py`; no AI, nothing saved. A moment with no time zone is a 422 |
 
 Every error reply is declared in the OpenAPI description, so the front end's generated types know it. A 422 is
 always `FormErrors` (`detail` and a list of field errors, each with its dotted `path`), whether the draft has a

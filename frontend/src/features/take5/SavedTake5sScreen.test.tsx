@@ -136,6 +136,7 @@ it("says when nothing has been saved yet, and offers a new Take 5", async () => 
   ).toBeTruthy();
   expect(screen.queryByRole("list")).toBeNull();
   expect(screen.queryByRole("link", { name: "Today’s review" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Risk by area" })).toBeNull();
   expect(
     screen
       .getByRole("link", { name: "Start a new Take 5" })
@@ -380,4 +381,11 @@ it("links to today's ranking once anything is saved (W7)", async () => {
     name: "Today’s review",
   });
   expect(link.getAttribute("href")).toBe("/review-today");
+});
+
+it("links to risk by area once anything is saved (A1)", async () => {
+  stubApi({ "GET /api/take5s": { status: 200, body: PAGE } });
+  renderWithApi(<SavedTake5sScreen />);
+  const link = await screen.findByRole("link", { name: "Risk by area" });
+  expect(link.getAttribute("href")).toBe("/risk-by-area");
 });

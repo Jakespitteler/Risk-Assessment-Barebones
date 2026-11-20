@@ -130,9 +130,12 @@ the app easier to tick through without thinking works against it, however handy.
   using, and rewards good work (see "Making it fun" above).
   - Relates to: task 0036 shows the best of today to whoever looks, but tells no one (D103); there is no sign-in
     to reach the worker by (D4).
-- **To investigate, each with its own task file:** refusing made-up hazards and stock wording (task 0037); a heat
-  map of high-risk areas, and how area relates to the data (0038); how the time of year, week and day relate to
-  hazards and incidents (0039); a photo of the job with the hazards circled, to train or test an AI later (0040).
+- **To investigate, each with its own task file:** how the time of year, week and day relate to hazards and
+  incidents (0039); a photo of the job with the hazards circled, to train or test an AI later (0040). Made-up and
+  stock hazards (0037) and a first risk by area (0038) are built.
+- **A real heat map of areas:** a company's fixed list of areas or the phone's position, drawn on a site plan.
+  - Relates to: task 0038 groups typed locations into a ranked list (spec D111, D112); spellings that differ by
+    more than capitals and punctuation are still two areas.
 - **Each company's own Take 5**, built from a photo, Word file or PDF of its blank card, then editable.
   - Relates to: "Planned for later" in the spec; the matrix and questions are already data (F1).
 - **More than the Take 5:** JHAs, hazard report cards and journey plans, built from the same pieces where they

@@ -387,6 +387,50 @@
           }
         }
       }
+    },
+    "/api/risk-by-area": {
+      "get": {
+        "tags": [
+          "areas"
+        ],
+        "summary": "Risk By Area",
+        "description": "Group the last 30 days of Take 5s by area, hottest first (A1 to A5).\n\nArgs:\n    today: Midnight today where the phone is, with its time zone.",
+        "operationId": "risk_by_area_api_risk_by_area_get",
+        "parameters": [
+          {
+            "name": "today",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "title": "Today"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskByArea"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The moment is missing or has no zone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormErrors"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -414,6 +458,58 @@
         ],
         "title": "AnswerRequest",
         "description": "The worker's answer to a Take 5's challenge question.\n\nAttributes:\n    answer: What the worker wrote."
+      },
+      "AreaRisk": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "take5_count": {
+            "type": "integer",
+            "title": "Take5 Count"
+          },
+          "high_risk_count": {
+            "type": "integer",
+            "title": "High Risk Count"
+          },
+          "dont_start_count": {
+            "type": "integer",
+            "title": "Dont Start Count"
+          },
+          "thought_gap_count": {
+            "type": "integer",
+            "title": "Thought Gap Count"
+          },
+          "highest_score": {
+            "type": "integer",
+            "title": "Highest Score"
+          },
+          "highest_band": {
+            "type": "string",
+            "title": "Highest Band"
+          },
+          "common_yes": {
+            "items": {
+              "$ref": "#/components/schemas/CommonYes"
+            },
+            "type": "array",
+            "title": "Common Yes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "take5_count",
+          "high_risk_count",
+          "dont_start_count",
+          "thought_gap_count",
+          "highest_score",
+          "highest_band",
+          "common_yes"
+        ],
+        "title": "AreaRisk",
+        "description": "What the Take 5s in one area show (A3 to A5).\n\nAttributes:\n    name: The area, as it was typed most often (A1).\n    take5_count: How many Take 5s were done there.\n    high_risk_count: How many had a hazard that needed a JHA before controls (A3).\n    dont_start_count: How many got \"Don't start yet\". An unfinished one has no\n        verdict yet, so it isn't counted.\n    thought_gap_count: How many thought gaps they had between them (W2 to W5, W10).\n    highest_score: The highest before-controls score of any hazard there.\n    highest_band: That score's band, such as \"Extreme\".\n    common_yes: Up to 3 hazard questions answered Yes most often there (A5)."
       },
       "AskedBy": {
         "type": "string",
@@ -532,6 +628,25 @@
         ],
         "title": "Challenge",
         "description": "The question a Take 5 was asked, who asked it, and the worker's answer.\n\nAttributes:\n    question: The question the worker was shown.\n    asked_by: Whether the AI or the fallback asked it.\n    model: For an AI question, which model asked it. None for the fallback.\n    instructions_version: For an AI question, which version of its instructions\n        it had. None for the fallback.\n    answer: The worker's answer, or None until they give one."
+      },
+      "CommonYes": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question",
+          "count"
+        ],
+        "title": "CommonYes",
+        "description": "A hazard question answered Yes in an area, and how many times.\n\nAttributes:\n    question: The card's question, word for word.\n    count: How many of the area's Take 5s answered it Yes."
       },
       "Control": {
         "properties": {
@@ -1042,6 +1157,29 @@
         "type": "object",
         "title": "RatingChoice",
         "description": "A likelihood and a consequence as the worker picked them; neither is preset.\n\nAttributes:\n    likelihood: The picked likelihood, or None until one is picked.\n    consequence: The picked consequence, or None until one is picked."
+      },
+      "RiskByArea": {
+        "properties": {
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Since"
+          },
+          "areas": {
+            "items": {
+              "$ref": "#/components/schemas/AreaRisk"
+            },
+            "type": "array",
+            "title": "Areas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "since",
+          "areas"
+        ],
+        "title": "RiskByArea",
+        "description": "Every area with a Take 5 in the last 30 days, hottest first (A1 to A5).\n\nAttributes:\n    since: Where the 30 days start: midnight, 29 days before today (A2).\n    areas: Each area and what its Take 5s show, hottest first."
       },
       "RiskCell": {
         "properties": {

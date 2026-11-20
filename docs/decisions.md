@@ -2,6 +2,19 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-21: Risk by area, a ranked list before a map (task 0038)
+
+- Decision: a "Risk by area" page groups the last 30 days of Take 5s by where the job is, as typed, ignoring
+  capitals, spaces and punctuation. Areas are ranked by how many Take 5s had a hazard needing a JHA before
+  controls, then "Don't start yet", then thought gaps, and each shows its most common Yes answers (spec A1 to A5,
+  D111 to D117). No AI, no saved data, no data model change.
+- Why: a safety person needs to know where to walk first. The typed location is already saved, so this works on
+  every Take 5 so far. A JHA-needing hazard is a threshold the site already uses, set on each card. Jake asked on
+  2026-11-21 to go with every recommendation.
+- Not chosen: a fixed list of areas, the phone's GPS or AI grouping (each changes the data model or adds cost);
+  a drawn map on a site plan (needs plans and coordinates); the sum of scores (favours busy areas).
+- Decided by: human.
+
 ## 2026-11-20: Push back on stock and made-up hazards, and count what is kept (task 0037)
 
 - Decision: the hazard check's AI can also call a hazard linked to a Yes *stock* (fits any job) or *unfit* (can't

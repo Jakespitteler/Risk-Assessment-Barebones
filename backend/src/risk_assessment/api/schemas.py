@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict
 from risk_assessment.domain.controls import ControlKind
 from risk_assessment.domain.questions import Answer, Question
 from risk_assessment.domain.risk import RiskMatrix, RiskRating
+from risk_assessment.domain.take5.areas import AreaRisk
 from risk_assessment.domain.take5.draft import FieldError, Take5Draft
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.template import LevelGuidance
@@ -227,3 +228,17 @@ class RankedTake5s(BaseModel):
     take5s: tuple[RankedTake5Line, ...]
     best: BestTake5Line | None
     typical_minutes: int | None
+
+
+class RiskByArea(BaseModel):
+    """Every area with a Take 5 in the last 30 days, hottest first (A1 to A5).
+
+    Attributes:
+        since: Where the 30 days start: midnight, 29 days before today (A2).
+        areas: Each area and what its Take 5s show, hottest first.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    since: datetime
+    areas: tuple[AreaRisk, ...]

@@ -28,6 +28,8 @@ export type Take5ListPage = Schemas["Take5ListPage"];
 export type RankedTake5s = Schemas["RankedTake5s"];
 export type RankedTake5Line = Schemas["RankedTake5Line"];
 export type BestTake5Line = Schemas["BestTake5Line"];
+export type RiskByArea = Schemas["RiskByArea"];
+export type AreaRisk = Schemas["AreaRisk"];
 export type Verdict = Schemas["Verdict"];
 export type Challenge = Schemas["Challenge"];
 type FormErrors = Schemas["FormErrors"];
@@ -296,6 +298,21 @@ export function useRankedTake5s(since: string) {
     // a failure shows "Try again", and the list doesn't reorder while it is read.
     retry: false,
     refetchOnWindowFocus: false,
+    networkMode: NETWORK_MODE,
+  });
+}
+
+/**
+ * Every area with a Take 5 in the last 30 days, hottest first (A1 to A5). Midnight
+ * today is sent with its time zone, so the 30 days start where the phone is.
+ */
+export function useRiskByArea(today: string) {
+  return useQuery({
+    queryKey: ["risk-by-area", today],
+    queryFn: () =>
+      request<RiskByArea>(
+        `/api/risk-by-area?today=${encodeURIComponent(today)}`,
+      ),
     networkMode: NETWORK_MODE,
   });
 }

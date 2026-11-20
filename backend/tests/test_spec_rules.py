@@ -149,6 +149,7 @@ def test_the_spec_rules_are_found() -> None:
         *(f"C{number}" for number in range(1, 7)),
         *(f"K{number}" for number in range(1, 4)),
         *(f"W{number}" for number in range(1, 11)),
+        *(f"A{number}" for number in range(1, 6)),
     ]
 
 
