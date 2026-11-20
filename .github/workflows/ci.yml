@@ -1,4 +1,4 @@
-# Runs every check in scripts/check.py on each pull request and each push to main.
+# Runs every check in check.py (in the repo root) on each pull request and each push to main.
 name: CI
 
 on:
@@ -33,7 +33,7 @@ jobs:
         run: npm ci && npx playwright install --with-deps chromium
         working-directory: frontend
       - name: Run every check
-        run: uv run scripts/check.py
+        run: uv run check.py
       - name: Attach phone screenshots
         if: always()
         uses: actions/upload-artifact@v7

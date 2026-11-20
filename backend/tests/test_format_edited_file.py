@@ -22,7 +22,7 @@ def test_python_is_formatted_then_given_trailing_commas_then_formatted_again() -
 
     All three use the back end's Ruff settings, the same as the checks.
     """
-    edited_file: Path = REPO_ROOT / "scripts" / "dev.py"
+    edited_file: Path = REPO_ROOT / "scripts" / "try_challenge.py"
     ruff_settings: list[str] = ["uv", "run", "ruff", "--config", "pyproject.toml"]
     ruff_format: FormatCommand = FormatCommand(
         [*ruff_settings, "format", str(edited_file)],
@@ -62,6 +62,21 @@ def test_markdown_gets_markdownlint_fixes_on_that_file_only() -> None:
 
     assert format_command.command[-2:] == ["--fix", f":{edited_file}"]
     assert format_command.folder == REPO_ROOT
+
+
+def test_a_command_in_the_repo_root_is_formatted_like_the_scripts() -> None:
+    """`start.py` and the other root commands get the same Ruff steps as `scripts/`."""
+    edited_file: Path = REPO_ROOT / "start.py"
+    script_steps: tuple[FormatCommand, ...] = format_commands_for(
+        REPO_ROOT / "scripts" / "try_challenge.py",
+        REPO_ROOT,
+    )
+
+    root_steps: tuple[FormatCommand, ...] = format_commands_for(edited_file, REPO_ROOT)
+
+    assert len(root_steps) == len(script_steps) == 3
+    assert all(step.folder == REPO_ROOT / "backend" for step in root_steps)
+    assert all(step.command[-1] == str(edited_file) for step in root_steps)
 
 
 @pytest.mark.parametrize(
@@ -120,7 +135,7 @@ def test_a_formatter_error_is_shown_to_claude(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Exit code 2 shows Claude the message, and the later formatters don't run."""
-    edited_file: Path = format_edited_file.REPO_ROOT / "scripts" / "dev.py"
+    edited_file: Path = format_edited_file.REPO_ROOT / "scripts" / "try_challenge.py"
 
     exit_code, formatter = run_formatter(monkeypatch, str(edited_file), [1])
 
@@ -133,7 +148,7 @@ def test_a_failed_trailing_comma_fix_stops_before_the_second_format(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """When Ruff's comma fix fails, the hook stops there and reports it."""
-    edited_file: Path = format_edited_file.REPO_ROOT / "scripts" / "dev.py"
+    edited_file: Path = format_edited_file.REPO_ROOT / "scripts" / "try_challenge.py"
 
     exit_code, formatter = run_formatter(monkeypatch, str(edited_file), [0, 1])
 
@@ -145,7 +160,7 @@ def test_every_python_formatter_runs_when_each_succeeds(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A Python edit runs all three formatters and reports nothing."""
-    edited_file: Path = format_edited_file.REPO_ROOT / "scripts" / "dev.py"
+    edited_file: Path = format_edited_file.REPO_ROOT / "scripts" / "try_challenge.py"
 
     exit_code, formatter = run_formatter(monkeypatch, str(edited_file), [0, 0, 0])
 

@@ -985,7 +985,7 @@ it("makes Leave wait while Continue is being checked, as Back does", async () =>
   expect(leave.disabled).toBe(true);
 });
 
-it("keeps the draft on the phone when the worker leaves to finish it later", () => {
+it("keeps the draft on the phone when the worker leaves to finish it later (K1)", () => {
   storeDraft();
   stubApi({ "POST /api/take5s/check": { status: 200, body: PASSING_CHECK } });
   renderWithApi(<FormAt start={{ page: "think" }} />);
