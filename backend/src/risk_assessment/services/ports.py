@@ -1,6 +1,7 @@
 """What the Take 5 service needs from the world outside: storage and AI jobs."""
 
 from collections.abc import Collection
+from datetime import datetime
 from typing import Protocol
 from uuid import UUID
 
@@ -90,6 +91,17 @@ class Take5Repository(Protocol):
         """
         ...
 
+    def list_saved_since(self, earliest: datetime) -> tuple[SavedTake5, ...]:
+        """Get the Take 5s saved at or after a moment, the newest first.
+
+        Args:
+            earliest: The moment, in any time zone.
+
+        Returns:
+            The saved Take 5s, newest first.
+        """
+        ...
+
     def fixed_among(self, take5_ids: Collection[UUID]) -> frozenset[UUID]:
         """Find which of these Take 5s a saved Take 5 fixes.
 
@@ -142,5 +154,21 @@ class HazardJudge(Protocol):
         Returns:
             The reply, "vague" or "specific", which the service checks before it is
             used (decision D58).
+        """
+        ...
+
+
+class Take5Ranker(Protocol):
+    """Anything that can rank the worst Take 5s: an AI, or a stand-in in tests."""
+
+    def rank(self, take5s_text: str) -> str:
+        """Order the worst Take 5s and write one line on each (spec W6).
+
+        Args:
+            take5s_text: The Take 5s as `ranking_text()` writes them out. It never
+                holds a worker's name.
+
+        Returns:
+            The reply, unchecked; `checked_ai_order()` decides whether it is used.
         """
         ...

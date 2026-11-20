@@ -371,3 +371,10 @@ it("says when more can't be loaded, keeps the list, and tries again", async () =
   await screen.findByText("Sam Example");
   expect(screen.queryByRole("status")).toBeNull();
 });
+
+it("links to today's ranking once anything is saved (W7)", async () => {
+  stubApi({ "GET /api/take5s": { status: 200, body: PAGE } });
+  renderWithApi(<SavedTake5sScreen />);
+  const link = await screen.findByRole("link", { name: "Worst of today" });
+  expect(link.getAttribute("href")).toBe("/worst-of-today");
+});

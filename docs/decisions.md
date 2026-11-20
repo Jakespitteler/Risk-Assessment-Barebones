@@ -2,6 +2,21 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-20: Rank Take 5s worst first by fixed rules, then the AI (task 0032)
+
+- Decision: a "Worst of today" page, linked from the saved list, ranks the Take 5s started since midnight where the
+  phone is, finished or not. Fixed rules score each one: its highest before-controls score, plus 5 for each sign
+  of little thought (a hazard under 6 words, controls that don't lower its risk, a missing or short answer, under
+  2 minutes taken). An AI then reorders the worst 10 and writes a line on each, given what the challenge question
+  gets plus the answer and minutes taken, never the name. Its reply is checked, and the rules decide when it
+  fails, is slow or names the worker. The worst 5 show first. Rankings are remembered until the server restarts,
+  not saved (spec D91 to D96, W1 to W7). The undo bar's focus outline takes the bar's text colour (D97), and D18
+  now points to D80.
+- Why: the rules keep the page useful with no AI and can be tested exactly; the AI sees what rules can't, such as
+  generic or copied answers. Jake took every recommended answer on 2026-11-20.
+- Not chosen: the AI ordering them all (cost, and nothing to fall back on); saving rankings (a data model change).
+- Decided by: human.
+
 ## 2026-11-20: Errors obvious in the terminal that runs the app (task 0028)
 
 - Decision: Browser crashes, `console.error` and `console.warn` print in the terminal through Vite's own

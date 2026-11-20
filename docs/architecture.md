@@ -102,12 +102,17 @@ backend/
                 challenge.py       what the AI is told (the Take 5 as JSON, without the
                                    worker's name), the check on its question,
                                    the fallback question, the check on the answer         (spec C1 to C4)
+                ranking.py         the fixed score and its line, what the AI is given to rank,
+                                   and the check on its order and lines                  (spec W1 to W6)
         services/          what the app does
             take5s.py          Take5Service: check a draft, nudge, submit, answer, get, list. It is
                                given a clock, so tests can set the time
             hazard_nudges.py   HazardNudger: asks the AI about each hazard for up to 5 seconds,
                                remembers its verdicts until the server restarts      (spec T6)
-            ports.py           Take5Repository, ChallengeAsker and HazardJudge (Protocols): what
+            ranking.py         Take5RankingService: today's Take 5s by the fixed rules, then the
+                               worst 10 by the AI for up to 20 seconds; remembers a ranking until
+                               the server restarts                                   (spec W6, W7)
+            ports.py           Take5Repository, ChallengeAsker, HazardJudge and Take5Ranker (Protocols): what
                                the service needs from storage and from an AI; AiReplyError, the
                                AI failures it expects
             ai_failures.py     names the kind of AI failure for its one log line
@@ -120,6 +125,8 @@ backend/
                                AiChallengeAsker, a ChallengeAsker that works with any LanguageModel
             vague_hazard.py    the vague-hazard instructions and their version, and AiHazardJudge,
                                a HazardJudge that works with any LanguageModel        (spec T6)
+            ranking.py         the ranking instructions and their version, and AiTake5Ranker,
+                               a Take5Ranker that works with any LanguageModel        (spec W6)
             providers/
                 claude.py          ClaudeModel, the first LanguageModel: one Messages API call, an
                                    11-second network limit and no retries. QUICK_MODEL names the
@@ -127,6 +134,7 @@ backend/
         api/               the web API
             app.py             builds the FastAPI app and plugs the pieces together
             take5_routes.py    one function per Take 5 endpoint
+            ranking_routes.py  the ranking endpoint                                   (spec W1 to W7)
             schemas.py         the shapes of requests and responses, including the error replies
             errors.py          turns errors into the declared error replies; names the request
                                of an unexpected error in one log line above its trace
@@ -151,7 +159,8 @@ frontend/
                            a dark value. Components use these names, never a shade such as `bg-stone-100`; only
                            the risk band colours in RiskBadge.tsx are fixed, the same in both modes
         features/take5/    the Take 5's screens: the four parts of the form, the question, the result, and
-                           the list of saved Take 5s (SavedTake5sScreen.tsx). formatDateTime.ts writes
+                           the list of saved Take 5s (SavedTake5sScreen.tsx), and today's worst first
+                           (WorstOfTodayScreen.tsx, spec F8). formatDateTime.ts writes
                            every date the one way the spec sets (D17)
                            stage.ts is which page shows (kept in the URL); useTake5Draft.ts keeps the one
                            draft on the phone (localStorage), with its start time, the page it was left on and
@@ -223,6 +232,7 @@ What the terminal running `uv run start.py` shows (task 0028). The aim: a glance
 | `POST /api/take5s/{id}/answer` | Saves the answer, works out the verdict, and returns the finished Take 5 (task 0008). A short answer is a 422 on `answer`; a different answer to a finished one is a 409; the same answer again returns the finished Take 5 |
 | `GET /api/take5s` | The list, newest first, 50 at a time: a `Take5ListPage` of `take5s` and `next`, the ID to send as `?before=` for the page after it (empty when there are no more). Each line is a `Take5Summary`: the ID, when it was saved, the worker, the job, the verdict (`can_start`, empty while the question is unanswered) and whether a newer Take 5 fixes it (`fixed`), not the whole card |
 | `GET /api/take5s/{id}` | One Take 5, with `fixed_by` (the newest Take 5 that fixes it, if any) and `offers_fix` (whether its result offers a fix) |
+| `GET /api/ranked-take5s?since=` | Every Take 5 started since a moment (sent with its time zone, such as midnight where the phone is), worst first (task 0032, spec W1 to W7): `RankedTake5s`, each a `RankedTake5Line` with the ID, when it was saved, the worker, the job, the verdict, its `line` and `ranked_by_ai`. Fixed rules in `domain/take5/ranking.py` score them, then `Take5RankingService` gives the worst 10 to the AI in `ai/ranking.py` for up to 20 seconds. Saves nothing; a ranking is remembered in memory until the server restarts. A moment with no time zone is a 422 |
 
 Every error reply is declared in the OpenAPI description, so the front end's generated types know it. A 422 is
 always `FormErrors` (`detail` and a list of field errors, each with its dotted `path`), whether the draft has a
@@ -319,7 +329,7 @@ api/app.py is the one exception: it also imports storage, ai and settings, to pl
 - **`storage`** owns the SQL. It stores and fetches; it makes no decisions.
 - **`ai`** owns talking to an AI, in two layers. A *provider* (`ai/providers/claude.py`) is a `LanguageModel`: it
   is given instructions and text and returns text, and knows nothing about this app. A *job* (`ai/challenge.py`,
-  `ai/vague_hazard.py`) holds the instructions for one task and works with any provider. Neither decides
+  `ai/vague_hazard.py`, `ai/ranking.py`) holds the instructions for one task and works with any provider. Neither decides
   anything: `domain/take5/challenge.py` and `domain/take5/hazard_nudges.py` check what comes back, and
   `services` falls back to the fixed question on any failure or after 10 seconds, and to the word rule for a
   hazard on any failure or after 5 seconds.
@@ -360,9 +370,9 @@ between Take 5s.
 
 | Risk | What it means | What stops it |
 | --- | --- | --- |
-| Poisoning | Wrong or hostile text gets in and is relied on | C2 checks every reply before it is shown. The AI's text is never fed into another AI call and never decides the verdict. A worker could type instructions into the job ("ignore your rules"); the instructions in `ai/challenge.py` tell the model the Take 5 is only data and to ignore any instructions in it (task 0009), and C2 limits any reply to one short question |
-| Distraction | Too much in front of the model | Each call sends one Take 5 and nothing builds up, so nothing needs compacting |
-| Confusion | Irrelevant material mixed in | Only that Take 5's own fields are sent (C1) |
+| Poisoning | Wrong or hostile text gets in and is relied on | C2 checks every reply before it is shown, and W6 checks every ranking: each number once, one short line each, and no line that names the worker. The AI's text is never fed into another AI call and never decides the verdict. A worker could type instructions into the job ("ignore your rules"); the instructions in `ai/challenge.py` tell the model the Take 5 is only data and to ignore any instructions in it (task 0009), and C2 limits any reply to one short question |
+| Distraction | Too much in front of the model | Each call sends one Take 5 and nothing builds up, so nothing needs compacting. A ranking sends at most the worst 10, picked by fixed rules (W6) |
+| Confusion | Irrelevant material mixed in | Only that Take 5's own fields are sent (C1). A ranking sends the same for each, plus its question, answer and minutes taken, and never a worker's name (W6) |
 | Clash | Sources that disagree | One source today. When company standards arrive, `StandardsSource` picks only the sections that matter. What happens when a standard and the card disagree is a product decision for then |
 
 If the app later has several AI jobs or a large body of standards, give the model a short index first and load
