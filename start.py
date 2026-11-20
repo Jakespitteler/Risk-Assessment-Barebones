@@ -17,9 +17,9 @@ In order, it:
    were installed. It installs exactly the locked versions and never upgrades one.
 4. Starts the back end, then the front end, and prints the app's address once it
    answers. Their own status lines, including those that give their own addresses,
-   are turned off in their settings: uvicorn's start-up, restart and shutdown lines in
+   are turned off in their settings: uvicorn's start-up and shutdown lines in
    `backend/dev_logging.json`, and Vite's address box with `--logLevel warn`. Requests,
-   the app's own lines, reload notices, warnings and errors still show.
+   the app's own lines, warnings and errors still show.
 5. Restarts the back end itself when a Python file under `backend/src` is saved, rather
    than using uvicorn's `--reload`. On Windows that reloader restarts by sending Ctrl+C,
    which Windows gives to every program in the terminal, so it stopped the whole app. A
@@ -411,8 +411,8 @@ def restart_backend(
         wait_until_ready(servers["back end"], BACKEND_READY_URL, "back end", timeout)
     except (RuntimeError, TimeoutError) as problem:
         print(
-            f"\n{problem} Its error is above. The app is waiting: save a fix and the "
-            "back end starts again.",
+            f"\n{problem} Check its output above. The app is waiting: save a fix "
+            "and the back end starts again.",
             flush=True,
         )
         return False

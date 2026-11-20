@@ -41,3 +41,14 @@ This can't be run here (no Windows), so Jake's check on Windows is a criterion.
 under `backend/src`, the same files uvicorn watched apart from the tests. No new package: the file times come
 from the standard library. An editor that saves two files a second apart restarts the back end twice, which
 is harmless.
+
+Jake picked this design on 2026-11-20: the card's option said `start.py` restarts the back end itself on save.
+
+A separate reviewer agent checked the diff on 2026-11-20 and agreed with the cause. It added tests for Ctrl+C
+during a restart, a file removed during the scan, and a mended back end that later stops by itself, and it
+corrected two docstrings that still spoke of uvicorn's reload notices. Left as they are:
+
+- On Windows, if the old back end still held port 8000 when the new one started, the new one couldn't start and
+  the app would say it waits for a fix. The next save mends it. `taskkill /T` ends the whole tree first, so this
+  shouldn't happen; Jake's Windows check will show.
+- As before this task, a failure to launch `uv` at all during a restart shows a traceback.

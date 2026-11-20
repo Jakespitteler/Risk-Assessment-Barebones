@@ -632,8 +632,8 @@ def test_the_uvicorn_settings_turn_down_only_its_status_lines() -> None:
     """Uvicorn's "running on" line is `uvicorn.error` info; requests still show.
 
     The file is uvicorn's own default log settings, from the installed uvicorn, with
-    that one logger at warnings, so its errors, reload notices and tracebacks still
-    reach the terminal. A uvicorn upgrade that changes its defaults fails here.
+    that one logger at warnings, so its errors and tracebacks still reach the
+    terminal. A uvicorn upgrade that changes its defaults fails here.
     """
     settings_file: Path = start.BACKEND / "dev_logging.json"
     settings: dict[str, Any] = json.loads(settings_file.read_text(encoding="utf-8"))
@@ -754,3 +754,77 @@ def test_a_change_that_breaks_the_back_end_waits_for_a_fix() -> None:
         call(fixed_backend),
         call(frontend),
     ]
+
+
+def test_the_code_stamp_skips_a_file_removed_while_it_is_looked_at(
+    tmp_path: Path,
+) -> None:
+    """A file listed and then removed before its time is read is left out, not fatal."""
+    module: Path = tmp_path / "app.py"
+    module.write_text("ANSWER = 1\n")
+    removed: Path = tmp_path / "removed.py"
+    with patch.object(start.Path, "rglob", return_value=iter([module, removed])):
+        stamp: frozenset[tuple[str, int]] = start.code_stamp(tmp_path)
+
+    assert stamp == frozenset({(str(module), module.stat().st_mtime_ns)})
+
+
+def test_ctrl_c_while_the_back_end_restarts_stops_everything() -> None:
+    """Ctrl+C during a restart returns 0 and stops the new back end and front end."""
+    old_backend = MagicMock(spec=subprocess.Popen)
+    new_backend = MagicMock(spec=subprocess.Popen)
+    frontend = MagicMock(spec=subprocess.Popen)
+    with (
+        patch.object(start, "start", side_effect=[old_backend, frontend, new_backend]),
+        patch.object(
+            start,
+            "wait_until_ready",
+            side_effect=[None, None, KeyboardInterrupt],
+        ),
+        patch.object(start, "code_stamp", side_effect=["before", "after"]),
+        patch.object(start, "print", create=True),
+        patch.object(start, "stop") as stop,
+        patch.object(start.signal, "signal"),
+    ):
+        exit_code: int = start.run_servers("http://localhost:5173", None)
+
+    assert exit_code == 0
+    assert stop.mock_calls == [call(old_backend), call(new_backend), call(frontend)]
+
+
+def test_a_fixed_back_end_that_stops_by_itself_stops_the_app_again() -> None:
+    """Once a save fixes the back end, it is watched again, as before the break."""
+    old_backend = MagicMock(spec=subprocess.Popen)
+    broken_backend = MagicMock(spec=subprocess.Popen)
+    fixed_backend = MagicMock(spec=subprocess.Popen)
+    frontend = MagicMock(spec=subprocess.Popen)
+    for server in (old_backend, frontend):
+        server.poll.return_value = None
+    broken_backend.poll.return_value = 1
+    fixed_backend.poll.return_value = 3
+    with (
+        patch.object(
+            start,
+            "start",
+            side_effect=[old_backend, frontend, broken_backend, fixed_backend],
+        ),
+        patch.object(
+            start,
+            "wait_until_ready",
+            side_effect=[
+                None,
+                None,
+                RuntimeError("The back end stopped before it was ready."),
+                None,
+            ],
+        ),
+        patch.object(start, "code_stamp", side_effect=["first", "broken", "fixed"]),
+        patch.object(start, "print", create=True) as say,
+        patch.object(start.time, "sleep"),
+        patch.object(start, "stop"),
+        patch.object(start.signal, "signal"),
+    ):
+        exit_code: int = start.run_servers("http://localhost:5173", None)
+
+    assert exit_code == 1
+    assert "The back end stopped (exit code 3)" in say.call_args.args[0]
