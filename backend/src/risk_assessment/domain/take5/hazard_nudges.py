@@ -169,8 +169,8 @@ def hazard_verdict(reply: str) -> HazardVerdict | None:
         reply: The AI's reply, exactly as it came.
 
     Returns:
-        The verdict, or None when the reply is anything but "vague" or "specific", so
-        the word rule decides instead.
+        The verdict, or None when the reply is anything but "specific", "vague",
+        "stock" or "unfit", so the word rule decides instead.
     """
     word: str = reply.strip().removesuffix(".").lower()
     try:

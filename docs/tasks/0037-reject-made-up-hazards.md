@@ -65,5 +65,10 @@ Built by Claude on 2026-11-20. Assumptions:
 - The flags are the same AI call as T6's, with its instructions now "vague-hazard-2" (one word: specific, vague,
   stock or unfit). With no AI, only T6's word rule applies.
 - "Kept" means still nudged when submitted, worked out on the server from the AI's remembered verdicts, so the
-  phone holds no rule. If the server restarted between the nudge and submitting, only the word rule decides.
+  phone holds no rule. A flag counts only if the server showed the worker that flag on the same words, so a
+  verdict that came too late to show, or a hazard never checked, saves no flag.
+- A flag can be lost in the worker's favour, never added: when the job, location or link changes after the nudge
+  was kept (the words the AI judged are different), when the server restarts between the check and submitting,
+  or past the 1000 remembered verdicts or shown flags. For a proof of concept this is fine.
+- Each nudge in the API reply now carries `flag` (vague, stock or unfit), so the phone can tell them apart.
 - A kept hazard under 6 words is counted once, by W2.

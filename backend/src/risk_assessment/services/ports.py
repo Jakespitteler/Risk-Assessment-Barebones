@@ -142,8 +142,8 @@ class HazardJudge(Protocol):
                 holds the worker's name.
 
         Returns:
-            The reply, "vague" or "specific", which the service checks before it is
-            used (decision D58).
+            The reply, one word of "specific", "vague", "stock" or "unfit", which the
+            service checks before it is used (decisions D58, D105).
         """
         ...
 

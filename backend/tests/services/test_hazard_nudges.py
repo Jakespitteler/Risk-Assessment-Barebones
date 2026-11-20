@@ -406,3 +406,39 @@ def test_example_116_a_retry_keeps_the_first_saves_flags() -> None:
     ).submit(_stock_draft(), submission_id)
 
     assert retried.hazards[0].kept_flag is HazardFlag.STOCK
+
+
+def test_a_hazard_never_checked_is_not_saved_as_kept() -> None:
+    """T7: with no hazard check, submitting asks the AI nothing and saves no flag."""
+    judge = StandInJudge("stock")
+    service = Take5Service(
+        MemoryRepository(),
+        BOOKLET_TEMPLATE,
+        hazard_judge=judge,
+        hazard_ai_time_limit_seconds=PLENTY_OF_TIME_SECONDS,
+    )
+
+    saved: SavedTake5 = service.submit(_stock_draft(), uuid4())
+
+    assert saved.hazards[0].kept_flag is None
+    assert judge.texts_given == []
+
+
+def test_a_verdict_too_late_to_show_is_not_saved_as_kept() -> None:
+    """T7: the worker never saw the AI's late "stock", so it isn't kept on submit."""
+    let_it_answer = threading.Event()
+    judge = StandInJudge("stock", wait_until=let_it_answer)
+    service = Take5Service(
+        MemoryRepository(),
+        BOOKLET_TEMPLATE,
+        hazard_judge=judge,
+        hazard_ai_time_limit_seconds=SHORT_TIME_LIMIT_SECONDS,
+    )
+
+    shown: tuple[Nudge, ...] = service.nudges(_stock_draft())
+    let_it_answer.set()
+    judge.answered.wait(timeout=PLENTY_OF_TIME_SECONDS)
+    saved: SavedTake5 = service.submit(_stock_draft(), uuid4())
+
+    assert shown == ()
+    assert saved.hazards[0].kept_flag is None

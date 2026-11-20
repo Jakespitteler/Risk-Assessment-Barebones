@@ -5,7 +5,7 @@
 # [tool.uv.sources]
 # risk-assessment = { path = "../backend", editable = true }
 # ///
-"""Ask the real AI whether twelve made-up hazards are vague, and measure it (spec T6).
+"""Ask the real AI to judge twelve made-up hazards, and measure it (spec T6, T7).
 
 It reads the key and the model from `backend/.env` or the environment, as the app
 does (`TAKE5_AI_KEY`, `TAKE5_AI_HAZARD_MODEL`). Each call costs real money: twelve
@@ -105,14 +105,14 @@ SAMPLE_HAZARDS: tuple[tuple[str, str, str, str, HazardVerdict], ...] = (
         "other",
         "Clean up the spillage under the conveyor",
         "Conveyor CV03",
-        HazardVerdict.VAGUE,
+        HazardVerdict.STOCK,
     ),
     (
-        "Heat",
+        "Drowning in the tailings dam",
         "other",
         "Weld new teeth on the loader bucket",
         "Outside the heavy vehicle workshop",
-        HazardVerdict.VAGUE,
+        HazardVerdict.UNFIT,
     ),
     (
         "There are some hazards around here today",
@@ -126,7 +126,7 @@ SAMPLE_HAZARDS: tuple[tuple[str, str, str, str, HazardVerdict], ...] = (
         "nearby_activity",
         "Replace the light over the crib hut door",
         "North pit crib hut",
-        HazardVerdict.VAGUE,
+        HazardVerdict.STOCK,
     ),
 )
 
@@ -168,7 +168,7 @@ def word_rule(draft: Take5Draft) -> str:
         draft: A draft with one linked hazard.
 
     Returns:
-        "vague" or "specific".
+        "vague" or "specific": only an AI can say stock or unfit (T7).
     """
     nudged: bool = bool(specific_hazard_nudges(draft, BOOKLET_TEMPLATE, {}))
     return HazardVerdict.VAGUE.value if nudged else HazardVerdict.SPECIFIC.value

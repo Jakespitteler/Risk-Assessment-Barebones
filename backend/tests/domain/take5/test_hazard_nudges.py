@@ -178,7 +178,7 @@ def test_example_79_spaces_capitals_and_a_full_stop_dont_matter(
     ["It depends on the site.", "", "   ", "vague or specific", "Vague!"],
 )
 def test_example_81_any_other_reply_is_unusable(reply: str) -> None:
-    """T6: a reply that isn't one of the two words leaves the word rule to decide."""
+    """T6: a reply that isn't one of the four words leaves the word rule to decide."""
     assert hazard_verdict(reply) is None
 
 
@@ -293,7 +293,7 @@ def test_example_112_the_ai_can_say_a_hazard_is_unfit_for_the_job() -> None:
     ]
 
 
-def test_example_113_with_no_ai_stock_wording_of_six_words_passes() -> None:
+def test_example_113_with_no_ai_stock_wording_of_eight_words_passes() -> None:
     """T7: only an AI can call a hazard stock or unfit; the word rule can't."""
     draft: Take5Draft = _linked_to_vehicles(STOCK_HAZARD)
 

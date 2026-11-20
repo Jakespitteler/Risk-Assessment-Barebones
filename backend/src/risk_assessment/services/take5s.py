@@ -201,14 +201,14 @@ class Take5Service:
         )
 
     def nudges(self, draft: Take5Draft) -> tuple[Nudge, ...]:
-        """Nudge each vague hazard linked to a Yes to say what could hurt and where.
+        """Nudge each vague, stock or unfit hazard linked to a Yes (T6, T7).
 
         Args:
             draft: The worker's answers so far. Nothing is saved.
 
         Returns:
-            One nudge for each vague hazard, judged by the AI when it answers in time
-            and by the word rule otherwise (spec T6).
+            One nudge for each flagged hazard, judged by the AI when it answers in
+            time and by the word rule otherwise (spec T6, T7).
         """
         return self._hazard_nudger.nudges(draft)
 
@@ -256,13 +256,14 @@ class Take5Service:
             raise InvalidDraftError(check)
         # A retry finds the first save, so the hazards are checked only the first time,
         # and what was flagged is left out when the two are compared. Only verdicts
-        # the AI already gave are used, so kept words are never sent again (D37).
+        # the AI already gave are used, so kept words are never sent again (D37), and
+        # only flags the worker was shown count as kept.
         hazards: tuple[Hazard, ...] = (
             check.assessment.hazards
             if previous is not None
             else with_kept_flags(
                 check.assessment.hazards,
-                self._hazard_nudger.nudges(draft, ask_ai=False),
+                self._hazard_nudger.kept_nudges(draft),
             )
         )
         submitted = SavedTake5(

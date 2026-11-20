@@ -253,18 +253,18 @@ falls back to a fixed rule.
 - **T6 Say what and where.** A vague hazard linked to a Yes gets a nudge under the first such question, in the
   card's order: "Make it specific: say what could hurt you, and where. For example: "\<that question's
   example\>"" (decision D34). An AI judges whether the hazard is vague (task 0027). When no AI is set up, it fails,
-  it takes longer than 5 seconds, or it sends back anything but "vague" or "specific", the word rule decides: a
-  hazard with fewer words than the template's minimum (6 on the booklet) is vague. The nudge shows the hazard in a
-  box, and what the worker types there changes the hazard on the list as they type; the box stays while they
-  type, and goes once they leave it with words judged specific. "Keep it as it is" leaves the words as they are.
+  it takes longer than 5 seconds, or it sends back anything but one of its words (below, and T7), the word rule
+  decides: a hazard with fewer words than the template's minimum (6 on the booklet) is vague. The nudge shows the
+  hazard in a box, and what the worker types there changes the hazard on the list as they type; the box stays
+  while they type, and goes once they leave it with words judged specific. "Keep it as it is" leaves the words as they are.
   A nudge never stops Continue or Submit (decision D35). Keeping the words is remembered on the phone for those
   exact words, so the nudge doesn't come back (decision D37). A template with no minimum never nudges, and never
   asks the AI.
   - The AI is asked once for each hazard's words: when the hazard is linked to a Yes, and again when the worker
     leaves the box with new words. It is not asked while they type (decision D56).
   - The AI is given the hazard, the question it is linked to, the job and where it is, as JSON. It is never given
-    the worker's name. It replies with one word, "vague" or "specific"; spaces, capitals and a full stop at the
-    end don't matter. The nudge's words never come from the AI (decision D58).
+    the worker's name. It replies with one word, "vague" or "specific" (or "stock" or "unfit", T7); spaces,
+    capitals and a full stop at the end don't matter. The nudge's words never come from the AI (decision D58).
   - While the AI is asked about a newly linked hazard, nothing shows under the Yes. After the worker rewords a
     nudged hazard and leaves the box, the nudge stays until the answer comes, so it doesn't vanish and come back.
     An answer that comes after 5 seconds is too late for that check, so the word rule decides it, but it is used
@@ -285,11 +285,12 @@ falls back to a fixed rule.
   shows the same way, with its own words: "This could be written about any job. What is it about this job that
   could hurt you?" or "This doesn't seem to fit the job. Is it the right hazard, and is it here?". The worker is
   never stopped and can still keep the words (D105); every nudge says "If you keep it as it is, it shows in today's
-  review." With no AI, only T6's word rule applies. When the Take 5 is
-  submitted, each hazard still nudged is saved with what was flagged (vague, stock or unfit), as kept by the
-  worker. Submitting uses only verdicts the AI has already given, so kept words are never sent again (D37). A
-  retry of the same submission gets the first save's flags. Take 5s saved before this keep no flags and are not
-  judged again (D110).
+  review." With no AI, only T6's word rule applies. When the Take 5 is submitted, each hazard still nudged is
+  saved with what was flagged (vague, stock or unfit), as kept by the worker. Submitting uses only verdicts the AI
+  has already given, so kept words are never sent again (D37), and a flag counts only if the worker was shown it
+  on those same words: a verdict that came too late to show, or a hazard never checked, saves no flag. A retry of
+  the same submission gets the first save's flags. Take 5s saved before this keep no flags and are not judged
+  again (D110).
 
 ### The challenge question
 
@@ -497,7 +498,7 @@ location is "Light vehicle workshop".
 | 78 | Hazard "There are some hazards around here today"; the AI returns "vague" | Nudged, with example 70's message | T6: the AI decides, though it has seven words |
 | 79 | Example 78, but the AI returns "  Vague." and a line break | Nudged | T6: spaces, capitals and a closing full stop don't matter |
 | 80 | Hazard "Get hit by a car"; the AI fails, takes longer than 5 seconds, or is not set up | Nudged | T6: the word rule decides: five words, one short |
-| 81 | Hazard "Crusher dust"; the AI returns "It depends on the site." | Nudged | T6: a reply that isn't one of the two words means the word rule decides |
+| 81 | Hazard "Crusher dust"; the AI returns "It depends on the site." | Nudged | T6: a reply that isn't one of the AI's words (T7 adds two) means the word rule decides |
 | 82 | Example 77, checked a second time | Not nudged; the AI was asked once | T6: the answer is remembered |
 | 83 | Example 77, then checked again with the job "Clean up under the primary crusher" | The AI is asked again | T6: remembered only for the same hazard, question, job and location |
 | 84 | Example 80, where the AI returns "specific" after 6 seconds; then checked again | The first check is nudged; the second is not, without asking the AI again | T6: a late answer is used next time |
@@ -822,7 +823,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D55 | When the AI judges vague hazards (2026-11-18) | Its own task, 0027, after 0009 | In task 0009 |
 | D56 | When the AI judges a hazard (2026-11-19) | Once for each hazard's words: when it is linked to a Yes, and when the worker leaves the box with new words (T6) | On every pause in typing (5 to 10 asks a hazard); only on Continue, which would stop Continue to show the nudge |
 | D57 | How long the AI has (2026-11-19) | 5 seconds, then the word rule; nothing shows under the Yes meanwhile | 10 seconds; the word rule's answer at once, changed when the AI answers, so a nudge can flicker |
-| D58 | What the AI sends back (2026-11-19) | Only "vague" or "specific"; the nudge keeps its fixed words and example | Which part is missing, what or where; a reason the AI writes, which could put words in the worker's mouth (T1) |
+| D58 | What the AI sends back (2026-11-19) | Only "vague" or "specific" (T7 adds "stock" and "unfit", D105); the nudge keeps its fixed words and example | Which part is missing, what or where; a reason the AI writes, which could put words in the worker's mouth (T1) |
 | D59 | Is the AI's answer remembered (2026-11-19) | Yes, on the server, for the same hazard, question, job and location, until it restarts | Saved in the database; not remembered, so paid for every time |
 | D60 | Which hazards the AI judges (2026-11-19) | Only one linked to a Yes, as before | Every hazard |
 | D61 | Which model judges vague hazards (2026-11-19) | Its own setting, `TAKE5_AI_HAZARD_MODEL`; by default the provider's quick model, Claude Haiku 5.5: a yes or no call, made mid-form | The challenge question's model, Opus 5.5 (about 40 times the cost) |
