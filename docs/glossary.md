@@ -85,3 +85,13 @@ helpers, and API types, which come from `src/api/schema.d.ts` through `src/api/t
 | Start time | When the worker made the draft's first change. | `SavedTake5.started_at` | `started_at` | K2, K3 |
 | Submission ID | The ID the phone makes for a Take 5, so a retry gets the same saved Take 5 back. | `submission_id` | `useSubmitTake5` | K2 |
 | Saved list | Every saved Take 5, newest first, 50 at a time with "Show more". Everyone using the app can see it. | `Take5Summary`, `Take5ListPage`, `SavedListPage`; `Take5Repository` | `SavedTake5sScreen` | K1 |
+
+## Ranking worst first
+
+| Term | Meaning | Back end | Front end | Rules |
+| --- | --- | --- | --- | --- |
+| Worst of today | Today's Take 5s ranked worst first, each with one line saying why. Anyone can open it from the saved list. | `Take5RankingService` | `WorstOfTodayScreen`, `useRankedTake5s`; types `RankedTake5s`, `RankedTake5Line` | W1, W7 |
+| Thought gap | A sign of little thought: a hazard under 6 words, controls that don't lower a risk, a missing or short answer, or under 2 minutes taken. | `thought_gaps` | none (the back end sends the line) | W2 to W5 |
+| Worst score | The highest before-controls score, plus 5 for each thought gap. Higher is worse. | `worst_score`, `rank_by_rules` | none | W1 |
+| Reason line | The one line saying why a Take 5 sits where it does: the AI's for the worst 10, else the rules'. | `RankedTake5.line`, `rule_line` | `line` | W1, W6 |
+| AI ranking | The AI reorders the worst 10 and writes their lines, never seeing a name. Its reply is checked, and the rules decide when it fails. | `Take5Ranker`, `AiTake5Ranker`, `checked_ai_order`, `with_ai_order`; `RankedBy` | `ranked_by_ai` | W6 |

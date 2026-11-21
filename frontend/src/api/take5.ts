@@ -25,6 +25,8 @@ export type Take5Response = Schemas["Take5Response"];
 export type SavedTake5 = Schemas["SavedTake5"];
 export type Take5Summary = Schemas["Take5Summary"];
 export type Take5ListPage = Schemas["Take5ListPage"];
+export type RankedTake5s = Schemas["RankedTake5s"];
+export type RankedTake5Line = Schemas["RankedTake5Line"];
 export type Verdict = Schemas["Verdict"];
 export type Challenge = Schemas["Challenge"];
 type FormErrors = Schemas["FormErrors"];
@@ -36,6 +38,9 @@ const CONTINUE_TIMEOUT_MS = 5_000;
 // Submitting waits for the challenge question, which the back end gives the AI up to
 // 10 seconds to write before it asks the fixed one (spec C3).
 const SUBMIT_TIMEOUT_MS = 20_000;
+// The ranking waits for the AI, which the back end gives up to 20 seconds to order
+// the worst Take 5s before the fixed rules decide (spec W6).
+const RANKING_TIMEOUT_MS = 30_000;
 const NETWORK_RETRIES = 2;
 // Always send the request, even when the phone says it is offline. TanStack's default
 // pauses it until the phone is back online, which leaves the screen waiting for good.
@@ -269,6 +274,27 @@ export function useSavedTake5List() {
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next,
     retry: retryOnNetworkError,
+    networkMode: NETWORK_MODE,
+  });
+}
+
+/**
+ * Every Take 5 started since a moment, worst first, each with why (spec W1 to W7). The
+ * moment is sent with its time zone, so "today" starts at midnight where the phone is.
+ */
+export function useRankedTake5s(since: string) {
+  return useQuery({
+    queryKey: ["ranked-take5s", since],
+    queryFn: () =>
+      request<RankedTake5s>(
+        `/api/ranked-take5s?since=${encodeURIComponent(since)}`,
+        undefined,
+        RANKING_TIMEOUT_MS,
+      ),
+    // The page says it can take half a minute, so it isn't asked again on its own:
+    // a failure shows "Try again", and the list doesn't reorder while it is read.
+    retry: false,
+    refetchOnWindowFocus: false,
     networkMode: NETWORK_MODE,
   });
 }

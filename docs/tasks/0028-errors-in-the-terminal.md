@@ -1,9 +1,9 @@
 ---
 id: 0028
 title: Make errors obvious in the terminal that runs the app
-status: todo
-owner:
-branch:
+status: done
+owner: claude
+branch: claude/0028-errors-in-the-terminal
 ---
 
 ## Goal
@@ -62,11 +62,12 @@ Claude's notes on how, not Jake's words: labels would bring back the pipe that 0
 `backend/dev_logging.json`; Vite's lines already start with `[vite]`; the request filter is a small log filter.
 The two changes that "come with the task unless Jake says otherwise" (below) weren't asked about yet. Task 0029's
 `start.py` already names a server that stops, with its exit code, so mainly the "back end is down" line is left;
-it is asked when the task is claimed.
+Asked when the task was claimed: **one short line per failed request** while the back end isn't answering (Jake,
+2026-11-20).
 
-**The criteria, question 3's sample line and the notes below still follow the original recommendations**, such
-as a label on every line and two quiet 422s. Where they differ from Jake's answers, the answers win; they are
-rewritten when the task is claimed.
+**Question 3's sample line and the notes below still follow the original recommendations**, such as a label on
+every line. The criteria were rewritten when the task was claimed, on 2026-11-20; where anything else differs
+from Jake's answers, the answers win.
 
 1. **How do front-end errors reach the terminal?** Options:
    - (a) Vite's own `server.forwardConsole: true`, one line in `frontend/vite.config.ts`. No new package. It
@@ -120,26 +121,29 @@ request.
 
 ## Acceptance criteria
 
-These follow the recommended picks; they change with Jake's answers.
+Rewritten on 2026-11-20 to follow Jake's answers above; the first version followed the original recommendations.
 
-- [ ] An error in the browser while developing, including a module that fails to load, prints in the terminal:
-  one line with the error, then where it happened when the browser knows.
-- [ ] `console.error` and `console.warn` in the browser reach the terminal; `console.log` does not.
-- [ ] Every back-end line follows one format: local time, level, which half, message, source. That includes
-  uvicorn's lines from its reloader, which runs outside the app.
-- [ ] An AI failure the app handles prints one warning line that names the kind of problem and no stack trace.
-- [ ] An unexpected error in a route prints one line naming the request (method and path, never the body), then
-  the trace.
-- [ ] Successful requests, Take 5s submitted with gaps and too-short challenge answers print no request line;
-  every other failed request prints one line.
-- [ ] Every line in the terminal says whether it came from the back end or the front end.
-- [ ] When either server stops, the script prints which one stopped and its exit code before stopping the other.
-- [ ] When the back end is down, the front end prints one line saying it can't reach it, not a proxy trace.
-- [ ] No line ever holds a worker's name or what they typed (AGENTS.md, Logging).
-- [ ] Tests cover the line format, the one-line AI warnings, the request filter, the labels, and
-  a browser error and a `console.log` in a running front end (the first reaches the terminal, the second
-  doesn't).
-- [ ] `docs/architecture.md` describes how logging is set up, and AGENTS.md's Logging rule points to it.
+- [x] An error in the browser while developing, an uncaught crash, `console.error` and `console.warn` each print a
+  line in the terminal; `console.log` does not (Vite's `server.forwardConsole: true` in `frontend/vite.config.ts`).
+- [x] Every back-end line, uvicorn's and the app's own, has one format: local time, level, message, then where it
+  came from in brackets (`backend/dev_logging.json`). No "back end" or "front end" label (Jake's answer 3 and 6).
+- [x] An AI failure the app handles (a time-out, or the adapter's `AiReplyError`, with the provider's own error as
+  its cause) prints one warning line that names the kind of problem and no stack trace; the provider's own
+  message, which can repeat what the AI was sent, is never printed. Any other error while asking the AI is a bug,
+  so it keeps its trace, and the worker still gets the fallback.
+- [x] An unexpected error in a route prints one line naming the request (method and path, never the body), then
+  uvicorn's trace. The reply is the same plain 500 as before.
+- [x] Successful requests print no line; every failed request (4xx or 5xx) prints one.
+- [x] When the back end isn't answering, the front end prints one line per failed request naming the path, not
+  Vite's proxy error and stack (Jake, 2026-11-20).
+- [x] When either server stops, the script names it with its exit code (already true since task 0029).
+- [x] No line holds a worker's name or what they typed: tests prove it for an AI failure and a route crash.
+- [x] Tests cover the log settings, the request filter, the one-line AI warnings, the route-crash line, and the
+  front end's back-end-down line and log level. The browser's lines reaching the terminal were checked by hand
+  in the running app (output in the pull request): a test of the terminal itself would need a second browser
+  run inside the tests.
+- [x] `docs/architecture.md` describes how logging is set up, and AGENTS.md's Logging rule points to it.
+- [x] All checks pass.
 
 ## Out of scope
 

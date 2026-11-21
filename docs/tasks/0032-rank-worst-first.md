@@ -1,9 +1,9 @@
 ---
 id: 0032
 title: Rank a set of Take 5s worst first, with one line saying why
-status: todo
-owner:
-branch:
+status: done
+owner: claude
+branch: claude/0032-rank-worst-first
 ---
 
 ## Goal
@@ -42,20 +42,20 @@ Questions for Jake, each with Claude's recommendation. Answered when the task st
 
 ## Acceptance criteria
 
-These follow the recommendations; they change with Jake's answers.
+Jake took every recommendation on 2026-11-20 (spec D91 to D96).
 
-- [ ] A fixed score in `domain/take5/` scores any set of saved Take 5s, and a job in `ai/` orders the worst of
+- [x] A fixed score in `domain/take5/` scores any set of saved Take 5s, and a job in `ai/` orders the worst of
   them and writes each one line saying why. With no AI, or when it fails, the fixed score orders them and the
   line says what the score found.
-- [ ] A "Worst of today" page lists today's Take 5s worst first: the worst 5, then "Show all".
-- [ ] The worker's name is never sent to the AI.
-- [ ] Tests cover the fixed score, the AI's order and lines, the fallback, and the page.
-- [ ] The ranked page shows each worker's name beside their Take 5 (decided by Jake, 2026-11-19).
-- [ ] `docs/spec.md` gets the ranking's rules, worked examples and a feature section, and its "Users and roles"
+- [x] A "Worst of today" page lists today's Take 5s worst first: the worst 5, then "Show all".
+- [x] The worker's name is never sent to the AI.
+- [x] Tests cover the fixed score, the AI's order and lines, the fallback, and the page.
+- [x] The ranked page shows each worker's name beside their Take 5 (decided by Jake, 2026-11-19).
+- [x] `docs/spec.md` gets the ranking's rules, worked examples and a feature section, and its "Users and roles"
   says anyone can rank. `docs/architecture.md` gets the new job and route, and its section on the AI's risks
   covers what the ranking sends and how its text is checked (the paragraph "What the AI is given, and keeping it
   trustworthy").
-- [ ] All checks pass.
+- [x] All checks pass.
 
 ## Out of scope
 
@@ -65,3 +65,24 @@ These follow the recommendations; they change with Jake's answers.
 ## Notes / assumptions
 
 Added by Claude on 2026-11-19 in task 0030, from the goal Jake agreed that day.
+
+Built by Claude on 2026-11-20. Jake's answers, all the recommended ones, are spec D91 to D96, with the rules W1 to
+W7 and worked examples 88 to 100. Assumptions Claude made, for Jake to check:
+
+- **The signs of little thought** (W2 to W5) are the ones the app already uses: under 6 words, as for the vague
+  hazard nudge (T6); controls that don't lower a hazard's score; a missing or short answer to the challenge
+  question; under 2 minutes from start to save. Each adds 5, so three of them outweigh a careful job one band
+  riskier. Jake can change any number in `domain/take5/ranking.py`.
+- **The AI reorders the worst 10** and has 20 seconds; the page waits up to 30 and doesn't retry on its own. So
+  the call isn't cut off at the other jobs' 11 seconds, `ClaudeModel` now takes its own network time limit, a new
+  optional argument that only the ranking uses. A ranking the rules made because
+  the AI failed isn't remembered, so the AI is asked again next time.
+- **A line naming a worker** is caught by any word of any given worker's name (two letters or more), as a whole
+  word, so "Sam" is caught and "danger" isn't caught for Dan. The AI's order still stands.
+- **A phone clock that is fast** gives a start after the save; that Take 5 isn't judged rushed (W5).
+- **Task 0034's and 0035's files** were still `review` after Jake merged them, so this pull request sets them
+  `done`.
+- **Reuse for task 0033:** `rank_by_rules` and `Take5RankingService` take any set of saved Take 5s, so a scanned
+  batch only needs its own way to pick them.
+- **Also in this pull request**, as Jake chose on 2026-11-20: the undo bar's focus outline takes the bar's text
+  colour (D97), and D18 now points to D80. The "5" logo already carries on the kept draft (D90).

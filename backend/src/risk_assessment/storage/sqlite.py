@@ -3,6 +3,7 @@
 import sqlite3
 from collections.abc import Collection
 from contextlib import closing
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID
 
@@ -46,6 +47,11 @@ _SELECT_OLDER_THAN: str = (
     "ORDER BY created_at DESC, rowid DESC LIMIT ?"
 )
 _NO_LIMIT: int = -1
+# Every time is saved in UTC as ISO text, so a UTC time compares as text.
+_SELECT_SAVED_SINCE: str = (
+    "SELECT document FROM take5s WHERE created_at >= ? "
+    "ORDER BY created_at DESC, rowid DESC"
+)
 # A fix points back at the Take 5 it fixes from inside its own document, so the first
 # one is never written to again. The newest fix wins if there is more than one.
 _SELECT_NEWEST_FIX: str = (
@@ -160,6 +166,23 @@ class SqliteTake5Repository:
                     (str(older_than), row_limit),
                 ).fetchall()
             )
+        return tuple(SavedTake5.model_validate_json(document) for (document,) in rows)
+
+    def list_saved_since(self, earliest: datetime) -> tuple[SavedTake5, ...]:
+        """Get the Take 5s saved at or after a moment, the newest first.
+
+        Args:
+            earliest: The moment, in any time zone.
+
+        Returns:
+            The saved Take 5s, each with the template and verdict it was saved with.
+        """
+        since: str = earliest.astimezone(UTC).isoformat()
+        with closing(self._connect()) as connection:
+            rows: list[tuple[str]] = connection.execute(
+                _SELECT_SAVED_SINCE,
+                (since,),
+            ).fetchall()
         return tuple(SavedTake5.model_validate_json(document) for (document,) in rows)
 
     def fixed_among(self, take5_ids: Collection[UUID]) -> frozenset[UUID]:

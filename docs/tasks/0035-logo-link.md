@@ -1,7 +1,7 @@
 ---
 id: 0035
 title: The "5" logo links to the start page
-status: review
+status: done
 owner: claude
 branch: claude/0035-logo-link
 ---

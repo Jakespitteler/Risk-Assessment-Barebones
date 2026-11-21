@@ -141,6 +141,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ranked-take5s": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ranked Take5S
+         * @description Rank the Take 5s started since a moment, worst first (spec W1 to W7).
+         *
+         *     Args:
+         *         since: The moment, with its time zone, such as midnight where the phone
+         *             is for "Worst of today".
+         */
+        get: operations["ranked_take5s_api_ranked_take5s_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -436,6 +460,58 @@ export interface components {
          * @enum {string}
          */
         QuestionRole: "stop" | "hazard";
+        /**
+         * RankedTake5Line
+         * @description One Take 5 in a ranking, worst first, with why it sits there (spec W1 to W7).
+         *
+         *     Attributes:
+         *         id: The Take 5's ID, to open it.
+         *         created_at: When it was saved.
+         *         worker_name: Who did it (decided by Jake, 2026-11-19). Never sent to the AI.
+         *         job: What the job is.
+         *         can_start: The verdict it was saved with: True for Good to go, False for
+         *             Don't start yet, or None while its question is unanswered.
+         *         line: One line saying why it sits where it does.
+         *         ranked_by_ai: True when the AI placed it and wrote the line, False when the
+         *             fixed rules did.
+         */
+        RankedTake5Line: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Worker Name */
+            worker_name: string;
+            /** Job */
+            job: string;
+            /** Can Start */
+            can_start: boolean | null;
+            /** Line */
+            line: string;
+            /** Ranked By Ai */
+            ranked_by_ai: boolean;
+        };
+        /**
+         * RankedTake5s
+         * @description Every Take 5 started since a moment, worst first (spec W7 and D92).
+         *
+         *     Attributes:
+         *         take5s: The ranking. The page shows the first 5, then the rest on request.
+         *         today_only: True when only today's are ranked; False when every saved Take 5
+         *             is, as `TAKE5_RANK_TODAY_ONLY` sets (D118).
+         */
+        RankedTake5s: {
+            /** Take5S */
+            take5s: components["schemas"]["RankedTake5Line"][];
+            /** Today Only */
+            today_only: boolean;
+        };
         /**
          * RatingChoice
          * @description A likelihood and a consequence as the worker picked them; neither is preset.
@@ -1103,6 +1179,37 @@ export interface operations {
                 };
             };
             /** @description Something is missing or wrong */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormErrors"];
+                };
+            };
+        };
+    };
+    ranked_take5s_api_ranked_take5s_get: {
+        parameters: {
+            query: {
+                since: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RankedTake5s"];
+                };
+            };
+            /** @description The moment is missing or has no zone */
             422: {
                 headers: {
                     [name: string]: unknown;

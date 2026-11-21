@@ -7,13 +7,17 @@ import pytest
 from pydantic import SecretStr
 
 from risk_assessment.ai.challenge import AiChallengeAsker
+from risk_assessment.ai.providers import claude
+from risk_assessment.ai.ranking import AiTake5Ranker
 from risk_assessment.ai.vague_hazard import AiHazardJudge
 from risk_assessment.api.app import (
     build_challenge_asker,
     build_hazard_judge,
+    build_take5_ranker,
     create_app,
 )
-from risk_assessment.services.ports import ChallengeAsker, HazardJudge
+from risk_assessment.domain.take5.ranking import AI_RANKING_TIME_LIMIT_SECONDS
+from risk_assessment.services.ports import ChallengeAsker, HazardJudge, Take5Ranker
 from risk_assessment.settings import Settings
 from risk_assessment.storage.sqlite import SqliteTake5Repository
 
@@ -30,6 +34,39 @@ def test_with_a_key_the_ai_asks_the_question() -> None:
     )
 
     assert isinstance(asker, AiChallengeAsker)
+
+
+def test_with_no_key_the_fixed_rules_rank_alone() -> None:
+    """No key means no ranker, so W1 orders the Take 5s alone (spec W6)."""
+    assert build_take5_ranker(Settings(ai_key=None)) is None
+
+
+def test_ranking_calls_may_take_as_long_as_the_ranking_waits(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """W6 waits 20 seconds, so a ranking call isn't cut off at the usual 11."""
+    timeouts: list[object] = []
+
+    def record_client(**settings: object) -> object:
+        """Stand in for Anthropic's client, keeping its time limit.
+
+        Args:
+            settings: What the client is set up with.
+
+        Returns:
+            Something in the client's place; nothing is sent.
+        """
+        timeouts.append(settings["timeout"])
+        return object()
+
+    monkeypatch.setattr(claude.anthropic, "Anthropic", record_client)
+
+    ranker: Take5Ranker | None = build_take5_ranker(
+        Settings(ai_key=SecretStr("made-up-key")),
+    )
+
+    assert isinstance(ranker, AiTake5Ranker)
+    assert timeouts == [AI_RANKING_TIME_LIMIT_SECONDS + 1]
 
 
 def test_with_no_key_the_word_rule_judges_hazards() -> None:

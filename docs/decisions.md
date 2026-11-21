@@ -2,6 +2,50 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-21: Rank every saved Take 5 while the app is a proof of concept
+
+- Decision: the ranking page ranks every saved Take 5 by default, and says "Worst of all saved". A setting,
+  `TAKE5_RANK_TODAY_ONLY=true` in `backend/.env`, ranks only today's again. The by-day code is unchanged (spec W7,
+  D118).
+- Why: Jake asked on 2026-11-21 for a setting to rank all saved Take 5s, since a proof of concept has few Take 5s
+  a day, while keeping the by-day ranking for later.
+- Not chosen: a switch on the page (more to build, and the front end would hold a rule); today only.
+- Decided by: human.
+
+## 2026-11-20: Rank Take 5s worst first by fixed rules, then the AI (task 0032)
+
+- Decision: a "Worst of today" page, linked from the saved list, ranks the Take 5s started since midnight where the
+  phone is, finished or not. Fixed rules score each one: its highest before-controls score, plus 5 for each sign
+  of little thought (a hazard under 6 words, controls that don't lower its risk, a missing or short answer, under
+  2 minutes taken). An AI then reorders the worst 10 and writes a line on each, given what the challenge question
+  gets plus the answer and minutes taken, never the name. Its reply is checked, and the rules decide when it
+  fails, is slow or names the worker. The worst 5 show first. Rankings are remembered until the server restarts,
+  not saved (spec D91 to D96, W1 to W7). The undo bar's focus outline takes the bar's text colour (D97), and D18
+  now points to D80.
+- Why: the rules keep the page useful with no AI and can be tested exactly; the AI sees what rules can't, such as
+  generic or copied answers. Jake took every recommended answer on 2026-11-20.
+- Not chosen: the AI ordering them all (cost, and nothing to fall back on); saving rankings (a data model change).
+- Decided by: human.
+
+## 2026-11-20: Errors obvious in the terminal that runs the app (task 0028)
+
+- Decision: Browser crashes, `console.error` and `console.warn` print in the terminal through Vite's own
+  `server.forwardConsole`. The back end's lines share one format through `backend/dev_logging.json`, with no
+  "back end" or "front end" label. A handled AI failure logs one line naming its kind, with no trace; a bug in a
+  route logs one line naming the request, then its trace. Only failed requests print, through a small log
+  filter (`api/request_log.py`). No log file. While the back end isn't answering, Vite prints one short line per
+  failed request instead of a proxy error and stack, through a small custom logger.
+- Why: Jake's answers of 2026-11-19 and 2026-11-20: "it should always be obvious from a glance what/where is
+  going wrong". Labels would have brought back the output pipe that task 0029 removed for being complicated.
+- How: a custom logger makes Vite ignore the command line's `--logLevel` and `clearScreen`, so the logger reads
+  the level from the command line itself and never clears the screen. Only a time-out or an `AiReplyError` counts
+  as an expected AI failure; anything else while asking the AI is a bug and keeps its trace. So every AI adapter
+  wraps its library's errors in `LanguageModelError` (a kind of `AiReplyError`), keeping each as the cause; the
+  Claude adapter now does.
+- Not chosen: a plugin of our own or `vite-plugin-terminal` for browser errors; labels on each line; a stack trace
+  for every AI failure; two quiet 422s; a log file.
+- Decided by: human (the behaviour), agent (how).
+
 ## 2026-11-20: `start.py` restarts the back end itself (task 0034)
 
 - Decision: `start.py` runs uvicorn without `--reload`, watches `backend/src` for saved Python files, and restarts

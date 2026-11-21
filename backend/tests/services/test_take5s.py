@@ -87,6 +87,12 @@ class MemoryRepository:
         end: int | None = None if limit is None else start + limit
         return tuple(newest_first[start:end])
 
+    def list_saved_since(self, earliest: datetime) -> tuple[SavedTake5, ...]:
+        """Return the documents saved at or after a moment, newest first."""
+        return tuple(
+            take5 for take5 in self.list_newest_first() if take5.created_at >= earliest
+        )
+
     def fixed_among(self, take5_ids: Collection[UUID]) -> frozenset[UUID]:
         """Return the IDs among these that some document's `fixes` points at."""
         return frozenset(

@@ -343,6 +343,50 @@
           }
         }
       }
+    },
+    "/api/ranked-take5s": {
+      "get": {
+        "tags": [
+          "ranking"
+        ],
+        "summary": "Ranked Take5S",
+        "description": "Rank the Take 5s started since a moment, worst first (spec W1 to W7).\n\nArgs:\n    since: The moment, with its time zone, such as midnight where the phone\n        is for \"Worst of today\".",
+        "operationId": "ranked_take5s_api_ranked_take5s_get",
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "title": "Since"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankedTake5s"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The moment is missing or has no zone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormErrors"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -794,6 +838,81 @@
         ],
         "title": "QuestionRole",
         "description": "What a question's answer means for the job."
+      },
+      "RankedTake5Line": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "worker_name": {
+            "type": "string",
+            "title": "Worker Name"
+          },
+          "job": {
+            "type": "string",
+            "title": "Job"
+          },
+          "can_start": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Start"
+          },
+          "line": {
+            "type": "string",
+            "title": "Line"
+          },
+          "ranked_by_ai": {
+            "type": "boolean",
+            "title": "Ranked By Ai"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "worker_name",
+          "job",
+          "can_start",
+          "line",
+          "ranked_by_ai"
+        ],
+        "title": "RankedTake5Line",
+        "description": "One Take 5 in a ranking, worst first, with why it sits there (spec W1 to W7).\n\nAttributes:\n    id: The Take 5's ID, to open it.\n    created_at: When it was saved.\n    worker_name: Who did it (decided by Jake, 2026-11-19). Never sent to the AI.\n    job: What the job is.\n    can_start: The verdict it was saved with: True for Good to go, False for\n        Don't start yet, or None while its question is unanswered.\n    line: One line saying why it sits where it does.\n    ranked_by_ai: True when the AI placed it and wrote the line, False when the\n        fixed rules did."
+      },
+      "RankedTake5s": {
+        "properties": {
+          "take5s": {
+            "items": {
+              "$ref": "#/components/schemas/RankedTake5Line"
+            },
+            "type": "array",
+            "title": "Take5S"
+          },
+          "today_only": {
+            "type": "boolean",
+            "title": "Today Only"
+          }
+        },
+        "type": "object",
+        "required": [
+          "take5s",
+          "today_only"
+        ],
+        "title": "RankedTake5s",
+        "description": "Every Take 5 started since a moment, worst first (spec W7 and D92).\n\nAttributes:\n    take5s: The ranking. The page shows the first 5, then the rest on request.\n    today_only: True when only today's are ranked; False when every saved Take 5\n        is, as `TAKE5_RANK_TODAY_ONLY` sets (D118)."
       },
       "RatingChoice": {
         "properties": {

@@ -7,34 +7,16 @@ import { Screen } from "../../components/Screen";
 import { UndoBar } from "../../components/UndoBar";
 import { formatDateTime } from "./formatDateTime";
 import { KeptDraftCard } from "./KeptDraftCard";
+import { VerdictTag } from "./VerdictTag";
 import type { StoredDraft } from "./useTake5Draft";
 import { forgetKeptDraft, keptDraft } from "./useTake5Draft";
 
 const HEADING = "text-3xl font-extrabold focus:outline-none";
+// The way to today's ranking (spec W7, decision D93), quieter than starting a Take 5.
+const WORST_LINK =
+  "flex min-h-14 items-center justify-center rounded-xl border-2 border-ink bg-surface px-5 text-lg font-bold text-ink hover:bg-surface-hover focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus";
 const NEW_TAKE5_LINK =
   "flex min-h-14 items-center justify-center rounded-xl bg-action px-5 text-lg font-bold text-on-action hover:bg-action-hover focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus";
-
-/**
- * The verdict as a tag, in the same strong colours as the result screen, or "Not
- * finished" while its question is unanswered (spec F5).
- */
-function VerdictTag({ canStart }: { canStart: boolean | null }) {
-  if (canStart === null)
-    return (
-      <span className="rounded-lg bg-brand px-2 py-1 text-sm font-bold text-on-brand uppercase">
-        Not finished
-      </span>
-    );
-  return (
-    <span
-      className={`rounded-lg px-2 py-1 text-sm font-bold text-on-fill uppercase ${
-        canStart ? "bg-success-fill" : "bg-danger-fill"
-      }`}
-    >
-      {canStart ? "Good to go" : "Don’t start yet"}
-    </span>
-  );
-}
 
 /** Marks a Don't start yet that a newer Take 5 fixes, so it isn't taken as still open. */
 function FixedTag() {
@@ -214,6 +196,11 @@ export function SavedTake5sScreen({
             ) : (
               <a className={NEW_TAKE5_LINK} href="/">
                 Start a new Take 5
+              </a>
+            )}
+            {take5s.length > 0 && (
+              <a className={WORST_LINK} href="/worst-of-today">
+                Worst of today
               </a>
             )}
             {take5s.length === 0 ? (
