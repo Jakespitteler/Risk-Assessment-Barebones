@@ -44,7 +44,7 @@ design choice: **if the app is boring and can be used without thinking, people w
 
 | Role | Who | What they can do |
 | --- | --- | --- |
-| Worker | Anyone on a mine-site crew about to start a task | Fill in a Take 5, see its verdict, look back at saved Take 5s, and see today's ranked worst first (F8) |
+| Worker | Anyone on a mine-site crew about to start a task | Fill in a Take 5, see its verdict, look back at saved Take 5s, and see today's ranked worst first (F8) and risk by area (F9) |
 
 There is one role for now. There is no sign-in: the worker types their name and the
 phone remembers it. Anyone can rank Take 5s, and the ranking shows each worker's name, as the saved list does
@@ -253,18 +253,18 @@ falls back to a fixed rule.
 - **T6 Say what and where.** A vague hazard linked to a Yes gets a nudge under the first such question, in the
   card's order: "Make it specific: say what could hurt you, and where. For example: "\<that question's
   example\>"" (decision D34). An AI judges whether the hazard is vague (task 0027). When no AI is set up, it fails,
-  it takes longer than 5 seconds, or it sends back anything but "vague" or "specific", the word rule decides: a
-  hazard with fewer words than the template's minimum (6 on the booklet) is vague. The nudge shows the hazard in a
-  box, and what the worker types there changes the hazard on the list as they type; the box stays while they
-  type, and goes once they leave it with words judged specific. "Keep it as it is" leaves the words as they are.
+  it takes longer than 5 seconds, or it sends back anything but one of its words (below, and T7), the word rule
+  decides: a hazard with fewer words than the template's minimum (6 on the booklet) is vague. The nudge shows the
+  hazard in a box, and what the worker types there changes the hazard on the list as they type; the box stays
+  while they type, and goes once they leave it with words judged specific. "Keep it as it is" leaves the words as they are.
   A nudge never stops Continue or Submit (decision D35). Keeping the words is remembered on the phone for those
   exact words, so the nudge doesn't come back (decision D37). A template with no minimum never nudges, and never
   asks the AI.
   - The AI is asked once for each hazard's words: when the hazard is linked to a Yes, and again when the worker
     leaves the box with new words. It is not asked while they type (decision D56).
   - The AI is given the hazard, the question it is linked to, the job and where it is, as JSON. It is never given
-    the worker's name. It replies with one word, "vague" or "specific"; spaces, capitals and a full stop at the
-    end don't matter. The nudge's words never come from the AI (decision D58).
+    the worker's name. It replies with one word, "vague" or "specific" (or "stock" or "unfit", T7); spaces,
+    capitals and a full stop at the end don't matter. The nudge's words never come from the AI (decision D58).
   - While the AI is asked about a newly linked hazard, nothing shows under the Yes. After the worker rewords a
     nudged hazard and leaves the box, the nudge stays until the answer comes, so it doesn't vanish and come back.
     An answer that comes after 5 seconds is too late for that check, so the word rule decides it, but it is used
@@ -279,6 +279,18 @@ falls back to a fixed rule.
     AI. Your name isn't sent." (decision D63).
   - A worker could write instructions to the AI into a hazard. They are sent as a quoted value and the AI is told
     to ignore them; at worst one skips a nudge, which "Keep it as it is" skips anyway.
+- **T7 Stock or doesn't fit the job.** The same AI, in the same one word, can also say a hazard linked to a Yes is
+  *stock* (wording that would fit almost any job, however long, such as "Slips, trips and falls in the work
+  area") or *unfit* (it plainly can't happen on this job or where it is done, as if made up or copied). The nudge
+  shows the same way, with its own words: "This could be written about any job. What is it about this job that
+  could hurt you?" or "This doesn't seem to fit the job. Is it the right hazard, and is it here?". The worker is
+  never stopped and can still keep the words (D105); every nudge says "If you keep it as it is, it shows in today's
+  review." With no AI, only T6's word rule applies. When the Take 5 is submitted, each hazard still nudged is
+  saved with what was flagged (vague, stock or unfit), as kept by the worker. Submitting uses only verdicts the AI
+  has already given, so kept words are never sent again (D37), and a flag counts only if the worker was shown it
+  on those same words: a verdict that came too late to show, or a hazard never checked, saves no flag. A retry of
+  the same submission gets the first save's flags. Take 5s saved before this keep no flags and are not judged
+  again (D110).
 
 ### The challenge question
 
@@ -349,7 +361,7 @@ keep a draft long enough for a radio call and no longer (decisions D19 to D29).
 
 Any set of Take 5s can be ranked worst first, so the weakest are looked at first. "Worst" weighs how risky the job
 is against how little thought the answers show. Today it ranks a day's Take 5s; task 0033 reuses it for a scanned
-batch (decisions D91 to D96).
+batch (decisions D91 to D96). The best of the set is found too, as a good example to point at (D98 to D104).
 
 - **W1 The score.** Each Take 5 scores its highest *before* controls score, plus 5 for each thought gap that W2
   to W5 find. The highest score is worst; an equal score puts the one saved last first. With no AI, each gets one
@@ -372,6 +384,47 @@ batch (decisions D91 to D96).
 - **W7 Today.** "Today" is from midnight where the phone is: a Take 5 counts from when it was started, or when it
   was saved if it has no start time, finished or not. The ranking isn't saved; it is worked out when the page
   opens, and remembered until the server restarts or a Take 5 is added or finished.
+  While the app is a proof of concept, every saved Take 5 is ranked instead, and the page says "Review of all saved"
+  and "Best of all saved". The setting `TAKE5_RANK_TODAY_ONLY=true` brings back today only (D118).
+- **W8 The best.** The best is chosen from the *careful* Take 5s: finished with the question answered, controls on
+  every hazard, and no gap from W2 to W4 or W10. A rushed one (W5) can still be the best (D98). The rules shortlist up to
+  5 of them: the riskiest job first, then the one that took longest, then the newest. When an AI is set up and
+  there are two or more, it picks one and writes a line on what was good, given what W6 gives it and never a name.
+  Its reply is JSON with the number and the line, checked as W6 checks a line, with the same name check. Anything
+  else, an error or no answer in the same 20 seconds, and the shortlist's first wins with the rules' line: "Highest
+  risk 18 Extreme, with specific hazards, controls that lower each risk and a full answer to the question." With
+  none careful there is no best. It is worked out and remembered with the ranking (W7).
+- **W9 The typical time.** The typical time is the median of the minutes each finished Take 5 took, rounded to
+  whole minutes, a half going up. One with no start time, or one started after it was saved, has no time and
+  isn't counted.
+- **W10 Kept after the check.** Each hazard saved as kept after the hazard check flagged it (T7) is a thought
+  gap, unless W2 already counts it for being short, such as "“Slips, trips and falls in the work area” was kept
+  though it could fit any job". It counts against being careful (W8) like W2 to W4 do.
+
+### Risk by area
+
+Where the jobs were, and which places keep coming up high risk, so a safety person knows where to walk first. It
+is a ranked list of areas with a bar for each, not a drawn map yet (decisions D111 to D117).
+
+- **A1 The area.** Take 5s are grouped by where the job is, as typed, ignoring capitals, spaces and punctuation,
+  so "Light vehicle workshop" and "light-vehicle  workshop." are one area, and so are "Pit2" and "Pit 2". The
+  area is named by the spelling typed most often there, the newest on a tie. A Take 5 whose location has no
+  letters or digits is left out.
+- **A2 The last 30 days.** It counts the Take 5s started in the last 30 days, today included: from midnight 29
+  days before today, where the phone is, counting 24 hours to a day. A Take 5 counts from when it was started,
+  or saved if it has no start time, finished or not, as W7 counts. Nothing is saved: it is worked out when the page opens.
+  While the app is a proof of concept the 30 days are off by default: every saved Take 5 counts and the page says
+  "in every saved Take 5". The setting `TAKE5_AREA_LAST_30_DAYS_ONLY=true` brings back the 30 days, and the page
+  then says "in the last 30 days" with no other change (D119).
+- **A3 High risk.** A Take 5 is high risk when a hazard's *before* score needs a JHA on its own card (R3): 11 or
+  more on the booklet.
+- **A4 Hottest first.** The area with the most high-risk Take 5s is first. On a tie, the most "Don't start yet"
+  verdicts, then the most thought gaps (W2 to W5, W10), then the most Take 5s, then the name from A to Z. An
+  unfinished Take 5 has no verdict yet, so it never counts as "Don't start yet". Each area's bar is its
+  high-risk count beside the hottest area's, and the page says so; with no high-risk Take 5 there are no bars.
+- **A5 What comes up there.** Each area shows its high-risk count out of its Take 5s, its highest *before* score
+  and band, its "Don't start yet" count, its thought gaps, and up to 3 hazard questions answered Yes most often
+  there, most first and in the card's order on a tie, each with how many times. No AI is used.
 
 ### Worked examples
 
@@ -472,7 +525,7 @@ location is "Light vehicle workshop".
 | 78 | Hazard "There are some hazards around here today"; the AI returns "vague" | Nudged, with example 70's message | T6: the AI decides, though it has seven words |
 | 79 | Example 78, but the AI returns "  Vague." and a line break | Nudged | T6: spaces, capitals and a closing full stop don't matter |
 | 80 | Hazard "Get hit by a car"; the AI fails, takes longer than 5 seconds, or is not set up | Nudged | T6: the word rule decides: five words, one short |
-| 81 | Hazard "Crusher dust"; the AI returns "It depends on the site." | Nudged | T6: a reply that isn't one of the two words means the word rule decides |
+| 81 | Hazard "Crusher dust"; the AI returns "It depends on the site." | Nudged | T6: a reply that isn't one of the AI's words (T7 adds two) means the word rule decides |
 | 82 | Example 77, checked a second time | Not nudged; the AI was asked once | T6: the answer is remembered |
 | 83 | Example 77, then checked again with the job "Clean up under the primary crusher" | The AI is asked again | T6: remembered only for the same hazard, question, job and location |
 | 84 | Example 80, where the AI returns "specific" after 6 seconds; then checked again | The first check is nudged; the second is not, without asking the AI again | T6: a late answer is used next time |
@@ -518,7 +571,7 @@ Drafts (K2, K3). On the booklet's time limit of 2 hours, unless the row says oth
 | 63 | Started at 8:12 pm, submitted at 8:16 pm | Saved with the start time 8:12 pm | K3 |
 | 64 | Saved at 8:16 pm, then the same submission is sent again at 1:12 am | The Take 5 saved at 8:16 pm comes back | K2: a retry of a Take 5 saved in time |
 
-Ranking (W1 to W7). Unless the row says otherwise, each Take 5 has one hazard, "Wheel rolls off the hub and
+Ranking and the best (W1 to W9). Unless the row says otherwise, each Take 5 has one hazard, "Wheel rolls off the hub and
 crushes a foot", rated Possible / Minor (8) then Unlikely / Minor (5) with a barricade, the answer "Wheels chocked
 both sides and nuts torqued", and was saved 10 minutes after it was started.
 
@@ -537,6 +590,47 @@ both sides and nuts torqued", and was saved 10 minutes after it was started.
 | 98 | The AI's reply gives number 1 twice | Thrown away; W1's order | W6 |
 | 99 | The AI's line for the worst says "Sam Example skipped the question." | That Take 5 gets its rule line instead | W6: names never come back |
 | 100 | In Perth: one started at 11:53 pm and saved at 12:03 am; one with no start time saved at 12:01 am; one saved at 11:59 pm | Only the one saved at 12:01 am | W7 |
+| 101 | A as above (8). B: before Possible / Major (18) | B is the best: "Highest risk 18 Extreme, with specific hazards, controls that lower each risk and a full answer to the question." | W8: riskiest first |
+| 102 | Saved 1 minute after it was started, and nothing else | It is the best | W8: rushed can still be best (D98) |
+| 103 | A: never answered. B: the answer "Wheels chocked both sides" | No best | W8: neither is careful |
+| 104 | A took 3 minutes; B took 10 | B is the best | W8: same risk, longest first |
+| 105 | Two careful; the AI's reply is {"number": 2, "why": "Names the exact chock points."} | The second is the best, with that line, picked by the AI | W8 |
+| 106 | Two careful; the AI picks number 3 | Thrown away; the shortlist's first wins | W8 |
+| 107 | Two careful; the AI's line is "Sam took real care." | Its pick stands with the rules' line | W8: names never come back |
+| 108 | Finished ones took 2, 5 and 9 minutes; one unfinished took 30 | Typical 5 minutes | W9 |
+| 109 | A: before Possible / Major (18) with no controls. B as above (8) | B is the best | W8: a hazard with no controls isn't careful |
+| 110 | Finished ones took 3 and 10 minutes | Typical 7 minutes | W9: a half goes up |
+
+Stock and unfit hazards (T7, W10). As T6's examples with the AI, unless the row says otherwise.
+
+| # | Situation | Expected | Why |
+| --- | --- | --- | --- |
+| 111 | The hazard is "Slips, trips and falls in the work area"; the AI replies "stock" | Nudged: "This could be written about any job. What is it about this job that could hurt you?" | T7 |
+| 112 | The hazard is "Drowning in the tailings dam"; the AI replies "unfit" | Nudged: "This doesn't seem to fit the job. Is it the right hazard, and is it here?" | T7 |
+| 113 | Example 111's hazard with no AI | Not nudged: eight words pass the word rule | T7: only an AI says stock or unfit |
+| 114 | Submitted with example 111's nudge still showing, and a second hazard not nudged | The first is saved kept as stock; the second with no flag | T7 |
+| 115 | As 114, through the service, after the phone asked for the nudges | Saved kept as stock; the AI was asked once | T7: submitting sends nothing new |
+| 116 | 115 retried after the AI would now say "specific" | The first save, still kept as stock; no conflict | T7 |
+| 117 | A ranked Take 5 (as the ranking examples) whose hazard was kept as stock | Score 13; "… was kept though it could fit any job."; it can't be the best | W10, W8 |
+| 118 | Its hazard is "Moving wheel", kept as vague | Score 13, not 18 | W10: W2 already counts it |
+
+Risk by area (A1 to A5). Unless the row says otherwise, each Take 5 is the ranking examples' careful one, in the
+"Light vehicle workshop", with every hazard question No.
+
+| # | Situation | Expected | Why |
+| --- | --- | --- | --- |
+| 119 | Typed "Light vehicle workshop" twice and "light-vehicle  workshop." once | One area of 3, "Light vehicle workshop" | A1 |
+| 120 | "LV workshop", then later "lv  WORKSHOP" | One area, "lv  WORKSHOP" | A1: the newest on a tie |
+| 121 | The location is " - " | Left out | A1 |
+| 122 | Its hazard is Almost Certain / Low (11) before controls | High risk | A3: 11 needs a JHA |
+| 123 | Its hazard is Rare / Major (10) | Not high risk | A3 |
+| 124 | One in "Crusher" at Possible / Major (18); three in the workshop | Crusher first: 1 high risk, highest 18 Extreme | A4 |
+| 125 | One in each; the Crusher one got "Don't start yet" | Crusher first | A4 |
+| 126 | One in each; the Crusher one's question was never answered | Crusher first, with 1 thought gap | A4 |
+| 127 | Three with vehicles Yes; one each also has other, heights or guards Yes | Vehicles (3), guards (1), heights (1) | A5: card order on a tie |
+| 128 | Midnight today is 21 Nov | The 30 days start at midnight on 23 Oct | A2 |
+| 129 | One started at midnight on 23 Oct, one a minute before | Only the first counts | A2 |
+| 130 | An unfinished one at Possible / Major | 1 high risk, 0 "Don't start yet" | A4 |
 
 ## Features
 
@@ -663,16 +757,31 @@ sent to the server (decisions D69 to D79).
   on every screen the whole-app tests visit, checked by axe.
 - Acceptance: a phone set to dark never shows a white page while the app starts.
 
-### F8: Worst of today
+### F8: Today's review
 
-Today's Take 5s, worst first, each with one line saying why (W1 to W7). For whoever looks through a day's Take 5s,
-on a phone or a desktop.
+Today's Take 5s, worst first, each with one line saying why (W1 to W7), and the best one (W8). For whoever looks
+through a day's Take 5s, on a phone or a desktop.
 
-- Acceptance: the saved list has "Worst of today" once anything is saved. It opens the ranking, numbered from 1,
-  each with its verdict, job, line, worker's name and time, and a link to the saved Take 5.
+- Acceptance: the saved list has "Today's review" once anything is saved. It opens the ranking, numbered
+  from 1, each with its verdict, job, line, worker's name and time, and a link to the saved Take 5.
+- Acceptance: a "Best of today" card above the ranking shows the best with its verdict, job, line, worker's name
+  and how long it took beside today's typical time (W9), such as "Took 9 minutes. Today's typical Take 5 took 3
+  minutes." ("under a minute" for 0), and a link to it. With none careful it says "No Take 5 today was free of
+  signs of little thought."
 - Acceptance: the worst 5 show first, then "Show all" shows the rest in order (D92).
 - Acceptance: it says when an AI ordered them, and that names aren't sent.
 - Acceptance: with nothing started today it says so.
+
+### F9: Risk by area
+
+Saved Take 5s grouped by area, hottest first (A1 to A5): every one while the app is a proof of concept, or the
+last 30 days with the setting (D119). For a safety person deciding where to go.
+
+- Acceptance: the saved list has "Risk by area" once anything is saved, below "Today's review".
+- Acceptance: each area shows its name, a bar, "2 of 3 Take 5s high risk", its highest risk, its "Don't start
+  yet" count, its thought gaps and the questions answered Yes most often there.
+- Acceptance: with nothing saved it says "No saved Take 5s with a location yet."; with the 30 days on and
+  nothing in them, "No Take 5s with a location in the last 30 days."
 
 ## Out of scope (for now)
 
@@ -700,6 +809,8 @@ under "Ready for later".
 - **JHAs, hazard report cards and journey plans.** They may or may not be added. The Take 5's building blocks
   (the matrix, controls, Yes / No questions, the wording checks, the challenge question) are kept separate from
   the Take 5 itself so that they can be reused. Until then the app only says when a JHA is needed.
+- **Areas from a fixed list, GPS or a site plan.** Risk by area (A1) groups the typed names. A company's own
+  list of areas, the phone's position, or a heat map drawn on a site plan can come later (D111, D112).
 - **The company's risk standards given to the AI**, so its question can draw on them.
 - **An AI the company keeps private**, so that company information stays in house.
 - **Feedback on the AI's questions.** Workers rate a question as useful or not, and those ratings are used to
@@ -770,7 +881,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D55 | When the AI judges vague hazards (2026-11-18) | Its own task, 0027, after 0009 | In task 0009 |
 | D56 | When the AI judges a hazard (2026-11-19) | Once for each hazard's words: when it is linked to a Yes, and when the worker leaves the box with new words (T6) | On every pause in typing (5 to 10 asks a hazard); only on Continue, which would stop Continue to show the nudge |
 | D57 | How long the AI has (2026-11-19) | 5 seconds, then the word rule; nothing shows under the Yes meanwhile | 10 seconds; the word rule's answer at once, changed when the AI answers, so a nudge can flicker |
-| D58 | What the AI sends back (2026-11-19) | Only "vague" or "specific"; the nudge keeps its fixed words and example | Which part is missing, what or where; a reason the AI writes, which could put words in the worker's mouth (T1) |
+| D58 | What the AI sends back (2026-11-19) | Only "vague" or "specific" (T7 adds "stock" and "unfit", D105); the nudge keeps its fixed words and example | Which part is missing, what or where; a reason the AI writes, which could put words in the worker's mouth (T1) |
 | D59 | Is the AI's answer remembered (2026-11-19) | Yes, on the server, for the same hazard, question, job and location, until it restarts | Saved in the database; not remembered, so paid for every time |
 | D60 | Which hazards the AI judges (2026-11-19) | Only one linked to a Yes, as before | Every hazard |
 | D61 | Which model judges vague hazards (2026-11-19) | Its own setting, `TAKE5_AI_HAZARD_MODEL`; by default the provider's quick model, Claude Haiku 5.5: a yes or no call, made mid-form | The challenge question's model, Opus 5.5 (about 40 times the cost) |
@@ -805,11 +916,33 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D90 | The "5" logo (2026-11-20) | A link to the start page, named "Take 5 home", which carries on the kept draft rather than throwing it away | Plain picture; a link that asks to start afresh |
 | D91 | Who orders a ranking (2026-11-20) | Fixed rules score every Take 5 (W1 to W5), then an AI reorders the worst 10 and writes their lines (W6). Replaces D66's "one AI ranking"; the rest of D66 stands | The AI orders them all |
 | D92 | How many are shown (2026-11-20) | The worst 5, then "Show all" | All of them; the worst 10 |
-| D93 | Where the ranking lives (2026-11-20) | "Worst of today" on the saved list | Its own button on the first screen |
+| D93 | Where the ranking lives (2026-11-20) | "Worst of today" on the saved list, renamed "Today's review" by D100 | Its own button on the first screen |
 | D94 | What "today" is (2026-11-20) | Since midnight where the phone is, by when a Take 5 was started, finished or not (W7) | Midnight on the server; finished ones only |
 | D95 | Is a ranking saved (2026-11-20) | No: worked out when the page opens, remembered until the server restarts | Saved, which changes the data model |
 | D96 | What the AI is given (2026-11-20) | What the challenge question gets (C1), plus the question, answer and minutes taken; never the name | Everything saved, name included |
 | D97 | The focus outline on the undo bar (2026-11-20) | The bar's own text colour (white on the dark bar in light mode, near-black on the light bar in dark mode), so it stands out | The blue used elsewhere, at about 2.3 to 1 on the bar |
+| D98 | What makes the best (2026-11-20) | The rules shortlist up to 5 finished Take 5s, answered, with controls on every hazard and no gap from W2 to W4, and an AI picks one and writes why (W8). A rushed one can still be best: good answers are good however quick (Jake) | The rules alone; rushed ones left out |
+| D99 | How many are best (2026-11-20) | One | The best 3 |
+| D100 | Where the best shows (2026-11-20) | A card above the ranking, on the same page, renamed "Today's review" (Jake's pick from four names) | Its own page |
+| D101 | Showing how long it takes (2026-11-20) | The time the best took beside the day's typical time, the median (W9) | Its time alone |
+| D102 | When none is careful (2026-11-20) | The card says so | No card |
+| D103 | Telling the worker (2026-11-20) | Not in the proof of concept; noted in `docs/ideas.md` | A message to the worker |
+| D104 | Is the best saved (2026-11-20) | No: worked out and remembered with the ranking (D95) | Saved |
+| D105 | Refuse a made-up or stock hazard, or push back (2026-11-20) | Push back, never refuse: the nudge and "Keep it as it is" stay, and keeping it counts in Today's review (T7, W10) | Refuse until reworded |
+| D106 | How "made up" is told (2026-11-20) | The AI judges whether the hazard fits the job and where it is (T7) | Copied from the worker's last Take 5, which needs sign-in |
+| D107 | What stock wording is (2026-11-20) | The AI's judgement of wording that would fit any job (T7) | A fixed list |
+| D108 | How it fits T6 (2026-11-20) | Part of T6's one AI call and nudge, with its own words; the AI never suggests a hazard (T7) | A separate check |
+| D109 | Is a kept flag saved (2026-11-20) | Yes, on each hazard: a data model change Jake approved (T7) | Not saved, so the review can't count it |
+| D110 | Are older Take 5s judged again (2026-11-20) | No; noted in `docs/ideas.md` for checking the field against new standards later | Re-judge every saved Take 5 |
+| D111 | Where the area comes from (2026-11-21) | The location as typed, ignoring capitals, spaces and punctuation (A1); no data model change | A site's fixed list of areas; the phone's GPS; an AI grouping the names |
+| D112 | What the map is drawn on (2026-11-21) | A ranked list of areas, each with a bar (F9) | A site plan image; a real map |
+| D113 | What makes an area hot (2026-11-21) | High-risk Take 5s (a hazard needing a JHA before controls), then "Don't start yet", then thought gaps (A3, A4) | The sum of scores, which favours busy areas; incidents, which the app doesn't record |
+| D114 | Over what time (2026-11-21) | The last 30 days, today included (A2) | Today only; a choice of spans |
+| D115 | Which relationships show (2026-11-21) | The hazard questions answered Yes most often in each area (A5) | Ratings over time per area, left for task 0039 |
+| D116 | Is an AI used (2026-11-21) | No: every number can be checked by hand | An AI summary of each area |
+| D117 | Where the page is (2026-11-21) | "Risk by area" at `/risk-by-area`, linked from the saved list beside "Today's review" | A new tab bar |
+| D118 | Today only, or every saved Take 5 (2026-11-21) | Every saved Take 5 by default while the app is a proof of concept; `TAKE5_RANK_TODAY_ONLY=true` ranks today only, and the by-day code stays (W7) | Today only; a switch on the page |
+| D119 | Last 30 days, or every saved Take 5 (2026-11-21) | Every saved Take 5 by default while the app is a proof of concept; `TAKE5_AREA_LAST_30_DAYS_ONLY=true` counts the last 30 days, the page's words follow the setting, and the 30-day code stays (A2) | The last 30 days; a switch on the page |
 
 ## Open questions
 

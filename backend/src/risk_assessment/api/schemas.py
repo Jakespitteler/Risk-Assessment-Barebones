@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict
 from risk_assessment.domain.controls import ControlKind
 from risk_assessment.domain.questions import Answer, Question
 from risk_assessment.domain.risk import RiskMatrix, RiskRating
+from risk_assessment.domain.take5.areas import AreaRisk
 from risk_assessment.domain.take5.draft import FieldError, Take5Draft
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.template import LevelGuidance
@@ -185,13 +186,63 @@ class RankedTake5Line(BaseModel):
     ranked_by_ai: bool
 
 
+class BestTake5Line(BaseModel):
+    """The best careful Take 5 of the set, with what was good about it (spec W8).
+
+    Attributes:
+        id: The Take 5's ID, to open it.
+        created_at: When it was saved.
+        worker_name: Who did it. Never sent to the AI.
+        job: What the job is.
+        can_start: The verdict it was saved with: True for Good to go, False for
+            Don't start yet.
+        line: One line saying what was good about it.
+        picked_by_ai: True when the AI picked it and wrote the line, False when the
+            fixed rules did.
+        minutes_taken: How many minutes it took, or None when that can't be told.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    id: UUID
+    created_at: datetime
+    worker_name: str
+    job: str
+    can_start: bool
+    line: str
+    picked_by_ai: bool
+    minutes_taken: int | None
+
+
 class RankedTake5s(BaseModel):
-    """Every Take 5 started since a moment, worst first (spec W7 and D92).
+    """Every Take 5 started since a moment worst first, and the best (W7 to W9, D92).
 
     Attributes:
         take5s: The ranking. The page shows the first 5, then the rest on request.
+        best: The best careful one, or None when none is careful.
+        typical_minutes: The median minutes a finished one took, or None.
+        today_only: True when only today's are ranked; False when every saved Take 5
+            is, as `TAKE5_RANK_TODAY_ONLY` sets (D118).
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     take5s: tuple[RankedTake5Line, ...]
+    best: BestTake5Line | None
+    typical_minutes: int | None
+    today_only: bool
+
+
+class RiskByArea(BaseModel):
+    """Every area with a Take 5 in the time counted, hottest first (A1 to A5).
+
+    Attributes:
+        areas: Each area and what its Take 5s show, hottest first.
+        last_30_days_only: True when only the last 30 days count; False when every
+            saved Take 5 does, as `TAKE5_AREA_LAST_30_DAYS_ONLY` sets (D119).
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    areas: tuple[AreaRisk, ...]
+    last_30_days_only: bool

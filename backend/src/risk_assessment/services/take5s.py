@@ -27,11 +27,17 @@ from risk_assessment.domain.take5.fix import fixes_error
 from risk_assessment.domain.take5.hazard_nudges import (
     HAZARD_AI_TIME_LIMIT_SECONDS,
     Nudge,
+    with_kept_flags,
 )
 from risk_assessment.domain.take5.saved import SavedTake5
+from risk_assessment.domain.take5.take5 import Hazard
 from risk_assessment.domain.take5.template import Take5Template
 from risk_assessment.domain.take5.time_limit import runs_out_at, time_limit_error
 from risk_assessment.domain.take5.verdict import verdict
+from risk_assessment.services.ai_failures import (
+    ai_failure_kind,
+    is_expected_ai_failure,
+)
 from risk_assessment.services.hazard_nudges import HazardNudger
 from risk_assessment.services.ports import ChallengeAsker, HazardJudge, Take5Repository
 
@@ -41,7 +47,15 @@ _logger: logging.Logger = logging.getLogger(__name__)
 SAVED_LIST_PAGE_SIZE: int = 50
 
 # The fields that differ between two saves of the same answers.
-_SAVE_DETAILS: set[str] = {"id", "created_at", "finished_at", "verdict", "challenge"}
+_SAVE_DETAILS: dict[str, Any] = {
+    "id": True,
+    "created_at": True,
+    "finished_at": True,
+    "verdict": True,
+    "challenge": True,
+    # What the hazard check flagged depends on the AI at the time, not the worker.
+    "hazards": {"__all__": {"kept_flag"}},
+}
 
 
 class SavedListPage(BaseModel):
@@ -191,14 +205,14 @@ class Take5Service:
         )
 
     def nudges(self, draft: Take5Draft) -> tuple[Nudge, ...]:
-        """Nudge each vague hazard linked to a Yes to say what could hurt and where.
+        """Nudge each vague, stock or unfit hazard linked to a Yes (T6, T7).
 
         Args:
             draft: The worker's answers so far. Nothing is saved.
 
         Returns:
-            One nudge for each vague hazard, judged by the AI when it answers in time
-            and by the word rule otherwise (spec T6).
+            One nudge for each flagged hazard, judged by the AI when it answers in
+            time and by the word rule otherwise (spec T6, T7).
         """
         return self._hazard_nudger.nudges(draft)
 
@@ -244,10 +258,22 @@ class Take5Service:
             )
         if check.assessment is None:
             raise InvalidDraftError(check)
+        # A retry finds the first save, so the hazards are checked only the first time,
+        # and what was flagged is left out when the two are compared. Only verdicts
+        # the AI already gave are used, so kept words are never sent again (D37), and
+        # only flags the worker was shown count as kept.
+        hazards: tuple[Hazard, ...] = (
+            check.assessment.hazards
+            if previous is not None
+            else with_kept_flags(
+                check.assessment.hazards,
+                self._hazard_nudger.kept_nudges(draft),
+            )
+        )
         submitted = SavedTake5(
             template=template,
             answers=check.assessment.answers,
-            hazards=check.assessment.hazards,
+            hazards=hazards,
             id=submission_id,
             created_at=now,
             worker_name=draft.worker_name.strip(),
@@ -397,10 +423,11 @@ class Take5Service:
         try:
             reply = executor.submit(self._challenge_asker.ask, take5_text)
             return ai_challenge(reply.result(timeout=self._ai_time_limit_seconds))
-        except Exception:  # Any AI failure at all means the fixed question.
+        except Exception as error:  # Any AI failure at all means the fixed question.
             _logger.warning(
-                "The AI could not ask a question, so the fixed one was asked.",
-                exc_info=True,
+                "The AI could not ask a question (%s), so the fixed one was asked.",
+                ai_failure_kind(error),
+                exc_info=not is_expected_ai_failure(error),
             )
             return None
         finally:
@@ -477,6 +504,7 @@ def _answers(take5: SavedTake5) -> dict[str, Any]:
         take5: A saved Take 5.
 
     Returns:
-        Its fields, without the ID, the times, the verdict and the question.
+        Its fields, without the ID, the times, the verdict, the question and what the
+        hazard check flagged.
     """
     return take5.model_dump(exclude=_SAVE_DETAILS)

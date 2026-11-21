@@ -1,6 +1,7 @@
 """Hazards, answers and the rating of a whole Take 5 (spec rules R4 to R6)."""
 
 from collections.abc import Mapping
+from enum import StrEnum
 from typing import ClassVar, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -11,6 +12,14 @@ from risk_assessment.domain.risk import RiskRating, rate
 from risk_assessment.domain.take5.template import Take5Template
 
 
+class HazardFlag(StrEnum):
+    """What the hazard check (T6) said was wrong with a hazard's words."""
+
+    VAGUE = "vague"
+    STOCK = "stock"
+    UNFIT = "unfit"
+
+
 class Hazard(BaseModel):
     """One hazard rated before and after controls, using ratings from `rate()`.
 
@@ -18,6 +27,9 @@ class Hazard(BaseModel):
     is needed. Description, ratings and controls are immutable once constructed.
     `covers` holds the IDs of the hazard questions answered Yes that the worker linked
     to this hazard (T5); it is empty for a Take 5 saved before links were kept.
+    `kept_flag` is what the hazard check still said about its words when the Take 5
+    was submitted, so the worker kept them after the nudge (T6, task 0037); None when
+    nothing was flagged, or for a Take 5 saved before flags were kept.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -28,6 +40,7 @@ class Hazard(BaseModel):
     after: RiskRating
     weak_controls_reason: str = ""
     covers: tuple[str, ...] = ()
+    kept_flag: HazardFlag | None = None
 
     @model_validator(mode="after")
     def _controls_cannot_raise_or_invent_a_reduction(self) -> Self:
