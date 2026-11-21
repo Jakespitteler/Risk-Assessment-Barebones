@@ -7,6 +7,7 @@ import { Screen } from "../../components/Screen";
 import { UndoBar } from "../../components/UndoBar";
 import { formatDateTime } from "./formatDateTime";
 import { KeptDraftCard } from "./KeptDraftCard";
+import { FromPaperTag } from "./FromPaperTag";
 import { VerdictTag } from "./VerdictTag";
 import type { StoredDraft } from "./useTake5Draft";
 import { forgetKeptDraft, keptDraft } from "./useTake5Draft";
@@ -40,6 +41,7 @@ function SavedTake5Item({ take5 }: { take5: Take5Summary }) {
           <span className="flex flex-wrap items-center gap-2">
             <VerdictTag canStart={take5.can_start} />
             {take5.fixed && <FixedTag />}
+            {take5.from_paper && <FromPaperTag />}
           </span>
           <span aria-hidden="true" className="text-3xl leading-none">
             ›

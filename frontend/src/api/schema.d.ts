@@ -98,6 +98,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/take5s/paper": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Paper
+         * @description Save a checked paper card as written, finished with its verdict (P1).
+         *
+         *     A level, date or time zone that can't be used raises `PaperCardError`, which
+         *     `api/errors.py` turns into a 422 beside that field.
+         */
+        post: operations["save_paper_api_take5s_paper_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/take5s/{take5_id}/answer": {
         parameters: {
             query?: never;
@@ -159,6 +182,28 @@ export interface paths {
         get: operations["ranked_take5s_api_ranked_take5s_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ranked-take5s/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ranked Batch
+         * @description Rank just these saved Take 5s, such as a batch of paper cards (F10).
+         *
+         *     An ID that isn't saved is left out.
+         */
+        post: operations["ranked_batch_api_ranked_take5s_batch_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -275,6 +320,17 @@ export interface components {
          * @enum {string}
          */
         AskedBy: "ai" | "fallback";
+        /**
+         * BatchRankingRequest
+         * @description Saved Take 5s to rank on their own, such as a batch of scanned cards (F10).
+         *
+         *     Attributes:
+         *         ids: The Take 5s' IDs, at most 200.
+         */
+        BatchRankingRequest: {
+            /** Ids */
+            ids: string[];
+        };
         /**
          * BestTake5Line
          * @description The best careful Take 5 of the set, with what was good about it (spec W8).
@@ -584,6 +640,29 @@ export interface components {
             /** Question Id */
             question_id: string;
             flag: components["schemas"]["HazardFlag"];
+        };
+        /**
+         * PaperTake5Request
+         * @description A checked paper card to save as written (spec P1, P5, task 0033).
+         *
+         *     Attributes:
+         *         id: Made once by the page and sent again, unchanged, on every retry.
+         *         draft: The card as the person checked it, with the worker's name as written.
+         *         filled_in_at: The card's date, "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM", as read
+         *             and checked, or None when it has none.
+         *         time_zone: The checker's time zone, such as "Australia/Perth", for the date.
+         */
+        PaperTake5Request: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            draft: components["schemas"]["Take5Draft"];
+            /** Filled In At */
+            filled_in_at?: string | null;
+            /** Time Zone */
+            time_zone: string;
         };
         /**
          * Question
@@ -993,6 +1072,7 @@ export interface components {
          *         can_start: The verdict it was saved with: True for Good to go, False for
          *             Don't start yet, or None while its question is unanswered.
          *         fixed: True when a newer Take 5 fixes this one.
+         *         from_paper: True when it was photographed off a paper card (P6).
          */
         Take5Summary: {
             /**
@@ -1013,6 +1093,8 @@ export interface components {
             can_start: boolean | null;
             /** Fixed */
             fixed: boolean;
+            /** From Paper */
+            from_paper: boolean;
         };
         /**
          * Take5Template
@@ -1314,6 +1396,48 @@ export interface operations {
             };
         };
     };
+    save_paper_api_take5s_paper_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaperTake5Request"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Take5Response"];
+                };
+            };
+            /** @description This ID was used for other answers */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorMessage"];
+                };
+            };
+            /** @description Something is missing or wrong */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormErrors"];
+                };
+            };
+        };
+    };
     answer_api_take5s__take5_id__answer_post: {
         parameters: {
             query?: never;
@@ -1417,6 +1541,39 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RankedTake5s"];
+                };
+            };
+            /** @description The moment is missing or has no zone */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormErrors"];
+                };
+            };
+        };
+    };
+    ranked_batch_api_ranked_take5s_batch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchRankingRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

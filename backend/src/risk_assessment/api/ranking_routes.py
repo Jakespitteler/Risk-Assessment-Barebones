@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from pydantic import AwareDatetime
 
 from risk_assessment.api.schemas import (
+    BatchRankingRequest,
     BestTake5Line,
     FormErrors,
     RankedTake5Line,
@@ -44,15 +45,35 @@ def create_ranking_router(service: Take5RankingService) -> APIRouter:
             since: The moment, with its time zone, such as midnight where the phone
                 is for "Today's review".
         """
-        today: BestAndWorst = service.since(since)
-        return RankedTake5s(
-            take5s=tuple(_line(ranked) for ranked in today.ranked),
-            best=_best_line(today.best) if today.best is not None else None,
-            typical_minutes=today.typical_minutes,
-            today_only=service.today_only,
-        )
+        return _ranked(service.since(since), today_only=service.today_only)
+
+    @router.post("/api/ranked-take5s/batch", responses=_UNREADABLE)
+    def ranked_batch(request: BatchRankingRequest) -> RankedTake5s:
+        """Rank just these saved Take 5s, such as a batch of paper cards (F10).
+
+        An ID that isn't saved is left out.
+        """
+        return _ranked(service.batch(request.ids), today_only=False)
 
     return router
+
+
+def _ranked(result: BestAndWorst, *, today_only: bool) -> RankedTake5s:
+    """Build the ranking's reply.
+
+    Args:
+        result: The Take 5s worst first, the best and the typical time.
+        today_only: Whether only today's were ranked (D118).
+
+    Returns:
+        The reply.
+    """
+    return RankedTake5s(
+        take5s=tuple(_line(ranked) for ranked in result.ranked),
+        best=_best_line(result.best) if result.best is not None else None,
+        typical_minutes=result.typical_minutes,
+        today_only=today_only,
+    )
 
 
 def _line(ranked: RankedTake5) -> RankedTake5Line:

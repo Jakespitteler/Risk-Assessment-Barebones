@@ -1,9 +1,9 @@
-"""Rank Take 5s started since a moment worst first, and find the best (W1 to W9)."""
+"""Rank Take 5s worst first, and find the best (W1 to W9, F10)."""
 
 import logging
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import UTC, datetime
 from typing import ClassVar
@@ -122,6 +122,34 @@ class Take5RankingService:
             for take5 in self._repository.list_saved_since(earliest)
             if (take5.started_at or take5.created_at) >= earliest
         )
+        return self._ranked(take5s)
+
+    def batch(self, take5_ids: Sequence[UUID]) -> BestAndWorst:
+        """Rank just these Take 5s, such as a batch of scanned paper cards (F10).
+
+        Args:
+            take5_ids: The saved Take 5s to rank. An ID that isn't saved is left out,
+                and one given twice counts once.
+
+        Returns:
+            Those Take 5s worst first, the best, and the typical time taken.
+        """
+        take5s: tuple[SavedTake5, ...] = tuple(
+            take5
+            for take5_id in dict.fromkeys(take5_ids)
+            if (take5 := self._repository.get(take5_id)) is not None
+        )
+        return self._ranked(take5s)
+
+    def _ranked(self, take5s: tuple[SavedTake5, ...]) -> BestAndWorst:
+        """Rank some Take 5s by the rules, then the AI, remembering the result.
+
+        Args:
+            take5s: The Take 5s to rank.
+
+        Returns:
+            Them worst first, the best, and the typical time taken.
+        """
         key: _RankingKey = tuple((take5.id, take5.is_finished) for take5 in take5s)
         with self._remembered_lock:
             remembered: BestAndWorst | None = self._remembered.get(key)

@@ -352,3 +352,19 @@ it("says Carry on your Take 5 when the phone keeps an unfinished one", () => {
   expect(screen.queryByRole("link", { name: "Start a new Take 5" })).toBeNull();
   localStorage.clear();
 });
+
+it("marks a paper card and says a blank rating is not rated (P6, P2)", async () => {
+  stubApi({
+    [`GET ${UNANSWERED_URL}`]: {
+      status: 200,
+      body: {
+        ...FINISHED,
+        take5: { ...FINISHED.take5, from_paper: true, challenge: null },
+        rating: null,
+      },
+    },
+  });
+  openUnanswered();
+  expect(await screen.findByText("From paper")).toBeTruthy();
+  expect(screen.getByText("Not rated")).toBeTruthy();
+});

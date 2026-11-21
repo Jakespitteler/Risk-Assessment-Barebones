@@ -21,6 +21,7 @@ from risk_assessment.domain.take5.verdict import verdict
 BAD_LEVEL_MESSAGE: str = "Pick a level from the card."
 BAD_DATE_MESSAGE: str = "Give the card's date as it is written."
 BAD_ZONE_MESSAGE: str = "This time zone isn't known."
+NOT_ON_CARD_MESSAGE: str = "This question isn't on the card."
 
 
 class PaperCardError(ValueError):
@@ -87,8 +88,13 @@ def paper_take5(draft: Take5Draft, template: Take5Template) -> Take5:
         The card as a paper Take 5.
 
     Raises:
-        PaperCardError: If a level isn't on the card's matrix.
+        PaperCardError: If a level isn't on the card's matrix, or an answer is to a
+            question the card doesn't ask.
     """
+    question_ids: set[str] = {question.id for question in template.questions}
+    for question_id in draft.answers:
+        if question_id not in question_ids:
+            raise PaperCardError(f"answers.{question_id}", NOT_ON_CARD_MESSAGE)
     return Take5(
         template=template,
         answers=dict(draft.answers),

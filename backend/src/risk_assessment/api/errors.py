@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 
 from risk_assessment.api.schemas import ErrorMessage, FormErrors
 from risk_assessment.domain.take5.draft import FieldError
+from risk_assessment.domain.take5.paper import PaperCardError
 from risk_assessment.services.card_scanning import (
     CardUnreadableError,
     ScanningUnavailableError,
@@ -31,9 +32,24 @@ def add_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(InvalidDraftError, _invalid_draft)
     app.add_exception_handler(InvalidAnswerError, _invalid_answer)
     app.add_exception_handler(RequestValidationError, _unreadable_request)
+    app.add_exception_handler(PaperCardError, _paper_card_error)
     app.add_exception_handler(CardUnreadableError, _unreadable_card)
     app.add_exception_handler(ScanningUnavailableError, _scanning_unavailable)
     app.add_exception_handler(Exception, _unexpected_error)
+
+
+def _paper_card_error(_request: Request, error: Exception) -> JSONResponse:
+    """Reply 422 beside the field a paper card can't hold (spec P1, task 0033).
+
+    Args:
+        _request: The request that failed.
+        error: The `PaperCardError` the domain raised, which names its field.
+
+    Returns:
+        A `FormErrors` reply with the message on that field.
+    """
+    path: str = error.path if isinstance(error, PaperCardError) else "draft"
+    return _form_errors(str(error), (FieldError(path=path, message=str(error)),))
 
 
 def _unreadable_card(_request: Request, error: Exception) -> JSONResponse:

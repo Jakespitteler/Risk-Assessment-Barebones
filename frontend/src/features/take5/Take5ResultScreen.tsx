@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { FromPaperTag } from "./FromPaperTag";
 import type { SavedTake5 } from "../../api/take5";
 import { ApiError, useSavedTake5 } from "../../api/take5";
 import { Button } from "../../components/Button";
@@ -99,6 +100,11 @@ export function Take5ResultScreen({
   return (
     <Screen subtitle="Your Take 5" aside={<SavedListLink />}>
       <div ref={page} className="flex flex-col gap-6">
+        {take5.from_paper && (
+          <p>
+            <FromPaperTag />
+          </p>
+        )}
         <VerdictPanel verdict={take5.verdict} />
         <FixPanel
           take5={take5}

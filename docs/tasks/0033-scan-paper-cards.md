@@ -3,7 +3,7 @@ id: 0033
 title: Photograph paper Take 5 cards into saved Take 5s, then rank the batch
 status: in-progress
 owner: claude
-branch: claude/0033-photo-reading (#71), claude/0033-reading-the-reply (#72), claude/0033-scan-paper-cards (#68), claude/0033-paper-cards-rules (part 2a)
+branch: claude/0033-photo-reading (#71), claude/0033-reading-the-reply (#72), claude/0033-scan-paper-cards (#68), claude/0033-paper-cards-rules (#82), claude/0033-save-paper-cards (part 2b)
 ---
 
 ## Goal
@@ -102,14 +102,14 @@ Part 1, reading (this pull request):
   Until then `test_the_settings_template_names_every_setting` fails on this branch.
 - [x] Tests cover the adapter, the instructions, the reading, the scanner and the route.
 
-Part 2, saving (next pull request):
+Part 2, saving (part 2a, the rules, and part 2b, the endpoints):
 
-- [ ] A checked card is saved as written, marked "from paper", finished at once with its verdict and no
+- [x] A checked card is saved as written, marked "from paper", finished at once with its verdict and no
   challenge question, with the card's date and time in `started_at`; the spec gets the exceptions to F2, C6 and
   K2 for scans, with worked examples, and anyone can scan in "Users and roles".
-- [ ] `docs/architecture.md` says a scanned card's text, as the AI read it and the person checked it, goes on to
+- [x] `docs/architecture.md` says a scanned card's text, as the AI read it and the person checked it, goes on to
   the ranking.
-- [ ] A saved batch is ranked worst first with task 0032's ranking.
+- [x] A saved batch is ranked worst first with task 0032's ranking.
 
 Part 3, the page (last pull request):
 
