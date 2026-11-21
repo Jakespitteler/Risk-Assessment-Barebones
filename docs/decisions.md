@@ -11,7 +11,6 @@ Newest first. One short entry per non-obvious decision.
   a day, while keeping the by-day ranking for later.
 - Not chosen: a switch on the page (more to build, and the front end would hold a rule); today only.
 - Decided by: human.
-- Decided by: human.
 
 ## 2026-11-21: CI skips the front end for Markdown-only pull requests, and waits for drafts (task 0041)
 
