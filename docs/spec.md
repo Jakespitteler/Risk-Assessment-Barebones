@@ -449,7 +449,8 @@ reads each photo into a filled-in card; a person checks it beside the photo and 
 - **P4 Its blanks are gaps.** In the ranking and risk by area, each blank is a thought gap like W2 to W5: a
   question with no answer, no hazard at all, a hazard with no description, a hazard with no rating before
   controls, and a control with no kind.
-  With no rating before controls its highest risk counts as 0 ("No risk rated").
+  With no rating before controls its highest risk counts as 0 ("No risk rated"). Two or more blank questions are
+  named together in its line ("11 questions have no answer"), each still counted.
 - **P5 Its date.** The date written on the card, as read and checked, is when it was started, so the ranking's
   "today" (W7) and risk by area's 30 days (A2) go by it. A date with no time is the start of that day where the
   person checking is; with no date the scan time stands in. A date before 2000 or after 2100 is taken as misread

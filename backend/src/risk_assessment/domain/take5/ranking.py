@@ -30,6 +30,8 @@ THOUGHTFUL_WORDS: int = 6
 RUSHED_UNDER: timedelta = timedelta(minutes=2)
 # Each sign of little thought adds this to the score (W1).
 GAP_POINTS: int = 5
+# How a paper card's blank question is named among the thought gaps (P4).
+_NO_ANSWER: str = "has no answer"
 # How many of the worst the AI reorders and writes lines for (W6).
 AI_RANKED_COUNT: int = 10
 AI_RANKING_TIME_LIMIT_SECONDS: float = 20
@@ -168,7 +170,7 @@ def paper_gaps(take5: SavedTake5) -> tuple[str, ...]:
         with no rating before controls, and a control with no kind.
     """
     gaps: list[str] = [
-        f"“{question.text}” has no answer"
+        f"“{question.text}” {_NO_ANSWER}"
         for question in take5.template.questions
         if question.id not in take5.answers
     ]
@@ -225,10 +227,28 @@ def rule_line(take5: SavedTake5) -> str:
         Such as "Highest risk 18 Extreme. The question was never answered."
     """
     risk: str = f"{_highest_risk_words(take5)}."
-    gaps: str = "; ".join(thought_gaps(take5))
+    gaps: str = "; ".join(_summarised(thought_gaps(take5)))
     if not gaps:
         return f"{risk} No signs of a rushed Take 5."
     return f"{risk} {gaps[0].upper()}{gaps[1:]}."
+
+
+def _summarised(gaps: tuple[str, ...]) -> list[str]:
+    """Put a paper card's blank questions in one phrase, so the line stays readable.
+
+    Each blank still counts on its own in the score (P4); only the words are joined.
+
+    Args:
+        gaps: The thought gaps, in order.
+
+    Returns:
+        The gaps, with two or more blank questions as one "N questions have no answer".
+    """
+    blank: list[str] = [gap for gap in gaps if gap.endswith(_NO_ANSWER)]
+    if len(blank) < 2:
+        return list(gaps)
+    others: list[str] = [gap for gap in gaps if not gap.endswith(_NO_ANSWER)]
+    return [f"{len(blank)} questions have no answer", *others]
 
 
 def rank_by_rules(take5s: Sequence[SavedTake5]) -> tuple[RankedTake5, ...]:
