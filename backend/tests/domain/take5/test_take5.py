@@ -3,6 +3,7 @@
 import pytest
 from pydantic import BaseModel
 
+from risk_assessment.domain.controls import Control
 from risk_assessment.domain.questions import Answer
 from risk_assessment.domain.risk import RiskCell, RiskMatrix, RiskRating, rate
 from risk_assessment.domain.take5.take5 import Hazard, Take5
@@ -238,3 +239,37 @@ def test_a_hazard_can_only_cover_hazard_questions_answered_yes(linked: str) -> N
             answers=sample_answers(permits=Answer.YES),
             hazards=(sample_hazard().model_copy(update={"covers": (linked,)}),),
         )
+
+
+@pytest.mark.parametrize(
+    ("hazard", "message"),
+    [
+        (
+            Hazard(description="Example hazard", before=None, controls=(), after=None),
+            "needs a rating before and after",
+        ),
+        (
+            Hazard(
+                description="Example hazard",
+                before=rate(BOOKLET_MATRIX, "Possible", "Minor"),
+                controls=(Control(description="Chock it", kind=None),),
+                after=rate(BOOKLET_MATRIX, "Unlikely", "Minor"),
+            ),
+            "needs a kind",
+        ),
+    ],
+    ids=["no_rating", "no_kind"],
+)
+def test_only_a_paper_card_may_leave_a_rating_or_kind_blank(
+    hazard: Hazard,
+    message: str,
+) -> None:
+    """Every Take 5 filled in in the app keeps all its ratings and kinds (P1, F2)."""
+    with pytest.raises(ValueError, match=message):
+        Take5(template=BOOKLET_TEMPLATE, answers=sample_answers(), hazards=(hazard,))
+    assert Take5(
+        template=BOOKLET_TEMPLATE,
+        answers=sample_answers(),
+        hazards=(hazard,),
+        from_paper=True,
+    ).from_paper

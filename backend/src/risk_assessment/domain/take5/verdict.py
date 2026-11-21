@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict
 
 from risk_assessment.domain.questions import Answer, QuestionRole
 from risk_assessment.domain.risk import RiskRating
-from risk_assessment.domain.take5.take5 import Take5
+from risk_assessment.domain.take5.take5 import Hazard, Take5
 
 
 class Verdict(BaseModel):
@@ -41,12 +41,12 @@ def verdict(take5: Take5) -> Verdict:
     if not take5.hazards:
         reasons.append(NO_HAZARD_REASON)
     reasons.extend(
-        f"Rate the risk of: {hazard.description}"
+        f"Rate the risk of: {_named(hazard)}"
         for hazard in take5.hazards
         if hazard.before is None
     )
     reasons.extend(
-        f"Say how you will control: {hazard.description}"
+        f"Say how you will control: {_named(hazard)}"
         for hazard in take5.hazards
         if not hazard.controls
     )
@@ -58,6 +58,18 @@ def verdict(take5: Take5) -> Verdict:
             "you start. Talk to your supervisor.",
         )
     return Verdict(can_start=not reasons, reasons=tuple(reasons))
+
+
+def _named(hazard: Hazard) -> str:
+    """Name a hazard in a reason by its words, or say it has none (a paper card, P3).
+
+    Args:
+        hazard: The hazard.
+
+    Returns:
+        Its description, or "the hazard with no description".
+    """
+    return hazard.description or "the hazard with no description"
 
 
 def _stop_answer_reasons(take5: Take5) -> list[str]:

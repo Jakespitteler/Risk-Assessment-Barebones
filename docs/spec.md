@@ -438,15 +438,17 @@ reads each photo into a filled-in card; a person checks it beside the photo and 
 
 - **P1 Saved as written.** A checked paper card is saved exactly as the person confirmed it, marked "from paper",
   and never rewritten to pass a rule. A question, a rating or a control's kind may be blank, any text may be
-  short or empty, and there may be no hazards. F2's form errors, T2 to T5, R6 and K2 don't apply. It gets no
-  challenge question (C6): it is finished as it is saved, with its verdict.
+  short or empty, and there may be no hazards. F2's form errors, T2 to T7, R6 and K2 don't apply: no nudge is
+  shown and no form error refuses it. It gets no challenge question (C6): it is finished as it is saved, with its
+  verdict.
 - **P2 Its rating.** A hazard with no after rating counts at its before rating, so a card that only rated the risk
   before controls isn't read as safer than it said (R4). A rating with only one half filled in is blank. A card
   with no rated hazard has no rating.
 - **P3 Its verdict.** V1 to V3 as for any Take 5, with a blank answer never a V1 reason, plus a reason for no hazard
   and for each hazard with no rating before controls (under Verdict rules).
 - **P4 Its blanks are gaps.** In the ranking and risk by area, each blank is a thought gap like W2 to W5: a
-  question with no answer, no hazard at all, a hazard with no rating before controls, and a control with no kind.
+  question with no answer, no hazard at all, a hazard with no description, a hazard with no rating before
+  controls, and a control with no kind.
   With no rating before controls its highest risk counts as 0 ("No risk rated").
 - **P5 Its date.** The date written on the card, as read and checked, is when it was started, so the ranking's
   "today" (W7) and risk by area's 30 days (A2) go by it. A date with no time is the start of that day where the
@@ -675,7 +677,7 @@ named, and the checker is in Perth.
 | 137 | Dated 03/04/2026 with no time | Started at 2026-04-03 00:00 in Perth (+08:00) | P5 |
 | 138 | Dated 03/04/2026 06:40, the checker in Sydney | Started at 2026-04-03 06:40 +11:00 | P5: the checker's zone, with daylight saving |
 | 139 | No date | Started at is empty; the scan time stands in | P5 |
-| 140 | Example 132 saved with a time 10 minutes before the scan | Not rushed, no "Took" time, left out of the typical time, never the best | P5 |
+| 140 | A card with a control and both ratings, dated 1 minute before the scan | Not rushed, no "Took" time, left out of the typical time, never the best | P5 |
 
 ## Features
 
