@@ -141,6 +141,9 @@ it("says when nothing has been saved yet, and offers a new Take 5", async () => 
   expect(screen.queryByRole("link", { name: "Today’s review" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Risk by area" })).toBeNull();
   expect(
+    screen.getByRole("link", { name: "Scan paper cards" }).getAttribute("href"),
+  ).toBe("/scan");
+  expect(
     screen
       .getByRole("link", { name: "Start a new Take 5" })
       .getAttribute("href"),

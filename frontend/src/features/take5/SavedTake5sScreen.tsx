@@ -211,6 +211,9 @@ export function SavedTake5sScreen({
                 </a>
               </>
             )}
+            <a className={LOOK_BACK_LINK} href="/scan">
+              Scan paper cards
+            </a>
             {take5s.length === 0 ? (
               <Card>
                 <p>No Take 5s have been saved yet.</p>
