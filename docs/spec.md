@@ -456,7 +456,8 @@ reads each photo into a filled-in card; a person checks it beside the photo and 
   person checking is; with no date the scan time stands in. A date before 2000 or after 2100 is taken as misread
   and refused beside the field, for the person to check. How long a paper card took isn't known, so it is never
   rushed (W5), it is left out of the typical time (W9), and it is never the best (W8).
-- **P6 Who and where.** Anyone can scan (D66). The saved list and the saved Take 5 say "From paper". The worker's
+- **P6 Who and where.** Anyone can scan (D66). The saved list and the saved Take 5 say "From paper". A paper card
+  that says "Don't start yet" offers no fix (F3): whoever checks it isn't the worker who wrote it. The worker's
   name is read off the card to fill it in, and never sent to any other AI call (C1, W6).
 
 ### Worked examples
@@ -842,7 +843,8 @@ P6). For whoever collects a crew's cards, on a desktop or a phone.
   before the first card is shown.
 - Acceptance: each card shows beside its photo, filled in as the AI read it, with each field it couldn't read left
   empty and marked; the person can change anything, then Save or Skip it.
-- Acceptance: once every card is saved or skipped, the saved ones are ranked worst first as in Today's review.
+- Acceptance: once every card is saved or skipped, the saved ones are ranked worst first as in Today's review, each
+  with the date written on the card in place of the time it was saved (D127).
 - Acceptance: with no AI set up it says scanning needs one; a photo that can't be read says to take it again.
 - Acceptance: worked examples 131 to 140 pass as tests.
 
@@ -1012,6 +1014,8 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D123 | Its photo (2026-11-20) | Not kept: thrown away once its card is saved or skipped | Kept beside the saved Take 5 |
 | D124 | Where the batch is ranked (2026-11-21) | On the scan page, by an endpoint that ranks just those saved cards (F10) | Today's review, mixed with the rest |
 | D125 | The page (2026-11-21) | "Scan paper cards" at `/scan`, linked from the saved list; a "From paper" tag on the list and the saved Take 5 (P6) | Another name |
+| D126 | Fixing a paper card (2026-11-21) | Not offered, and refused: whoever checks a card isn't the worker who wrote it, and the proof of concept stays simple (P6) | "Fix this Take 5" on the checker's phone, copied from someone else's card |
+| D127 | Which date a ranked paper card shows (2026-11-21) | The date on the card, with its time when it has one; the ranking's API sends `started_at` and `from_paper` (P5) | The time it was scanned, the same for every card in a batch |
 
 ## Open questions
 

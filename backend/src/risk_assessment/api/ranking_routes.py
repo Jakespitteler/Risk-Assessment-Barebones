@@ -94,6 +94,8 @@ def _line(ranked: RankedTake5) -> RankedTake5Line:
         can_start=take5.verdict.can_start if take5.verdict is not None else None,
         line=ranked.line,
         ranked_by_ai=ranked.ranked_by is RankedBy.AI,
+        from_paper=take5.from_paper,
+        started_at=take5.started_at,
     )
 
 
