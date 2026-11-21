@@ -5,7 +5,7 @@ import threading
 import time
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import ClassVar
 from uuid import UUID
 
@@ -36,6 +36,8 @@ _logger: logging.Logger = logging.getLogger(__name__)
 # the AI again only when a Take 5 was added or finished (decision D95). Only the
 # newest few are kept.
 _REMEMBERED_RANKINGS: int = 20
+# Earlier than any Take 5, so ranking "since" it ranks every one saved (D118).
+_EVERY_TAKE5: datetime = datetime.min.replace(tzinfo=UTC)
 
 type _RankingKey = tuple[tuple[UUID, bool], ...]
 
@@ -74,6 +76,7 @@ class Take5RankingService:
         repository: Take5Repository,
         ranker: Take5Ranker | None = None,
         ai_time_limit_seconds: float = AI_RANKING_TIME_LIMIT_SECONDS,
+        today_only: bool = True,
     ) -> None:
         """Set up the ranking.
 
@@ -83,13 +86,21 @@ class Take5RankingService:
                 use the fixed rules alone.
             ai_time_limit_seconds: How long to wait for the AI before the fixed rules
                 decide.
+            today_only: True to rank only the Take 5s since the moment asked for;
+                False to rank every saved Take 5, whatever moment is asked for (D118).
         """
+        self._today_only: bool = today_only
         self._repository: Take5Repository = repository
         self._ranker: Take5Ranker | None = ranker
         self._ai_time_limit_seconds: float = ai_time_limit_seconds
         self._remembered: dict[_RankingKey, BestAndWorst] = {}
         # Requests run in a pool of threads, so the remembered rankings are locked.
         self._remembered_lock = threading.Lock()
+
+    @property
+    def today_only(self) -> bool:
+        """Whether only today's Take 5s are ranked, not every saved one (D118)."""
+        return self._today_only
 
     def since(self, earliest: datetime) -> BestAndWorst:
         """Rank the Take 5s started at or after a moment and find the best (W7 to W9).
@@ -102,7 +113,10 @@ class Take5RankingService:
 
         Returns:
             Every one of them worst first, the best, and the typical time taken.
+            When the service ranks every saved Take 5, the moment is ignored.
         """
+        if not self._today_only:
+            earliest = _EVERY_TAKE5
         take5s: tuple[SavedTake5, ...] = tuple(
             take5
             for take5 in self._repository.list_saved_since(earliest)

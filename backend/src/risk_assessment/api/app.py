@@ -111,6 +111,7 @@ def create_app(
     ranking_service = Take5RankingService(
         storage,
         take5_ranker if take5_ranker is not None else build_take5_ranker(app_settings),
+        today_only=app_settings.rank_today_only,
     )
     app.include_router(create_ranking_router(ranking_service))
     app.include_router(create_area_router(AreaRiskService(storage)))
