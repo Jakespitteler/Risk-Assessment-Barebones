@@ -1,9 +1,9 @@
 ---
 id: 0033
 title: Photograph paper Take 5 cards into saved Take 5s, then rank the batch
-status: review
+status: done
 owner: claude
-branch: claude/0033-photo-reading (#71), claude/0033-reading-the-reply (#72), claude/0033-scan-paper-cards (#68), claude/0033-paper-cards-rules (#82), claude/0033-save-paper-cards (#83), claude/0033-scan-page (#84), claude/0033-scan-ranking (part 3b)
+branch: claude/0033-photo-reading (#71), claude/0033-reading-the-reply (#72), claude/0033-scan-paper-cards (#68), claude/0033-paper-cards-rules (#82), claude/0033-save-paper-cards (#83), claude/0033-scan-page (#84), claude/0033-scan-ranking (#85)
 ---
 
 ## Goal
@@ -97,9 +97,8 @@ Part 1, reading (this pull request):
   couldn't read is a 422 beside the photo. Never an AI error, and the log never holds the worker's name.
 - [x] The AI interface has one new method for a photo, filled by the Claude adapter; the provider's main model
   reads photos unless `TAKE5_AI_SCAN_MODEL` names another.
-- [ ] `backend/.env.example` lists `TAKE5_AI_SCAN_MODEL`. Jake adds it: the guard hook keeps agents out of that
-      file.
-  Until then `test_the_settings_template_names_every_setting` fails on this branch.
+- [x] `backend/.env.example` lists `TAKE5_AI_SCAN_MODEL`, which Jake added on 2026-11-21 (the guard hook
+  keeps agents out of that file).
 - [x] Tests cover the adapter, the instructions, the reading, the scanner and the route.
 
 Part 2, saving (part 2a, the rules, and part 2b, the endpoints):
