@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { RankedTake5Line } from "../../api/take5";
+import type { BestTake5Line, RankedTake5Line } from "../../api/take5";
 import { useRankedTake5s } from "../../api/take5";
 import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
@@ -57,17 +57,87 @@ function RankedItem({
   );
 }
 
+/** "Took 9 minutes. Today's typical Take 5 took 3 minutes." (spec W9). */
+function timeTaken(
+  minutes: number | null,
+  typical: number | null,
+  todayOnly: boolean,
+): string {
+  const plural = (count: number) =>
+    count === 0
+      ? "under a minute"
+      : `${String(count)} minute${count === 1 ? "" : "s"}`;
+  const took = minutes === null ? "" : `Took ${plural(minutes)}. `;
+  const usual =
+    typical === null
+      ? ""
+      : `${todayOnly ? "Today’s" : "The"} typical Take 5 took ${plural(typical)}.`;
+  return `${took}${usual}`.trim();
+}
+
+/** The best careful Take 5 of today, with what was good and how long it took (W8). */
+function BestCard({
+  best,
+  typicalMinutes,
+  todayOnly,
+}: {
+  best: BestTake5Line | null;
+  typicalMinutes: number | null;
+  todayOnly: boolean;
+}) {
+  return (
+    <section aria-labelledby="best-heading" className="flex flex-col gap-3">
+      <h2 id="best-heading" className="text-2xl font-extrabold">
+        {todayOnly ? "Best of today" : "Best of all saved"}
+      </h2>
+      {best === null ? (
+        <Card>
+          <p>
+            {todayOnly
+              ? "No Take 5 today was free of signs of little thought."
+              : "No saved Take 5 was free of signs of little thought."}
+          </p>
+        </Card>
+      ) : (
+        <a
+          href={`/take5s/${best.id}`}
+          className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-4 [overflow-wrap:anywhere] hover:bg-surface-subtle focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        >
+          <span className="flex items-center justify-between gap-2">
+            <VerdictTag canStart={best.can_start} />
+            <span aria-hidden="true" className="text-3xl leading-none">
+              ›
+            </span>
+          </span>
+          <span className="line-clamp-2 text-lg font-bold">{best.job}</span>
+          <span className="rounded-lg border-l-4 border-success-line bg-success-soft px-3 py-2 text-on-success-soft">
+            {best.line}
+          </span>
+          <span className="flex flex-col">
+            <span>{best.worker_name}</span>
+            <span className="text-ink-muted">
+              {timeTaken(best.minutes_taken, typicalMinutes, todayOnly)}
+            </span>
+          </span>
+        </a>
+      )}
+    </section>
+  );
+}
+
 /**
- * Today's Take 5s, worst first, each with one line saying why (spec W1 to W7). The
- * worst 5 show first, then "Show all" for the rest in order.
+ * Today's best Take 5, then all of them worst first, each with one line saying why
+ * (spec W1 to W9). The worst 5 show first, then "Show all" for the rest in order.
  */
-export function WorstOfTodayScreen() {
+export function ReviewTodayScreen() {
   const [since] = useState(midnightToday);
   const ranking = useRankedTake5s(since);
   const [showAll, setShowAll] = useState(false);
   const take5s = ranking.data?.take5s ?? [];
   const shownTake5s = showAll ? take5s : take5s.slice(0, FIRST_SHOWN);
-  const byAi = take5s.some((take5) => take5.ranked_by_ai);
+  const byAi =
+    take5s.some((take5) => take5.ranked_by_ai) ||
+    ranking.data?.best?.picked_by_ai === true;
   // The back end says whether it ranked today's only or every saved one (D118).
   const todayOnly = ranking.data?.today_only ?? true;
 
@@ -100,20 +170,8 @@ export function WorstOfTodayScreen() {
         {ranking.data && (
           <>
             <h1 tabIndex={-1} className={HEADING}>
-              {todayOnly ? "Worst of today" : "Worst of all saved"}
+              {todayOnly ? "Today’s review" : "Review of all saved"}
             </h1>
-            <p>
-              {todayOnly ? "Today’s Take 5s" : "Every saved Take 5"}, worst
-              first: the riskiest jobs with the least thought in the answers.
-              Look at the top ones first, and talk to the worker about the
-              reason given.
-            </p>
-            {byAi && (
-              <p className="text-ink-muted">
-                An AI ordered the worst and wrote their reasons. Names aren’t
-                sent to it.
-              </p>
-            )}
             {take5s.length === 0 ? (
               <Card>
                 <p>
@@ -123,6 +181,28 @@ export function WorstOfTodayScreen() {
                 </p>
               </Card>
             ) : (
+              <>
+                <p>
+                  The best of {todayOnly ? "today’s" : "the saved"} Take 5s, to
+                  hold up as an example, then all of them worst first: the
+                  riskiest jobs with the least thought in the answers. Talk to
+                  each worker about the reason given.
+                </p>
+                {byAi && (
+                  <p className="text-ink-muted">
+                    An AI helped choose these and wrote their reasons. Names
+                    aren’t sent to it.
+                  </p>
+                )}
+                <BestCard
+                  best={ranking.data.best}
+                  typicalMinutes={ranking.data.typical_minutes}
+                  todayOnly={todayOnly}
+                />
+                <h2 className="text-2xl font-extrabold">Worst first</h2>
+              </>
+            )}
+            {take5s.length > 0 && (
               <ol className="flex flex-col gap-3">
                 {shownTake5s.map((take5, index) => (
                   <RankedItem key={take5.id} take5={take5} place={index + 1} />

@@ -9,7 +9,7 @@ import pytest
 
 from risk_assessment.domain.take5.ranking import RankedBy, RankedTake5
 from risk_assessment.domain.take5.saved import SavedTake5
-from risk_assessment.services.ranking import Take5RankingService
+from risk_assessment.services.ranking import BestAndWorst, Take5RankingService
 from risk_assessment.storage.sqlite import SqliteTake5Repository
 from tests.domain.take5.test_ranking import ranked_take5
 
@@ -18,24 +18,37 @@ MIDNIGHT_IN_PERTH: datetime = datetime(2026, 11, 20, 0, 0, tzinfo=UTC) - timedel
 )
 
 
+FIRST_IS_BEST: str = json.dumps({"number": 1, "why": "Specific controls."})
+
+
 class StandInRanker:
-    """A stand-in AI that sends back a set reply, and counts how often it was asked.
+    """A stand-in AI that sends back set replies, and counts how often it was asked.
 
     Attributes:
-        reply: What it sends back.
-        texts: Each text it was given.
+        reply: What it sends back to order the worst.
+        best_reply: What it sends back to pick the best.
+        texts: Each text it was given to order.
+        best_texts: Each text it was given to pick the best from.
     """
 
-    def __init__(self, reply: str, delay_seconds: float = 0) -> None:
-        """Choose the reply.
+    def __init__(
+        self,
+        reply: str,
+        delay_seconds: float = 0,
+        best_reply: str = FIRST_IS_BEST,
+    ) -> None:
+        """Choose the replies.
 
         Args:
-            reply: What it sends back.
+            reply: What it sends back to order the worst.
             delay_seconds: How long it takes.
+            best_reply: What it sends back to pick the best.
         """
         self.reply: str = reply
         self.delay_seconds: float = delay_seconds
+        self.best_reply: str = best_reply
         self.texts: list[str] = []
+        self.best_texts: list[str] = []
 
     def rank(self, take5s_text: str) -> str:
         """Record the text and send back the set reply.
@@ -50,11 +63,35 @@ class StandInRanker:
         time.sleep(self.delay_seconds)
         return self.reply
 
+    def pick_best(self, take5s_text: str) -> str:
+        """Record the text and send back the set pick.
+
+        Args:
+            take5s_text: The careful Take 5s as the AI is given them.
+
+        Returns:
+            The set pick.
+        """
+        self.best_texts.append(take5s_text)
+        time.sleep(self.delay_seconds)
+        return self.best_reply
+
 
 class BrokenRanker:
     """A stand-in AI that always fails."""
 
     def rank(self, take5s_text: str) -> str:
+        """Fail.
+
+        Args:
+            take5s_text: Not used.
+
+        Raises:
+            RuntimeError: Always.
+        """
+        raise RuntimeError("The AI is down.")
+
+    def pick_best(self, take5s_text: str) -> str:
         """Fail.
 
         Args:
@@ -121,8 +158,8 @@ def test_example_100_today_counts_from_the_start_or_else_the_save(
     )
     repository.add(ranked_take5(saved_at=MIDNIGHT_IN_PERTH - timedelta(minutes=1)))
 
-    ranked: tuple[RankedTake5, ...] = Take5RankingService(repository).worst_since(
-        MIDNIGHT_IN_PERTH,
+    ranked: tuple[RankedTake5, ...] = (
+        Take5RankingService(repository).since(MIDNIGHT_IN_PERTH).ranked
     )
 
     assert started_late.started_at is not None
@@ -137,10 +174,14 @@ def test_the_ai_reorders_the_worst_and_writes_their_lines(
     careless, careful = two_today(repository)
     ranker = StandInRanker(SWAPPED)
 
-    ranked: tuple[RankedTake5, ...] = Take5RankingService(
-        repository,
-        ranker,
-    ).worst_since(MIDNIGHT_IN_PERTH)
+    ranked: tuple[RankedTake5, ...] = (
+        Take5RankingService(
+            repository,
+            ranker,
+        )
+        .since(MIDNIGHT_IN_PERTH)
+        .ranked
+    )
 
     assert [(each.take5.id, each.line) for each in ranked] == [
         (careful.id, "Copied controls."),
@@ -156,9 +197,9 @@ def test_a_failed_ai_leaves_the_rules_order_and_is_asked_again(
     careless, careful = two_today(repository)
     service = Take5RankingService(repository, BrokenRanker())
 
-    first: tuple[RankedTake5, ...] = service.worst_since(MIDNIGHT_IN_PERTH)
+    first: tuple[RankedTake5, ...] = service.since(MIDNIGHT_IN_PERTH).ranked
     service._ranker = StandInRanker(SWAPPED)  # pyright: ignore[reportPrivateUsage]
-    second: tuple[RankedTake5, ...] = service.worst_since(MIDNIGHT_IN_PERTH)
+    second: tuple[RankedTake5, ...] = service.since(MIDNIGHT_IN_PERTH).ranked
 
     assert [each.take5.id for each in first] == [careless.id, careful.id]
     assert all(each.ranked_by is RankedBy.RULES for each in first)
@@ -174,7 +215,7 @@ def test_a_slow_ai_is_given_up_on(repository: SqliteTake5Repository) -> None:
         ai_time_limit_seconds=0.05,
     )
 
-    ranked: tuple[RankedTake5, ...] = service.worst_since(MIDNIGHT_IN_PERTH)
+    ranked: tuple[RankedTake5, ...] = service.since(MIDNIGHT_IN_PERTH).ranked
 
     assert [each.take5.id for each in ranked] == [careless.id, careful.id]
 
@@ -187,10 +228,10 @@ def test_the_same_take5s_are_ranked_once_until_one_is_added(
     ranker = StandInRanker(SWAPPED)
     service = Take5RankingService(repository, ranker)
 
-    service.worst_since(MIDNIGHT_IN_PERTH)
-    service.worst_since(MIDNIGHT_IN_PERTH)
+    service.since(MIDNIGHT_IN_PERTH)
+    service.since(MIDNIGHT_IN_PERTH)
     repository.add(ranked_take5(saved_at=MIDNIGHT_IN_PERTH + timedelta(hours=8)))
-    service.worst_since(MIDNIGHT_IN_PERTH)
+    service.since(MIDNIGHT_IN_PERTH)
 
     assert len(ranker.texts) == 2
 
@@ -200,7 +241,7 @@ def test_one_take5_is_not_sent_to_the_ai(repository: SqliteTake5Repository) -> N
     repository.add(ranked_take5(saved_at=MIDNIGHT_IN_PERTH + timedelta(hours=7)))
     ranker = StandInRanker(SWAPPED)
 
-    Take5RankingService(repository, ranker).worst_since(MIDNIGHT_IN_PERTH)
+    Take5RankingService(repository, ranker).since(MIDNIGHT_IN_PERTH)
 
     assert ranker.texts == []
 
@@ -213,13 +254,13 @@ def test_the_same_take5s_are_ranked_again_once_one_is_finished(
     ranker = StandInRanker(SWAPPED)
     service = Take5RankingService(repository, ranker)
 
-    service.worst_since(MIDNIGHT_IN_PERTH)
+    service.since(MIDNIGHT_IN_PERTH)
     finished: SavedTake5 = ranked_take5(
         minutes_taken=1,
         saved_at=careless.created_at,
     ).model_copy(update={"id": careless.id})
     repository.finish(finished)
-    service.worst_since(MIDNIGHT_IN_PERTH)
+    service.since(MIDNIGHT_IN_PERTH)
 
     assert len(ranker.texts) == 2
 
@@ -246,12 +287,124 @@ def test_only_the_worst_10_go_to_the_ai_and_the_rest_follow(
     )
     ranker = StandInRanker(reply)
 
-    ranked: tuple[RankedTake5, ...] = Take5RankingService(
-        repository,
-        ranker,
-    ).worst_since(MIDNIGHT_IN_PERTH)
+    ranked: tuple[RankedTake5, ...] = (
+        Take5RankingService(
+            repository,
+            ranker,
+        )
+        .since(MIDNIGHT_IN_PERTH)
+        .ranked
+    )
 
     assert len(json.loads(ranker.texts[0])["take5s"]) == 10
     assert ranked[-1].take5.id == careful.id
     assert ranked[-1].ranked_by is RankedBy.RULES
     assert [each.ranked_by for each in ranked[:10]] == [RankedBy.AI] * 10
+
+
+def two_careful_today(
+    repository: SqliteTake5Repository,
+) -> tuple[SavedTake5, SavedTake5]:
+    """Save two careful Take 5s this morning in Perth: 10 minutes, then 3.
+
+    Args:
+        repository: Where to save them.
+
+    Returns:
+        The 10-minute one, then the 3-minute one.
+    """
+    morning: datetime = MIDNIGHT_IN_PERTH + timedelta(hours=7)
+    slow: SavedTake5 = repository.add(ranked_take5(saved_at=morning))
+    quick: SavedTake5 = repository.add(
+        ranked_take5(minutes_taken=3, saved_at=morning),
+    )
+    return slow, quick
+
+
+def test_the_ai_picks_the_best_of_the_careful_ones(
+    repository: SqliteTake5Repository,
+) -> None:
+    """W8: the AI is given the shortlist and its checked pick is the best."""
+    _, quick = two_careful_today(repository)
+    ranker = StandInRanker(
+        SWAPPED,
+        best_reply=json.dumps({"number": 2, "why": "Exact chock points."}),
+    )
+
+    today: BestAndWorst = Take5RankingService(repository, ranker).since(
+        MIDNIGHT_IN_PERTH,
+    )
+
+    assert len(ranker.best_texts) == 1
+    assert today.best is not None
+    assert today.best.take5.id == quick.id
+    assert today.best.line == "Exact chock points."
+    assert today.typical_minutes == 7  # The median of 10 and 3 is 6.5, rounded up.
+
+
+def test_a_failed_ai_pick_leaves_the_rules_best_and_is_asked_again(
+    repository: SqliteTake5Repository,
+) -> None:
+    """W8: a pick that fails its checks isn't remembered, so the AI is asked again."""
+    slow, _ = two_careful_today(repository)
+    ranker = StandInRanker(SWAPPED, best_reply="Not JSON.")
+    service = Take5RankingService(repository, ranker)
+
+    first: BestAndWorst = service.since(MIDNIGHT_IN_PERTH)
+    service.since(MIDNIGHT_IN_PERTH)
+
+    assert first.best is not None
+    assert first.best.take5.id == slow.id
+    assert first.best.picked_by is RankedBy.RULES
+    assert len(ranker.best_texts) == 2
+
+
+def test_a_broken_ai_leaves_both_to_the_rules(
+    repository: SqliteTake5Repository,
+) -> None:
+    """W6, W8: when the AI fails, the rules order the worst and pick the best."""
+    slow, _ = two_careful_today(repository)
+
+    today: BestAndWorst = Take5RankingService(repository, BrokenRanker()).since(
+        MIDNIGHT_IN_PERTH,
+    )
+
+    assert today.best is not None
+    assert today.best.take5.id == slow.id
+    assert all(each.ranked_by is RankedBy.RULES for each in today.ranked)
+
+
+def test_one_careful_take5_is_the_best_without_asking_the_ai(
+    repository: SqliteTake5Repository,
+) -> None:
+    """W8: with one careful Take 5 there is nothing to choose between."""
+    _, careful = two_today(repository)
+    ranker = StandInRanker(SWAPPED)
+
+    today: BestAndWorst = Take5RankingService(repository, ranker).since(
+        MIDNIGHT_IN_PERTH,
+    )
+
+    assert ranker.best_texts == []
+    assert today.best is not None
+    assert today.best.take5.id == careful.id
+
+
+def test_both_ai_jobs_share_one_time_limit(
+    repository: SqliteTake5Repository,
+) -> None:
+    """W6, W8: ordering and picking run side by side, so a slow AI costs one limit."""
+    two_careful_today(repository)
+    service = Take5RankingService(
+        repository,
+        StandInRanker(SWAPPED, delay_seconds=2),
+        ai_time_limit_seconds=0.5,
+    )
+
+    started: float = time.monotonic()
+    today: BestAndWorst = service.since(MIDNIGHT_IN_PERTH)
+    took: float = time.monotonic() - started
+
+    assert took < 0.9
+    assert today.best is not None
+    assert today.best.picked_by is RankedBy.RULES

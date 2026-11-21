@@ -4,11 +4,17 @@ on:
   issue_comment:
     types: [created]
 
+# Nothing by default; the job asks for only what it needs.
+permissions: {}
+
 jobs:
   claude:
+    # Only the owner and people Jake invites can start it. Anyone can comment on a public repo, and this job
+    # can push and spend the API key. (The action checks write access too; this check runs first, for free.)
     if: |
       github.event.issue.pull_request &&
-      contains(github.event.comment.body, '@claude')
+      contains(github.event.comment.body, '@claude') &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:

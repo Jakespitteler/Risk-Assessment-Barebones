@@ -60,7 +60,9 @@ helpers, and API types, which come from `src/api/schema.d.ts` through `src/api/t
 | Reason | One line saying why the job is stopped. | `Verdict.reasons` | `VerdictPanel` | V1 to V3 |
 | Warning | On the review, something allowed that will stop the job. | `FieldWarning`; `DraftCheck.warnings` | `ReviewPage`, `Warning` | V1, V2 |
 | Form error | Something missing or not allowed, so the page can't go on. Not a verdict. | `FieldError`, `FormErrors` | `Field`; `FieldError` | T2 to T5 |
-| Nudge | A suggestion under a Yes to make a vague hazard specific. It never stops Continue or Submit. | `Nudge`; `specific_hazard_nudges` | `HazardNudge`; `useHazardNudges` | T6 |
+| Nudge | A suggestion under a Yes to make a vague, stock or unfit hazard specific. It never stops Continue or Submit. | `Nudge`; `specific_hazard_nudges` | `HazardNudge`; `useHazardNudges` | T6, T7 |
+| Stock or unfit hazard | A hazard an AI calls stock (wording that fits any job) or unfit (can't happen on this job). Nudged like a vague one. | `HazardVerdict`, `HazardFlag` | `flag` | T7 |
+| Kept flag | What the hazard check still said about a hazard when it was submitted, so the worker kept it. Counts in today's review. | `Hazard.kept_flag`, `with_kept_flags` | none (the back end keeps it) | T7, W10 |
 | Vague / specific hazard | Whether a hazard says what could hurt and where. The AI judges, or the word rule does. | `HazardVerdict`; `Take5Template.specific_hazard_words`; `HazardJudge` | none (the back end decides) | T6 |
 | Fix | A new Take 5 started from a Don't start yet, with its answers copied. | `SavedTake5.fixes`; `fix.py` | `FixPanel`; `fixDraftOf` | (feature F3) |
 
@@ -90,8 +92,19 @@ helpers, and API types, which come from `src/api/schema.d.ts` through `src/api/t
 
 | Term | Meaning | Back end | Front end | Rules |
 | --- | --- | --- | --- | --- |
-| Worst of today | Today's Take 5s ranked worst first, each with one line saying why. Anyone can open it from the saved list. | `Take5RankingService` | `WorstOfTodayScreen`, `useRankedTake5s`; types `RankedTake5s`, `RankedTake5Line` | W1, W7 |
+| Today's review | Today's best Take 5, then all of them ranked worst first, each with one line saying why. Anyone can open it from the saved list. | `Take5RankingService`, `BestAndWorst` | `ReviewTodayScreen`, `useRankedTake5s`; types `RankedTake5s`, `RankedTake5Line` | W1, W7 to W9 |
 | Thought gap | A sign of little thought: a hazard under 6 words, controls that don't lower a risk, a missing or short answer, or under 2 minutes taken. | `thought_gaps` | none (the back end sends the line) | W2 to W5 |
 | Worst score | The highest before-controls score, plus 5 for each thought gap. Higher is worse. | `worst_score`, `rank_by_rules` | none | W1 |
 | Reason line | The one line saying why a Take 5 sits where it does: the AI's for the worst 10, else the rules'. | `RankedTake5.line`, `rule_line` | `line` | W1, W6 |
+| Best of today | The best careful Take 5: finished and answered, controls on every hazard, no gap from W2 to W4 (rushed is allowed). The rules shortlist 5, the AI picks one and says what was good. | `BestTake5`, `is_careful`, `best_shortlist`, `best_by_rules`, `checked_ai_pick`, `with_ai_pick` | `ReviewTodayScreen`; type `BestTake5Line` | W8 |
+| Typical time | The median minutes today's finished Take 5s took, shown beside the best's time. | `typical_minutes`, `minutes_taken` | `typical_minutes` | W9 |
 | AI ranking | The AI reorders the worst 10 and writes their lines, never seeing a name. Its reply is checked, and the rules decide when it fails. | `Take5Ranker`, `AiTake5Ranker`, `checked_ai_order`, `with_ai_order`; `RankedBy` | `ranked_by_ai` | W6 |
+
+## Risk by area
+
+| Term | Meaning | Back end | Front end | Rules |
+| --- | --- | --- | --- | --- |
+| Risk by area | Every saved Take 5 (or, with the setting, the last 30 days) grouped by where the job is, hottest first. Opened from the saved list. | `AreaRiskService`, `risk_by_area`, `AreaRisk`, `area_since` | `RiskByAreaScreen`, `useRiskByArea`; types `RiskByArea`, `AreaRisk` | A2, A4 |
+| Area | Where the job is, as typed, ignoring capitals, spaces and punctuation; named by the spelling typed most. | `area_key` | `name` | A1 |
+| High risk | A Take 5 with a hazard whose before score needs a JHA on its card (11 or more on the booklet). | `is_high_risk` | `high_risk_count` | A3 |
+| Common Yes | A hazard question answered Yes often in an area, with how many times; up to 3 per area. | `CommonYes` | `common_yes` | A5 |

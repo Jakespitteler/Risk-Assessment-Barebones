@@ -150,13 +150,38 @@ export interface paths {
         };
         /**
          * Ranked Take5S
-         * @description Rank the Take 5s started since a moment, worst first (spec W1 to W7).
+         * @description Rank the Take 5s started since a moment, and find the best (W1 to W9).
          *
          *     Args:
          *         since: The moment, with its time zone, such as midnight where the phone
-         *             is for "Worst of today".
+         *             is for "Today's review".
          */
         get: operations["ranked_take5s_api_ranked_take5s_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/risk-by-area": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Risk By Area
+         * @description Group the Take 5s by area, hottest first (A1 to A5).
+         *
+         *     Only the last 30 days count when the setting says so (A2, D119).
+         *
+         *     Args:
+         *         today: Midnight today where the phone is, with its time zone.
+         */
+        get: operations["risk_by_area_api_risk_by_area_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -187,11 +212,84 @@ export interface components {
             answer: string;
         };
         /**
+         * AreaRisk
+         * @description What the Take 5s in one area show (A3 to A5).
+         *
+         *     Attributes:
+         *         name: The area, as it was typed most often (A1).
+         *         take5_count: How many Take 5s were done there.
+         *         high_risk_count: How many had a hazard that needed a JHA before controls (A3).
+         *         stopped_count: How many got "Don't start yet". An unfinished one has no
+         *             verdict yet, so it isn't counted.
+         *         thought_gap_count: How many thought gaps they had between them (W2 to W5, W10).
+         *         highest_score: The highest before-controls score of any hazard there.
+         *         highest_band: That score's band, such as "Extreme".
+         *         common_yes: Up to 3 hazard questions answered Yes most often there (A5).
+         */
+        AreaRisk: {
+            /** Name */
+            name: string;
+            /** Take5 Count */
+            take5_count: number;
+            /** High Risk Count */
+            high_risk_count: number;
+            /** Stopped Count */
+            stopped_count: number;
+            /** Thought Gap Count */
+            thought_gap_count: number;
+            /** Highest Score */
+            highest_score: number;
+            /** Highest Band */
+            highest_band: string;
+            /** Common Yes */
+            common_yes: components["schemas"]["CommonYes"][];
+        };
+        /**
          * AskedBy
          * @description Who wrote the question the worker was asked.
          * @enum {string}
          */
         AskedBy: "ai" | "fallback";
+        /**
+         * BestTake5Line
+         * @description The best careful Take 5 of the set, with what was good about it (spec W8).
+         *
+         *     Attributes:
+         *         id: The Take 5's ID, to open it.
+         *         created_at: When it was saved.
+         *         worker_name: Who did it. Never sent to the AI.
+         *         job: What the job is.
+         *         can_start: The verdict it was saved with: True for Good to go, False for
+         *             Don't start yet.
+         *         line: One line saying what was good about it.
+         *         picked_by_ai: True when the AI picked it and wrote the line, False when the
+         *             fixed rules did.
+         *         minutes_taken: How many minutes it took, or None when that can't be told.
+         */
+        BestTake5Line: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Worker Name */
+            worker_name: string;
+            /** Job */
+            job: string;
+            /** Can Start */
+            can_start: boolean;
+            /** Line */
+            line: string;
+            /** Picked By Ai */
+            picked_by_ai: boolean;
+            /** Minutes Taken */
+            minutes_taken: number | null;
+        };
         /**
          * Challenge
          * @description The question a Take 5 was asked, who asked it, and the worker's answer.
@@ -214,6 +312,20 @@ export interface components {
             instructions_version?: string | null;
             /** Answer */
             answer?: string | null;
+        };
+        /**
+         * CommonYes
+         * @description A hazard question answered Yes in an area, and how many times.
+         *
+         *     Attributes:
+         *         question: The card's question, word for word.
+         *         count: How many of the area's Take 5s answered it Yes.
+         */
+        CommonYes: {
+            /** Question */
+            question: string;
+            /** Count */
+            count: number;
         };
         /**
          * Control
@@ -341,6 +453,9 @@ export interface components {
          *     is needed. Description, ratings and controls are immutable once constructed.
          *     `covers` holds the IDs of the hazard questions answered Yes that the worker linked
          *     to this hazard (T5); it is empty for a Take 5 saved before links were kept.
+         *     `kept_flag` is what the hazard check still said about its words when the Take 5
+         *     was submitted, so the worker kept them after the nudge (T6, task 0037); None when
+         *     nothing was flagged, or for a Take 5 saved before flags were kept.
          */
         Hazard: {
             /** Description */
@@ -359,6 +474,7 @@ export interface components {
              * @default []
              */
             covers: string[];
+            kept_flag?: components["schemas"]["HazardFlag"] | null;
         };
         /**
          * HazardDraft
@@ -398,6 +514,12 @@ export interface components {
             covers: string[];
         };
         /**
+         * HazardFlag
+         * @description What the hazard check (T6) said was wrong with a hazard's words.
+         * @enum {string}
+         */
+        HazardFlag: "vague" | "stock" | "unfit";
+        /**
          * LevelGuidance
          * @description What one level of a scale means, in the card's own words.
          *
@@ -420,6 +542,7 @@ export interface components {
          *         message: The suggestion, in plain words.
          *         question_id: The question to show it under, such as `vehicles`, so the phone
          *             needn't work out where it goes.
+         *         flag: What is wrong with the hazard's words: vague, stock or unfit.
          */
         Nudge: {
             /** Path */
@@ -428,6 +551,7 @@ export interface components {
             message: string;
             /** Question Id */
             question_id: string;
+            flag: components["schemas"]["HazardFlag"];
         };
         /**
          * Question
@@ -499,16 +623,21 @@ export interface components {
         };
         /**
          * RankedTake5s
-         * @description Every Take 5 started since a moment, worst first (spec W7 and D92).
+         * @description Every Take 5 started since a moment worst first, and the best (W7 to W9, D92).
          *
          *     Attributes:
          *         take5s: The ranking. The page shows the first 5, then the rest on request.
+         *         best: The best careful one, or None when none is careful.
+         *         typical_minutes: The median minutes a finished one took, or None.
          *         today_only: True when only today's are ranked; False when every saved Take 5
          *             is, as `TAKE5_RANK_TODAY_ONLY` sets (D118).
          */
         RankedTake5s: {
             /** Take5S */
             take5s: components["schemas"]["RankedTake5Line"][];
+            best: components["schemas"]["BestTake5Line"] | null;
+            /** Typical Minutes */
+            typical_minutes: number | null;
             /** Today Only */
             today_only: boolean;
         };
@@ -525,6 +654,21 @@ export interface components {
             likelihood?: string | null;
             /** Consequence */
             consequence?: string | null;
+        };
+        /**
+         * RiskByArea
+         * @description Every area with a Take 5 in the time counted, hottest first (A1 to A5).
+         *
+         *     Attributes:
+         *         areas: Each area and what its Take 5s show, hottest first.
+         *         last_30_days_only: True when only the last 30 days count; False when every
+         *             saved Take 5 does, as `TAKE5_AREA_LAST_30_DAYS_ONLY` sets (D119).
+         */
+        RiskByArea: {
+            /** Areas */
+            areas: components["schemas"]["AreaRisk"][];
+            /** Last 30 Days Only */
+            last_30_days_only: boolean;
         };
         /**
          * RiskCell
@@ -1207,6 +1351,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RankedTake5s"];
+                };
+            };
+            /** @description The moment is missing or has no zone */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormErrors"];
+                };
+            };
+        };
+    };
+    risk_by_area_api_risk_by_area_get: {
+        parameters: {
+            query: {
+                today: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiskByArea"];
                 };
             };
             /** @description The moment is missing or has no zone */

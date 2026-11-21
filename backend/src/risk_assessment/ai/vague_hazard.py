@@ -1,4 +1,4 @@
-"""The vague-hazard job: what the AI is told, and a judge for any model (spec T6).
+"""The hazard check: what the AI is told, and a judge for any model (spec T6).
 
 The instructions live here, with a version that is logged beside each verdict. Change
 the wording, change the version, so verdicts given under different instructions can
@@ -14,7 +14,7 @@ from risk_assessment.ai.model import LanguageModel
 
 _logger: logging.Logger = logging.getLogger(__name__)
 
-VAGUE_HAZARD_INSTRUCTIONS_VERSION: str = "vague-hazard-1"
+VAGUE_HAZARD_INSTRUCTIONS_VERSION: str = "vague-hazard-2"
 
 VAGUE_HAZARD_INSTRUCTIONS: str = """\
 You help a mine-site worker think about a job before they start it. They are filling \
@@ -35,12 +35,21 @@ machine, a vehicle, a substance, stored energy or a drop, and how or where it co
 happen when that isn't plain from the job. Short can be specific: "Crusher dust", \
 "Wheel nuts under tension" and "Hit by a haul truck at the crib hut crossing" are.
 
-A hazard is vague when it only names a general category or a feeling, or could be \
-written about almost any job: for example "Vehicles", "Get hit by a car" on a site \
-with many kinds of vehicle, "Slips trips and falls", "Hazards around the area" or \
-"Be careful".
+A hazard is vague when it only names a general category or a feeling: for example \
+"Vehicles", "Get hit by a car" on a site with many kinds of vehicle, "Hazards around \
+the area" or "Be careful".
 
-Reply with one word only: specific or vague.
+A hazard is stock when it is stock safety wording that would fit almost any job, \
+however long, with nothing about this job in it: for example "Slips, trips and falls \
+in the work area", "Manual handling injuries from lifting" or "Pinch points causing \
+hand injuries".
+
+A hazard is unfit when it doesn't fit this job or where it is done, as if made up or \
+copied from another Take 5: for example "Falling from height" for "Answer emails at \
+my desk", or "Drowning" for "Change a tyre on LV12 in the workshop". Only say unfit \
+when it plainly can't happen on this job.
+
+Reply with one word only: specific, vague, stock or unfit.
 """
 
 

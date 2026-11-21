@@ -7,6 +7,11 @@ Usage, from the repo root: `uv run check.py`. With `--fix` it changes the code i
 of checking it: it formats everything, makes the fixes the lint tools can make by
 themselves, and writes the API types again. Run `uv run check.py` afterwards to see what
 is left.
+
+With `--no-front-end` it skips every check in `frontend/`, so it needs no npm install or
+browser. CI uses it when a pull request changes only Markdown or the spelling and
+Markdown settings: those can't change the front end, but the back-end tests read the
+spec and the glossary, so they still run.
 """
 
 import os
@@ -93,6 +98,21 @@ CHECKS: list[Check] = [
     ),
     Check("Whole app in a browser", [NPM, "run", "test:e2e"], "frontend"),
 ]
+
+
+FRONT_END_FOLDER: str = "frontend"
+
+
+def without_front_end(checks: Sequence[Check]) -> list[Check]:
+    """Leave out the checks that run in the front end's folder.
+
+    Args:
+        checks: The checks to choose from.
+
+    Returns:
+        The checks that run anywhere but `frontend/`, in the same order.
+    """
+    return [each for each in checks if each.folder != FRONT_END_FOLDER]
 
 
 # The formatter runs before and after the lint fixes, as Claude's format hook does: a
@@ -189,7 +209,7 @@ def run_fixes(fixes: Sequence[Check] = FIXES) -> int:
 
 
 def main(arguments: Sequence[str]) -> int:
-    """Check everything, or fix what can be fixed with `--fix`.
+    """Check everything, fix what can be fixed with `--fix`, or skip the front end.
 
     Args:
         arguments: What followed the script's name on the command line.
@@ -202,7 +222,9 @@ def main(arguments: Sequence[str]) -> int:
         return run_checks(CHECKS)
     if list(arguments) == ["--fix"]:
         return run_fixes(FIXES)
-    print("Usage: uv run check.py [--fix]")
+    if list(arguments) == ["--no-front-end"]:
+        return run_checks(without_front_end(CHECKS))
+    print("Usage: uv run check.py [--fix | --no-front-end]")
     return 2
 
 

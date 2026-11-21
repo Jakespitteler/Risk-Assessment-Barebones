@@ -350,7 +350,7 @@
           "ranking"
         ],
         "summary": "Ranked Take5S",
-        "description": "Rank the Take 5s started since a moment, worst first (spec W1 to W7).\n\nArgs:\n    since: The moment, with its time zone, such as midnight where the phone\n        is for \"Worst of today\".",
+        "description": "Rank the Take 5s started since a moment, and find the best (W1 to W9).\n\nArgs:\n    since: The moment, with its time zone, such as midnight where the phone\n        is for \"Today's review\".",
         "operationId": "ranked_take5s_api_ranked_take5s_get",
         "parameters": [
           {
@@ -371,6 +371,50 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RankedTake5s"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The moment is missing or has no zone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormErrors"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/risk-by-area": {
+      "get": {
+        "tags": [
+          "areas"
+        ],
+        "summary": "Risk By Area",
+        "description": "Group the Take 5s by area, hottest first (A1 to A5).\n\nOnly the last 30 days count when the setting says so (A2, D119).\n\nArgs:\n    today: Midnight today where the phone is, with its time zone.",
+        "operationId": "risk_by_area_api_risk_by_area_get",
+        "parameters": [
+          {
+            "name": "today",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "title": "Today"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskByArea"
                 }
               }
             }
@@ -415,6 +459,58 @@
         "title": "AnswerRequest",
         "description": "The worker's answer to a Take 5's challenge question.\n\nAttributes:\n    answer: What the worker wrote."
       },
+      "AreaRisk": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "take5_count": {
+            "type": "integer",
+            "title": "Take5 Count"
+          },
+          "high_risk_count": {
+            "type": "integer",
+            "title": "High Risk Count"
+          },
+          "stopped_count": {
+            "type": "integer",
+            "title": "Stopped Count"
+          },
+          "thought_gap_count": {
+            "type": "integer",
+            "title": "Thought Gap Count"
+          },
+          "highest_score": {
+            "type": "integer",
+            "title": "Highest Score"
+          },
+          "highest_band": {
+            "type": "string",
+            "title": "Highest Band"
+          },
+          "common_yes": {
+            "items": {
+              "$ref": "#/components/schemas/CommonYes"
+            },
+            "type": "array",
+            "title": "Common Yes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "take5_count",
+          "high_risk_count",
+          "stopped_count",
+          "thought_gap_count",
+          "highest_score",
+          "highest_band",
+          "common_yes"
+        ],
+        "title": "AreaRisk",
+        "description": "What the Take 5s in one area show (A3 to A5).\n\nAttributes:\n    name: The area, as it was typed most often (A1).\n    take5_count: How many Take 5s were done there.\n    high_risk_count: How many had a hazard that needed a JHA before controls (A3).\n    stopped_count: How many got \"Don't start yet\". An unfinished one has no\n        verdict yet, so it isn't counted.\n    thought_gap_count: How many thought gaps they had between them (W2 to W5, W10).\n    highest_score: The highest before-controls score of any hazard there.\n    highest_band: That score's band, such as \"Extreme\".\n    common_yes: Up to 3 hazard questions answered Yes most often there (A5)."
+      },
       "AskedBy": {
         "type": "string",
         "enum": [
@@ -423,6 +519,64 @@
         ],
         "title": "AskedBy",
         "description": "Who wrote the question the worker was asked."
+      },
+      "BestTake5Line": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "worker_name": {
+            "type": "string",
+            "title": "Worker Name"
+          },
+          "job": {
+            "type": "string",
+            "title": "Job"
+          },
+          "can_start": {
+            "type": "boolean",
+            "title": "Can Start"
+          },
+          "line": {
+            "type": "string",
+            "title": "Line"
+          },
+          "picked_by_ai": {
+            "type": "boolean",
+            "title": "Picked By Ai"
+          },
+          "minutes_taken": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minutes Taken"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "worker_name",
+          "job",
+          "can_start",
+          "line",
+          "picked_by_ai",
+          "minutes_taken"
+        ],
+        "title": "BestTake5Line",
+        "description": "The best careful Take 5 of the set, with what was good about it (spec W8).\n\nAttributes:\n    id: The Take 5's ID, to open it.\n    created_at: When it was saved.\n    worker_name: Who did it. Never sent to the AI.\n    job: What the job is.\n    can_start: The verdict it was saved with: True for Good to go, False for\n        Don't start yet.\n    line: One line saying what was good about it.\n    picked_by_ai: True when the AI picked it and wrote the line, False when the\n        fixed rules did.\n    minutes_taken: How many minutes it took, or None when that can't be told."
       },
       "Challenge": {
         "properties": {
@@ -474,6 +628,25 @@
         ],
         "title": "Challenge",
         "description": "The question a Take 5 was asked, who asked it, and the worker's answer.\n\nAttributes:\n    question: The question the worker was shown.\n    asked_by: Whether the AI or the fallback asked it.\n    model: For an AI question, which model asked it. None for the fallback.\n    instructions_version: For an AI question, which version of its instructions\n        it had. None for the fallback.\n    answer: The worker's answer, or None until they give one."
+      },
+      "CommonYes": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question",
+          "count"
+        ],
+        "title": "CommonYes",
+        "description": "A hazard question answered Yes in an area, and how many times.\n\nAttributes:\n    question: The card's question, word for word.\n    count: How many of the area's Take 5s answered it Yes."
       },
       "Control": {
         "properties": {
@@ -707,6 +880,16 @@
             "type": "array",
             "title": "Covers",
             "default": []
+          },
+          "kept_flag": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HazardFlag"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -717,7 +900,7 @@
           "after"
         ],
         "title": "Hazard",
-        "description": "One hazard rated before and after controls, using ratings from `rate()`.\n\nWithout controls, reuse the before rating as the after rating; no second rating\nis needed. Description, ratings and controls are immutable once constructed.\n`covers` holds the IDs of the hazard questions answered Yes that the worker linked\nto this hazard (T5); it is empty for a Take 5 saved before links were kept."
+        "description": "One hazard rated before and after controls, using ratings from `rate()`.\n\nWithout controls, reuse the before rating as the after rating; no second rating\nis needed. Description, ratings and controls are immutable once constructed.\n`covers` holds the IDs of the hazard questions answered Yes that the worker linked\nto this hazard (T5); it is empty for a Take 5 saved before links were kept.\n`kept_flag` is what the hazard check still said about its words when the Take 5\nwas submitted, so the worker kept them after the nudge (T6, task 0037); None when\nnothing was flagged, or for a Take 5 saved before flags were kept."
       },
       "HazardDraft": {
         "properties": {
@@ -758,6 +941,16 @@
         "title": "HazardDraft",
         "description": "A hazard while the worker is still rating it and writing its controls.\n\nAttributes:\n    description: The hazard in the worker's own words.\n    before: The rating before controls.\n    controls: The controls, possibly none.\n    after: The rating after controls. Ignored when there are no controls (R6).\n    weak_controls_reason: Why stronger controls aren't possible, when T3 asks.\n    covers: The IDs of the hazard questions the worker linked to this hazard (T5),\n        whether it was added from a Yes or picked from the list."
       },
+      "HazardFlag": {
+        "type": "string",
+        "enum": [
+          "vague",
+          "stock",
+          "unfit"
+        ],
+        "title": "HazardFlag",
+        "description": "What the hazard check (T6) said was wrong with a hazard's words."
+      },
       "LevelGuidance": {
         "properties": {
           "level": {
@@ -790,16 +983,20 @@
           "question_id": {
             "type": "string",
             "title": "Question Id"
+          },
+          "flag": {
+            "$ref": "#/components/schemas/HazardFlag"
           }
         },
         "type": "object",
         "required": [
           "path",
           "message",
-          "question_id"
+          "question_id",
+          "flag"
         ],
         "title": "Nudge",
-        "description": "A suggestion to look again at an answer. It never stops submitting.\n\nAttributes:\n    path: The answer's dotted field path, such as `hazards.0.description`.\n    message: The suggestion, in plain words.\n    question_id: The question to show it under, such as `vehicles`, so the phone\n        needn't work out where it goes."
+        "description": "A suggestion to look again at an answer. It never stops submitting.\n\nAttributes:\n    path: The answer's dotted field path, such as `hazards.0.description`.\n    message: The suggestion, in plain words.\n    question_id: The question to show it under, such as `vehicles`, so the phone\n        needn't work out where it goes.\n    flag: What is wrong with the hazard's words: vague, stock or unfit."
       },
       "Question": {
         "properties": {
@@ -901,6 +1098,27 @@
             "type": "array",
             "title": "Take5S"
           },
+          "best": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BestTake5Line"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "typical_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Typical Minutes"
+          },
           "today_only": {
             "type": "boolean",
             "title": "Today Only"
@@ -909,10 +1127,12 @@
         "type": "object",
         "required": [
           "take5s",
+          "best",
+          "typical_minutes",
           "today_only"
         ],
         "title": "RankedTake5s",
-        "description": "Every Take 5 started since a moment, worst first (spec W7 and D92).\n\nAttributes:\n    take5s: The ranking. The page shows the first 5, then the rest on request.\n    today_only: True when only today's are ranked; False when every saved Take 5\n        is, as `TAKE5_RANK_TODAY_ONLY` sets (D118)."
+        "description": "Every Take 5 started since a moment worst first, and the best (W7 to W9, D92).\n\nAttributes:\n    take5s: The ranking. The page shows the first 5, then the rest on request.\n    best: The best careful one, or None when none is careful.\n    typical_minutes: The median minutes a finished one took, or None.\n    today_only: True when only today's are ranked; False when every saved Take 5\n        is, as `TAKE5_RANK_TODAY_ONLY` sets (D118)."
       },
       "RatingChoice": {
         "properties": {
@@ -942,6 +1162,28 @@
         "type": "object",
         "title": "RatingChoice",
         "description": "A likelihood and a consequence as the worker picked them; neither is preset.\n\nAttributes:\n    likelihood: The picked likelihood, or None until one is picked.\n    consequence: The picked consequence, or None until one is picked."
+      },
+      "RiskByArea": {
+        "properties": {
+          "areas": {
+            "items": {
+              "$ref": "#/components/schemas/AreaRisk"
+            },
+            "type": "array",
+            "title": "Areas"
+          },
+          "last_30_days_only": {
+            "type": "boolean",
+            "title": "Last 30 Days Only"
+          }
+        },
+        "type": "object",
+        "required": [
+          "areas",
+          "last_30_days_only"
+        ],
+        "title": "RiskByArea",
+        "description": "Every area with a Take 5 in the time counted, hottest first (A1 to A5).\n\nAttributes:\n    areas: Each area and what its Take 5s show, hottest first.\n    last_30_days_only: True when only the last 30 days count; False when every\n        saved Take 5 does, as `TAKE5_AREA_LAST_30_DAYS_ONLY` sets (D119)."
       },
       "RiskCell": {
         "properties": {

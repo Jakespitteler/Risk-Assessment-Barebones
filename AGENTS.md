@@ -21,7 +21,8 @@ newer (24.15 or newer on version 24). Run each from the repo root.
 - Test: `uv run test.py` runs all; `uv run test.py backend`, `frontend` or `e2e` runs one kind, and passes the
   rest of the line to pytest, Vitest or Playwright (the real-AI test: `uv run test.py backend -m real_ai`).
 - All checks (what CI runs): `uv run check.py`. It lints and type checks the back end, `scripts/` and the root
-  commands, and checks Markdown and spelling (Australian English) too.
+  commands, and checks Markdown and spelling (Australian English) too. For a pull request that changes only
+  Markdown, CI runs `uv run check.py --no-front-end` instead (task 0041).
 - Fix: `uv run check.py --fix` formats everything, makes the lint tools' own fixes (including Ruff's `COM812`,
   a missing trailing comma) and writes the API types again. Run it after any change to the API, and commit both
   files it writes in `frontend/src/api/`.

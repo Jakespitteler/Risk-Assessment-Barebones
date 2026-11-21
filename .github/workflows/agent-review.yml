@@ -9,6 +9,12 @@ permissions:
 
 jobs:
   eligible:
+    # A quick filter that saves starting a runner (a billed minute) for events the policy
+    # below always skips: draft pull requests and the reviewer's own pushes. It can only skip
+    # more, never review more; scripts/agent_review.cjs on the base branch still decides.
+    if: >-
+      !github.event.pull_request.draft &&
+      !(github.event.action == 'synchronize' && github.event.sender.login == 'claude[bot]')
     runs-on: ubuntu-latest
     outputs:
       review: ${{ steps.gate.outputs.result }}
