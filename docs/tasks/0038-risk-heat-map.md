@@ -57,6 +57,9 @@ Assumptions:
   it, a change to the API left for later.
 - A location with only punctuation (" - ") passes the job page but can't be placed, so it is left out, and the
   empty page says "No Take 5s with a location in the last 30 days."
+- Later on 2026-11-21 Jake asked for no time limit while the app is a proof of concept (D119): the page counts
+  every saved Take 5 by default, says "in every saved Take 5", and with nothing saved says "No saved Take 5s with
+  a location yet." `TAKE5_AREA_LAST_30_DAYS_ONLY=true` brings back the 30 days and their words above.
 - No AI: every number can be checked by hand, and the page costs nothing to open (D116).
 - Each Take 5 is judged on its own card's JHA threshold, so a card with another matrix still works.
 - The bar is drawn beside the hottest area's high-risk count, and only repeats the words, so it is hidden from

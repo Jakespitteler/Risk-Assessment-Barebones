@@ -58,19 +58,28 @@ it("says there is no time limit when every saved Take 5 counts (D119)", async ()
   ).toBeTruthy();
 });
 
-it("names the time counted above the areas (D119)", async () => {
-  stubApi({
-    [AREAS_URL]: {
-      status: 200,
-      body: { areas: [area("Crusher")], last_30_days_only: false },
-    },
-  });
-  renderWithApi(<RiskByAreaScreen />);
-  await screen.findByRole("heading", { name: "Risk by area" });
-  expect(
-    screen.getByText(/^Where the jobs were in every saved Take 5,/),
-  ).toBeTruthy();
-});
+it.each([
+  { lastThirtyDaysOnly: false, period: "in every saved Take 5" },
+  { lastThirtyDaysOnly: true, period: "in the last 30 days" },
+])(
+  "names the time counted above the areas: $period (A2, D119)",
+  async ({ lastThirtyDaysOnly, period }) => {
+    stubApi({
+      [AREAS_URL]: {
+        status: 200,
+        body: {
+          areas: [area("Crusher")],
+          last_30_days_only: lastThirtyDaysOnly,
+        },
+      },
+    });
+    renderWithApi(<RiskByAreaScreen />);
+    await screen.findByRole("heading", { name: "Risk by area" });
+    expect(
+      screen.getByText(new RegExp(`^Where the jobs were ${period},`)),
+    ).toBeTruthy();
+  },
+);
 
 it("lists the areas hottest first, each with what its Take 5s show (A4, A5)", async () => {
   stubApi({
