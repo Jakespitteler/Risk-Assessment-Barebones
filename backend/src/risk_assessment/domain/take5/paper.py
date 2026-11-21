@@ -7,7 +7,7 @@ zone that can't be read.
 """
 
 import re
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta, timezone
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -57,8 +57,10 @@ def paper_started_at(filled_in_at: str | None, time_zone: str) -> datetime | Non
         time_zone: The checker's time zone, such as "Australia/Perth".
 
     Returns:
-        That moment in the checker's time zone, a date alone being the start of that
-        day there, or None when the card has no date, so the scan time stands in.
+        That moment at the checker's time zone's offset then, a date alone being the
+        start of that day there, or None when the card has no date, so the scan time
+        stands in. In an hour daylight saving repeats, the first is taken; in one it
+        skips, the offset from before the change.
 
     Raises:
         PaperCardError: If the date or the time zone can't be read.
@@ -82,7 +84,10 @@ def paper_started_at(filled_in_at: str | None, time_zone: str) -> datetime | Non
         raise PaperCardError("filled_in_at", BAD_DATE_MESSAGE) from error
     if not _EARLIEST_YEAR <= started_at.year <= _LATEST_YEAR:
         raise PaperCardError("filled_in_at", BAD_DATE_MESSAGE)
-    return started_at
+    # Kept at its fixed offset, as it is saved and read back, so a time in an hour
+    # daylight saving repeats or skips still equals itself on a retry.
+    offset: timedelta | None = started_at.utcoffset()
+    return started_at.astimezone(timezone(offset)) if offset is not None else started_at
 
 
 def paper_take5(draft: Take5Draft, template: Take5Template) -> Take5:

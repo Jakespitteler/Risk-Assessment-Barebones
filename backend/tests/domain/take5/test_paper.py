@@ -321,3 +321,30 @@ def test_a_paper_hazard_with_no_words_is_still_named_in_its_reasons() -> None:
         "Rate the risk of: the hazard with no description",
         "Say how you will control: the hazard with no description",
     )
+
+
+@pytest.mark.parametrize(
+    ("filled_in_at", "offset_hours"),
+    [("2026-04-05T02:30", 11), ("2026-10-04T02:30", 10)],
+    ids=["repeated_hour", "skipped_hour"],
+)
+def test_a_time_daylight_saving_repeats_or_skips_keeps_one_fixed_offset(
+    filled_in_at: str,
+    offset_hours: int,
+) -> None:
+    """Saved and read back, it still equals itself, so a retry isn't a conflict (P5)."""
+    started_at: datetime | None = paper_started_at(filled_in_at, "Australia/Sydney")
+
+    assert started_at is not None
+    assert started_at.utcoffset() == timedelta(hours=offset_hours)
+    assert datetime.fromisoformat(started_at.isoformat()) == started_at
+
+
+def test_an_answer_to_a_question_the_card_lacks_is_refused_by_its_field() -> None:
+    """A made-up question is never kept (P1)."""
+    answers: dict[str, Answer] = sample_answers() | {"made_up": Answer.YES}
+
+    with pytest.raises(PaperCardError) as raised:
+        paper_card(answers=answers)
+
+    assert raised.value.path == "answers.made_up"
