@@ -49,7 +49,6 @@ Spitteler
 sqlalchemy
 Starlette
 subagents
-Talison
 taskkill
 testpaths
 trackpad
