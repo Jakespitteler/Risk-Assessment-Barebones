@@ -2,6 +2,17 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-21: Risk by area counts every saved Take 5 while the app is a proof of concept
+
+- Decision: the risk-by-area page counts every saved Take 5 by default, and says "in every saved Take 5". A
+  setting, `TAKE5_AREA_LAST_30_DAYS_ONLY=true` in `backend/.env`, counts only the last 30 days again, and the
+  page then says "in the last 30 days" by itself, because the back end sends which one it counted. The 30-day
+  code is unchanged (spec A2, D119).
+- Why: Jake asked on 2026-11-21 for no time limit in the proof of concept, shown in the page's words, with the
+  30 days kept for later and the words changing back on their own.
+- Not chosen: a switch on the page (more to build, and the front end would hold a rule); keeping the 30 days.
+- Decided by: human.
+
 ## 2026-11-21: Rank every saved Take 5 while the app is a proof of concept
 
 - Decision: the ranking page ranks every saved Take 5 by default, and says "Review of all saved". A setting,

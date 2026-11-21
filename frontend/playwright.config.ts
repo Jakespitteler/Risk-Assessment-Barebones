@@ -35,6 +35,9 @@ export default defineConfig({
         // No AI in the whole-app tests, even with a key in backend/.env: the
         // fixed question is asked every time, so the tests know what to expect.
         TAKE5_AI_KEY: "",
+        // Risk by area counts every saved Take 5, as the tests expect, even
+        // with the 30 days turned on in backend/.env (D119).
+        TAKE5_AREA_LAST_30_DAYS_ONLY: "false",
         TAKE5_DATABASE_PATH: join(
           tmpdir(),
           `take5-e2e-${String(process.pid)}.sqlite3`,

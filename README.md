@@ -103,7 +103,8 @@ made-up hazards. `uv run test.py backend -m real_ai` runs the two tests that cal
 these costs a little money; the normal tests and CI never call it.
 
 The ranking page ranks every saved Take 5 while the app is a proof of concept. To rank only today's, add the
-line `TAKE5_RANK_TODAY_ONLY=true` to `backend/.env` and start the app again.
+line `TAKE5_RANK_TODAY_ONLY=true` to `backend/.env` and start the app again. Risk by area likewise counts every
+saved Take 5; the line `TAKE5_AREA_LAST_30_DAYS_ONLY=true` makes it count only the last 30 days.
 
 Using VS Code? See [docs/dev-setup.md](docs/dev-setup.md) for the editor set-up and fixes for common problems.
 
