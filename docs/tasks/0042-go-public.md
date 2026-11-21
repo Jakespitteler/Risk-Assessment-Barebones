@@ -1,7 +1,7 @@
 ---
 id: 0042
 title: Get the repo ready to be public
-status: review
+status: done
 owner: claude
 branch: claude/project-thread-b5b8wl
 ---
@@ -26,7 +26,7 @@ adds the files a public repo needs, and lists the settings Jake turns on. Jake m
 - [x] The licence stays "All rights reserved" in Jake's name (task 0015); only "confidential" is dropped, because
   public code can't be confidential.
 - [x] A test covers the review gate skipping Dependabot.
-- [ ] Jake answers the questions below, and the matching edits are made.
+- [x] Jake answers the questions below, and the matching edits are made.
 - [x] Jake makes the repo public and turns on the settings below (public on 2026-11-21).
 
 ## Out of scope
@@ -117,5 +117,6 @@ scanning, which GitHub turns on for public repos, scans the whole history again 
 1. Accepted. Jake turned on GitHub's email privacy; the 22 old commits keep the old address.
 2. Reworded: the app is meant for any company, so the docs no longer name his employer (task 0015, the licence
    decision, the spelling list). The old wording stays in the git history.
-3. Explained in chat; waiting on Jake.
-4. Explained in chat (the promise is to whoever reports a security problem); waiting on Jake.
+3. Recommendation taken: Jake checks with his manager that the booklet's wording may be public. If not, or as
+   the app moves to any company's card, the template gets the app's own words in a later task.
+4. No promised time: `SECURITY.md` now says "as soon as I can".

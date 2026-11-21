@@ -6,7 +6,7 @@ This repo is public so people can read it, but it is not open source: see [LICEN
 
 If you find a security problem, please report it privately: on GitHub, open the **Security** tab and choose
 **Report a vulnerability**. Please don't open a public issue or pull request about it. Include what you found,
-how to reproduce it, and what someone could do with it. Expect a reply within a week.
+how to reproduce it, and what someone could do with it. I'll reply as soon as I can.
 
 ## What is in scope
 
