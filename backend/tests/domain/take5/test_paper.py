@@ -348,3 +348,17 @@ def test_an_answer_to_a_question_the_card_lacks_is_refused_by_its_field() -> Non
         paper_card(answers=answers)
 
     assert raised.value.path == "answers.made_up"
+
+
+def test_a_hazard_with_no_words_is_named_in_its_controls_gap() -> None:
+    """W3 on a paper hazard with no description reads as a sentence (P4)."""
+    same = RatingChoice(likelihood="Possible", consequence="Minor")
+    card: SavedTake5 = paper_card(
+        HazardDraft(
+            before=same,
+            controls=(ControlDraft(description="Chock it", kind=ControlKind.PPE),),
+            after=same,
+        ),
+    )
+
+    assert "the controls for a hazard don't lower its risk" in thought_gaps(card)

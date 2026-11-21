@@ -138,7 +138,8 @@ def thought_gaps(take5: SavedTake5) -> tuple[str, ...]:
             and hazard.after is not None
             and hazard.after.score == hazard.before.score
         ):
-            gaps.append(f"the controls for “{hazard.description}” don't lower its risk")
+            name: str = f"“{hazard.description}”" if hazard.description else "a hazard"
+            gaps.append(f"the controls for {name} don't lower its risk")
     for hazard in take5.hazards:
         if (
             hazard.kept_flag is not None
