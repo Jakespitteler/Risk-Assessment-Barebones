@@ -4,6 +4,7 @@ import json
 import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 
@@ -408,3 +409,20 @@ def test_both_ai_jobs_share_one_time_limit(
     assert took < 0.9
     assert today.best is not None
     assert today.best.picked_by is RankedBy.RULES
+
+
+def test_a_batch_ranks_just_its_take5s_once_each_in_any_order(
+    repository: SqliteTake5Repository,
+) -> None:
+    """F10: unknown IDs are left out, repeats count once, and the order sent is moot."""
+    careless, careful = two_today(repository)
+    repository.add(ranked_take5(saved_at=MIDNIGHT_IN_PERTH + timedelta(hours=8)))
+    ranker = StandInRanker(SWAPPED)
+    service = Take5RankingService(repository, ranker)
+
+    first: BestAndWorst = service.batch([careful.id, careless.id, careful.id, uuid4()])
+    again: BestAndWorst = service.batch([careless.id, careful.id])
+
+    assert {ranked.take5.id for ranked in first.ranked} == {careless.id, careful.id}
+    assert again == first
+    assert len(ranker.texts) == 1
