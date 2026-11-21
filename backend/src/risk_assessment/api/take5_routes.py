@@ -111,8 +111,7 @@ def create_router(service: Take5Service) -> APIRouter:
         """Save a checked paper card as written, finished with its verdict (P1).
 
         A level, date, time zone or question that can't be used raises
-        `PaperCardError`, which
-        `api/errors.py` turns into a 422 beside that field.
+        `PaperCardError`, which `api/errors.py` turns into a 422 beside that field.
         """
         try:
             saved: SavedTake5 = service.save_paper(
