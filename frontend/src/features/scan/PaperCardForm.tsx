@@ -36,7 +36,7 @@ export function PaperCardForm({
   filledInAt,
   errorFor,
   onChange,
-  onRemoveHazard,
+  onRemoveItem,
 }: {
   template: TemplateResponse;
   draft: Take5Draft;
@@ -44,8 +44,11 @@ export function PaperCardForm({
   /** The back end's error for a field, or the mark for one the AI couldn't read. */
   errorFor: (path: string) => string | undefined;
   onChange: (draft: Take5Draft, filledInAt: string | null) => void;
-  /** Told which hazard was removed, so marks and errors can follow the rest. */
-  onRemoveHazard: (index: number) => void;
+  /**
+   * Told which item of a list was removed, such as hazard 0 of "hazards", so marks
+   * and errors can follow the rest.
+   */
+  onRemoveItem: (listPath: string, index: number) => void;
 }) {
   const answers: Record<string, Answer> = draft.answers;
   const hazards = draft.hazards;
@@ -149,6 +152,7 @@ export function PaperCardForm({
             {answers[question.id] && (
               <Button
                 variant="quiet"
+                aria-label={`Leave “${question.text}” blank, as on the card`}
                 onClick={() => {
                   change({
                     answers: Object.fromEntries(
@@ -177,7 +181,10 @@ export function PaperCardForm({
           }}
           onRemove={() => {
             change({ hazards: hazards.filter((_, at) => at !== index) });
-            onRemoveHazard(index);
+            onRemoveItem("hazards", index);
+          }}
+          onRemoveControl={(control) => {
+            onRemoveItem(`hazards.${String(index)}.controls`, control);
           }}
         />
       ))}
@@ -204,6 +211,7 @@ function HazardCard({
   errorFor,
   onChange,
   onRemove,
+  onRemoveControl,
 }: {
   template: TemplateResponse;
   hazard: HazardDraft;
@@ -211,6 +219,7 @@ function HazardCard({
   errorFor: (path: string) => string | undefined;
   onChange: (hazard: HazardDraft) => void;
   onRemove: () => void;
+  onRemoveControl: (index: number) => void;
 }) {
   const path = `hazards.${String(number - 1)}`;
   const controls = hazard.controls;
@@ -244,6 +253,7 @@ function HazardCard({
       />
       <ClearRating
         rating={hazard.before}
+        name={`hazard ${String(number)}’s rating before controls`}
         onClear={() => {
           onChange({ ...hazard, before: NO_RATING });
         }}
@@ -278,6 +288,7 @@ function HazardCard({
               ...hazard,
               controls: controls.filter((_, at) => at !== index),
             });
+            onRemoveControl(index);
           }}
         />
       ))}
@@ -303,6 +314,7 @@ function HazardCard({
       />
       <ClearRating
         rating={hazard.after}
+        name={`hazard ${String(number)}’s rating after controls`}
         onClear={() => {
           onChange({ ...hazard, after: NO_RATING });
         }}
@@ -317,14 +329,21 @@ function HazardCard({
 /** Set a rating back to blank, for a card that left it blank (P1). */
 function ClearRating({
   rating,
+  name,
   onClear,
 }: {
   rating: HazardDraft["before"];
+  /** Which rating, such as "hazard 1's rating before controls", for a screen reader. */
+  name: string;
   onClear: () => void;
 }) {
   if (!rating?.likelihood && !rating?.consequence) return null;
   return (
-    <Button variant="quiet" onClick={onClear}>
+    <Button
+      variant="quiet"
+      aria-label={`Leave ${name} blank, as on the card`}
+      onClick={onClear}
+    >
       Leave this rating blank, as on the card
     </Button>
   );
