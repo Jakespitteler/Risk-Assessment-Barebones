@@ -66,8 +66,9 @@ scanning, which GitHub turns on for public repos, scans the whole history again 
    - "Workflow permissions": "Read repository contents and packages permissions", and leave "Allow GitHub
      Actions to create and approve pull requests" off. Each workflow already asks for what it needs.
    - "Actions permissions": keep "Allow all actions and reusable workflows", and tick "Require actions to be
-     pinned to a full-length commit SHA" if your page shows it. Every action here, and the one action that
-     `claude-code-action` runs itself, is already pinned.
+     pinned to a full-length commit SHA" if your page shows it, but only once the pins are on `main`. Turned on
+     earlier, every PR whose workflows aren't pinned fails at "Set up job" (found on 2026-11-21). Every action
+     here, and the one action that `claude-code-action` runs itself, is pinned in this task.
 5. **Protect `main`.** Settings → Rules → Rulesets → New ruleset → New branch ruleset. Name it `main`,
    Enforcement status Active, Target branches → Add target → Include default branch. Tick: Restrict deletions,
    Block force pushes, Require a pull request before merging (Required approvals 0, because GitHub won't let you
