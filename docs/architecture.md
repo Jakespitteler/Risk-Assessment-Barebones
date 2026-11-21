@@ -401,4 +401,5 @@ cloud account, or a model the company runs itself.
 
 CI runs, on every PR and every push to `main` (task 0002): for the back end `ruff check`, `ruff format --check`,
 `pyright` and `pytest`; for the front end ESLint, Prettier's check, the TypeScript compiler, Vitest, and the
-Playwright tests.
+Playwright tests. A draft PR waits until it is marked ready, and a PR that changes only Markdown or the spelling
+and Markdown settings skips the front end's checks (task 0041).

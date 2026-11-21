@@ -33,8 +33,10 @@ jobs:
         id: changes
         if: github.event_name == 'pull_request'
         # Prettier checks Markdown in frontend/ too, so any file there needs the full run.
+        # `--no-renames` lists both names of a moved file, so a file moved out of frontend/
+        # still counts as a change there.
         run: |
-          changed_files="$(git diff --name-only HEAD^1 HEAD)"
+          changed_files="$(git diff --no-renames --name-only HEAD^1 HEAD)"
           if grep --quiet --invert-match --extended-regexp \
             '(\.md$|^\.cspell/|^\.markdownlint-cli2\.jsonc$)' <<< "$changed_files" ||
             grep --quiet '^frontend/' <<< "$changed_files"; then
