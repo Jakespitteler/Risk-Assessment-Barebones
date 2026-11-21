@@ -215,12 +215,12 @@ it("sets a misread answer and rating back to blank, as on the card (P1)", async 
   choosePhotos(1);
   fireEvent.click(
     await screen.findByRole("button", {
-      name: "Leave “Have you got the gate keys?” blank, as on the card",
+      name: "Leave blank, as on the card: Have you got the gate keys?",
     }),
   );
   fireEvent.click(
     screen.getByRole("button", {
-      name: "Leave hazard 1’s rating before controls blank, as on the card",
+      name: "Leave this rating blank, as on the card: hazard 1, before controls",
     }),
   );
   fireEvent.click(screen.getByRole("button", { name: "Save as written" }));

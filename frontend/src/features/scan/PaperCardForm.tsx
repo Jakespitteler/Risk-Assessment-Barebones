@@ -152,7 +152,7 @@ export function PaperCardForm({
             {answers[question.id] && (
               <Button
                 variant="quiet"
-                aria-label={`Leave “${question.text}” blank, as on the card`}
+                aria-label={`Leave blank, as on the card: ${question.text}`}
                 onClick={() => {
                   change({
                     answers: Object.fromEntries(
@@ -253,7 +253,7 @@ function HazardCard({
       />
       <ClearRating
         rating={hazard.before}
-        name={`hazard ${String(number)}’s rating before controls`}
+        name={`hazard ${String(number)}, before controls`}
         onClear={() => {
           onChange({ ...hazard, before: NO_RATING });
         }}
@@ -314,7 +314,7 @@ function HazardCard({
       />
       <ClearRating
         rating={hazard.after}
-        name={`hazard ${String(number)}’s rating after controls`}
+        name={`hazard ${String(number)}, after controls`}
         onClear={() => {
           onChange({ ...hazard, after: NO_RATING });
         }}
@@ -333,7 +333,7 @@ function ClearRating({
   onClear,
 }: {
   rating: HazardDraft["before"];
-  /** Which rating, such as "hazard 1's rating before controls", for a screen reader. */
+  /** Which rating, such as "hazard 1, before controls", for a screen reader. */
   name: string;
   onClear: () => void;
 }) {
@@ -341,7 +341,7 @@ function ClearRating({
   return (
     <Button
       variant="quiet"
-      aria-label={`Leave ${name} blank, as on the card`}
+      aria-label={`Leave this rating blank, as on the card: ${name}`}
       onClick={onClear}
     >
       Leave this rating blank, as on the card
