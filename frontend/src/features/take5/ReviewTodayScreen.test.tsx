@@ -235,3 +235,24 @@ it("says every saved Take 5 is reviewed when the back end ranks them all (W7, D1
     screen.getByText("No saved Take 5 was free of signs of little thought."),
   ).toBeTruthy();
 });
+
+it("shows the date written on a paper card, with its time when it has one (D127)", async () => {
+  stubApi({
+    [RANKING_URL]: {
+      status: 200,
+      body: {
+        take5s: [
+          ranked(1, {
+            from_paper: true,
+            started_at: new Date(2026, 3, 3, 6, 40).toISOString(),
+          }),
+        ],
+        best: null,
+        typical_minutes: null,
+        today_only: true,
+      },
+    },
+  });
+  renderWithApi(<ReviewTodayScreen />);
+  expect(await screen.findByText("Dated 3 Apr 2026, 6:40 am")).toBeTruthy();
+});

@@ -65,11 +65,32 @@ function RankedItem({
         </span>
         <span className="flex flex-col">
           <span>{take5.worker_name}</span>
-          <time dateTime={take5.created_at} className="text-ink-muted">
-            {formatDateTime(take5.created_at)}
-          </time>
+          <WhenTaken take5={take5} />
         </span>
       </a>
     </li>
+  );
+}
+
+/**
+ * When a ranked Take 5 was done: the time it was saved, or for a paper card the date
+ * written on it, with its time when it has one (spec P5, D127).
+ */
+function WhenTaken({ take5 }: { take5: RankedTake5Line }) {
+  const cardDate = take5.from_paper ? take5.started_at : null;
+  if (!cardDate)
+    return (
+      <time dateTime={take5.created_at} className="text-ink-muted">
+        {formatDateTime(take5.created_at)}
+      </time>
+    );
+  const start = new Date(cardDate);
+  const written = formatDateTime(cardDate);
+  // A card with a date and no time was saved as the start of that day.
+  const dateOnly = start.getHours() === 0 && start.getMinutes() === 0;
+  return (
+    <time dateTime={cardDate} className="text-ink-muted">
+      Dated {dateOnly ? written.split(", ")[0] : written}
+    </time>
   );
 }

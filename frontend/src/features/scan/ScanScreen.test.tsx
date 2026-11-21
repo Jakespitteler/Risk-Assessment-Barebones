@@ -433,6 +433,9 @@ it("ranks the saved cards worst first once the batch is done (F10)", async () =>
             can_start: false,
             line: "No risk rated. “Moving wheel” has no rating.",
             ranked_by_ai: false,
+            from_paper: true,
+            // Midnight where the test runs: a card with a date and no time.
+            started_at: new Date(2026, 3, 3).toISOString(),
           },
         ],
         best: null,
@@ -453,6 +456,7 @@ it("ranks the saved cards worst first once the batch is done (F10)", async () =>
   expect(
     await screen.findByText("No risk rated. “Moving wheel” has no rating."),
   ).toBeTruthy();
+  expect(screen.getByText("Dated 3 Apr 2026")).toBeTruthy();
   const batch = fetchStub.mock.calls.find(
     ([input]) => input === "/api/ranked-take5s/batch",
   );

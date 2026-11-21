@@ -71,6 +71,8 @@ for (const { width, name } of [
     const ranked = page.getByRole("listitem");
     await expect(ranked).toHaveCount(1);
     await expect(ranked).toContainText("Highest risk 18 Extreme.");
+    // The date on the card, not the time it was scanned (D127).
+    await expect(ranked).toContainText("Dated 3 Apr 2026");
     await capture(page, `${name}-ranked`);
 
     await ranked.getByRole("link").click();
