@@ -49,6 +49,7 @@ def create_ranking_router(service: Take5RankingService) -> APIRouter:
             take5s=tuple(_line(ranked) for ranked in today.ranked),
             best=_best_line(today.best) if today.best is not None else None,
             typical_minutes=today.typical_minutes,
+            today_only=service.today_only,
         )
 
     return router

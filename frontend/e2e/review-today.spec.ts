@@ -28,12 +28,12 @@ test("the saved list opens today's best, then all worst first, each with why (W1
 
   await page.goto("/take5s");
   await page.getByRole("link", { name: "Today’s review", exact: true }).click();
-  await expect(heading(page, "Today’s review")).toBeVisible();
+  await expect(heading(page, "Review of all saved")).toBeVisible();
   const ranking = page.getByRole("list");
   const first = ranking.getByRole("listitem").first();
   await expect(first.getByText("1.", { exact: true })).toBeVisible();
   await expect(first.getByText(/^Highest risk \d+ /)).toBeVisible();
-  const best = page.getByRole("region", { name: "Best of today" });
+  const best = page.getByRole("region", { name: "Best of all saved" });
   await expect(
     best.getByText(/^Highest risk \d+ \w+, with specific hazards/),
   ).toBeVisible();
