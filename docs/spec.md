@@ -774,12 +774,14 @@ through a day's Take 5s, on a phone or a desktop.
 
 ### F9: Risk by area
 
-The last 30 days of Take 5s grouped by area, hottest first (A1 to A5). For a safety person deciding where to go.
+Saved Take 5s grouped by area, hottest first (A1 to A5): every one while the app is a proof of concept, or the
+last 30 days with the setting (D119). For a safety person deciding where to go.
 
 - Acceptance: the saved list has "Risk by area" once anything is saved, below "Today's review".
 - Acceptance: each area shows its name, a bar, "2 of 3 Take 5s high risk", its highest risk, its "Don't start
   yet" count, its thought gaps and the questions answered Yes most often there.
-- Acceptance: with nothing in the last 30 days it says "No Take 5s with a location in the last 30 days."
+- Acceptance: with nothing saved it says "No saved Take 5s with a location yet."; with the 30 days on and
+  nothing in them, "No Take 5s with a location in the last 30 days."
 
 ## Out of scope (for now)
 
