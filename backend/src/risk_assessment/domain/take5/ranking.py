@@ -462,12 +462,11 @@ def is_careful(take5: SavedTake5) -> bool:
 
     Returns:
         True when it is finished, its question was answered, every hazard has
-        controls, and only W5 may find a gap. A paper card is never the best, since
-        how long it took isn't known (P5).
+        controls, and only W5 may find a gap. A paper card has no question, so it is
+        never the best (P5).
     """
     return (
-        not take5.from_paper
-        and take5.is_finished
+        take5.is_finished
         and take5.challenge is not None
         and take5.challenge.answer is not None
         and all(hazard.controls for hazard in take5.hazards)

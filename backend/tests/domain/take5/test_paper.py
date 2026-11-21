@@ -228,11 +228,11 @@ def test_example_140_a_paper_cards_time_taken_is_never_known() -> None:
             ),
             after=RatingChoice(likelihood="Unlikely", consequence="Minor"),
         ),
-        filled_in_at="2026-11-21T09:50",
+        filled_in_at="2026-11-21T09:59",
     )
 
     assert card.started_at is not None
-    assert SCANNED_AT - card.started_at == timedelta(minutes=10)
+    assert SCANNED_AT - card.started_at == timedelta(minutes=1)
     assert minutes_taken(card) is None
     assert typical_minutes([card]) is None
     assert not any("under 2 minutes" in gap for gap in thought_gaps(card))
@@ -244,6 +244,9 @@ def test_example_140_a_paper_cards_time_taken_is_never_known() -> None:
     [
         ("03/04/2026", PERTH, "filled_in_at"),
         ("2026-02-30", PERTH, "filled_in_at"),
+        ("2026-W14-5", PERTH, "filled_in_at"),
+        ("2026-04-03T0640Z", PERTH, "filled_in_at"),
+        ("0001-01-01", PERTH, "filled_in_at"),
         ("2026-04-03", "Mars/Olympus", "time_zone"),
     ],
 )
@@ -307,3 +310,14 @@ def test_an_area_of_unrated_paper_cards_has_no_highest_risk() -> None:
     assert (area.highest_score, area.highest_band) == (None, None)
     assert area.high_risk_count == 0
     assert area.thought_gap_count == 1
+
+
+def test_a_paper_hazard_with_no_words_is_still_named_in_its_reasons() -> None:
+    """A blank description reads as a sentence, not "Rate the risk of: " (P3)."""
+    card: SavedTake5 = paper_card(HazardDraft())
+
+    assert card.verdict is not None
+    assert card.verdict.reasons == (
+        "Rate the risk of: the hazard with no description",
+        "Say how you will control: the hazard with no description",
+    )

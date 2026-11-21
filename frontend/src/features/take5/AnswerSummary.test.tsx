@@ -45,3 +45,14 @@ it("shows the hazard on the list that a Yes was linked to, under that answer", (
     "Are there dogs on site?YesOn your list: Bitten",
   );
 });
+
+it("says a question a paper card left blank is not answered (P1)", () => {
+  render(
+    <AnswerSummary
+      questions={SMALL_TEMPLATE.questions}
+      answers={{ keys: "Yes" }}
+      hazards={[]}
+    />,
+  );
+  expect(screen.getByText("Not answered")).toBeTruthy();
+});

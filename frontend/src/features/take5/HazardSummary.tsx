@@ -53,7 +53,9 @@ export function HazardSummary({
               className="flex flex-col border-l-4 border-line-strong pl-3"
             >
               <strong>{control.description}</strong>
-              <span className="text-ink-muted">{control.kind}</span>
+              <span className="text-ink-muted">
+                {control.kind ?? "No kind given"}
+              </span>
             </li>
           ))}
         </ul>
