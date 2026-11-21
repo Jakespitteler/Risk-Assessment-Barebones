@@ -221,6 +221,8 @@ class RankedTake5s(BaseModel):
         take5s: The ranking. The page shows the first 5, then the rest on request.
         best: The best careful one, or None when none is careful.
         typical_minutes: The median minutes a finished one took, or None.
+        today_only: True when only today's are ranked; False when every saved Take 5
+            is, as `TAKE5_RANK_TODAY_ONLY` sets (D118).
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -228,6 +230,7 @@ class RankedTake5s(BaseModel):
     take5s: tuple[RankedTake5Line, ...]
     best: BestTake5Line | None
     typical_minutes: int | None
+    today_only: bool
 
 
 class RiskByArea(BaseModel):

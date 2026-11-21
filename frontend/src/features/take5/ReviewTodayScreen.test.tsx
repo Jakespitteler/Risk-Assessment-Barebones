@@ -129,11 +129,11 @@ it("says while it ranks, and offers Try again when it can't (W6)", async () => {
   });
   renderWithApi(<ReviewTodayScreen />);
   expect(
-    screen.getByRole("heading", { name: "Ranking today’s Take 5s…" }),
+    screen.getByRole("heading", { name: "Ranking Take 5s…" }),
   ).toBeTruthy();
   expect(
     await screen.findByRole("heading", {
-      name: "Today’s Take 5s couldn’t be ranked",
+      name: "Take 5s couldn’t be ranked",
     }),
   ).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
@@ -207,5 +207,29 @@ it("says when no Take 5 today was careful enough to be the best (W8)", async () 
     await screen.findByText(
       "No Take 5 today was free of signs of little thought.",
     ),
+  ).toBeTruthy();
+});
+
+it("says every saved Take 5 is reviewed when the back end ranks them all (W7, D118)", async () => {
+  stubApi({
+    [RANKING_URL]: {
+      status: 200,
+      body: {
+        take5s: [ranked(1)],
+        best: null,
+        typical_minutes: null,
+        today_only: false,
+      },
+    },
+  });
+  renderWithApi(<ReviewTodayScreen />);
+  expect(
+    await screen.findByRole("heading", { name: "Review of all saved" }),
+  ).toBeTruthy();
+  expect(
+    screen.getByRole("heading", { name: "Best of all saved" }),
+  ).toBeTruthy();
+  expect(
+    screen.getByText("No saved Take 5 was free of signs of little thought."),
   ).toBeTruthy();
 });

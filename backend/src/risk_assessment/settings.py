@@ -38,6 +38,9 @@ class Settings(BaseSettings):
         ai_key: The key for the provider's API (`TAKE5_AI_KEY`). With none, or an
             empty one, no AI is asked: the fixed question is used (spec C3) and the
             word rule judges hazards (spec T6).
+        rank_today_only: Whether the ranking counts only today's Take 5s
+            (`TAKE5_RANK_TODAY_ONLY`). False, the default while the app is a proof of
+            concept, ranks every saved Take 5 (spec W7, decision D118).
     """
 
     model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
@@ -54,6 +57,7 @@ class Settings(BaseSettings):
     ai_model: str | None = None
     ai_hazard_model: str | None = None
     ai_key: SecretStr | None = None
+    rank_today_only: bool = False
 
     @property
     def usable_ai_key(self) -> str | None:

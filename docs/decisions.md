@@ -2,6 +2,16 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-21: Rank every saved Take 5 while the app is a proof of concept
+
+- Decision: the ranking page ranks every saved Take 5 by default, and says "Review of all saved". A setting,
+  `TAKE5_RANK_TODAY_ONLY=true` in `backend/.env`, ranks only today's again. The by-day code is unchanged (spec W7,
+  D118).
+- Why: Jake asked on 2026-11-21 for a setting to rank all saved Take 5s, since a proof of concept has few Take 5s
+  a day, while keeping the by-day ranking for later.
+- Not chosen: a switch on the page (more to build, and the front end would hold a rule); today only.
+- Decided by: human.
+
 ## 2026-11-21: The repo goes public, still All rights reserved (task 0042)
 
 - Decision: Jake makes the repo public. The licence stays All rights reserved in his name, without the word
