@@ -111,7 +111,8 @@ export interface paths {
          * Save Paper
          * @description Save a checked paper card as written, finished with its verdict (P1).
          *
-         *     A level, date or time zone that can't be used raises `PaperCardError`, which
+         *     A level, date, time zone or question that can't be used raises
+         *     `PaperCardError`, which
          *     `api/errors.py` turns into a 422 beside that field.
          */
         post: operations["save_paper_api_take5s_paper_post"];
