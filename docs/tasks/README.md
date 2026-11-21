@@ -5,8 +5,8 @@ otherwise. Each task file's frontmatter holds its status; this page holds only t
 
 Recommended by Claude on 2026-11-13, agreed by Jake the same day. Tasks 0015 to 0020 added by Claude on 2026-11-14,
 0021 on 2026-11-15, 0022 on 2026-11-16, 0023 on 2026-11-17, 0024 to 0027 on 2026-11-18, 0028 to 0033 on
-2026-11-19, 0034 to 0040 on 2026-11-20, and 0042 on 2026-11-21; Jake can move them. Last brought up to date on
-2026-11-21, when 0042 was added. Task 0030's set it after Jake agreed the app's goal (top of
+2026-11-19, 0034 to 0040 on 2026-11-20, and 0041 and 0042 on 2026-11-21; Jake can move them. Last brought up to date on
+2026-11-21, when 0041 and 0042 were added. Task 0030's set it after Jake agreed the app's goal (top of
 `docs/spec.md`). Every task is judged against that goal.
 
 Complete: 0001 to 0026, 0030 to 0032 and 0034 to 0038. Jake chose on 2026-11-19 to build 0024 (dark mode) then (spec D79).

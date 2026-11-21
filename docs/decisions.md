@@ -13,6 +13,7 @@ Newest first. One short entry per non-obvious decision.
 - Not chosen: an open-source licence (Jake owns the app and wants it not copied); rewriting history to remove old
   commit emails (nothing secret was found, and it would break every open PR).
 - Decided by: human (going public), Claude (the hardening).
+
 ## 2026-11-21: CI skips the front end for Markdown-only pull requests, and waits for drafts (task 0041)
 
 - Decision: a pull request that changes only Markdown or the spelling and Markdown settings runs
