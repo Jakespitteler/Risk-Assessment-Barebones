@@ -174,7 +174,9 @@ export interface paths {
         };
         /**
          * Risk By Area
-         * @description Group the last 30 days of Take 5s by area, hottest first (A1 to A5).
+         * @description Group the Take 5s by area, hottest first (A1 to A5).
+         *
+         *     Only the last 30 days count when the setting says so (A2, D119).
          *
          *     Args:
          *         today: Midnight today where the phone is, with its time zone.
@@ -655,14 +657,18 @@ export interface components {
         };
         /**
          * RiskByArea
-         * @description Every area with a Take 5 in the last 30 days, hottest first (A1 to A5).
+         * @description Every area with a Take 5 in the time counted, hottest first (A1 to A5).
          *
          *     Attributes:
          *         areas: Each area and what its Take 5s show, hottest first.
+         *         last_30_days_only: True when only the last 30 days count; False when every
+         *             saved Take 5 does, as `TAKE5_AREA_LAST_30_DAYS_ONLY` sets (D119).
          */
         RiskByArea: {
             /** Areas */
             areas: components["schemas"]["AreaRisk"][];
+            /** Last 30 Days Only */
+            last_30_days_only: boolean;
         };
         /**
          * RiskCell

@@ -234,12 +234,15 @@ class RankedTake5s(BaseModel):
 
 
 class RiskByArea(BaseModel):
-    """Every area with a Take 5 in the last 30 days, hottest first (A1 to A5).
+    """Every area with a Take 5 in the time counted, hottest first (A1 to A5).
 
     Attributes:
         areas: Each area and what its Take 5s show, hottest first.
+        last_30_days_only: True when only the last 30 days count; False when every
+            saved Take 5 does, as `TAKE5_AREA_LAST_30_DAYS_ONLY` sets (D119).
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     areas: tuple[AreaRisk, ...]
+    last_30_days_only: bool

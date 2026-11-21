@@ -35,7 +35,7 @@ function area(name: string, changed: Partial<AreaRisk> = {}): AreaRisk {
 
 it("asks from midnight where the phone is, and says when there is nothing (A2)", async () => {
   const calls = stubApi({
-    [AREAS_URL]: { status: 200, body: { areas: [] } },
+    [AREAS_URL]: { status: 200, body: { areas: [], last_30_days_only: true } },
   });
   renderWithApi(<RiskByAreaScreen />);
   expect(
@@ -44,6 +44,31 @@ it("asks from midnight where the phone is, and says when there is nothing (A2)",
   expect(calls).toEqual([AREAS_URL]);
   expect(
     screen.getByText("No Take 5s with a location in the last 30 days."),
+  ).toBeTruthy();
+});
+
+it("says there is no time limit when every saved Take 5 counts (D119)", async () => {
+  stubApi({
+    [AREAS_URL]: { status: 200, body: { areas: [], last_30_days_only: false } },
+  });
+  renderWithApi(<RiskByAreaScreen />);
+  await screen.findByRole("heading", { name: "Risk by area" });
+  expect(
+    screen.getByText("No saved Take 5s with a location yet."),
+  ).toBeTruthy();
+});
+
+it("names the time counted above the areas (D119)", async () => {
+  stubApi({
+    [AREAS_URL]: {
+      status: 200,
+      body: { areas: [area("Crusher")], last_30_days_only: false },
+    },
+  });
+  renderWithApi(<RiskByAreaScreen />);
+  await screen.findByRole("heading", { name: "Risk by area" });
+  expect(
+    screen.getByText(/^Where the jobs were in every saved Take 5,/),
   ).toBeTruthy();
 });
 
@@ -68,6 +93,7 @@ it("lists the areas hottest first, each with what its Take 5s show (A4, A5)", as
             highest_band: "Moderate",
           }),
         ],
+        last_30_days_only: true,
       },
     },
   });
@@ -113,6 +139,7 @@ it("draws each bar beside the hottest area's high-risk count (A4)", async () => 
           area("Crusher", { high_risk_count: 4 }),
           area("Workshop", { high_risk_count: 2 }),
         ],
+        last_30_days_only: true,
       },
     },
   });
@@ -142,7 +169,7 @@ it("offers to try again when the areas can't be loaded", async () => {
     }),
   ).toBeTruthy();
   stubApi({
-    [AREAS_URL]: { status: 200, body: { areas: [] } },
+    [AREAS_URL]: { status: 200, body: { areas: [], last_30_days_only: true } },
   });
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
   expect(

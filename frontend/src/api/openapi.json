@@ -394,7 +394,7 @@
           "areas"
         ],
         "summary": "Risk By Area",
-        "description": "Group the last 30 days of Take 5s by area, hottest first (A1 to A5).\n\nArgs:\n    today: Midnight today where the phone is, with its time zone.",
+        "description": "Group the Take 5s by area, hottest first (A1 to A5).\n\nOnly the last 30 days count when the setting says so (A2, D119).\n\nArgs:\n    today: Midnight today where the phone is, with its time zone.",
         "operationId": "risk_by_area_api_risk_by_area_get",
         "parameters": [
           {
@@ -1171,14 +1171,19 @@
             },
             "type": "array",
             "title": "Areas"
+          },
+          "last_30_days_only": {
+            "type": "boolean",
+            "title": "Last 30 Days Only"
           }
         },
         "type": "object",
         "required": [
-          "areas"
+          "areas",
+          "last_30_days_only"
         ],
         "title": "RiskByArea",
-        "description": "Every area with a Take 5 in the last 30 days, hottest first (A1 to A5).\n\nAttributes:\n    areas: Each area and what its Take 5s show, hottest first."
+        "description": "Every area with a Take 5 in the time counted, hottest first (A1 to A5).\n\nAttributes:\n    areas: Each area and what its Take 5s show, hottest first.\n    last_30_days_only: True when only the last 30 days count; False when every\n        saved Take 5 does, as `TAKE5_AREA_LAST_30_DAYS_ONLY` sets (D119)."
       },
       "RiskCell": {
         "properties": {

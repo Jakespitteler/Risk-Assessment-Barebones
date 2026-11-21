@@ -70,14 +70,19 @@ function AreaItem({ area, hottest }: { area: AreaRisk; hottest: number }) {
 }
 
 /**
- * Every area with a Take 5 in the last 30 days, hottest first: the most Take 5s with
- * a hazard that needed a JHA before controls (spec A1 to A5).
+ * Every area with a Take 5, hottest first: the most Take 5s with a hazard that needed
+ * a JHA before controls (spec A1 to A5). The back end says whether only the last 30
+ * days count or every saved Take 5 does (D119), and the words follow it.
  */
 export function RiskByAreaScreen() {
   const [today] = useState(midnightToday);
   const risk = useRiskByArea(today);
   const areas = risk.data?.areas ?? [];
   const hottest = Math.max(0, ...areas.map((area) => area.high_risk_count));
+  const lastThirtyDaysOnly = risk.data?.last_30_days_only ?? true;
+  const period = lastThirtyDaysOnly
+    ? "in the last 30 days"
+    : "in every saved Take 5";
 
   const page = useRef<HTMLDivElement>(null);
   const shown = risk.data ? "list" : risk.isError ? "error" : "loading";
@@ -109,15 +114,19 @@ export function RiskByAreaScreen() {
             </h1>
             {areas.length === 0 ? (
               <Card>
-                <p>No Take 5s with a location in the last 30 days.</p>
+                <p>
+                  {lastThirtyDaysOnly
+                    ? "No Take 5s with a location in the last 30 days."
+                    : "No saved Take 5s with a location yet."}
+                </p>
               </Card>
             ) : (
               <>
                 <p>
-                  Where the jobs were in the last 30 days, as workers typed it,
-                  hottest first. A Take 5 is high risk when a hazard needed a
-                  JHA before controls. Each bar compares an area’s high-risk
-                  Take 5s with the top area’s.
+                  Where the jobs were {period}, as workers typed it, hottest
+                  first. A Take 5 is high risk when a hazard needed a JHA before
+                  controls. Each bar compares an area’s high-risk Take 5s with
+                  the top area’s.
                 </p>
                 <ol className="flex flex-col gap-3">
                   {areas.map((area) => (
