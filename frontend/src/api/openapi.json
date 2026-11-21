@@ -222,7 +222,7 @@
           "take5"
         ],
         "summary": "Save Paper",
-        "description": "Save a checked paper card as written, finished with its verdict (P1).\n\nA level, date, time zone or question that can't be used raises\n`PaperCardError`, which\n`api/errors.py` turns into a 422 beside that field.",
+        "description": "Save a checked paper card as written, finished with its verdict (P1).\n\nA level, date, time zone or question that can't be used raises\n`PaperCardError`, which `api/errors.py` turns into a 422 beside that field.",
         "operationId": "save_paper_api_take5s_paper_post",
         "requestBody": {
           "content": {
