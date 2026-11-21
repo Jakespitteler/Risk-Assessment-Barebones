@@ -27,7 +27,7 @@ adds the files a public repo needs, and lists the settings Jake turns on. Jake m
   public code can't be confidential.
 - [x] A test covers the review gate skipping Dependabot.
 - [ ] Jake answers the questions below, and the matching edits are made.
-- [ ] Jake makes the repo public and turns on the settings below.
+- [x] Jake makes the repo public and turns on the settings below (public on 2026-11-21).
 
 ## Out of scope
 
@@ -111,3 +111,11 @@ scanning, which GitHub turns on for public repos, scans the whole history again 
   token that can push.
 - `agent-review.yml` runs on `pull_request`, not `pull_request_target`, so a fork's PR never gets the secrets or
   a token that can write. `scripts/agent_review.cjs` also refuses forks before the review job starts.
+
+## Jake's answers (2026-11-21, in chat)
+
+1. Accepted. Jake turned on GitHub's email privacy; the 22 old commits keep the old address.
+2. Reworded: the app is meant for any company, so the docs no longer name his employer (task 0015, the licence
+   decision, the spelling list). The old wording stays in the git history.
+3. Explained in chat; waiting on Jake.
+4. Explained in chat (the promise is to whoever reports a security problem); waiting on Jake.
