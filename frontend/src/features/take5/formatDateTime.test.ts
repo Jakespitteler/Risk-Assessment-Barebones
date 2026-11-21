@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { formatDateTime } from "./formatDateTime";
+import { formatAsWritten, formatDateTime } from "./formatDateTime";
 
 const MONTHS = [
   "Jan",
@@ -31,3 +31,13 @@ it.each(MONTHS.map((month, index) => [month, index + 1] as const))(
     expect(formatDateTime(iso)).toMatch(new RegExp(`^15 ${month} 2026, `));
   },
 );
+
+it("writes a paper card's date and time as written, whatever the phone's zone (P5)", () => {
+  expect(formatAsWritten("2026-04-03T00:00:00+08:00")).toBe("3 Apr 2026");
+  expect(formatAsWritten("2026-04-03T06:40:00+11:00")).toBe(
+    "3 Apr 2026, 6:40 am",
+  );
+  expect(formatAsWritten("2026-09-30T18:05:00-04:00")).toBe(
+    "30 Sep 2026, 6:05 pm",
+  );
+});

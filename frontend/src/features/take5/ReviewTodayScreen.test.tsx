@@ -244,7 +244,8 @@ it("shows the date written on a paper card, with its time when it has one (D127)
         take5s: [
           ranked(1, {
             from_paper: true,
-            started_at: new Date(2026, 3, 3, 6, 40).toISOString(),
+            // Written in Sydney; shown as written wherever the phone is.
+            started_at: "2026-04-03T06:40:00+11:00",
           }),
         ],
         best: null,

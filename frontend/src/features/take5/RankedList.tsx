@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { RankedTake5Line } from "../../api/take5";
 import { Button } from "../../components/Button";
-import { formatDateTime } from "./formatDateTime";
+import { formatAsWritten, formatDateTime } from "./formatDateTime";
 import { VerdictTag } from "./VerdictTag";
 
 // The worst few show first; the rest wait for "Show all" (decision D92).
@@ -84,13 +84,9 @@ function WhenTaken({ take5 }: { take5: RankedTake5Line }) {
         {formatDateTime(take5.created_at)}
       </time>
     );
-  const start = new Date(cardDate);
-  const written = formatDateTime(cardDate);
-  // A card with a date and no time was saved as the start of that day.
-  const dateOnly = start.getHours() === 0 && start.getMinutes() === 0;
   return (
     <time dateTime={cardDate} className="text-ink-muted">
-      Dated {dateOnly ? written.split(", ")[0] : written}
+      Dated {formatAsWritten(cardDate)}
     </time>
   );
 }

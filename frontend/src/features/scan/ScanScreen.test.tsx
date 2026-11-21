@@ -434,8 +434,8 @@ it("ranks the saved cards worst first once the batch is done (F10)", async () =>
             line: "No risk rated. “Moving wheel” has no rating.",
             ranked_by_ai: false,
             from_paper: true,
-            // Midnight where the test runs: a card with a date and no time.
-            started_at: new Date(2026, 3, 3).toISOString(),
+            // A card with a date and no time, checked in Perth.
+            started_at: "2026-04-03T00:00:00+08:00",
           },
         ],
         best: null,
