@@ -2,6 +2,19 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-21: CI skips the front end for Markdown-only pull requests, and waits for drafts (task 0041)
+
+- Decision: a pull request that changes only Markdown or the spelling and Markdown settings runs
+  `uv run check.py --no-front-end` (Markdown, spelling and the whole back end) instead of every check. CI waits
+  until a draft is marked ready. Agent review's gate job no longer starts a runner for a draft or a reviewer push.
+- Why: the browser tests and their install are about 9 of CI's 10 minutes, and can't fail on a Markdown change.
+  Of 1,736 billed minutes from 2026-11-13 to 2026-11-21, about 230 went on Markdown-only runs and skipped
+  reviews. Jake asked to cut the waste on 2026-11-21.
+- Not chosen: skipping the whole workflow with `paths-ignore` (a required check would then never report); a
+  third-party changed-files action (a new dependency for one `git diff`); fewer dark-mode browser tests (drops a
+  check, so Jake's call).
+- Decided by: proposed by claude; the human approves it by merging task 0041's pull request.
+
 ## 2026-11-21: Risk by area, a ranked list before a map (task 0038)
 
 - Decision: a "Risk by area" page groups the last 30 days of Take 5s by where the job is, as typed, ignoring

@@ -195,7 +195,8 @@ start.py                   sets up what isn't set up, installs what the lock fil
                            halves and prints the app's one address (task 0029)
 install.py                 installs everything again from scratch: checks git and Node.js, then the rest
 test.py                    runs the tests, all or one kind, passing extra words to the test tool
-check.py                   runs every check, as CI does; `--fix` fixes what the tools can fix
+check.py                   runs every check, as CI does; `--fix` fixes what the tools can fix;
+                           `--no-front-end` skips frontend/ (CI, for Markdown-only changes)
 ```
 
 The four files directly under `domain/` know nothing about a Take 5. They are the shared building blocks, and

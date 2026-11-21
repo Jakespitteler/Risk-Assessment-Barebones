@@ -112,5 +112,7 @@ Every command runs from the repo root:
 - `uv run check.py` runs every check that CI runs, in the same order, and stops at the first failure.
 - `uv run check.py --fix` formats the code, makes the fixes the lint tools can make by themselves, and writes the
   API types again.
+- `uv run check.py --no-front-end` runs every check except the front end's, with no npm install or browser
+  needed. CI uses it for a pull request that changes only Markdown.
 
 The single commands are listed in [AGENTS.md](AGENTS.md#commands).

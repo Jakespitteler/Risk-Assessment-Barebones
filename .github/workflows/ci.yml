@@ -1,8 +1,12 @@
 # Runs every check in check.py (in the repo root) on each pull request and each push to main.
+# To save Actions minutes, a draft pull request waits until it is marked ready for review, and
+# a pull request that changes only Markdown, or the spelling and Markdown settings, skips the
+# front end's checks and its install (about 9 of the 10 minutes). Task 0041 has the numbers.
 name: CI
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
 
@@ -16,10 +20,28 @@ concurrency:
 
 jobs:
   checks:
+    if: github.event_name == 'push' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+        with:
+          # A pull request is checked out as its merge into the base, so the merge's first
+          # parent is the base and `git diff HEAD^1 HEAD` lists what the pull request changes.
+          fetch-depth: 2
+      - name: See whether only Markdown changed
+        id: changes
+        if: github.event_name == 'pull_request'
+        # Prettier checks Markdown in frontend/ too, so any file there needs the full run.
+        run: |
+          changed_files="$(git diff --name-only HEAD^1 HEAD)"
+          if grep --quiet --invert-match --extended-regexp \
+            '(\.md$|^\.cspell/|^\.markdownlint-cli2\.jsonc$)' <<< "$changed_files" ||
+            grep --quiet '^frontend/' <<< "$changed_files"; then
+            echo "only_markdown=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "only_markdown=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: astral-sh/setup-uv@v9.0.0
       - uses: actions/setup-node@v7
         with:
@@ -30,10 +52,16 @@ jobs:
         run: uv sync --locked
         working-directory: backend
       - name: Install the front end
+        if: steps.changes.outputs.only_markdown != 'true'
         run: npm ci && npx playwright install --with-deps chromium
         working-directory: frontend
       - name: Run every check
+        if: steps.changes.outputs.only_markdown != 'true'
         run: uv run check.py
+      # The back-end tests read the spec and the glossary, so they still run.
+      - name: Run every check but the front end's
+        if: steps.changes.outputs.only_markdown == 'true'
+        run: uv run check.py --no-front-end
       - name: Attach phone screenshots
         if: always()
         uses: actions/upload-artifact@v7

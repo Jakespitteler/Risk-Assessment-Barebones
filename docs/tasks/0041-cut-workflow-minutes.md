@@ -1,7 +1,7 @@
 ---
 id: 0041
 title: Cut wasted GitHub Actions minutes
-status: in-progress
+status: review
 owner: claude
 branch: claude/project-thread-cu38ru
 ---
