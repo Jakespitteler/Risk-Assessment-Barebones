@@ -376,3 +376,38 @@ def test_many_blank_questions_are_one_phrase_but_each_counts() -> None:
     assert rule_line(card) == (
         f"Highest risk 18 Extreme. {question_count} questions have no answer."
     )
+
+
+@pytest.mark.parametrize(
+    ("filled_in_at", "kept"),
+    [
+        ("1999-12-31", False),
+        ("2000-01-01", True),
+        ("2100-12-31", True),
+        ("2101-01-01", False),
+    ],
+)
+def test_a_card_dated_from_2000_to_2100_is_kept_and_any_other_refused(
+    filled_in_at: str,
+    kept: bool,
+) -> None:
+    """A date outside those years is taken as misread (P5)."""
+    if kept:
+        assert paper_started_at(filled_in_at, PERTH) is not None
+    else:
+        with pytest.raises(PaperCardError):
+            paper_started_at(filled_in_at, PERTH)
+
+
+def test_one_blank_question_keeps_its_name_in_the_line() -> None:
+    """Only two or more are named together (P4)."""
+    answers: dict[str, Answer] = sample_answers()
+    del answers["scope"]
+
+    card: SavedTake5 = paper_card(
+        HazardDraft(description=WHEEL, before=POSSIBLE_MAJOR),
+        answers=answers,
+    )
+
+    assert "1 questions" not in rule_line(card)
+    assert "has no answer" in rule_line(card)
