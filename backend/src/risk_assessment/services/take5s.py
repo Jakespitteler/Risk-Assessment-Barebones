@@ -32,6 +32,10 @@ from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.template import Take5Template
 from risk_assessment.domain.take5.time_limit import runs_out_at, time_limit_error
 from risk_assessment.domain.take5.verdict import verdict
+from risk_assessment.services.ai_failures import (
+    ai_failure_kind,
+    is_expected_ai_failure,
+)
 from risk_assessment.services.hazard_nudges import HazardNudger
 from risk_assessment.services.ports import ChallengeAsker, HazardJudge, Take5Repository
 
@@ -397,10 +401,11 @@ class Take5Service:
         try:
             reply = executor.submit(self._challenge_asker.ask, take5_text)
             return ai_challenge(reply.result(timeout=self._ai_time_limit_seconds))
-        except Exception:  # Any AI failure at all means the fixed question.
+        except Exception as error:  # Any AI failure at all means the fixed question.
             _logger.warning(
-                "The AI could not ask a question, so the fixed one was asked.",
-                exc_info=True,
+                "The AI could not ask a question (%s), so the fixed one was asked.",
+                ai_failure_kind(error),
+                exc_info=not is_expected_ai_failure(error),
             )
             return None
         finally:

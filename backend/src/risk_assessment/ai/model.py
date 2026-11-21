@@ -7,9 +7,15 @@ other change to the AI's jobs.
 
 from typing import Protocol
 
+from risk_assessment.services.ports import AiReplyError
 
-class LanguageModelError(Exception):
-    """A model answered, but not with text the app can use, such as a refusal."""
+
+class LanguageModelError(AiReplyError):
+    """A model gave no text the app can use: a refusal, no text, or no reply at all.
+
+    For a call that failed, the provider's own error is its cause, which names the kind
+    of problem in the log, such as `AuthenticationError`.
+    """
 
 
 class LanguageModel(Protocol):
@@ -33,6 +39,9 @@ class LanguageModel(Protocol):
             The model's reply, exactly as it came.
 
         Raises:
-            LanguageModelError: When the model answers without usable text.
+            LanguageModelError: When the model answers without usable text, or the call
+                fails or takes too long. An adapter wraps its library's own errors in
+                it, with that error as the cause, so the app logs a failure in one line
+                and keeps stack traces for bugs (task 0028).
         """
         ...

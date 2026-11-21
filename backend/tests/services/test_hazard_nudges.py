@@ -4,6 +4,7 @@ Each test uses a stand-in for the AI that sends back whatever the spec's row say
 fails, or takes too long.
 """
 
+import logging
 import threading
 import time
 
@@ -18,6 +19,7 @@ from risk_assessment.domain.take5.hazard_nudges import (
 )
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE, Take5Template
 from risk_assessment.services.hazard_nudges import HazardNudger, RememberedVerdicts
+from risk_assessment.services.ports import AiReplyError
 from tests.samples import sample_answers, sample_draft, sample_hazard_draft
 
 # Long enough for the test to see the nudger give up, short enough to keep it fast.
@@ -148,7 +150,7 @@ def test_example_79_a_dressed_up_reply_still_counts() -> None:
 @pytest.mark.parametrize(
     "judge",
     [
-        StandInJudge(failure=RuntimeError("The AI is down.")),
+        StandInJudge(failure=AiReplyError("The AI is down.")),
         None,
     ],
     ids=["the AI fails", "no AI is set up"],
@@ -340,3 +342,40 @@ def test_the_oldest_verdict_is_forgotten_past_the_limit() -> None:
 def test_the_ai_has_five_seconds() -> None:
     """Decision D57: the word rule decides after 5 seconds."""
     assert HAZARD_AI_TIME_LIMIT_SECONDS == 5
+
+
+def test_a_failed_ai_judgement_logs_one_line_naming_the_kind_without_a_trace(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A handled AI failure is one warning, with no stack trace (task 0028)."""
+    judge = StandInJudge(failure=AiReplyError("Get hit by a car"))
+
+    with caplog.at_level(logging.WARNING, logger="risk_assessment"):
+        _nudger(judge).nudges(_linked_to_vehicles("Get hit by a car"))
+
+    (warning,) = [record for record in caplog.records if record.levelname == "WARNING"]
+    assert warning.getMessage() == (
+        "The AI could not judge a hazard (AiReplyError), so the word rule decided."
+    )
+    assert not warning.exc_info
+
+
+def test_a_bug_while_judging_still_leaves_the_word_rule_but_keeps_its_trace(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A TypeError is a bug in the app, not an AI failure (task 0028).
+
+    The word rule still decides, and the log keeps the trace so it can be fixed.
+    """
+    judge = StandInJudge(failure=TypeError("a bug"))
+
+    with caplog.at_level(logging.WARNING, logger="risk_assessment"):
+        nudges: tuple[Nudge, ...] = _nudger(judge).nudges(
+            _linked_to_vehicles("Get hit by a car"),
+        )
+
+    (warning,) = [record for record in caplog.records if record.levelname == "WARNING"]
+    assert "(TypeError)" in warning.getMessage()
+    assert warning.exc_info is not None
+    assert warning.exc_info[0] is TypeError
+    assert len(nudges) == 1
