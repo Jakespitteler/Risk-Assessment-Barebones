@@ -1003,16 +1003,21 @@
               }
             ],
             "title": "Typical Minutes"
+          },
+          "today_only": {
+            "type": "boolean",
+            "title": "Today Only"
           }
         },
         "type": "object",
         "required": [
           "take5s",
           "best",
-          "typical_minutes"
+          "typical_minutes",
+          "today_only"
         ],
         "title": "RankedTake5s",
-        "description": "Every Take 5 started since a moment worst first, and the best (W7 to W9, D92).\n\nAttributes:\n    take5s: The ranking. The page shows the first 5, then the rest on request.\n    best: The best careful one, or None when none is careful.\n    typical_minutes: The median minutes a finished one took, or None."
+        "description": "Every Take 5 started since a moment worst first, and the best (W7 to W9, D92).\n\nAttributes:\n    take5s: The ranking. The page shows the first 5, then the rest on request.\n    best: The best careful one, or None when none is careful.\n    typical_minutes: The median minutes a finished one took, or None.\n    today_only: True when only today's are ranked; False when every saved Take 5\n        is, as `TAKE5_RANK_TODAY_ONLY` sets (D118)."
       },
       "RatingChoice": {
         "properties": {

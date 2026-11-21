@@ -384,6 +384,8 @@ batch (decisions D91 to D96). The best of the set is found too, as a good exampl
 - **W7 Today.** "Today" is from midnight where the phone is: a Take 5 counts from when it was started, or when it
   was saved if it has no start time, finished or not. The ranking isn't saved; it is worked out when the page
   opens, and remembered until the server restarts or a Take 5 is added or finished.
+  While the app is a proof of concept, every saved Take 5 is ranked instead, and the page says "Review of all saved"
+  and "Best of all saved". The setting `TAKE5_RANK_TODAY_ONLY=true` brings back today only (D118).
 - **W8 The best.** The best is chosen from the *careful* Take 5s: finished with the question answered, controls on
   every hazard, and no gap from W2 to W4 or W10. A rushed one (W5) can still be the best (D98). The rules shortlist up to
   5 of them: the riskiest job first, then the one that took longest, then the newest. When an AI is set up and
@@ -876,6 +878,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D108 | How it fits T6 (2026-11-20) | Part of T6's one AI call and nudge, with its own words; the AI never suggests a hazard (T7) | A separate check |
 | D109 | Is a kept flag saved (2026-11-20) | Yes, on each hazard: a data model change Jake approved (T7) | Not saved, so the review can't count it |
 | D110 | Are older Take 5s judged again (2026-11-20) | No; noted in `docs/ideas.md` for checking the field against new standards later | Re-judge every saved Take 5 |
+| D118 | Today only, or every saved Take 5 (2026-11-21) | Every saved Take 5 by default while the app is a proof of concept; `TAKE5_RANK_TODAY_ONLY=true` ranks today only, and the by-day code stays (W7) | Today only; a switch on the page |
 
 ## Open questions
 
