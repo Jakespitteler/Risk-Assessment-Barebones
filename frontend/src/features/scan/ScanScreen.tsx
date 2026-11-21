@@ -429,7 +429,7 @@ function Done({
           {skipped > 0 && `, ${String(skipped)} skipped`}.
         </p>
         <a
-          className="font-semibold underline underline-offset-4"
+          className="flex min-h-12 items-center self-start font-semibold underline underline-offset-4 hover:decoration-2 focus-visible:outline-4 focus-visible:outline-focus"
           href="/take5s"
         >
           See them in the saved list
