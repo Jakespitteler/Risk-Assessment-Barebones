@@ -409,5 +409,5 @@ def test_one_blank_question_keeps_its_name_in_the_line() -> None:
         answers=answers,
     )
 
-    assert "1 questions" not in rule_line(card)
-    assert "has no answer" in rule_line(card)
+    scope: str = BOOKLET_TEMPLATE.questions[0].text
+    assert rule_line(card) == f"Highest risk 18 Extreme. “{scope}” has no answer."

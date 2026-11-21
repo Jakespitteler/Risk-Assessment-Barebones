@@ -359,6 +359,28 @@ it("counts a card as saved when a retry finds it already saved", async () => {
     await screen.findByRole("button", { name: "Save as written" }),
   );
   expect(await screen.findByText("1 card saved.")).toBeTruthy();
+  expect(
+    screen.getByText(/^One card was already saved, as it was first sent/),
+  ).toBeTruthy();
+});
+
+it("keeps the edits to the card being checked when more photos are added", async () => {
+  stubApi({
+    ...TEMPLATE,
+    "POST /api/scans": { status: 200, body: READ },
+  });
+  renderWithApi(<ScanScreen />);
+  choosePhotos(1);
+  fireEvent.change(await screen.findByLabelText("Job"), {
+    target: { value: "Change tyre" },
+  });
+  fireEvent.change(screen.getByLabelText("Add more photos"), {
+    target: {
+      files: [new File(["photo"], "next.jpg", { type: "image/jpeg" })],
+    },
+  });
+  await screen.findByRole("heading", { name: "Check card 1 of 2" });
+  expect(screen.getByLabelText("Job")).toHaveProperty("value", "Change tyre");
 });
 
 it("keeps a control's mark beside it when an earlier control is removed", async () => {

@@ -51,6 +51,8 @@ export function ScanScreen() {
   const readCard = useReadCard();
   const savePaper = useSavePaperTake5();
   const [cards, setCards] = useState<ScanCard[]>([]);
+  // How many saves found the card already saved, as it was first sent.
+  const [savedBefore, setSavedBefore] = useState(0);
   const heading = useRef<HTMLHeadingElement>(null);
   const problem = useRef<HTMLParagraphElement>(null);
   // The photos waiting to be read, in the order taken, and whether one is being read.
@@ -159,6 +161,7 @@ export function ScanScreen() {
           // A save whose reply was lost, sent again after an edit, finds the first
           // save: the card is saved as it was first sent, so it counts as saved.
           if (error instanceof ApiError && error.status === 409) {
+            setSavedBefore((count) => count + 1);
             finish(card, "saved");
             return;
           }
@@ -216,7 +219,7 @@ export function ScanScreen() {
       )}
       {/* Always in the same place, so a photo taken while the last read finishes
           still arrives: the picker is never swapped out from under the camera. */}
-      {(cards.length === 0 || stillReading || checking) && (
+      {
         <PhotoPicker
           key="photos"
           label={cards.length === 0 ? "Choose photos" : "Add more photos"}
@@ -224,6 +227,13 @@ export function ScanScreen() {
           variant={cards.length === 0 ? "primary" : "secondary"}
           onChoose={addPhotos}
         />
+      }
+      {savedBefore > 0 && !stillReading && !checking && (
+        <p>
+          {savedBefore === 1
+            ? "One card was already saved, as it was first sent; later changes to it weren’t kept."
+            : `${String(savedBefore)} cards were already saved, as they were first sent; later changes to them weren’t kept.`}
+        </p>
       )}
       {!stillReading && checking && !template.data && (
         <Card>
@@ -338,6 +348,7 @@ export function ScanScreen() {
           skipped={cards.filter((card) => card.status === "skipped").length}
           onMore={() => {
             setCards([]);
+            setSavedBefore(0);
           }}
         />
       )}
