@@ -6,6 +6,7 @@ import pytest
 
 from risk_assessment.domain.take5.draft import FieldError
 from risk_assessment.domain.take5.fix import (
+    FROM_PAPER_MESSAGE,
     NOT_FINISHED_MESSAGE,
     NOT_SAVED_MESSAGE,
     NOTHING_TO_FIX_MESSAGE,
@@ -69,3 +70,14 @@ def test_a_fix_is_offered_only_for_a_dont_start_yet_with_no_fix_yet(
     fixed_by = uuid4() if has_a_fix else None
 
     assert offers_a_fix(sample_saved_take5(verdict), fixed_by) is offered
+
+
+def test_a_paper_card_is_never_offered_a_fix_or_fixed() -> None:
+    """Whoever checks a paper card isn't the worker who wrote it (P6)."""
+    stopped = Verdict(can_start=False, reasons=("Say how you will control: Wheel",))
+    paper: SavedTake5 = sample_saved_take5(stopped).model_copy(
+        update={"from_paper": True},
+    )
+
+    assert fixes_error(paper) == FieldError(path="fixes", message=FROM_PAPER_MESSAGE)
+    assert not offers_a_fix(paper, None)

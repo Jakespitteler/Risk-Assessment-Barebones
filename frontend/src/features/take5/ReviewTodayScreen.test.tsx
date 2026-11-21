@@ -31,6 +31,8 @@ function ranked(
     can_start: true,
     line: `Reason ${String(number)}.`,
     ranked_by_ai: false,
+    from_paper: false,
+    started_at: null,
     ...changed,
   };
 }

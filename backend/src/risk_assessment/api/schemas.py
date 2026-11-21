@@ -207,6 +207,10 @@ class RankedTake5Line(BaseModel):
         line: One line saying why it sits where it does.
         ranked_by_ai: True when the AI placed it and wrote the line, False when the
             fixed rules did.
+        from_paper: True when it was photographed off a paper card (P6).
+        started_at: When it was started: for a paper card, the date on the card,
+            at midnight where the checker was when it has no time (P5). None when
+            not known.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -218,6 +222,8 @@ class RankedTake5Line(BaseModel):
     can_start: bool | None
     line: str
     ranked_by_ai: bool
+    from_paper: bool
+    started_at: datetime | None
 
 
 class BestTake5Line(BaseModel):

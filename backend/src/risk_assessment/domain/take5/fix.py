@@ -1,7 +1,8 @@
 """Which saved Take 5 a new one may fix (spec F3), and whether its result offers a fix.
 
 Only a Take 5 that said Don't start yet can be fixed. The fix is a new Take 5 that
-points back at it, so the first one is never changed.
+points back at it, so the first one is never changed. A paper card can't be fixed:
+whoever checks it isn't the worker who wrote it (spec P6, D126).
 """
 
 from uuid import UUID
@@ -13,6 +14,9 @@ FIXES_PATH: str = "fixes"
 NOT_SAVED_MESSAGE: str = "The Take 5 this fixes could not be found."
 NOTHING_TO_FIX_MESSAGE: str = "That Take 5 was Good to go, so there is nothing to fix."
 NOT_FINISHED_MESSAGE: str = "That Take 5 isn't finished yet, so it can't be fixed."
+FROM_PAPER_MESSAGE: str = (
+    "That Take 5 came from a paper card, so it can't be fixed here."
+)
 
 
 def fixes_error(fixed: SavedTake5 | None) -> FieldError | None:
@@ -27,6 +31,8 @@ def fixes_error(fixed: SavedTake5 | None) -> FieldError | None:
     """
     if fixed is None:
         return FieldError(path=FIXES_PATH, message=NOT_SAVED_MESSAGE)
+    if fixed.from_paper:
+        return FieldError(path=FIXES_PATH, message=FROM_PAPER_MESSAGE)
     if fixed.verdict is None:
         return FieldError(path=FIXES_PATH, message=NOT_FINISHED_MESSAGE)
     if fixed.verdict.can_start:
