@@ -9,8 +9,8 @@ branch: claude/project-thread-nidbht
 ## Goal
 
 `LICENSE` is the MIT licence with Jake as the copyright holder, which lets anyone who gets a copy use, change and
-share the code. Jake said (2026-11-14) the app is the property of Talison Lithium and must not be copied or used by
-anyone else, using a known licence template. After Claude asked who the legal owner is, Jake chose (2026-11-14)
+share the code. Jake said (2026-11-14) the app must not be copied or used by anyone else without
+permission, using a known licence template. After Claude asked who the legal owner is, Jake chose (2026-11-14)
 to be named as the owner for now.
 
 ## Acceptance criteria
@@ -44,10 +44,9 @@ Known templates that fit, best first:
 
 Jake's answers (2026-11-14, in chat):
 
-1. Owner: Jake Spitteler (the name the old MIT licence used), for now, instead of Talison Lithium. If Talison is
-   to own it later, change the name in `LICENSE` and `README.md`; whether that needs a signed assignment is a
-   question for a lawyer.
-2. Already Talison's? Not needed while Jake is the owner.
+1. Owner: Jake Spitteler (the name the old MIT licence used), for now. If a company is to own it later, change
+   the name in `LICENSE` and `README.md`; whether that needs a signed assignment is a question for a lawyer.
+2. Already owned by a company? Not needed while Jake is the owner.
 3. Who may use it: not answered. Assumed: nobody without the owner's written permission, which is what the
    notice says. Jake can still give anyone written permission.
 4. The `Risk-Assessment` repo: not for now.

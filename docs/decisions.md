@@ -558,8 +558,8 @@ Newest first. One short entry per non-obvious decision.
   `frontend/package.json` says `"license": "UNLICENSED"` and `backend/pyproject.toml` says
   `license = "LicenseRef-Proprietary"`, so tools do not read the project as open source. Source files carry no
   copyright header. Copies taken before this change keep their MIT rights.
-- Why: Jake wants nobody else to copy or use the app. Jake first named Talison Lithium as the owner, then chose
-  to be the owner for now. Changing the owner later means changing the name in `LICENSE` and `README.md`; a
+- Why: Jake wants nobody else to copy or use the app. Jake chose to be the owner for now; a company may own it
+  later. Changing the owner later means changing the name in `LICENSE` and `README.md`; a
   lawyer should say whether that also needs a signed assignment. This is not legal advice.
 - Alternatives considered: PolyForm Strict 1.0.0 (still allows non-commercial use) and Business Source License
   1.1 (becomes open source after a set date). Neither stops all use. A header in every file was left out as
