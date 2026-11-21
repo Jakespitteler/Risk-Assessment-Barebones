@@ -34,8 +34,18 @@ def test_example_129_a_take5_started_before_the_30_days_is_left_out() -> None:
     repository.add(_started_at(first_day, WORKSHOP))
     repository.add(_started_at(first_day - timedelta(minutes=1), "Crusher"))
 
-    areas: tuple[AreaRisk, ...] = AreaRiskService(repository).last_30_days(
-        MIDNIGHT_TODAY,
-    )
+    areas: tuple[AreaRisk, ...] = AreaRiskService(repository).group(MIDNIGHT_TODAY)
 
     assert [area.name for area in areas] == [WORKSHOP]
+
+
+def test_with_the_30_days_off_every_saved_take5_counts() -> None:
+    """A2, D119: with no time limit, a Take 5 from a year ago counts too."""
+    repository = MemoryRepository()
+    repository.add(_started_at(MIDNIGHT_TODAY - timedelta(days=365), "Crusher"))
+
+    service = AreaRiskService(repository, last_30_days_only=False)
+    areas: tuple[AreaRisk, ...] = service.group(MIDNIGHT_TODAY)
+
+    assert [area.name for area in areas] == ["Crusher"]
+    assert service.last_30_days_only is False

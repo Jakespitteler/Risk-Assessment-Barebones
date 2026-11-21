@@ -104,7 +104,7 @@ helpers, and API types, which come from `src/api/schema.d.ts` through `src/api/t
 
 | Term | Meaning | Back end | Front end | Rules |
 | --- | --- | --- | --- | --- |
-| Risk by area | The last 30 days of Take 5s grouped by where the job is, hottest first. Opened from the saved list. | `AreaRiskService`, `risk_by_area`, `AreaRisk`, `area_since` | `RiskByAreaScreen`, `useRiskByArea`; types `RiskByArea`, `AreaRisk` | A2, A4 |
+| Risk by area | Every saved Take 5 (or, with the setting, the last 30 days) grouped by where the job is, hottest first. Opened from the saved list. | `AreaRiskService`, `risk_by_area`, `AreaRisk`, `area_since` | `RiskByAreaScreen`, `useRiskByArea`; types `RiskByArea`, `AreaRisk` | A2, A4 |
 | Area | Where the job is, as typed, ignoring capitals, spaces and punctuation; named by the spelling typed most. | `area_key` | `name` | A1 |
 | High risk | A Take 5 with a hazard whose before score needs a JHA on its card (11 or more on the booklet). | `is_high_risk` | `high_risk_count` | A3 |
 | Common Yes | A hazard question answered Yes often in an area, with how many times; up to 3 per area. | `CommonYes` | `common_yes` | A5 |

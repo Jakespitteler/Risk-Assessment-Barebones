@@ -11,6 +11,10 @@ test("the saved list opens risk by area, hottest first, with what each shows (A1
   await page.goto("/take5s");
   await page.getByRole("link", { name: "Risk by area", exact: true }).click();
   await expect(heading(page, "Risk by area")).toBeVisible();
+  // While the app is a proof of concept there is no time limit (D119).
+  await expect(
+    page.getByText(/^Where the jobs were in every saved Take 5,/),
+  ).toBeVisible();
   const workshop = page
     .getByRole("listitem")
     .filter({ has: page.getByRole("heading", { name: "Example workshop" }) });

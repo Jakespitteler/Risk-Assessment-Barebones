@@ -413,6 +413,9 @@ is a ranked list of areas with a bar for each, not a drawn map yet (decisions D1
 - **A2 The last 30 days.** It counts the Take 5s started in the last 30 days, today included: from midnight 29
   days before today, where the phone is, counting 24 hours to a day. A Take 5 counts from when it was started,
   or saved if it has no start time, finished or not, as W7 counts. Nothing is saved: it is worked out when the page opens.
+  While the app is a proof of concept the 30 days are off by default: every saved Take 5 counts and the page says
+  "in every saved Take 5". The setting `TAKE5_AREA_LAST_30_DAYS_ONLY=true` brings back the 30 days, and the page
+  then says "in the last 30 days" with no other change (D119).
 - **A3 High risk.** A Take 5 is high risk when a hazard's *before* score needs a JHA on its own card (R3): 11 or
   more on the booklet.
 - **A4 Hottest first.** The area with the most high-risk Take 5s is first. On a tie, the most "Don't start yet"
@@ -771,12 +774,14 @@ through a day's Take 5s, on a phone or a desktop.
 
 ### F9: Risk by area
 
-The last 30 days of Take 5s grouped by area, hottest first (A1 to A5). For a safety person deciding where to go.
+Saved Take 5s grouped by area, hottest first (A1 to A5): every one while the app is a proof of concept, or the
+last 30 days with the setting (D119). For a safety person deciding where to go.
 
 - Acceptance: the saved list has "Risk by area" once anything is saved, below "Today's review".
 - Acceptance: each area shows its name, a bar, "2 of 3 Take 5s high risk", its highest risk, its "Don't start
   yet" count, its thought gaps and the questions answered Yes most often there.
-- Acceptance: with nothing in the last 30 days it says "No Take 5s with a location in the last 30 days."
+- Acceptance: with nothing saved it says "No saved Take 5s with a location yet."; with the 30 days on and
+  nothing in them, "No Take 5s with a location in the last 30 days."
 
 ## Out of scope (for now)
 
@@ -937,6 +942,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D116 | Is an AI used (2026-11-21) | No: every number can be checked by hand | An AI summary of each area |
 | D117 | Where the page is (2026-11-21) | "Risk by area" at `/risk-by-area`, linked from the saved list beside "Today's review" | A new tab bar |
 | D118 | Today only, or every saved Take 5 (2026-11-21) | Every saved Take 5 by default while the app is a proof of concept; `TAKE5_RANK_TODAY_ONLY=true` ranks today only, and the by-day code stays (W7) | Today only; a switch on the page |
+| D119 | Last 30 days, or every saved Take 5 (2026-11-21) | Every saved Take 5 by default while the app is a proof of concept; `TAKE5_AREA_LAST_30_DAYS_ONLY=true` counts the last 30 days, the page's words follow the setting, and the 30-day code stays (A2) | The last 30 days; a switch on the page |
 
 ## Open questions
 

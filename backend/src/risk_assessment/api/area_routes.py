@@ -26,11 +26,16 @@ def create_area_router(service: AreaRiskService) -> APIRouter:
 
     @router.get("/api/risk-by-area", responses=_UNREADABLE)
     def risk_by_area(today: AwareDatetime) -> RiskByArea:
-        """Group the last 30 days of Take 5s by area, hottest first (A1 to A5).
+        """Group the Take 5s by area, hottest first (A1 to A5).
+
+        Only the last 30 days count when the setting says so (A2, D119).
 
         Args:
             today: Midnight today where the phone is, with its time zone.
         """
-        return RiskByArea(areas=service.last_30_days(today))
+        return RiskByArea(
+            areas=service.group(today),
+            last_30_days_only=service.last_30_days_only,
+        )
 
     return router

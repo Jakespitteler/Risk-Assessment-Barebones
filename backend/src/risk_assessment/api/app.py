@@ -114,7 +114,11 @@ def create_app(
         today_only=app_settings.rank_today_only,
     )
     app.include_router(create_ranking_router(ranking_service))
-    app.include_router(create_area_router(AreaRiskService(storage)))
+    area_service = AreaRiskService(
+        storage,
+        last_30_days_only=app_settings.area_last_30_days_only,
+    )
+    app.include_router(create_area_router(area_service))
     return app
 
 
