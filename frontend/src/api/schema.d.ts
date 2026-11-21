@@ -709,6 +709,10 @@ export interface components {
          *         line: One line saying why it sits where it does.
          *         ranked_by_ai: True when the AI placed it and wrote the line, False when the
          *             fixed rules did.
+         *         from_paper: True when it was photographed off a paper card (P6).
+         *         started_at: When it was started: for a paper card, the date on the card,
+         *             at midnight where the checker was when it has no time (P5). None when
+         *             not known.
          */
         RankedTake5Line: {
             /**
@@ -731,6 +735,10 @@ export interface components {
             line: string;
             /** Ranked By Ai */
             ranked_by_ai: boolean;
+            /** From Paper */
+            from_paper: boolean;
+            /** Started At */
+            started_at: string | null;
         };
         /**
          * RankedTake5s

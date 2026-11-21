@@ -1323,6 +1323,22 @@
           "ranked_by_ai": {
             "type": "boolean",
             "title": "Ranked By Ai"
+          },
+          "from_paper": {
+            "type": "boolean",
+            "title": "From Paper"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
           }
         },
         "type": "object",
@@ -1333,10 +1349,12 @@
           "job",
           "can_start",
           "line",
-          "ranked_by_ai"
+          "ranked_by_ai",
+          "from_paper",
+          "started_at"
         ],
         "title": "RankedTake5Line",
-        "description": "One Take 5 in a ranking, worst first, with why it sits there (spec W1 to W7).\n\nAttributes:\n    id: The Take 5's ID, to open it.\n    created_at: When it was saved.\n    worker_name: Who did it (decided by Jake, 2026-11-19). Never sent to the AI.\n    job: What the job is.\n    can_start: The verdict it was saved with: True for Good to go, False for\n        Don't start yet, or None while its question is unanswered.\n    line: One line saying why it sits where it does.\n    ranked_by_ai: True when the AI placed it and wrote the line, False when the\n        fixed rules did."
+        "description": "One Take 5 in a ranking, worst first, with why it sits there (spec W1 to W7).\n\nAttributes:\n    id: The Take 5's ID, to open it.\n    created_at: When it was saved.\n    worker_name: Who did it (decided by Jake, 2026-11-19). Never sent to the AI.\n    job: What the job is.\n    can_start: The verdict it was saved with: True for Good to go, False for\n        Don't start yet, or None while its question is unanswered.\n    line: One line saying why it sits where it does.\n    ranked_by_ai: True when the AI placed it and wrote the line, False when the\n        fixed rules did.\n    from_paper: True when it was photographed off a paper card (P6).\n    started_at: When it was started: for a paper card, the date on the card,\n        at midnight where the checker was when it has no time (P5). None when\n        not known."
       },
       "RankedTake5s": {
         "properties": {

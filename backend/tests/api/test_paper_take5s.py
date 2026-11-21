@@ -173,6 +173,8 @@ def test_a_batch_is_ranked_on_its_own_worst_first(client: TestClient) -> None:
     assert body["best"] is None
     assert body["typical_minutes"] is None
     assert body["take5s"][0]["line"].startswith("Highest risk 21 Extreme.")
+    assert body["take5s"][0]["from_paper"] is True
+    assert body["take5s"][0]["started_at"] == "2026-04-03T00:00:00+08:00"
 
 
 def test_a_batch_of_more_than_200_is_a_422(client: TestClient) -> None:
