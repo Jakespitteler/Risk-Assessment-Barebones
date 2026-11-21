@@ -2,6 +2,17 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-21: The repo goes public, still All rights reserved (task 0042)
+
+- Decision: Jake makes the repo public. The licence stays All rights reserved in his name, without the word
+  "confidential". Workflows that hold a secret or can write only start for the repo's own people: `claude.yml`
+  checks the commenter's association, and the agent review skips forks and Dependabot. Every action is pinned to a
+  commit SHA, kept current by Dependabot. `SECURITY.md` asks for private reports.
+- Why: Jake decided on 2026-11-21. On a public repo anyone can comment or open a PR, and a moved action tag could
+  run someone else's code with the API key. Public code can't be called confidential.
+- Not chosen: an open-source licence (Jake owns the app and wants it not copied); rewriting history to remove old
+  commit emails (nothing secret was found, and it would break every open PR).
+- Decided by: human (going public), Claude (the hardening).
 ## 2026-11-21: CI skips the front end for Markdown-only pull requests, and waits for drafts (task 0041)
 
 - Decision: a pull request that changes only Markdown or the spelling and Markdown settings runs

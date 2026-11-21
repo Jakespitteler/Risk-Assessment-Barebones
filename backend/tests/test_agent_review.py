@@ -10,20 +10,39 @@ ROOT: Path = Path(__file__).resolve().parents[2]
 
 
 @pytest.mark.parametrize(
-    ("action", "sender", "draft", "fork", "branch", "expected"),
+    ("author", "action", "sender", "draft", "fork", "branch", "expected"),
     [
-        ("opened", "claude[bot]", False, False, "claude/task", True),
-        ("synchronize", "claude[bot]", False, False, "claude/task", False),
-        ("synchronize", "Jake", False, False, "chatgpt/task", True),
-        ("ready_for_review", "Jake", False, False, "task", True),
-        ("reopened", "Jake", False, False, "task", True),
-        ("opened", "Jake", True, False, "task", False),
-        ("opened", "Jake", False, True, "task", False),
-        ("opened", "Jake", False, False, "main", False),
-        ("closed", "Jake", False, False, "task", False),
+        ("Jake", "opened", "claude[bot]", False, False, "claude/task", True),
+        ("Jake", "synchronize", "claude[bot]", False, False, "claude/task", False),
+        ("Jake", "synchronize", "Jake", False, False, "chatgpt/task", True),
+        ("Jake", "ready_for_review", "Jake", False, False, "task", True),
+        ("Jake", "reopened", "Jake", False, False, "task", True),
+        ("Jake", "opened", "Jake", True, False, "task", False),
+        ("Jake", "opened", "Jake", False, True, "task", False),
+        ("Jake", "opened", "Jake", False, False, "main", False),
+        ("Jake", "closed", "Jake", False, False, "task", False),
+        (
+            "dependabot[bot]",
+            "opened",
+            "dependabot[bot]",
+            False,
+            False,
+            "dependabot/npm/vite",
+            False,
+        ),
+        (
+            "dependabot[bot]",
+            "synchronize",
+            "Jake",
+            False,
+            False,
+            "dependabot/npm/vite",
+            False,
+        ),
     ],
 )
-def test_review_gate_skips_drafts_forks_main_and_its_own_pushes(
+def test_review_gate_skips_drafts_forks_main_dependabot_and_its_own_pushes(
+    author: str,
     action: str,
     sender: str,
     draft: bool,
@@ -31,9 +50,10 @@ def test_review_gate_skips_drafts_forks_main_and_its_own_pushes(
     branch: str,
     expected: bool,
 ) -> None:
-    """Allow ordinary PR changes, but reject drafts, forks and reviewer loops.
+    """Allow ordinary PR changes; reject drafts, forks, Dependabot and reviewer loops.
 
     Args:
+        author: Account that opened the PR.
         action: GitHub PR event action.
         sender: Account responsible for the event, not the original PR author.
         draft: Whether the PR is unfinished.
@@ -46,6 +66,7 @@ def test_review_gate_skips_drafts_forks_main_and_its_own_pushes(
         "sender": {"login": sender},
         "repository": {"full_name": "example/repo", "default_branch": "main"},
         "pull_request": {
+            "user": {"login": author},
             "draft": draft,
             "head": {
                 "ref": branch,

@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # A pull request is checked out as its merge into the base, so the merge's first
           # parent is the base and `git diff HEAD^1 HEAD` lists what the pull request changes.
@@ -44,8 +44,8 @@ jobs:
           else
             echo "only_markdown=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: astral-sh/setup-uv@v9.0.0
-      - uses: actions/setup-node@v7
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -66,7 +66,7 @@ jobs:
         run: uv run check.py --no-front-end
       - name: Attach phone screenshots
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: phone-screenshots
           path: frontend/test-results/screenshots/*.png
