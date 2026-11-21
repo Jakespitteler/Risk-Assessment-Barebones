@@ -68,6 +68,8 @@ export function WorstOfTodayScreen() {
   const take5s = ranking.data?.take5s ?? [];
   const shownTake5s = showAll ? take5s : take5s.slice(0, FIRST_SHOWN);
   const byAi = take5s.some((take5) => take5.ranked_by_ai);
+  // The back end says whether it ranked today's only or every saved one (D118).
+  const todayOnly = ranking.data?.today_only ?? true;
 
   const page = useRef<HTMLDivElement>(null);
   const shown = ranking.data ? "list" : ranking.isError ? "error" : "loading";
@@ -81,7 +83,7 @@ export function WorstOfTodayScreen() {
         {ranking.isPending && (
           <>
             <h1 tabIndex={-1} className={HEADING}>
-              Ranking today’s Take 5s…
+              Ranking Take 5s…
             </h1>
             <p>This can take up to half a minute.</p>
           </>
@@ -89,7 +91,7 @@ export function WorstOfTodayScreen() {
         {ranking.isError && (
           <>
             <h1 tabIndex={-1} className={HEADING}>
-              Today’s Take 5s couldn’t be ranked
+              Take 5s couldn’t be ranked
             </h1>
             <p>Check your signal and try again.</p>
             <Button onClick={() => void ranking.refetch()}>Try again</Button>
@@ -98,12 +100,13 @@ export function WorstOfTodayScreen() {
         {ranking.data && (
           <>
             <h1 tabIndex={-1} className={HEADING}>
-              Worst of today
+              {todayOnly ? "Worst of today" : "Worst of all saved"}
             </h1>
             <p>
-              Today’s Take 5s, worst first: the riskiest jobs with the least
-              thought in the answers. Look at the top ones first, and talk to
-              the worker about the reason given.
+              {todayOnly ? "Today’s Take 5s" : "Every saved Take 5"}, worst
+              first: the riskiest jobs with the least thought in the answers.
+              Look at the top ones first, and talk to the worker about the
+              reason given.
             </p>
             {byAi && (
               <p className="text-ink-muted">
@@ -113,7 +116,11 @@ export function WorstOfTodayScreen() {
             )}
             {take5s.length === 0 ? (
               <Card>
-                <p>No Take 5s have been started today.</p>
+                <p>
+                  {todayOnly
+                    ? "No Take 5s have been started today."
+                    : "No Take 5s have been saved yet."}
+                </p>
               </Card>
             ) : (
               <ol className="flex flex-col gap-3">

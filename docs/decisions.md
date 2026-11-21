@@ -2,6 +2,16 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-21: Rank every saved Take 5 while the app is a proof of concept
+
+- Decision: the ranking page ranks every saved Take 5 by default, and says "Worst of all saved". A setting,
+  `TAKE5_RANK_TODAY_ONLY=true` in `backend/.env`, ranks only today's again. The by-day code is unchanged (spec W7,
+  D118).
+- Why: Jake asked on 2026-11-21 for a setting to rank all saved Take 5s, since a proof of concept has few Take 5s
+  a day, while keeping the by-day ranking for later.
+- Not chosen: a switch on the page (more to build, and the front end would hold a rule); today only.
+- Decided by: human.
+
 ## 2026-11-20: Rank Take 5s worst first by fixed rules, then the AI (task 0032)
 
 - Decision: a "Worst of today" page, linked from the saved list, ranks the Take 5s started since midnight where the
