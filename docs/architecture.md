@@ -113,8 +113,8 @@ backend/
                 paper.py           a checked paper card as a finished SavedTake5, as written, and
                                    the card's date as started_at                (spec P1 to P5)
         services/          what the app does
-            take5s.py          Take5Service: check a draft, nudge, submit, save a paper card, answer, get, list. It is
-                               given a clock, so tests can set the time
+            take5s.py          Take5Service: check a draft, nudge, submit, save a paper card,
+                               answer, get, list. It is given a clock, so tests can set the time
             hazard_nudges.py   HazardNudger: asks the AI about each hazard for up to 5 seconds,
                                remembers its verdicts until the server restarts      (spec T6)
             ranking.py         Take5RankingService: today's Take 5s, or a batch, by the rules, then the
