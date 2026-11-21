@@ -44,5 +44,6 @@ it("says a rating a paper card left blank is not rated (P1)", () => {
   };
   render(<HazardSummary hazard={hazard} number={1} />);
   expect(screen.getAllByText("Not rated")).toHaveLength(2);
+  expect(screen.getByText("No kind given")).toBeTruthy();
   expect(screen.getByText("Chock the wheel")).toBeTruthy();
 });

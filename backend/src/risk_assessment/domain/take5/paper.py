@@ -6,6 +6,7 @@ card can hold is refused: a level that isn't on the card's matrix, or a date or 
 zone that can't be read.
 """
 
+import re
 from datetime import date, datetime, time
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -17,6 +18,11 @@ from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.take5 import Hazard, Take5
 from risk_assessment.domain.take5.template import Take5Template
 from risk_assessment.domain.take5.verdict import verdict
+
+# The card's date as the page sends it: a date, or a date and a time to the minute.
+_CARD_DATE: re.Pattern[str] = re.compile(r"\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?")
+_EARLIEST_YEAR: int = 2000
+_LATEST_YEAR: int = 2100
 
 BAD_LEVEL_MESSAGE: str = "Pick a level from the card."
 BAD_DATE_MESSAGE: str = "Give the card's date as it is written."
@@ -64,14 +70,19 @@ def paper_started_at(filled_in_at: str | None, time_zone: str) -> datetime | Non
     if filled_in_at is None or not filled_in_at.strip():
         return None
     text: str = filled_in_at.strip()
+    if not _CARD_DATE.fullmatch(text):
+        raise PaperCardError("filled_in_at", BAD_DATE_MESSAGE)
     try:
-        if len(text) == len("YYYY-MM-DD"):
-            return datetime.combine(date.fromisoformat(text), time(), tzinfo=zone)
-        if len(text) == len("YYYY-MM-DDTHH:MM") and text[10] == "T":
-            return datetime.fromisoformat(text).replace(tzinfo=zone)
+        started_at: datetime = (
+            datetime.fromisoformat(text).replace(tzinfo=zone)
+            if "T" in text
+            else datetime.combine(date.fromisoformat(text), time(), tzinfo=zone)
+        )
     except ValueError as error:
         raise PaperCardError("filled_in_at", BAD_DATE_MESSAGE) from error
-    raise PaperCardError("filled_in_at", BAD_DATE_MESSAGE)
+    if not _EARLIEST_YEAR <= started_at.year <= _LATEST_YEAR:
+        raise PaperCardError("filled_in_at", BAD_DATE_MESSAGE)
+    return started_at
 
 
 def paper_take5(draft: Take5Draft, template: Take5Template) -> Take5:
