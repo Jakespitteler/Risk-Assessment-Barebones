@@ -9,6 +9,16 @@ from risk_assessment.domain.take5.challenge import AiQuestion
 from risk_assessment.domain.take5.saved import SavedTake5
 
 
+class AiReplyError(Exception):
+    """The AI couldn't give a usable reply: it refused, sent nothing, or wasn't reached.
+
+    The service expects this and falls back (spec C3, T6), so it logs one line without
+    a stack trace. Any other error from asking the AI is a bug, and keeps its trace
+    (task 0028). An AI adapter raises this, or a kind of it, with the provider's own
+    error as its cause.
+    """
+
+
 class Take5Repository(Protocol):
     """Where Take 5s are kept.
 

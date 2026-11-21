@@ -22,6 +22,10 @@ from risk_assessment.domain.take5.hazard_nudges import (
     specific_hazard_nudges,
 )
 from risk_assessment.domain.take5.template import Take5Template
+from risk_assessment.services.ai_failures import (
+    ai_failure_kind,
+    is_expected_ai_failure,
+)
 from risk_assessment.services.ports import HazardJudge
 
 _logger: logging.Logger = logging.getLogger(__name__)
@@ -222,10 +226,11 @@ class HazardNudger:
         """
         try:
             verdict: HazardVerdict | None = hazard_verdict(judge.judge(hazard_text))
-        except Exception:  # Any AI failure at all means the word rule decides.
+        except Exception as error:  # Any AI failure at all means the word rule decides.
             _logger.warning(
-                "The AI could not judge a hazard, so the word rule decided.",
-                exc_info=True,
+                "The AI could not judge a hazard (%s), so the word rule decided.",
+                ai_failure_kind(error),
+                exc_info=not is_expected_ai_failure(error),
             )
             verdict = None
         else:
