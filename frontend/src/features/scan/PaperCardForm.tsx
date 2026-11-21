@@ -12,7 +12,7 @@ import { Field } from "../../components/Field";
 import { FIELD_STYLE } from "../../components/fieldStyle";
 import { RatingPicker } from "../../components/RatingPicker";
 
-export const COULDNT_READ = "Couldn’t read this. Check the photo.";
+export const UNREADABLE_MARK = "Couldn’t read this. Check the photo.";
 
 const NO_RATING = { likelihood: null, consequence: null };
 
@@ -36,6 +36,7 @@ export function PaperCardForm({
   filledInAt,
   errorFor,
   onChange,
+  onRemoveHazard,
 }: {
   template: TemplateResponse;
   draft: Take5Draft;
@@ -43,6 +44,8 @@ export function PaperCardForm({
   /** The back end's error for a field, or the mark for one the AI couldn't read. */
   errorFor: (path: string) => string | undefined;
   onChange: (draft: Take5Draft, filledInAt: string | null) => void;
+  /** Told which hazard was removed, so marks and errors can follow the rest. */
+  onRemoveHazard: (index: number) => void;
 }) {
   const answers: Record<string, Answer> = draft.answers;
   const hazards = draft.hazards;
@@ -102,6 +105,10 @@ export function PaperCardForm({
               id="filled_in_at"
               type="date"
               className={FIELD_STYLE}
+              aria-invalid={Boolean(errorFor("filled_in_at"))}
+              aria-describedby={
+                errorFor("filled_in_at") ? "filled_in_at-error" : undefined
+              }
               value={day}
               onChange={(event) => {
                 changeDate(event.target.value, time);
@@ -122,6 +129,9 @@ export function PaperCardForm({
           </Field>
         </div>
       </Card>
+      {errorFor("answers") && (
+        <p className="font-semibold text-danger">{errorFor("answers")}</p>
+      )}
       {template.questions.map((question) => {
         const path = `answers.${question.id}`;
         return (
@@ -136,6 +146,22 @@ export function PaperCardForm({
                 change({ answers: { ...answers, [question.id]: answer } });
               }}
             />
+            {answers[question.id] && (
+              <Button
+                variant="quiet"
+                onClick={() => {
+                  change({
+                    answers: Object.fromEntries(
+                      Object.entries(answers).filter(
+                        ([id]) => id !== question.id,
+                      ),
+                    ),
+                  });
+                }}
+              >
+                Leave blank, as on the card
+              </Button>
+            )}
           </Card>
         );
       })}
@@ -151,6 +177,7 @@ export function PaperCardForm({
           }}
           onRemove={() => {
             change({ hazards: hazards.filter((_, at) => at !== index) });
+            onRemoveHazard(index);
           }}
         />
       ))}
@@ -215,6 +242,17 @@ function HazardCard({
           onChange({ ...hazard, before });
         }}
       />
+      <ClearRating
+        rating={hazard.before}
+        onClear={() => {
+          onChange({ ...hazard, before: NO_RATING });
+        }}
+      />
+      {errorFor(`${path}.controls`) && (
+        <p className="font-semibold text-danger">
+          {errorFor(`${path}.controls`)}
+        </p>
+      )}
       {controls.map((control, index) => (
         <ControlEditor
           key={index}
@@ -222,6 +260,7 @@ function HazardCard({
           number={index + 1}
           kinds={template.control_kinds}
           path={`${path}.controls.${String(index)}`}
+          kindCanBeBlank
           errorFor={(controlPath) =>
             errorFor(controlPath) ??
             errorFor(`${path}.controls.${String(index)}`)
@@ -262,10 +301,32 @@ function HazardCard({
           onChange({ ...hazard, after });
         }}
       />
+      <ClearRating
+        rating={hazard.after}
+        onClear={() => {
+          onChange({ ...hazard, after: NO_RATING });
+        }}
+      />
       <Button variant="quiet" onClick={onRemove}>
         Remove hazard {number}
       </Button>
     </Card>
+  );
+}
+
+/** Set a rating back to blank, for a card that left it blank (P1). */
+function ClearRating({
+  rating,
+  onClear,
+}: {
+  rating: HazardDraft["before"];
+  onClear: () => void;
+}) {
+  if (!rating?.likelihood && !rating?.consequence) return null;
+  return (
+    <Button variant="quiet" onClick={onClear}>
+      Leave this rating blank, as on the card
+    </Button>
   );
 }
 
