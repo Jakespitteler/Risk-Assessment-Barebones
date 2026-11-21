@@ -65,5 +65,11 @@ each job rounded up to the next whole minute.
 - Assumption: draft pull requests don't need CI. Agents run `uv run check.py` before marking a pull request
   ready (AGENTS.md, "Done means"), and marking it ready starts CI. A skipped job shows as passed, but GitHub
   doesn't merge a draft.
+- Browser tests with more workers, run in a 4-core cloud container on 2026-11-21: 2 workers passed all 115 in
+  3.3 minutes; 4 workers took 2.4 minutes but the long desktop test hit its 30-second limit once, with another
+  job sharing the machine. Playwright picks 2 on a public repo's 4-core runner, so nothing is set; don't set 4.
 - The Markdown-only test is a `git diff` of the merge commit against its first parent (the base), so it needs
-  `fetch-depth: 2` on the checkout and no extra action.
+  `fetch-depth: 2` on the checkout and no extra action. It uses `--no-renames`, so a file moved out of
+  `frontend/` still counts as a front-end change (found by the review).
+- The review noted that the `eligible` filter repeats two rules from `scripts/agent_review.cjs`. If the script
+  ever reviews `claude[bot]` pushes, remove the filter's second line too.
