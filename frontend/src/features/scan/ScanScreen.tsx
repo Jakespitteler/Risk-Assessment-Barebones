@@ -393,14 +393,15 @@ function PhotoPicker({
       : "border-2 border-ink bg-surface text-ink hover:bg-surface-hover";
   return (
     <label
-      className={`flex min-h-14 cursor-pointer items-center justify-center rounded-xl px-5 text-lg font-bold has-focus-visible:outline-4 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus ${look}`}
+      className={`relative flex min-h-14 cursor-pointer items-center justify-center rounded-xl px-5 text-lg font-bold has-focus-visible:outline-4 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus ${look}`}
     >
       {label}
       <input
         type="file"
         accept="image/*"
         multiple={multiple}
-        className="sr-only"
+        // Stretched over the whole button, unseen, so its tap area is the button's.
+        className="absolute inset-0 cursor-pointer opacity-0"
         onChange={(event) => {
           onChoose(event.target.files);
           // The same photo can be chosen again after a problem.
