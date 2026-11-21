@@ -6,6 +6,7 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 from httpx2 import Response
 
+from risk_assessment.domain.take5.fix import FROM_PAPER_MESSAGE
 from risk_assessment.domain.take5.paper import BAD_LEVEL_MESSAGE, BAD_ZONE_MESSAGE
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.verdict import NO_HAZARD_REASON
@@ -201,3 +202,24 @@ def test_a_retry_of_a_card_dated_in_a_repeated_hour_is_not_a_conflict(
 
     assert (first.status_code, again.status_code) == (200, 200)
     assert first.json()["take5"]["started_at"] == "2026-04-05T02:30:00+11:00"
+
+
+def test_a_stopped_paper_card_offers_no_fix_and_cannot_be_fixed(
+    client: TestClient,
+) -> None:
+    """Whoever checks a paper card isn't the worker who wrote it (P6, D126)."""
+    take5_id: str = saved_id(client, paper_request())
+    opened: dict[str, Any] = client.get(f"/api/take5s/{take5_id}").json()
+
+    fix: Response = client.post(
+        "/api/take5s",
+        json={
+            "id": str(uuid4()),
+            "draft": paper_request()["draft"] | {"fixes": take5_id},
+        },
+    )
+
+    assert opened["take5"]["verdict"]["can_start"] is False
+    assert opened["offers_fix"] is False
+    assert fix.status_code == 422
+    assert {"path": "fixes", "message": FROM_PAPER_MESSAGE} in fix.json()["errors"]
