@@ -150,7 +150,10 @@ class Take5RankingService:
         Returns:
             Them worst first, the best, and the typical time taken.
         """
-        key: _RankingKey = tuple((take5.id, take5.is_finished) for take5 in take5s)
+        # Sorted, so the same Take 5s sent in another order find the same result.
+        key: _RankingKey = tuple(
+            sorted((take5.id, take5.is_finished) for take5 in take5s),
+        )
         with self._remembered_lock:
             remembered: BestAndWorst | None = self._remembered.get(key)
         if remembered is not None:

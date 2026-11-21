@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { FromPaperTag } from "./FromPaperTag";
 import type { SavedTake5 } from "../../api/take5";
 import { ApiError, useSavedTake5 } from "../../api/take5";
 import { Button } from "../../components/Button";
@@ -11,6 +10,7 @@ import { ChallengeScreen } from "./ChallengeScreen";
 import { ChallengeSummary } from "./ChallengeSummary";
 import { FixPanel } from "./FixPanel";
 import { formatDateTime } from "./formatDateTime";
+import { FromPaperTag } from "./FromPaperTag";
 import { HazardSummary } from "./HazardSummary";
 import { SavedListLink } from "./SavedListLink";
 import { answersHere, forgetUnanswered } from "./unanswered";

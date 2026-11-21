@@ -183,3 +183,19 @@ def test_a_batch_of_more_than_200_is_a_422(client: TestClient) -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_a_retry_of_a_card_dated_in_a_repeated_hour_is_not_a_conflict(
+    client: TestClient,
+) -> None:
+    """Sydney's clocks go back at 3 am on 5 April 2026, so 2:30 happens twice (P5)."""
+    request: dict[str, Any] = paper_request(
+        filled_in_at="2026-04-05T02:30",
+        time_zone="Australia/Sydney",
+    )
+
+    first: Response = client.post("/api/take5s/paper", json=request)
+    again: Response = client.post("/api/take5s/paper", json=request)
+
+    assert (first.status_code, again.status_code) == (200, 200)
+    assert first.json()["take5"]["started_at"] == "2026-04-05T02:30:00+11:00"
