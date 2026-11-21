@@ -100,6 +100,7 @@ export const PASSING_CHECK: DraftCheck = {
     template: SMALL_TEMPLATE,
     answers: ANSWERS,
     hazards: [RATED_HAZARD],
+    from_paper: false,
   },
 };
 
@@ -114,6 +115,7 @@ export const SAVED: Take5Response = {
     template: SMALL_TEMPLATE,
     answers: ANSWERS,
     hazards: [RATED_HAZARD],
+    from_paper: false,
     verdict: { can_start: true, reasons: [] },
     challenge: {
       question: "What stops the wheel moving while you work on it?",

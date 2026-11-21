@@ -245,8 +245,10 @@ export interface components {
          *         stopped_count: How many got "Don't start yet". An unfinished one has no
          *             verdict yet, so it isn't counted.
          *         thought_gap_count: How many thought gaps they had between them (W2 to W5, W10).
-         *         highest_score: The highest before-controls score of any hazard there.
-         *         highest_band: That score's band, such as "Extreme".
+         *         highest_score: The highest before-controls score of any hazard there, or
+         *             None when no hazard there was rated (only paper cards can leave it
+         *             blank, P4).
+         *         highest_band: That score's band, such as "Extreme", or None likewise.
          *         common_yes: Up to 3 hazard questions answered Yes most often there (A5).
          */
         AreaRisk: {
@@ -261,9 +263,9 @@ export interface components {
             /** Thought Gap Count */
             thought_gap_count: number;
             /** Highest Score */
-            highest_score: number;
+            highest_score: number | null;
             /** Highest Band */
-            highest_band: string;
+            highest_band: string | null;
             /** Common Yes */
             common_yes: components["schemas"]["CommonYes"][];
         };
@@ -362,7 +364,7 @@ export interface components {
         Control: {
             /** Description */
             description: string;
-            kind: components["schemas"]["ControlKind"];
+            kind: components["schemas"]["ControlKind"] | null;
         };
         /**
          * ControlDraft
@@ -479,6 +481,8 @@ export interface components {
          *
          *     Without controls, reuse the before rating as the after rating; no second rating
          *     is needed. Description, ratings and controls are immutable once constructed.
+         *     A rating is None only on a paper card where it was left blank (P1); `Take5`
+         *     refuses a None rating on any other Take 5.
          *     `covers` holds the IDs of the hazard questions answered Yes that the worker linked
          *     to this hazard (T5); it is empty for a Take 5 saved before links were kept.
          *     `kept_flag` is what the hazard check still said about its words when the Take 5
@@ -488,10 +492,10 @@ export interface components {
         Hazard: {
             /** Description */
             description: string;
-            before: components["schemas"]["RiskRating"];
+            before: components["schemas"]["RiskRating"] | null;
             /** Controls */
             controls: components["schemas"]["Control"][];
-            after: components["schemas"]["RiskRating"];
+            after: components["schemas"]["RiskRating"] | null;
             /**
              * Weak Controls Reason
              * @default
@@ -782,8 +786,16 @@ export interface components {
             answers: {
                 [key: string]: components["schemas"]["Answer"];
             };
-            /** Hazards */
+            /**
+             * Hazards
+             * @default []
+             */
             hazards: components["schemas"]["Hazard"][];
+            /**
+             * From Paper
+             * @default false
+             */
+            from_paper: boolean;
             /**
              * Id
              * Format: uuid
@@ -853,12 +865,16 @@ export interface components {
          *     `SavedTake5` adds the job, the worker and the rest of the completed card. Ratings
          *     must match this template, so a caller cannot supply a different score or band.
          *
+         *     A paper card (P1) is kept as written: it may leave answers, ratings and control
+         *     kinds blank and have no hazards. Every other Take 5 must have them all.
+         *
          *     Attributes:
          *         template: The card it was filled in on.
          *         answers: The answer to each of the template's questions, by question ID.
          *             Empty for a Take 5 saved before the app asked them, whose template has no
-         *             questions.
-         *         hazards: The rated hazards, at least one.
+         *             questions. A paper card may leave some out.
+         *         hazards: The rated hazards, at least one unless it is a paper card.
+         *         from_paper: True when it was photographed off a paper card (task 0033).
          */
         Take5: {
             template: components["schemas"]["Take5Template"];
@@ -869,8 +885,16 @@ export interface components {
             answers: {
                 [key: string]: components["schemas"]["Answer"];
             };
-            /** Hazards */
+            /**
+             * Hazards
+             * @default []
+             */
             hazards: components["schemas"]["Hazard"][];
+            /**
+             * From Paper
+             * @default false
+             */
+            from_paper: boolean;
         };
         /**
          * Take5Draft
@@ -942,7 +966,8 @@ export interface components {
          *     Attributes:
          *         take5: The saved Take 5, with its question and a copy of its template. Its
          *             verdict is empty until the question is answered.
-         *         rating: The Take 5's rating (spec R4 and R5).
+         *         rating: The Take 5's rating (spec R4 and R5), or None for a paper card with
+         *             no rated hazard (P2).
          *         fixed_by: The ID of the newest Take 5 that fixes this one, or None. It is
          *             found when the Take 5 is opened, because the saved one never changes.
          *         offers_fix: True when the result should offer to fix this Take 5 in a new
@@ -950,7 +975,7 @@ export interface components {
          */
         Take5Response: {
             take5: components["schemas"]["SavedTake5"];
-            rating: components["schemas"]["RiskRating"];
+            rating: components["schemas"]["RiskRating"] | null;
             /** Fixed By */
             fixed_by: string | null;
             /** Offers Fix */
@@ -1112,8 +1137,8 @@ export interface components {
          *
          *     Attributes:
          *         can_start: True for Good to go, False for Don't start yet.
-         *         reasons: Every reason that applies, in the order of the rules (V1, V2, then
-         *             V3).
+         *         reasons: Every reason that applies, in the order of the rules (V1, then a
+         *             paper card's blanks, P3, then V2 and V3).
          */
         Verdict: {
             /** Can Start */

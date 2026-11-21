@@ -185,3 +185,23 @@ it("offers to try again when the areas can't be loaded", async () => {
     await screen.findByRole("heading", { name: "Risk by area" }),
   ).toBeTruthy();
 });
+
+it("says no risk was rated in an area of unrated paper cards (P4)", async () => {
+  stubApi({
+    [AREAS_URL]: {
+      status: 200,
+      body: {
+        areas: [
+          area("Crusher", {
+            high_risk_count: 0,
+            highest_score: null,
+            highest_band: null,
+          }),
+        ],
+        last_30_days_only: false,
+      },
+    },
+  });
+  renderWithApi(<RiskByAreaScreen />);
+  expect(await screen.findByText(/No risk rated\./)).toBeTruthy();
+});

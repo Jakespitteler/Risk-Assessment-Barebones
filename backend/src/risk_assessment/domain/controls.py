@@ -28,4 +28,4 @@ class Control(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     description: str
-    kind: ControlKind
+    kind: ControlKind | None

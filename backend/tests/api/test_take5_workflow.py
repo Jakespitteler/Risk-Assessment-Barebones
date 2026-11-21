@@ -38,6 +38,7 @@ def test_submit_and_reopen_preserve_the_original_document(tmp_path: Path) -> Non
     finished: Response = answer(client, str(request.id))
     saved: Take5Response = Take5Response.model_validate(finished.json())
     assert saved.take5.verdict is not None and saved.take5.verdict.can_start
+    assert saved.rating is not None
     assert saved.rating.score == 5 and saved.rating.band == "Low"
     assert saved.take5.template.matrix.jha_threshold == 11
     reopened: Response = TestClient(create_app(SqliteTake5Repository(database))).get(
@@ -131,6 +132,7 @@ def test_without_controls_after_is_derived_and_the_verdict_stops_the_job(
     )
     assert saved.take5.verdict is not None and not saved.take5.verdict.can_start
     assert saved.take5.hazards[0].after == saved.take5.hazards[0].before
+    assert saved.rating is not None
     assert saved.rating.score == 8
 
 

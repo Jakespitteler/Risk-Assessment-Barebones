@@ -81,7 +81,8 @@ class Take5Response(BaseModel):
     Attributes:
         take5: The saved Take 5, with its question and a copy of its template. Its
             verdict is empty until the question is answered.
-        rating: The Take 5's rating (spec R4 and R5).
+        rating: The Take 5's rating (spec R4 and R5), or None for a paper card with
+            no rated hazard (P2).
         fixed_by: The ID of the newest Take 5 that fixes this one, or None. It is
             found when the Take 5 is opened, because the saved one never changes.
         offers_fix: True when the result should offer to fix this Take 5 in a new
@@ -91,7 +92,7 @@ class Take5Response(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     take5: SavedTake5
-    rating: RiskRating
+    rating: RiskRating | None
     fixed_by: UUID | None
     offers_fix: bool
 

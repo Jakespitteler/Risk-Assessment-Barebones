@@ -534,11 +534,25 @@
             "title": "Thought Gap Count"
           },
           "highest_score": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Highest Score"
           },
           "highest_band": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Highest Band"
           },
           "common_yes": {
@@ -561,7 +575,7 @@
           "common_yes"
         ],
         "title": "AreaRisk",
-        "description": "What the Take 5s in one area show (A3 to A5).\n\nAttributes:\n    name: The area, as it was typed most often (A1).\n    take5_count: How many Take 5s were done there.\n    high_risk_count: How many had a hazard that needed a JHA before controls (A3).\n    stopped_count: How many got \"Don't start yet\". An unfinished one has no\n        verdict yet, so it isn't counted.\n    thought_gap_count: How many thought gaps they had between them (W2 to W5, W10).\n    highest_score: The highest before-controls score of any hazard there.\n    highest_band: That score's band, such as \"Extreme\".\n    common_yes: Up to 3 hazard questions answered Yes most often there (A5)."
+        "description": "What the Take 5s in one area show (A3 to A5).\n\nAttributes:\n    name: The area, as it was typed most often (A1).\n    take5_count: How many Take 5s were done there.\n    high_risk_count: How many had a hazard that needed a JHA before controls (A3).\n    stopped_count: How many got \"Don't start yet\". An unfinished one has no\n        verdict yet, so it isn't counted.\n    thought_gap_count: How many thought gaps they had between them (W2 to W5, W10).\n    highest_score: The highest before-controls score of any hazard there, or\n        None when no hazard there was rated (only paper cards can leave it\n        blank, P4).\n    highest_band: That score's band, such as \"Extreme\", or None likewise.\n    common_yes: Up to 3 hazard questions answered Yes most often there (A5)."
       },
       "AskedBy": {
         "type": "string",
@@ -721,7 +735,14 @@
             "title": "Description"
           },
           "kind": {
-            "$ref": "#/components/schemas/ControlKind"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ControlKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -922,7 +943,14 @@
             "title": "Description"
           },
           "before": {
-            "$ref": "#/components/schemas/RiskRating"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RiskRating"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "controls": {
             "items": {
@@ -932,7 +960,14 @@
             "title": "Controls"
           },
           "after": {
-            "$ref": "#/components/schemas/RiskRating"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RiskRating"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "weak_controls_reason": {
             "type": "string",
@@ -966,7 +1001,7 @@
           "after"
         ],
         "title": "Hazard",
-        "description": "One hazard rated before and after controls, using ratings from `rate()`.\n\nWithout controls, reuse the before rating as the after rating; no second rating\nis needed. Description, ratings and controls are immutable once constructed.\n`covers` holds the IDs of the hazard questions answered Yes that the worker linked\nto this hazard (T5); it is empty for a Take 5 saved before links were kept.\n`kept_flag` is what the hazard check still said about its words when the Take 5\nwas submitted, so the worker kept them after the nudge (T6, task 0037); None when\nnothing was flagged, or for a Take 5 saved before flags were kept."
+        "description": "One hazard rated before and after controls, using ratings from `rate()`.\n\nWithout controls, reuse the before rating as the after rating; no second rating\nis needed. Description, ratings and controls are immutable once constructed.\nA rating is None only on a paper card where it was left blank (P1); `Take5`\nrefuses a None rating on any other Take 5.\n`covers` holds the IDs of the hazard questions answered Yes that the worker linked\nto this hazard (T5); it is empty for a Take 5 saved before links were kept.\n`kept_flag` is what the hazard check still said about its words when the Take 5\nwas submitted, so the worker kept them after the nudge (T6, task 0037); None when\nnothing was flagged, or for a Take 5 saved before flags were kept."
       },
       "HazardDraft": {
         "properties": {
@@ -1358,8 +1393,13 @@
               "$ref": "#/components/schemas/Hazard"
             },
             "type": "array",
-            "minItems": 1,
-            "title": "Hazards"
+            "title": "Hazards",
+            "default": []
+          },
+          "from_paper": {
+            "type": "boolean",
+            "title": "From Paper",
+            "default": false
           },
           "id": {
             "type": "string",
@@ -1443,7 +1483,6 @@
         "type": "object",
         "required": [
           "template",
-          "hazards",
           "id",
           "created_at",
           "worker_name",
@@ -1523,17 +1562,21 @@
               "$ref": "#/components/schemas/Hazard"
             },
             "type": "array",
-            "minItems": 1,
-            "title": "Hazards"
+            "title": "Hazards",
+            "default": []
+          },
+          "from_paper": {
+            "type": "boolean",
+            "title": "From Paper",
+            "default": false
           }
         },
         "type": "object",
         "required": [
-          "template",
-          "hazards"
+          "template"
         ],
         "title": "Take5",
-        "description": "The answers, hazards and template needed to give a Take 5 its verdict.\n\n`SavedTake5` adds the job, the worker and the rest of the completed card. Ratings\nmust match this template, so a caller cannot supply a different score or band.\n\nAttributes:\n    template: The card it was filled in on.\n    answers: The answer to each of the template's questions, by question ID.\n        Empty for a Take 5 saved before the app asked them, whose template has no\n        questions.\n    hazards: The rated hazards, at least one."
+        "description": "The answers, hazards and template needed to give a Take 5 its verdict.\n\n`SavedTake5` adds the job, the worker and the rest of the completed card. Ratings\nmust match this template, so a caller cannot supply a different score or band.\n\nA paper card (P1) is kept as written: it may leave answers, ratings and control\nkinds blank and have no hazards. Every other Take 5 must have them all.\n\nAttributes:\n    template: The card it was filled in on.\n    answers: The answer to each of the template's questions, by question ID.\n        Empty for a Take 5 saved before the app asked them, whose template has no\n        questions. A paper card may leave some out.\n    hazards: The rated hazards, at least one unless it is a paper card.\n    from_paper: True when it was photographed off a paper card (task 0033)."
       },
       "Take5Draft": {
         "properties": {
@@ -1633,7 +1676,14 @@
             "$ref": "#/components/schemas/SavedTake5"
           },
           "rating": {
-            "$ref": "#/components/schemas/RiskRating"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RiskRating"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "fixed_by": {
             "anyOf": [
@@ -1660,7 +1710,7 @@
           "offers_fix"
         ],
         "title": "Take5Response",
-        "description": "A saved Take 5, with the overall rating the back end worked out for it.\n\nAttributes:\n    take5: The saved Take 5, with its question and a copy of its template. Its\n        verdict is empty until the question is answered.\n    rating: The Take 5's rating (spec R4 and R5).\n    fixed_by: The ID of the newest Take 5 that fixes this one, or None. It is\n        found when the Take 5 is opened, because the saved one never changes.\n    offers_fix: True when the result should offer to fix this Take 5 in a new\n        one: it said Don't start yet and has no fix yet."
+        "description": "A saved Take 5, with the overall rating the back end worked out for it.\n\nAttributes:\n    take5: The saved Take 5, with its question and a copy of its template. Its\n        verdict is empty until the question is answered.\n    rating: The Take 5's rating (spec R4 and R5), or None for a paper card with\n        no rated hazard (P2).\n    fixed_by: The ID of the newest Take 5 that fixes this one, or None. It is\n        found when the Take 5 is opened, because the saved one never changes.\n    offers_fix: True when the result should offer to fix this Take 5 in a new\n        one: it said Don't start yet and has no fix yet."
       },
       "Take5Summary": {
         "properties": {
@@ -1945,7 +1995,7 @@
           "reasons"
         ],
         "title": "Verdict",
-        "description": "Whether the job can start, and why not.\n\nAttributes:\n    can_start: True for Good to go, False for Don't start yet.\n    reasons: Every reason that applies, in the order of the rules (V1, V2, then\n        V3)."
+        "description": "Whether the job can start, and why not.\n\nAttributes:\n    can_start: True for Good to go, False for Don't start yet.\n    reasons: Every reason that applies, in the order of the rules (V1, then a\n        paper card's blanks, P3, then V2 and V3)."
       }
     }
   }

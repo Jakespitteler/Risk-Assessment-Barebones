@@ -2,6 +2,20 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-21: A paper card is saved as written, blanks and all (task 0033, part 2a)
+
+- Decision: `Take5.from_paper` marks a photographed paper card. On one, an answer, a rating or a control's kind
+  may be empty and there may be no hazards, so `Hazard.before`, `Hazard.after` and `Control.kind` may be empty,
+  and only `Take5`'s validators allow it, for paper only. R6 moved from `Hazard` to `Take5` so it can skip paper.
+  A hazard with no after rating counts at its before rating. Blanks are "Don't start yet" reasons (no hazard, no
+  rating) and thought gaps; a paper card has no time taken, so it is never rushed, timed or the best. A date
+  alone is the start of that day in the checker's time zone; no date leaves `started_at` empty (spec P1 to P6,
+  D120 to D125).
+- Why: Jake's answers of 2026-11-21: "as written, gaps and all", with the gaps counted against the card.
+- Not chosen: the checker filling every gap in (it rewrites the worst cards); a separate paper model (two of
+  everything the ranking and risk by area read).
+- Decided by: human (the rules), agent (where the checks live).
+
 ## 2026-11-21: Risk by area counts every saved Take 5 while the app is a proof of concept
 
 - Decision: the risk-by-area page counts every saved Take 5 by default, and says "in every saved Take 5". A

@@ -14,9 +14,13 @@ from typing import ClassVar
 from pydantic import BaseModel, ConfigDict
 
 from risk_assessment.domain.questions import Answer, QuestionRole
-from risk_assessment.domain.take5.ranking import highest_risk, thought_gaps
+from risk_assessment.domain.risk import RiskRating
+from risk_assessment.domain.take5.ranking import (
+    highest_risk,
+    highest_score,
+    thought_gaps,
+)
 from risk_assessment.domain.take5.saved import SavedTake5
-from risk_assessment.domain.take5.take5 import Hazard
 
 # How far back the page looks, today included (A2, decision D114).
 AREA_DAYS: int = 30
@@ -50,8 +54,10 @@ class AreaRisk(BaseModel):
         stopped_count: How many got "Don't start yet". An unfinished one has no
             verdict yet, so it isn't counted.
         thought_gap_count: How many thought gaps they had between them (W2 to W5, W10).
-        highest_score: The highest before-controls score of any hazard there.
-        highest_band: That score's band, such as "Extreme".
+        highest_score: The highest before-controls score of any hazard there, or
+            None when no hazard there was rated (only paper cards can leave it
+            blank, P4).
+        highest_band: That score's band, such as "Extreme", or None likewise.
         common_yes: Up to 3 hazard questions answered Yes most often there (A5).
     """
 
@@ -62,8 +68,8 @@ class AreaRisk(BaseModel):
     high_risk_count: int
     stopped_count: int
     thought_gap_count: int
-    highest_score: int
-    highest_band: str
+    highest_score: int | None
+    highest_band: str | None
     common_yes: tuple[CommonYes, ...]
 
 
@@ -105,7 +111,7 @@ def is_high_risk(take5: SavedTake5) -> bool:
     Returns:
         True when its highest before-controls score needs a JHA.
     """
-    return take5.template.matrix.needs_jha(highest_risk(take5).before.score)
+    return take5.template.matrix.needs_jha(highest_score(take5))
 
 
 def risk_by_area(take5s: Sequence[SavedTake5]) -> tuple[AreaRisk, ...]:
@@ -149,9 +155,13 @@ def _area(newest_first: Sequence[SavedTake5]) -> AreaRisk:
     Returns:
         The area's counts, its highest risk and its most common Yes answers.
     """
-    riskiest: Hazard = max(
-        (highest_risk(take5) for take5 in newest_first),
-        key=lambda hazard: hazard.before.score,
+    ratings: list[RiskRating] = [
+        rating for take5 in newest_first if (rating := highest_risk(take5)) is not None
+    ]
+    riskiest: RiskRating | None = max(
+        ratings,
+        key=lambda rating: rating.score,
+        default=None,
     )
     return AreaRisk(
         name=_most_typed(newest_first),
@@ -162,8 +172,8 @@ def _area(newest_first: Sequence[SavedTake5]) -> AreaRisk:
             for take5 in newest_first
         ),
         thought_gap_count=sum(len(thought_gaps(take5)) for take5 in newest_first),
-        highest_score=riskiest.before.score,
-        highest_band=riskiest.before.band,
+        highest_score=riskiest.score if riskiest is not None else None,
+        highest_band=riskiest.band if riskiest is not None else None,
         common_yes=_common_yes(newest_first),
     )
 

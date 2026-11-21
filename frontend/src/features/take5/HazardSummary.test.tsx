@@ -34,3 +34,15 @@ it("shows the saved reason without changing or summarising it", () => {
   ).toBeTruthy();
   expect(screen.getByText(reason)).toBeTruthy();
 });
+
+it("says a rating a paper card left blank is not rated (P1)", () => {
+  const hazard = {
+    ...RATED_HAZARD,
+    before: null,
+    after: null,
+    controls: [{ description: "Chock the wheel", kind: null }],
+  };
+  render(<HazardSummary hazard={hazard} number={1} />);
+  expect(screen.getAllByText("Not rated")).toHaveLength(2);
+  expect(screen.getByText("Chock the wheel")).toBeTruthy();
+});

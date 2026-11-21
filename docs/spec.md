@@ -44,11 +44,11 @@ design choice: **if the app is boring and can be used without thinking, people w
 
 | Role | Who | What they can do |
 | --- | --- | --- |
-| Worker | Anyone on a mine-site crew about to start a task | Fill in a Take 5, see its verdict, look back at saved Take 5s, and see today's ranked worst first (F8) and risk by area (F9) |
+| Worker | Anyone on a mine-site crew about to start a task | Fill in a Take 5, see its verdict, look back at saved Take 5s, see today's ranked worst first (F8) and risk by area (F9), and scan a pile of paper cards (F10) |
 
 There is one role for now. There is no sign-in: the worker types their name and the
-phone remembers it. Anyone can rank Take 5s, and the ranking shows each worker's name, as the saved list does
-(decision D66).
+phone remembers it. Anyone can rank Take 5s and scan paper cards, and the ranking shows each worker's name, as the
+saved list does (decision D66).
 
 Where and when it is used (confirmed by Jake for task 0004):
 
@@ -222,9 +222,14 @@ question is answered), and saved with it, so a saved Take 5 always shows the ver
 - **V3** The Take 5's rating is 11 or more. ("The risk is High (12). At 11 or more you need a JHA before you
   start. Talk to your supervisor.") The app does not write JHAs.
 
+- On a paper card only (P3, below): no hazard was written down ("No hazard was written down. Think about what
+  could hurt someone."), and each hazard with no rating before controls ("Rate the risk of: ..."). These come
+  after V1 and before V2.
+
 N/A never stops a job. A Take 5 with anything missing (the name, the job, where it is, an answer to a question,
 a rating, a first hazard, the weak-controls question in T3 below, or a hazard linked to each hazard question
-answered Yes in T5) can't be submitted at all, so "missing" is a form error, not a verdict.
+answered Yes in T5) can't be submitted at all, so "missing" is a form error, not a verdict. A paper card is the
+one exception: it is saved as written, and its blanks are reasons (P3) and gaps (P4).
 
 ### Thinking rules
 
@@ -425,6 +430,30 @@ is a ranked list of areas with a bar for each, not a drawn map yet (decisions D1
 - **A5 What comes up there.** Each area shows its high-risk count out of its Take 5s, its highest *before* score
   and band, its "Don't start yet" count, its thought gaps, and up to 3 hazard questions answered Yes most often
   there, most first and in the card's order on a tie, each with how many times. No AI is used.
+
+### Paper cards
+
+A pile of paper Take 5s can be photographed, so they are ranked with the rest (decision D66, task 0033). The AI
+reads each photo into a filled-in card; a person checks it beside the photo and saves it. The photo is never kept.
+
+- **P1 Saved as written.** A checked paper card is saved exactly as the person confirmed it, marked "from paper",
+  and never rewritten to pass a rule. A question, a rating or a control's kind may be blank, any text may be
+  short or empty, and there may be no hazards. F2's form errors, T2 to T5, R6 and K2 don't apply. It gets no
+  challenge question (C6): it is finished as it is saved, with its verdict.
+- **P2 Its rating.** A hazard with no after rating counts at its before rating, so a card that only rated the risk
+  before controls isn't read as safer than it said (R4). A rating with only one half filled in is blank. A card
+  with no rated hazard has no rating.
+- **P3 Its verdict.** V1 to V3 as for any Take 5, with a blank answer never a V1 reason, plus a reason for no hazard
+  and for each hazard with no rating before controls (under Verdict rules).
+- **P4 Its blanks are gaps.** In the ranking and risk by area, each blank is a thought gap like W2 to W5: a
+  question with no answer, no hazard at all, a hazard with no rating before controls, and a control with no kind.
+  With no rating before controls its highest risk counts as 0 ("No risk rated").
+- **P5 Its date.** The date written on the card, as read and checked, is when it was started, so the ranking's
+  "today" (W7) and risk by area's 30 days (A2) go by it. A date with no time is the start of that day where the
+  person checking is; with no date the scan time stands in. How long a paper card took isn't known, so it is never
+  rushed (W5), it is left out of the typical time (W9), and it is never the best (W8).
+- **P6 Who and where.** Anyone can scan (D66). The saved list and the saved Take 5 say "From paper". The worker's
+  name is read off the card to fill it in, and never sent to any other AI call (C1, W6).
 
 ### Worked examples
 
@@ -632,6 +661,22 @@ Risk by area (A1 to A5). Unless the row says otherwise, each Take 5 is the ranki
 | 129 | One started at midnight on 23 Oct, one a minute before | Only the first counts | A2 |
 | 130 | An unfinished one at Possible / Major | 1 high risk, 0 "Don't start yet" | A4 |
 
+Paper cards (P1 to P5). Unless the row says otherwise, the card has every question answered, apart from those
+named, and the checker is in Perth.
+
+| # | Situation | Expected | Why |
+| --- | --- | --- | --- |
+| 131 | Ticks only: every question answered, no hazard written down | Saved; "Don't start yet": "No hazard was written down. ..."; the gap "no hazard was written down" | P1, P3, P4 |
+| 132 | "The wheel falls off the hub onto a foot", before Possible / Major (18), no controls, no after rating | Its rating is 18 Extreme; "Say how you will control: ..." and the JHA reason | P2, V2, V3 |
+| 133 | That hazard with no rating, and a control "Chock it" with no kind | "Rate the risk of: ..."; the gaps "... has no rating" and "a control for ... has no kind"; "No risk rated", score 10 | P3, P4 |
+| 134 | The scope question left blank | No V1 reason for it; the gap "... has no answer" | P1, P4 |
+| 135 | Before Unlikely / Minor (5), after Possible / Minor (8), one control | Saved as written, rating 8 | P1: R6 doesn't apply |
+| 136 | The job is "Tyre" and the control is "Be careful" | Saved as written, no form error | P1: T2 and T4 don't apply |
+| 137 | Dated 03/04/2026 with no time | Started at 2026-04-03 00:00 in Perth (+08:00) | P5 |
+| 138 | Dated 03/04/2026 06:40, the checker in Sydney | Started at 2026-04-03 06:40 +11:00 | P5: the checker's zone, with daylight saving |
+| 139 | No date | Started at is empty; the scan time stands in | P5 |
+| 140 | Example 132 saved with a time 10 minutes before the scan | Not rushed, no "Took" time, left out of the typical time, never the best | P5 |
+
 ## Features
 
 ### F1: Rate a risk
@@ -782,6 +827,20 @@ last 30 days with the setting (D119). For a safety person deciding where to go.
   yet" count, its thought gaps and the questions answered Yes most often there.
 - Acceptance: with nothing saved it says "No saved Take 5s with a location yet."; with the 30 days on and
   nothing in them, "No Take 5s with a location in the last 30 days."
+
+### F10: Scan paper cards
+
+A pile of paper Take 5s photographed, checked one at a time beside the photo, saved, and ranked worst first (P1 to
+P6). For whoever collects a crew's cards, on a desktop or a phone.
+
+- Acceptance: the saved list has "Scan paper cards" beside "Today's review" and "Risk by area".
+- Acceptance: one page takes many photos in a row (the camera on a phone, files on a desktop), and reads them all
+  before the first card is shown.
+- Acceptance: each card shows beside its photo, filled in as the AI read it, with each field it couldn't read left
+  empty and marked; the person can change anything, then Save or Skip it.
+- Acceptance: once every card is saved or skipped, the saved ones are ranked worst first as in Today's review.
+- Acceptance: with no AI set up it says scanning needs one; a photo that can't be read says to take it again.
+- Acceptance: worked examples 131 to 140 pass as tests.
 
 ## Out of scope (for now)
 
@@ -943,6 +1002,12 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D117 | Where the page is (2026-11-21) | "Risk by area" at `/risk-by-area`, linked from the saved list beside "Today's review" | A new tab bar |
 | D118 | Today only, or every saved Take 5 (2026-11-21) | Every saved Take 5 by default while the app is a proof of concept; `TAKE5_RANK_TODAY_ONLY=true` ranks today only, and the by-day code stays (W7) | Today only; a switch on the page |
 | D119 | Last 30 days, or every saved Take 5 (2026-11-21) | Every saved Take 5 by default while the app is a proof of concept; `TAKE5_AREA_LAST_30_DAYS_ONLY=true` counts the last 30 days, the page's words follow the setting, and the 30-day code stays (A2) | The last 30 days; a switch on the page |
+| D120 | A paper card's gaps (2026-11-21) | Saved as written, blanks and all, marked "from paper": questions, ratings and kinds may be blank and there may be no hazards; a data model change Jake approved (P1) | The checker fills every gap in, which rewrites the worst cards; refusing an incomplete card |
+| D121 | Its verdict and ranking (2026-11-21) | Its blanks are "Don't start yet" reasons (no hazard, no rating) and thought gaps (P3, P4) | Blanks ignored |
+| D122 | Its date (2026-11-20, 2026-11-21) | The date on the card in `started_at`, a date alone at the start of that day where the checker is, none meaning the scan time; no time taken (P5) | A second date field; the scan time always |
+| D123 | Its photo (2026-11-20) | Not kept: thrown away once its card is saved or skipped | Kept beside the saved Take 5 |
+| D124 | Where the batch is ranked (2026-11-21) | On the scan page, by an endpoint that ranks just those saved cards (F10) | Today's review, mixed with the rest |
+| D125 | The page (2026-11-21) | "Scan paper cards" at `/scan`, linked from the saved list; a "From paper" tag on the list and the saved Take 5 (P6) | Another name |
 
 ## Open questions
 

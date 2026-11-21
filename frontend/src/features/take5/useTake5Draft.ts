@@ -47,22 +47,26 @@ export function blankHazard(): HazardDraft {
   };
 }
 
-/** A saved hazard as a draft again. With no controls it was never rated after them. */
+/**
+ * A saved hazard as a draft again. With no controls it was never rated after them. A
+ * rating a paper card left blank stays unpicked.
+ */
 function hazardDraftOf(hazard: Hazard): HazardDraft {
-  const { likelihood, consequence } = hazard.after;
+  const before = hazard.before ?? NOTHING_PICKED;
+  const after = hazard.after ?? NOTHING_PICKED;
   return {
     description: hazard.description,
     weak_controls_reason: hazard.weak_controls_reason,
     before: {
-      likelihood: hazard.before.likelihood,
-      consequence: hazard.before.consequence,
+      likelihood: before.likelihood,
+      consequence: before.consequence,
     },
     controls: hazard.controls.map(({ description, kind }) => ({
       description,
       kind,
     })),
     after: hazard.controls.length
-      ? { likelihood, consequence }
+      ? { likelihood: after.likelihood, consequence: after.consequence }
       : { ...NOTHING_PICKED },
     covers: [...hazard.covers],
   };

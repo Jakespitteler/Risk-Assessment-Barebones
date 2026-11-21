@@ -5,7 +5,8 @@ import { RiskBadge } from "../../components/RiskBadge";
 
 /**
  * One rated hazard as the back end returned it: its ratings and its controls. Anything
- * the back end says about it, such as a warning, goes in `children` at the end.
+ * the back end says about it, such as a warning, goes in `children` at the end. Only a
+ * paper card can leave a rating or a control's kind blank (spec P1).
  */
 export function HazardSummary({
   hazard,
@@ -30,10 +31,16 @@ export function HazardSummary({
         {ratings.map(({ title, rating }) => (
           <div key={title} className="flex flex-col gap-2">
             <h3 className="font-bold">{title}</h3>
-            <p className="text-ink-muted">
-              {rating.likelihood} · {rating.consequence}
-            </p>
-            <RiskBadge score={rating.score} band={rating.band} />
+            {rating ? (
+              <>
+                <p className="text-ink-muted">
+                  {rating.likelihood} · {rating.consequence}
+                </p>
+                <RiskBadge score={rating.score} band={rating.band} />
+              </>
+            ) : (
+              <p className="text-ink-muted">Not rated</p>
+            )}
           </div>
         ))}
       </div>

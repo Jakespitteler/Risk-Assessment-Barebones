@@ -111,7 +111,11 @@ export function Take5ResultScreen({
         />
         <Card>
           <h2 className="text-xl font-bold">Overall risk after controls</h2>
-          <RiskBadge score={rating.score} band={rating.band} />
+          {rating ? (
+            <RiskBadge score={rating.score} band={rating.band} />
+          ) : (
+            <p>Not rated</p>
+          )}
           <dl className="flex flex-col gap-2">
             {details.map(({ term, value }) => (
               <div key={term}>

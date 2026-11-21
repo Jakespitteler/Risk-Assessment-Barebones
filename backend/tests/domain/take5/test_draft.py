@@ -36,6 +36,7 @@ def test_a_complete_draft_is_rated_and_can_be_submitted() -> None:
     assert check.errors == ()
     assert check.can_submit
     assert check.assessment is not None
+    assert check.assessment.rating is not None
     assert check.assessment.rating.score == 5
     assert check.assessment.rating.band == "Low"
 
@@ -67,6 +68,7 @@ def test_the_answers_are_kept_with_the_rated_take5() -> None:
     )
 
     assert check.assessment is not None
+    assert check.assessment.rating is not None
     assert check.assessment.answers == answers
 
 
@@ -96,6 +98,7 @@ def test_an_answer_to_a_question_the_card_does_not_ask_is_not_kept() -> None:
     )
 
     assert check.assessment is not None
+    assert check.assessment.rating is not None
     assert check.assessment.answers == sample_answers()
 
 
@@ -205,6 +208,7 @@ def test_example_16_an_unchanged_score_is_allowed() -> None:
     check: DraftCheck = check_draft(sample_draft(hazard), BOOKLET_TEMPLATE)
 
     assert check.assessment is not None
+    assert check.assessment.rating is not None
     assert (check.assessment.rating.score, check.assessment.rating.band) == (
         8,
         "Moderate",
@@ -220,6 +224,7 @@ def test_example_17_with_no_controls_after_is_the_before_rating() -> None:
     check: DraftCheck = check_draft(sample_draft(hazard), BOOKLET_TEMPLATE)
 
     assert check.assessment is not None
+    assert check.assessment.rating is not None
     rated: Hazard = check.assessment.hazards[0]
     assert rated.after == rated.before
     assert (check.assessment.rating.score, check.assessment.rating.band) == (
@@ -295,6 +300,7 @@ def test_answers_are_trimmed() -> None:
     check: DraftCheck = check_draft(sample_draft(hazard), BOOKLET_TEMPLATE)
 
     assert check.assessment is not None
+    assert check.assessment.rating is not None
     assert check.assessment.hazards[0].description == "Dust"
 
 
@@ -332,6 +338,7 @@ def test_example_66_a_yes_with_a_hazard_linked_is_saved_with_the_link() -> None:
 
     assert check.errors == ()
     assert check.assessment is not None
+    assert check.assessment.rating is not None
     assert check.assessment.hazards[0].covers == ("heights",)
 
 
@@ -356,6 +363,7 @@ def test_example_67_one_hazard_linked_to_two_yes_answers_is_saved_with_both() ->
 
     assert check.errors == ()
     assert check.assessment is not None
+    assert check.assessment.rating is not None
     assert check.assessment.hazards[0].covers == ("vehicles", "hazardous_materials")
 
 
@@ -384,6 +392,7 @@ def test_example_69_a_link_to_a_question_now_answered_no_is_not_saved() -> None:
 
     assert check.errors == ()
     assert check.assessment is not None
+    assert check.assessment.rating is not None
     assert check.assessment.hazards[0].covers == ()
 
 
@@ -396,6 +405,7 @@ def test_a_link_to_a_question_the_card_does_not_ask_is_not_saved() -> None:
     check: DraftCheck = check_draft(_heights_yes(fall), BOOKLET_TEMPLATE)
 
     assert check.assessment is not None
+    assert check.assessment.rating is not None
     assert check.assessment.hazards[0].covers == ("heights",)
 
 

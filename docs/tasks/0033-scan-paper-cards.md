@@ -3,7 +3,7 @@ id: 0033
 title: Photograph paper Take 5 cards into saved Take 5s, then rank the batch
 status: in-progress
 owner: claude
-branch: claude/0033-photo-reading (#71), claude/0033-reading-the-reply (#72), claude/0033-scan-paper-cards (#68); stacked on #66
+branch: claude/0033-photo-reading (#71), claude/0033-reading-the-reply (#72), claude/0033-scan-paper-cards (#68), claude/0033-paper-cards-rules (part 2a)
 ---
 
 ## Goal
@@ -35,6 +35,18 @@ Questions for Jake, each with Claude's recommendation. Answered when the task st
 - 9: **approved**: a "from paper" field on a saved Take 5 (a data model change).
 - 10: **approved**: add `python-multipart`, so FastAPI can take photo uploads.
 - The AI interface gets one new method for a photo, which the Claude adapter fills; other jobs don't change.
+
+**Jake's answers, 2026-11-21** (asked when parts 2 and 3 started):
+
+- Card gaps: **approved**, a data model change: on a paper card only, a question, a rating or a control's kind may
+  be blank, and there may be no hazards. A blank rating or no hazards gives "Don't start yet", with the reason
+  said, and each blank is a gap in the ranking.
+- Card date: a date with no time is the start of that day where the checker is; no date leaves `started_at`
+  empty, so the scan time is used. A paper card has no time taken: no "Took N minutes", left out of the typical
+  time.
+- Batch ranking: on the scan page, by a new endpoint that ranks just the saved cards, in Today's review's style.
+- The page: "Scan paper cards" at `/scan`, linked beside Today's review and Risk by area; a "From paper" tag on
+  the saved list and the saved Take 5's page.
 
 Built as three stacked pull requests, one job each: (1) reading a photo into a filled-in card, saving nothing;
 (2) saving a scanned card and ranking a batch; (3) the scan page.
