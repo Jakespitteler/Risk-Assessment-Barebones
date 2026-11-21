@@ -37,3 +37,12 @@ it("draws a big photo at most 2576 px on its long side, as a JPEG", async () => 
   expect(size).toEqual({ width: LONGEST_SIDE, height: 1932 });
   expect(drawImage).toHaveBeenCalledOnce();
 });
+
+it("sends the photo as it is when it can't be drawn", async () => {
+  vi.stubGlobal(
+    "createImageBitmap",
+    vi.fn(() => Promise.reject(new Error("not an image"))),
+  );
+  const photo = new Blob(["photo"]);
+  expect(await shrinkPhoto(photo)).toBe(photo);
+});

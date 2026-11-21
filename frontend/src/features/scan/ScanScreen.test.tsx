@@ -8,7 +8,7 @@ import {
   SMALL_TEMPLATE,
   stubApi,
 } from "../../test-utils";
-import { COULDNT_READ } from "./PaperCardForm";
+import { UNREADABLE_MARK } from "./PaperCardForm";
 import { ScanScreen } from "./ScanScreen";
 
 const TEMPLATE = {
@@ -66,7 +66,7 @@ it("reads every photo, then shows each card to check with what couldn't be read 
     "value",
     "2026-04-03",
   );
-  expect(screen.getByText(COULDNT_READ)).toBeTruthy();
+  expect(screen.getByText(UNREADABLE_MARK)).toBeTruthy();
   expect(screen.getByRole("heading", { name: "Hazard 1" })).toBeTruthy();
 });
 
@@ -169,4 +169,156 @@ it("says when scanning needs an AI that isn't set up", async () => {
       "Scanning paper cards needs an AI, and none is set up.",
     ),
   ).toBeTruthy();
+});
+
+/** The bodies sent to save paper cards, in order. */
+function savedBodies(): unknown[] {
+  return vi
+    .mocked(fetch)
+    .mock.calls.filter(([input]) => input === "/api/take5s/paper")
+    .map(([, init]) =>
+      typeof init?.body === "string"
+        ? (JSON.parse(init.body) as unknown)
+        : null,
+    );
+}
+
+it("sends the card exactly as read when nothing is changed (P1)", async () => {
+  stubApi({
+    ...TEMPLATE,
+    "POST /api/scans": { status: 200, body: READ },
+    "POST /api/take5s/paper": { status: 200, body: SAVED },
+  });
+  renderWithApi(<ScanScreen />);
+  choosePhotos(1);
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Save as written" }),
+  );
+  await screen.findByText("1 card saved.");
+  expect(savedBodies()).toEqual([
+    {
+      id: expect.any(String) as unknown,
+      draft: READ.draft,
+      filled_in_at: "2026-04-03",
+      time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    },
+  ]);
+});
+
+it("sets a misread answer and rating back to blank, as on the card (P1)", async () => {
+  stubApi({
+    ...TEMPLATE,
+    "POST /api/scans": { status: 200, body: READ },
+    "POST /api/take5s/paper": { status: 200, body: SAVED },
+  });
+  renderWithApi(<ScanScreen />);
+  choosePhotos(1);
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Leave blank, as on the card" }),
+  );
+  fireEvent.click(
+    screen.getAllByRole("button", {
+      name: "Leave this rating blank, as on the card",
+    })[0] as HTMLElement,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Save as written" }));
+  await screen.findByText("1 card saved.");
+  expect(savedBodies()[0]).toMatchObject({
+    draft: {
+      answers: {},
+      hazards: [{ before: { likelihood: null, consequence: null } }],
+    },
+  });
+});
+
+it("saves a card once when the first reply was lost", async () => {
+  stubApi({
+    ...TEMPLATE,
+    "POST /api/scans": { status: 200, body: READ },
+    "POST /api/take5s/paper": ["offline", { status: 200, body: SAVED }],
+  });
+  renderWithApi(<ScanScreen />);
+  choosePhotos(1);
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Save as written" }),
+  );
+  await screen.findByText("1 card saved.");
+  const [first, second] = savedBodies() as { id: string }[];
+  expect(second?.id).toBe(first?.id);
+});
+
+it("stops reading the batch when no AI is set up", async () => {
+  const calls = stubApi({
+    ...TEMPLATE,
+    "POST /api/scans": {
+      status: 503,
+      body: { detail: "Scanning paper cards needs an AI, and none is set up." },
+    },
+  });
+  renderWithApi(<ScanScreen />);
+  choosePhotos(3);
+  await screen.findByRole("heading", { name: "Check card 1 of 3" });
+  expect(calls.filter((call) => call === "POST /api/scans")).toHaveLength(1);
+});
+
+it("reads a retaken photo in place of one that couldn't be read", async () => {
+  stubApi({
+    ...TEMPLATE,
+    "POST /api/scans": [
+      {
+        status: 422,
+        body: { detail: "Try a clearer photo of the whole card.", errors: [] },
+      },
+      { status: 200, body: READ },
+    ],
+  });
+  renderWithApi(<ScanScreen />);
+  choosePhotos(1);
+  fireEvent.change(await screen.findByLabelText("Take this photo again"), {
+    target: {
+      files: [new File(["clearer"], "again.jpg", { type: "image/jpeg" })],
+    },
+  });
+  expect(await screen.findByLabelText("Name")).toBeTruthy();
+});
+
+it("says when the card couldn't be loaded, and loads it again", async () => {
+  stubApi({
+    "GET /api/take5/template": [
+      { status: 500, body: { detail: "Down." } },
+      { status: 500, body: { detail: "Down." } },
+      { status: 500, body: { detail: "Down." } },
+      { status: 200, body: SMALL_TEMPLATE },
+    ],
+    "POST /api/scans": { status: 200, body: READ },
+  });
+  renderWithApi(<ScanScreen />);
+  choosePhotos(1);
+  fireEvent.click(await screen.findByRole("button", { name: "Try again" }));
+  expect(await screen.findByLabelText("Name")).toBeTruthy();
+});
+
+it("keeps each mark beside its own hazard when one is removed", async () => {
+  stubApi({
+    ...TEMPLATE,
+    "POST /api/scans": {
+      status: 200,
+      body: {
+        ...READ,
+        draft: {
+          ...READ.draft,
+          hazards: [HAZARD_DRAFT, { ...HAZARD_DRAFT, description: "Second" }],
+        },
+        unreadable: ["hazards.1.description"],
+      },
+    },
+  });
+  renderWithApi(<ScanScreen />);
+  choosePhotos(1);
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Remove hazard 1" }),
+  );
+  const hazard = screen.getByRole("heading", { name: "Hazard 1" })
+    .parentElement as HTMLElement;
+  expect(within(hazard).getByText(UNREADABLE_MARK)).toBeTruthy();
 });

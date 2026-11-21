@@ -15,6 +15,7 @@ export function ControlEditor({
   errorFor,
   onChange,
   onRemove,
+  kindCanBeBlank = false,
 }: {
   control: ControlDraft;
   number: number;
@@ -23,6 +24,8 @@ export function ControlEditor({
   errorFor: (path: string) => string | undefined;
   onChange: (control: ControlDraft) => void;
   onRemove?: () => void;
+  /** True on a paper card, where a kind left blank is kept blank (spec P1). */
+  kindCanBeBlank?: boolean;
 }) {
   const description = `${path}.description`;
   const kind = `${path}.kind`;
@@ -62,8 +65,8 @@ export function ControlEditor({
             });
           }}
         >
-          <option value="" disabled>
-            Choose a control kind
+          <option value="" disabled={!kindCanBeBlank}>
+            {kindCanBeBlank ? "Not given on the card" : "Choose a control kind"}
           </option>
           {kinds.map((item) => (
             <option key={item} value={item}>
