@@ -362,3 +362,17 @@ def test_a_hazard_with_no_words_is_named_in_its_controls_gap() -> None:
     )
 
     assert "the controls for a hazard don't lower its risk" in thought_gaps(card)
+
+
+def test_many_blank_questions_are_one_phrase_but_each_counts() -> None:
+    """The line stays readable, and every blank still costs points (P4)."""
+    card: SavedTake5 = paper_card(
+        HazardDraft(description=WHEEL, before=POSSIBLE_MAJOR),
+        answers={},
+    )
+
+    question_count: int = len(BOOKLET_TEMPLATE.questions)
+    assert worst_score(card) == 18 + 5 * question_count
+    assert rule_line(card) == (
+        f"Highest risk 18 Extreme. {question_count} questions have no answer."
+    )
