@@ -195,6 +195,10 @@ frontend/
                            ChallengeScreen.tsx asks the challenge question; ChallengeSummary.tsx shows it with
                            its answer on the result; unanswered.ts remembers which unanswered Take 5s this
                            phone submitted, so only it answers them and opening the app goes back to one
+        features/scan/     the scan page at /scan (ScanScreen.tsx, spec F10): photos shrunk to 2576 px on the
+                           long side (shrinkPhoto.ts), read one at a time, then each card checked beside
+                           its photo in PaperCardForm.tsx and saved as written; the batch lives only in
+                           the page's memory (D20), and the photos never leave it except to be read
         dev/               startLogger.ts: Vite's terminal output while developing (only
                            vite.config.ts imports it; not part of the app)
         test-utils.tsx     the fake card, drafts and API replies the Vitest tests share
