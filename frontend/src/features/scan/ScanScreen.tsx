@@ -135,9 +135,10 @@ export function ScanScreen() {
     read([retaken]);
   };
 
+  // The photo is thrown away once its card is saved or skipped (Jake, answer 4).
   const finish = (card: ScanCard, status: "saved" | "skipped") => {
     URL.revokeObjectURL(card.photoUrl);
-    update(card.id, { status });
+    update(card.id, { status, photo: new Blob(), photoUrl: "" });
   };
 
   const save = (card: ScanCard) => {
@@ -153,6 +154,12 @@ export function ScanScreen() {
           finish(card, "saved");
         },
         onError: (error) => {
+          // A save whose reply was lost, sent again after an edit, finds the first
+          // save: the card is saved as it was first sent, so it counts as saved.
+          if (error instanceof ApiError && error.status === 409) {
+            finish(card, "saved");
+            return;
+          }
           update(card.id, {
             fieldErrors: Object.fromEntries(
               error instanceof ApiError
@@ -176,7 +183,11 @@ export function ScanScreen() {
   ).length;
 
   return (
-    <Screen subtitle="Scan paper cards" aside={<SavedListLink />} wide>
+    <Screen
+      subtitle="Scan paper cards"
+      aside={<SavedListLink />}
+      wide={!stillReading && Boolean(checking)}
+    >
       <h1
         ref={heading}
         tabIndex={-1}
@@ -194,9 +205,21 @@ export function ScanScreen() {
           photos meanwhile; you’ll check every card once they’re all read.
         </p>
       )}
-      {(cards.length === 0 || stillReading) && (
-        <ChoosePhotos
+      {cards.length === 0 && (
+        <p>
+          Take a photo of each paper Take 5, one after another, or choose the
+          photos you have. The AI fills in each card, then you check it beside
+          its photo and save it as written. The photos aren’t kept.
+        </p>
+      )}
+      {/* Always in the same place, so a photo taken while the last read finishes
+          still arrives: the picker is never swapped out from under the camera. */}
+      {(cards.length === 0 || stillReading || checking) && (
+        <PhotoPicker
+          key="photos"
           label={cards.length === 0 ? "Choose photos" : "Add more photos"}
+          multiple
+          variant={cards.length === 0 ? "primary" : "secondary"}
           onChoose={addPhotos}
         />
       )}
@@ -233,17 +256,19 @@ export function ScanScreen() {
                   onChange={(draft, filledInAt) => {
                     update(checking.id, { draft, filledInAt });
                   }}
-                  onRemoveHazard={(index) => {
+                  onRemoveItem={(listPath, index) => {
                     update(checking.id, {
-                      unreadable: withoutHazard(checking.unreadable, index),
+                      unreadable: checking.unreadable.flatMap((path) => {
+                        const moved = withoutItem(path, listPath, index);
+                        return moved === null ? [] : [moved];
+                      }),
                       fieldErrors: Object.fromEntries(
-                        withoutHazard(
-                          Object.keys(checking.fieldErrors),
-                          index,
-                        ).map((path, at) => [
-                          path,
-                          Object.values(checking.fieldErrors)[at] ?? "",
-                        ]),
+                        Object.entries(checking.fieldErrors).flatMap(
+                          ([path, message]) => {
+                            const moved = withoutItem(path, listPath, index);
+                            return moved === null ? [] : [[moved, message]];
+                          },
+                        ),
                       ),
                     });
                   }}
@@ -317,39 +342,22 @@ export function ScanScreen() {
 }
 
 /**
- * The paths marked on a card once a hazard is removed: the removed hazard's go, and
- * each later hazard's move up one, so a mark stays beside its own hazard.
+ * Where a marked path is once an item of a list is removed, such as hazard 0 of
+ * "hazards": the removed item's paths go (null), and each later item's move up one, so
+ * a mark stays beside its own item.
  */
-function withoutHazard(paths: string[], removed: number): string[] {
-  return paths.flatMap((path) => {
-    const match = /^hazards\.(\d+)(.*)$/.exec(path);
-    if (!match) return [path];
-    const index = Number(match[1]);
-    if (index === removed) return [];
-    return [
-      index > removed ? `hazards.${String(index - 1)}${match[2] ?? ""}` : path,
-    ];
-  });
-}
-
-/** Pick the photos: the camera or the gallery on a phone, files on a desktop. */
-function ChoosePhotos({
-  label,
-  onChoose,
-}: {
-  label: string;
-  onChoose: (files: FileList | null) => void;
-}) {
-  return (
-    <Card>
-      <p>
-        Take a photo of each paper Take 5, one after another, or choose the
-        photos you have. The AI fills in each card, then you check it beside its
-        photo and save it as written. The photos aren’t kept.
-      </p>
-      <PhotoPicker label={label} multiple onChoose={onChoose} />
-    </Card>
-  );
+function withoutItem(
+  path: string,
+  listPath: string,
+  removed: number,
+): string | null {
+  if (!path.startsWith(`${listPath}.`)) return path;
+  const [index = "", ...rest] = path.slice(listPath.length + 1).split(".");
+  if (!/^\d+$/.test(index)) return path;
+  const at = Number(index);
+  if (at === removed) return null;
+  if (at < removed) return path;
+  return [listPath, String(at - 1), ...rest].join(".");
 }
 
 /** A button that opens the camera or the photos. */

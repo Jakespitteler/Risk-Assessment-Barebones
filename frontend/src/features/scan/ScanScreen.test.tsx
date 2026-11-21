@@ -214,12 +214,14 @@ it("sets a misread answer and rating back to blank, as on the card (P1)", async 
   renderWithApi(<ScanScreen />);
   choosePhotos(1);
   fireEvent.click(
-    await screen.findByRole("button", { name: "Leave blank, as on the card" }),
+    await screen.findByRole("button", {
+      name: "Leave “Have you got the gate keys?” blank, as on the card",
+    }),
   );
   fireEvent.click(
-    screen.getAllByRole("button", {
-      name: "Leave this rating blank, as on the card",
-    })[0] as HTMLElement,
+    screen.getByRole("button", {
+      name: "Leave hazard 1’s rating before controls blank, as on the card",
+    }),
   );
   fireEvent.click(screen.getByRole("button", { name: "Save as written" }));
   await screen.findByText("1 card saved.");
@@ -321,4 +323,73 @@ it("keeps each mark beside its own hazard when one is removed", async () => {
   const hazard = screen.getByRole("heading", { name: "Hazard 1" })
     .parentElement as HTMLElement;
   expect(within(hazard).getByText(UNREADABLE_MARK)).toBeTruthy();
+});
+
+it("takes more photos while a card is being checked, and reads them next", async () => {
+  const calls = stubApi({
+    ...TEMPLATE,
+    "POST /api/scans": { status: 200, body: READ },
+  });
+  renderWithApi(<ScanScreen />);
+  choosePhotos(1);
+  await screen.findByRole("heading", { name: "Check card 1 of 1" });
+  fireEvent.change(screen.getByLabelText("Add more photos"), {
+    target: {
+      files: [new File(["photo"], "next.jpg", { type: "image/jpeg" })],
+    },
+  });
+  expect(
+    await screen.findByRole("heading", { name: "Check card 1 of 2" }),
+  ).toBeTruthy();
+  expect(calls.filter((call) => call === "POST /api/scans")).toHaveLength(2);
+});
+
+it("counts a card as saved when a retry finds it already saved", async () => {
+  stubApi({
+    ...TEMPLATE,
+    "POST /api/scans": { status: 200, body: READ },
+    "POST /api/take5s/paper": {
+      status: 409,
+      body: { detail: "This Take 5 was already saved with different answers." },
+    },
+  });
+  renderWithApi(<ScanScreen />);
+  choosePhotos(1);
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Save as written" }),
+  );
+  expect(await screen.findByText("1 card saved.")).toBeTruthy();
+});
+
+it("keeps a control's mark beside it when an earlier control is removed", async () => {
+  stubApi({
+    ...TEMPLATE,
+    "POST /api/scans": {
+      status: 200,
+      body: {
+        ...READ,
+        draft: {
+          ...READ.draft,
+          hazards: [
+            {
+              ...HAZARD_DRAFT,
+              controls: [
+                { description: "First", kind: "Wear PPE" },
+                { description: "Second", kind: null },
+              ],
+            },
+          ],
+        },
+        unreadable: ["hazards.0.controls.1.kind"],
+      },
+    },
+  });
+  renderWithApi(<ScanScreen />);
+  choosePhotos(1);
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Remove control 1" }),
+  );
+  const control = screen.getByRole("heading", { name: "Control 1" })
+    .parentElement as HTMLElement;
+  expect(within(control).getByText(UNREADABLE_MARK)).toBeTruthy();
 });
