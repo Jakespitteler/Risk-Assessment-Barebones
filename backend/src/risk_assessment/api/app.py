@@ -13,12 +13,14 @@ from risk_assessment.ai.model import LanguageModel, PhotoReadingModel
 from risk_assessment.ai.providers import claude
 from risk_assessment.ai.ranking import AiTake5Ranker
 from risk_assessment.ai.vague_hazard import AiHazardJudge
+from risk_assessment.api.area_routes import create_area_router
 from risk_assessment.api.errors import add_error_handlers
 from risk_assessment.api.ranking_routes import create_ranking_router
 from risk_assessment.api.scan_routes import create_scan_router
 from risk_assessment.api.take5_routes import create_router
 from risk_assessment.domain.take5.ranking import AI_RANKING_TIME_LIMIT_SECONDS
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
+from risk_assessment.services.areas import AreaRiskService
 from risk_assessment.services.card_scanning import CardScanner
 from risk_assessment.services.ports import (
     CardReader,
@@ -121,8 +123,14 @@ def create_app(
     ranking_service = Take5RankingService(
         storage,
         take5_ranker if take5_ranker is not None else build_take5_ranker(app_settings),
+        today_only=app_settings.rank_today_only,
     )
     app.include_router(create_ranking_router(ranking_service))
+    area_service = AreaRiskService(
+        storage,
+        last_30_days_only=app_settings.area_last_30_days_only,
+    )
+    app.include_router(create_area_router(area_service))
     scanner = CardScanner(
         card_reader if card_reader is not None else build_card_reader(app_settings),
         BOOKLET_TEMPLATE,
@@ -134,8 +142,10 @@ def create_app(
 def _show_app_logs() -> None:
     """Show the app's own info lines in the server's log, beside uvicorn's.
 
-    Uvicorn sets up only its own loggers, so without this Python shows the app's
-    warnings and nothing less, and lines such as which model asks would be lost.
+    `start.py` gives uvicorn `backend/dev_logging.json`, which sets this logger up, so
+    this does nothing then. Without it, as in the tests or a server started by hand,
+    Python shows the app's warnings and nothing less, and lines such as which model asks
+    would be lost.
     """
     app_logger: logging.Logger = logging.getLogger("risk_assessment")
     if app_logger.handlers:

@@ -3,8 +3,10 @@
 A Take 5 app for mine-site workers, built by a human with AI coding agents (Claude Code and ChatGPT) working in the
 same repo.
 
-The app is the confidential property of Jake Spitteler. All rights are reserved: nobody may copy, use or share it
-without the owner's written permission. See [LICENSE](LICENSE).
+The repo is public so people can read it, but it is not open source. The app is the property of Jake Spitteler,
+and all rights are reserved: nobody may copy, use or share it without the owner's written permission. See
+[LICENSE](LICENSE). For the same reason, pull requests from outside aren't accepted. To report a security problem,
+see [SECURITY.md](SECURITY.md).
 
 - How agents work here: [AGENTS.md](AGENTS.md)
 - What the app does: [docs/spec.md](docs/spec.md)
@@ -101,6 +103,10 @@ made-up hazards. Photos of paper cards are read by the main model unless a line 
 `TAKE5_AI_SCAN_MODEL=claude-fable-5-2` names another. `uv run test.py backend -m real_ai` runs the two tests
 that call the real AI. Each of these costs a little money; the normal tests and CI never call it.
 
+The ranking page ranks every saved Take 5 while the app is a proof of concept. To rank only today's, add the
+line `TAKE5_RANK_TODAY_ONLY=true` to `backend/.env` and start the app again. Risk by area likewise counts every
+saved Take 5; the line `TAKE5_AREA_LAST_30_DAYS_ONLY=true` makes it count only the last 30 days.
+
 Using VS Code? See [docs/dev-setup.md](docs/dev-setup.md) for the editor set-up and fixes for common problems.
 
 ## Test it
@@ -113,5 +119,7 @@ Every command runs from the repo root:
 - `uv run check.py` runs every check that CI runs, in the same order, and stops at the first failure.
 - `uv run check.py --fix` formats the code, makes the fixes the lint tools can make by themselves, and writes the
   API types again.
+- `uv run check.py --no-front-end` runs every check except the front end's, with no npm install or browser
+  needed. CI uses it for a pull request that changes only Markdown.
 
 The single commands are listed in [AGENTS.md](AGENTS.md#commands).

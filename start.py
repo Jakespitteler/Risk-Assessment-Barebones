@@ -18,8 +18,9 @@ In order, it:
 4. Starts the back end, then the front end, and prints the app's address once it
    answers. Their own status lines, including those that give their own addresses,
    are turned off in their settings: uvicorn's start-up and shutdown lines in
-   `backend/dev_logging.json`, and Vite's address box with `--logLevel warn`. Requests,
-   the app's own lines, warnings and errors still show.
+   `backend/dev_logging.json`, and Vite's address box with `--logLevel warn`. Failed
+   requests, the app's own lines, warnings and errors still show, and browser errors
+   reach this terminal too (see Logging in `docs/architecture.md`).
 5. Restarts the back end itself when a Python file under `backend/src` is saved, rather
    than using uvicorn's `--reload`. On Windows that reloader restarts by sending Ctrl+C,
    which Windows gives to every program in the terminal, so it stopped the whole app. A
@@ -49,8 +50,9 @@ START_COMMAND: str = "uv run start.py"
 
 API_PORT: int = 8000
 APP_PORT: int = 5173
-# `dev_logging.json` is uvicorn's own log settings with its status messages, such as
-# "Uvicorn running on http://127.0.0.1:8000", turned down to warnings only.
+# `dev_logging.json` sets the back end's log lines: one format, uvicorn's status
+# messages, such as "Uvicorn running on http://127.0.0.1:8000", turned down to warnings
+# only, and only failed requests (task 0028).
 BACKEND_COMMAND: list[str] = [
     "uv",
     "run",

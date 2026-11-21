@@ -93,8 +93,8 @@ class ClaudeModel:
             The text of Claude's reply.
 
         Raises:
-            LanguageModelError: When Claude refuses or sends back no text.
-            anthropic.APIError: When the call fails or takes too long.
+            LanguageModelError: When Claude refuses, sends back no text, or the call
+                fails or takes too long (with the `anthropic.APIError` as its cause).
         """
         return self._send(instructions, text, MAX_OUTPUT_TOKENS, None)
 
@@ -110,10 +110,9 @@ class ClaudeModel:
             The text of Claude's reply.
 
         Raises:
-            LanguageModelError: When the photo's type isn't one Claude reads, or
-                Claude refuses or sends back no text.
-            anthropic.APIError: When the call fails or takes longer than
-                `PHOTO_TIME_LIMIT_SECONDS`.
+            LanguageModelError: When the photo's type isn't one Claude reads, Claude
+                refuses or sends back no text, or the call fails or takes longer than
+                `PHOTO_TIME_LIMIT_SECONDS` (with the `anthropic.APIError` as its cause).
         """
         photo_type: PhotoType | None = PHOTO_TYPES.get(media_type)
         if photo_type is None:
@@ -155,8 +154,8 @@ class ClaudeModel:
             The text of Claude's reply.
 
         Raises:
-            LanguageModelError: When Claude refuses or sends back no text.
-            anthropic.APIError: When the call fails or takes too long.
+            LanguageModelError: When Claude refuses, sends back no text, or the call
+                fails or takes too long (with the `anthropic.APIError` as its cause).
         """
         client: anthropic.Anthropic = (
             self._client
@@ -164,13 +163,16 @@ class ClaudeModel:
             else self._client.with_options(timeout=time_limit_seconds)
         )
         user_message: MessageParam = {"role": "user", "content": content}
-        message: Message = client.messages.create(
-            model=self.name,
-            max_tokens=max_tokens,
-            system=instructions,
-            messages=[user_message],
-            output_config={"effort": self._effort},
-        )
+        try:
+            message: Message = client.messages.create(
+                model=self.name,
+                max_tokens=max_tokens,
+                system=instructions,
+                messages=[user_message],
+                output_config={"effort": self._effort},
+            )
+        except anthropic.APIError as error:
+            raise LanguageModelError(f"The call to {self.name} failed.") from error
         _logger.info(
             "%s replied using %d input and %d output tokens.",
             self.name,

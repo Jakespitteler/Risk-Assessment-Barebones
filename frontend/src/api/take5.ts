@@ -27,6 +27,9 @@ export type Take5Summary = Schemas["Take5Summary"];
 export type Take5ListPage = Schemas["Take5ListPage"];
 export type RankedTake5s = Schemas["RankedTake5s"];
 export type RankedTake5Line = Schemas["RankedTake5Line"];
+export type BestTake5Line = Schemas["BestTake5Line"];
+export type RiskByArea = Schemas["RiskByArea"];
+export type AreaRisk = Schemas["AreaRisk"];
 export type Verdict = Schemas["Verdict"];
 export type Challenge = Schemas["Challenge"];
 type FormErrors = Schemas["FormErrors"];
@@ -279,7 +282,7 @@ export function useSavedTake5List() {
 }
 
 /**
- * Every Take 5 started since a moment, worst first, each with why (spec W1 to W7). The
+ * Every Take 5 started since a moment, worst first, each with why, and the best (W1 to W9). The
  * moment is sent with its time zone, so "today" starts at midnight where the phone is.
  */
 export function useRankedTake5s(since: string) {
@@ -294,6 +297,24 @@ export function useRankedTake5s(since: string) {
     // The page says it can take half a minute, so it isn't asked again on its own:
     // a failure shows "Try again", and the list doesn't reorder while it is read.
     retry: false,
+    refetchOnWindowFocus: false,
+    networkMode: NETWORK_MODE,
+  });
+}
+
+/**
+ * Every area with a Take 5 in the last 30 days, hottest first (A1 to A5). Midnight
+ * today where the phone is is sent, and the back end counts 29 days of 24 hours back.
+ */
+export function useRiskByArea(today: string) {
+  return useQuery({
+    queryKey: ["risk-by-area", today],
+    queryFn: () =>
+      request<RiskByArea>(
+        `/api/risk-by-area?today=${encodeURIComponent(today)}`,
+      ),
+    retry: retryOnNetworkError,
+    // The list doesn't reorder while it is read.
     refetchOnWindowFocus: false,
     networkMode: NETWORK_MODE,
   });

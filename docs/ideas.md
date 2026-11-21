@@ -63,6 +63,8 @@ touches what is already built or decided. It only points at things; it decides n
   out in the field fell through the cracks under the previous calibration.
   - Relates to: the matrix is already data handed to the rating rules (F1), and every saved Take 5 keeps a copy
     of the template it was filled in on. "Each company's own Take 5" is in the spec's Planned for later.
+  - Jake, 2026-11-20: older Take 5s could be judged again, for example by the hazard check that task 0037 adds,
+    to see whether anything out in the field breaks a new safety standard.
 - **Compare with past Take 5s and public incidents.** Compare against previous Take 5s in our system, and against
   publicly reported incidents, like those in the WA
   [Safety Regulation System publication search](https://srs.dmp.wa.gov.au/SRS/Public/PublicationSearch?publicationTypeEnum=SbAndSir).
@@ -113,3 +115,94 @@ touches what is already built or decided. It only points at things; it decides n
   confirmed.)
   - Relates to: scanning a filled-in paper card is out of scope for now (see above). Nothing connects to another
     company's system today; the architecture's aim is only that no single tool is hard to replace.
+
+## Added 2026-11-20: every good idea so far, in one place
+
+Jake asked on 2026-11-20 for every good idea we have had to be noted here, including the ones in the original
+[Risk-Assessment](https://github.com/Jakespitteler/Risk-Assessment) app, keeping the proof of concept simple for
+now. Each is judged against the goal at the top of `docs/spec.md`: **make a mine site safer by making every
+Take 5 count**, so the worker really thinks about today's job, and the weak ones are found. An idea that makes
+the app easier to tick through without thinking works against it, however handy.
+
+### Ideas from Jake's threads
+
+- **Tell the worker when theirs was the best of the day.** Praise for a careful Take 5 could make the app worth
+  using, and rewards good work (see "Making it fun" above).
+  - Relates to: task 0036 shows the best of today to whoever looks, but tells no one (D103); there is no sign-in
+    to reach the worker by (D4).
+- **To investigate, each with its own task file:** how the time of year, week and day relate to hazards and
+  incidents (0039); a photo of the job with the hazards circled, to train or test an AI later (0040). Made-up and
+  stock hazards (0037) and a first risk by area (0038) are built.
+- **A real heat map of areas:** a company's fixed list of areas or the phone's position, drawn on a site plan.
+  - Relates to: task 0038 groups typed locations into a ranked list (spec D111, D112); spellings that differ by
+    more than capitals and punctuation are still two areas.
+- **Each company's own Take 5**, built from a photo, Word file or PDF of its blank card, then editable.
+  - Relates to: "Planned for later" in the spec; the matrix and questions are already data (F1).
+- **More than the Take 5:** JHAs, hazard report cards and journey plans, built from the same pieces where they
+  can be.
+- **The company's risk standards as the AI's context.** Whether they fit in the AI's context or need a search
+  index first is still to weigh.
+- **A private AI**, so a company's information stays in house.
+  - Relates to: the AI provider is one adapter behind `LanguageModel` (F6), so another provider is one file.
+- **Feedback on the AI's replies feeds back into it**, so its questions and lines get better.
+
+### Ideas from the original Risk-Assessment app
+
+The original app is a much bigger version of this one. These are the parts worth bringing over one day, roughly
+from the closest fit to the goal.
+
+Helping the worker think:
+
+- **"Your hazards first", then the AI suggests.** Once the worker has written their own hazards, the AI suggests
+  a few common to jobs like this, each with Add and Not here; the worker still rates and controls each one
+  (its issue #75).
+  - Relates to: "own words first" (D1). Suggesting hazards only after the worker's own keeps it.
+- **A "Before you start" list with Done ticks**, and "I've done these: ready to start", recording when the worker
+  ticked them all off.
+- **Prompts up the hierarchy of controls as they type:** PPE-only controls get "could you remove, swap, guard or
+  isolate it?", and "be careful" gets "say what you'll actually do".
+  - Relates to: the thinking rules (T2 to T5) do some of this already.
+- **"Has the job changed?"**: walks the booklet's Think Through Change flowchart and starts a new Take 5 linked to
+  the first.
+- **Similar incidents** on similar work at WA mines, from the regulator's reports, matched on the app's own
+  computer and never sent to the AI.
+- **A critical-risk floor in code:** the rules that matter are enforced by code, whatever the AI says.
+  - Relates to: the verdict is already decided by the rules alone (R5, V1 to V3).
+
+Finding the weak ones and acting on them:
+
+- **A supervisor's "Today" page:** "Don't start yet" Take 5s, who in the crew has done one today, and what waits
+  for their approval.
+  - Relates to: "Today's review" (F8) is a first step that needs no sign-in.
+- **Told when something needs you**, on the home page, by email or in a Teams channel.
+- **An end-of-shift summary** (its issue #83).
+- **Crew feedback on the AI ("Helpful?")**, grouped by the AI into the same problem, and turned into backlog
+  items, with a "What's coming" page for the crew.
+- **Testing the AI against known cases** before a change to its instructions or site notes goes live.
+
+Working on site:
+
+- **Works with no signal:** the form opens offline and the Take 5 sends itself once there is signal; later, an
+  offline answer to the question and a PIN sign-in (its issue #83).
+- **A PDF of each Take 5** to download or print, with a sign-off box.
+- **Scanning:** remove a photo, several photos into one card, and scanning a JHA (its issue #74).
+  - Relates to: task 0033 photographs paper cards.
+- **Start from a job you've done, or one a supervisor starred**, with ratings left blank so they still think.
+  - Relates to: the spec leaves this out on purpose, as copying stops thinking. It would need a way to keep the
+    thought in.
+- **Everything outside the core in its own folder**, so each can be turned off (its issue #79), and **AI where it
+  helps, with a rules fallback for every AI job** (its issue #77).
+  - Relates to: both match the principles above and how this app is already built.
+
+Beyond the Take 5 (from its issues):
+
+- A JHA the crew write themselves, with questions at each step and the AI listing what may be missing, never
+  drafting it; signing on each phone.
+- Journey plans with "I've left" and "I've arrived" taps and an alert when someone is overdue.
+- Hazard and near-miss reports from the phone, reviewed by a supervisor and HSE.
+- A company's own risk table (#62), and filling in its own PDF or Word form (#58); company questions on the JHA
+  and journey plan (#73).
+- Shift handover of open jobs and hazards (#57), fitness for work and fatigue at the start of a shift (#56),
+  critical control checks in the field (#55), a warning when a task needs a ticket the person doesn't hold (#54),
+  plant and vehicle pre-start checks (#53), isolating and locking out plant (#51), and permits linked to the Take 5 and
+  JHA (#50).

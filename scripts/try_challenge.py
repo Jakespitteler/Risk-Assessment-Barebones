@@ -38,6 +38,7 @@ from risk_assessment.domain.take5.draft import (
     check_draft,
 )
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
+from risk_assessment.services.ai_failures import ai_failure_kind
 from risk_assessment.settings import Settings
 
 # US dollars per million input and output tokens, from Anthropic's price list.
@@ -270,7 +271,7 @@ def measure(model_name: str, api_key: str, counter: TokenCounter) -> list[str]:
         try:
             question: str = asker.ask(text).text
         except Exception as error:  # Show every failure in the table.
-            question = f"(failed: {type(error).__name__})"
+            question = f"(failed: {ai_failure_kind(error)})"
         seconds: float = time.perf_counter() - started
         cost: str = cost_in_cents(counter, prices)
         passes: str = "yes" if checked_question(question) else "no"

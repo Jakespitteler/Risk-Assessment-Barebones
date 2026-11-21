@@ -81,8 +81,8 @@ export async function answerThinkThrough(
 }
 
 /** List one hazard, then answer every hazard question No. */
-export async function fillOneHazard(page: Page) {
-  await page.getByLabel("Hazard 1", { exact: true }).fill(HAZARD);
+export async function fillOneHazard(page: Page, hazard = HAZARD) {
+  await page.getByLabel("Hazard 1", { exact: true }).fill(hazard);
   await next(page);
   await answerAll(page, CHECK, "No");
   await next(page);
@@ -116,11 +116,12 @@ export async function controlledDraft(
   before: [string, string] = ["Possible", "Minor"],
   after: [string, string] = ["Unlikely", "Minor"],
   thinkAnswers: Record<string, string> = {},
+  hazard = HAZARD,
 ) {
   await page.goto("/");
   await fillJob(page);
   await answerThinkThrough(page, thinkAnswers);
-  await fillOneHazard(page);
+  await fillOneHazard(page, hazard);
   await pick(page, ...before);
   await next(page);
   await addControl(page);

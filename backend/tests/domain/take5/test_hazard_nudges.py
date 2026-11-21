@@ -18,9 +18,16 @@ from risk_assessment.domain.take5.hazard_nudges import (
     hazard_verdict,
     hazards_to_judge,
     specific_hazard_nudges,
+    with_kept_flags,
 )
+from risk_assessment.domain.take5.take5 import Hazard, HazardFlag
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE, Take5Template
-from tests.samples import sample_answers, sample_draft, sample_hazard_draft
+from tests.samples import (
+    sample_answers,
+    sample_draft,
+    sample_hazard,
+    sample_hazard_draft,
+)
 
 VEHICLES_NUDGE: Nudge = Nudge(
     path="hazards.0.description",
@@ -29,6 +36,7 @@ VEHICLES_NUDGE: Nudge = Nudge(
         'For example: "Hit by a haul truck at the crib hut crossing"'
     ),
     question_id="vehicles",
+    flag=HazardFlag.VAGUE,
 )
 
 
@@ -170,7 +178,7 @@ def test_example_79_spaces_capitals_and_a_full_stop_dont_matter(
     ["It depends on the site.", "", "   ", "vague or specific", "Vague!"],
 )
 def test_example_81_any_other_reply_is_unusable(reply: str) -> None:
-    """T6: a reply that isn't one of the two words leaves the word rule to decide."""
+    """T6: a reply that isn't one of the four words leaves the word rule to decide."""
     assert hazard_verdict(reply) is None
 
 
@@ -241,3 +249,79 @@ def test_example_87_only_a_hazard_on_a_yes_with_words_is_judged() -> None:
     assert hazards_to_judge(sample_draft(unlinked), BOOKLET_TEMPLATE) == ()
     assert hazards_to_judge(_linked_to_vehicles("   "), BOOKLET_TEMPLATE) == ()
     assert hazards_to_judge(_linked_to_vehicles("Crusher dust"), no_minimum) == ()
+
+
+STOCK_HAZARD: str = "Slips, trips and falls in the work area"
+
+
+def test_example_111_the_ai_can_call_a_long_hazard_stock() -> None:
+    """T7: stock wording that fits any job gets its own nudge, however long."""
+    draft: Take5Draft = _linked_to_vehicles(STOCK_HAZARD)
+
+    assert specific_hazard_nudges(
+        draft,
+        BOOKLET_TEMPLATE,
+        {0: HazardVerdict.STOCK},
+    ) == (
+        Nudge(
+            path="hazards.0.description",
+            message=(
+                "This could be written about any job. What is it about this job "
+                "that could hurt you?"
+            ),
+            question_id="vehicles",
+            flag=HazardFlag.STOCK,
+        ),
+    )
+
+
+def test_example_112_the_ai_can_say_a_hazard_is_unfit_for_the_job() -> None:
+    """T7: a hazard that can't happen on this job is asked about."""
+    draft: Take5Draft = _linked_to_vehicles("Drowning in the tailings dam")
+
+    nudges: tuple[Nudge, ...] = specific_hazard_nudges(
+        draft,
+        BOOKLET_TEMPLATE,
+        {0: HazardVerdict.UNFIT},
+    )
+
+    assert [(nudge.flag, nudge.message) for nudge in nudges] == [
+        (
+            HazardFlag.UNFIT,
+            "This doesn't seem to fit the job. Is it the right hazard, and is it here?",
+        ),
+    ]
+
+
+def test_example_113_with_no_ai_stock_wording_of_eight_words_passes() -> None:
+    """T7: only an AI can call a hazard stock or unfit; the word rule can't."""
+    draft: Take5Draft = _linked_to_vehicles(STOCK_HAZARD)
+
+    assert specific_hazard_nudges(draft, BOOKLET_TEMPLATE, {}) == ()
+
+
+@pytest.mark.parametrize(
+    ("reply", "verdict"),
+    [("stock", HazardVerdict.STOCK), (" Unfit.", HazardVerdict.UNFIT)],
+)
+def test_the_ai_may_also_reply_stock_or_unfit(
+    reply: str,
+    verdict: HazardVerdict,
+) -> None:
+    """T7: the reply's one word can also be stock or unfit."""
+    assert hazard_verdict(reply) is verdict
+
+
+def test_example_114_a_hazard_still_nudged_at_submit_is_kept_flagged() -> None:
+    """T7: each hazard keeps the flag it was submitted with; the others keep none."""
+    draft: Take5Draft = _linked_to_vehicles(STOCK_HAZARD)
+    nudges: tuple[Nudge, ...] = specific_hazard_nudges(
+        draft,
+        BOOKLET_TEMPLATE,
+        {0: HazardVerdict.STOCK},
+    )
+    hazard: Hazard = sample_hazard()
+
+    flagged: tuple[Hazard, ...] = with_kept_flags((hazard, hazard), nudges)
+
+    assert [each.kept_flag for each in flagged] == [HazardFlag.STOCK, None]

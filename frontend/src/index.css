@@ -49,6 +49,9 @@
   /* Something right: "Good to go", "Fixed". */
   --color-success: var(--color-green-800);
   --color-success-fill: var(--color-green-800);
+  --color-success-line: var(--color-green-700);
+  --color-success-soft: var(--color-green-50);
+  --color-on-success-soft: var(--color-green-950);
 
   /* Text on a danger or success fill. */
   --color-on-fill: var(--color-white);
@@ -95,6 +98,9 @@
   --color-on-danger-soft: var(--color-red-100);
 
   --color-success: var(--color-green-300);
+  --color-success-line: var(--color-green-500);
+  --color-success-soft: var(--color-green-950);
+  --color-on-success-soft: var(--color-green-100);
 
   --color-caution-line: var(--color-amber-500);
   --color-caution-soft: var(--color-amber-950);

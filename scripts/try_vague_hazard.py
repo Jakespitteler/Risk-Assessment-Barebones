@@ -5,7 +5,7 @@
 # [tool.uv.sources]
 # risk-assessment = { path = "../backend", editable = true }
 # ///
-"""Ask the real AI whether twelve made-up hazards are vague, and measure it (spec T6).
+"""Ask the real AI to judge twelve made-up hazards, and measure it (spec T6, T7).
 
 It reads the key and the model from `backend/.env` or the environment, as the app
 does (`TAKE5_AI_KEY`, `TAKE5_AI_HAZARD_MODEL`). Each call costs real money: twelve
@@ -39,6 +39,7 @@ from risk_assessment.domain.take5.hazard_nudges import (
     specific_hazard_nudges,
 )
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
+from risk_assessment.services.ai_failures import ai_failure_kind
 from risk_assessment.settings import Settings
 
 # Made up, every one: a hazard, the question it is linked to, the job, where it is,
@@ -105,14 +106,14 @@ SAMPLE_HAZARDS: tuple[tuple[str, str, str, str, HazardVerdict], ...] = (
         "other",
         "Clean up the spillage under the conveyor",
         "Conveyor CV03",
-        HazardVerdict.VAGUE,
+        HazardVerdict.STOCK,
     ),
     (
-        "Heat",
+        "Drowning in the tailings dam",
         "other",
         "Weld new teeth on the loader bucket",
         "Outside the heavy vehicle workshop",
-        HazardVerdict.VAGUE,
+        HazardVerdict.UNFIT,
     ),
     (
         "There are some hazards around here today",
@@ -126,7 +127,7 @@ SAMPLE_HAZARDS: tuple[tuple[str, str, str, str, HazardVerdict], ...] = (
         "nearby_activity",
         "Replace the light over the crib hut door",
         "North pit crib hut",
-        HazardVerdict.VAGUE,
+        HazardVerdict.STOCK,
     ),
 )
 
@@ -168,7 +169,7 @@ def word_rule(draft: Take5Draft) -> str:
         draft: A draft with one linked hazard.
 
     Returns:
-        "vague" or "specific".
+        "vague" or "specific": only an AI can say stock or unfit (T7).
     """
     nudged: bool = bool(specific_hazard_nudges(draft, BOOKLET_TEMPLATE, {}))
     return HazardVerdict.VAGUE.value if nudged else HazardVerdict.SPECIFIC.value
@@ -201,7 +202,7 @@ def measure(model_name: str, api_key: str, counter: TokenCounter) -> list[str]:
         try:
             reply: str = judge.judge(hazard_judgement_text(judged[0], job, location))
         except Exception as error:  # Show every failure in the table.
-            reply = f"(failed: {type(error).__name__})"
+            reply = f"(failed: {ai_failure_kind(error)})"
         seconds: float = time.perf_counter() - started
         verdict: HazardVerdict | None = hazard_verdict(reply)
         says: str = verdict.value if verdict else f"unusable: {reply.strip()}"

@@ -21,7 +21,12 @@ from risk_assessment.domain.take5.hazard_nudges import (
     hazards_to_judge,
     specific_hazard_nudges,
 )
+from risk_assessment.domain.take5.take5 import HazardFlag
 from risk_assessment.domain.take5.template import Take5Template
+from risk_assessment.services.ai_failures import (
+    ai_failure_kind,
+    is_expected_ai_failure,
+)
 from risk_assessment.services.ports import HazardJudge
 
 _logger: logging.Logger = logging.getLogger(__name__)
@@ -74,8 +79,66 @@ class RememberedVerdicts:
                 self._verdicts.popitem(last=False)
 
 
+class RememberedFlags:
+    """The flag last shown on each hazard's words, until the server restarts.
+
+    Safe to use from several threads at once.
+    """
+
+    def __init__(self, limit: int = REMEMBERED_VERDICTS_LIMIT) -> None:
+        """Start with nothing remembered.
+
+        Args:
+            limit: The most flags kept. Past it, the oldest is forgotten first.
+        """
+        self._limit: int = limit
+        self._flags: OrderedDict[str, HazardFlag] = OrderedDict()
+        self._lock: Lock = Lock()
+
+    def get(self, hazard_text: str) -> HazardFlag | None:
+        """Look up the flag last shown on this exact text.
+
+        Args:
+            hazard_text: What the AI would be given about the hazard.
+
+        Returns:
+            The flag, or None when none was shown on this text.
+        """
+        with self._lock:
+            return self._flags.get(hazard_text)
+
+    def remember(self, hazard_text: str, flag: HazardFlag) -> None:
+        """Note a flag shown, forgetting the oldest one if there are too many.
+
+        Args:
+            hazard_text: What the AI would be given about the hazard.
+            flag: The flag the worker was shown.
+        """
+        with self._lock:
+            self._flags[hazard_text] = flag
+            self._flags.move_to_end(hazard_text)
+            while len(self._flags) > self._limit:
+                self._flags.popitem(last=False)
+
+
+def _shown_key(texts: dict[int, str], nudge: Nudge) -> str:
+    """Find the judgement text of the hazard a nudge is on.
+
+    Args:
+        texts: The text for each judged hazard, by its place on the list.
+        nudge: A nudge on one of them, at `hazards.<index>.description`.
+
+    Returns:
+        That hazard's text.
+    """
+    return texts[int(nudge.path.split(".")[1])]
+
+
 class HazardNudger:
-    """Nudge each vague hazard linked to a Yes, judged by an AI or the word rule."""
+    """Nudge each vague, stock or unfit hazard linked to a Yes (T6, T7).
+
+    An AI judges when one is set up; the word rule decides otherwise.
+    """
 
     def __init__(
         self,
@@ -96,6 +159,9 @@ class HazardNudger:
         self._judge: HazardJudge | None = judge
         self._time_limit_seconds: float = time_limit_seconds
         self._remembered: RememberedVerdicts = RememberedVerdicts()
+        # The flag last shown on each hazard's words, so a submit counts only what
+        # the worker saw (task 0037). The word rule's flags are noted here too.
+        self._shown: RememberedFlags = RememberedFlags()
         # Hazards with the AI now, so a second check of the same words waits for the
         # same answer instead of paying for another.
         self._asking: dict[str, Future[HazardVerdict | None]] = {}
@@ -111,22 +177,81 @@ class HazardNudger:
         return self._judge is not None
 
     def nudges(self, draft: Take5Draft) -> tuple[Nudge, ...]:
-        """Find every vague hazard linked to a Yes, and say what to do about it.
+        """Find every flagged hazard linked to a Yes, and say what to do about it.
+
+        Each nudge returned is noted as shown, so submitting can tell which flags the
+        worker saw and kept (task 0037).
 
         Args:
             draft: The worker's answers so far. The worker's name is never sent to the
                 AI: only each hazard, its question, the job and the location are.
 
         Returns:
-            One nudge for each vague hazard, in the order of the list.
+            One nudge for each vague, stock or unfit hazard, in the order of the list.
         """
-        texts: dict[int, str] = {
-            hazard.index: hazard_judgement_text(hazard, draft.job, draft.location)
-            for hazard in hazards_to_judge(draft, self._template)
-        }
+        texts: dict[int, str] = self._judgement_texts(draft)
         verdicts: dict[str, HazardVerdict] = self._ai_verdicts(
             frozenset(texts.values()),
         )
+        nudges: tuple[Nudge, ...] = self._nudges_from(draft, texts, verdicts)
+        for nudge in nudges:
+            self._shown.remember(_shown_key(texts, nudge), nudge.flag)
+        return nudges
+
+    def kept_nudges(self, draft: Take5Draft) -> tuple[Nudge, ...]:
+        """Find the nudges the worker was shown and kept, asking the AI nothing new.
+
+        Words the worker kept are never sent again (D37), so only the AI's remembered
+        verdicts and the word rule decide. A nudge counts only when the worker was
+        shown the same flag on the same words: a verdict that came too late to show,
+        or a hazard never checked, is never saved as kept.
+
+        Args:
+            draft: The worker's answers, as submitted.
+
+        Returns:
+            Each nudge still on the draft that the worker saw, in the order of the list.
+        """
+        texts: dict[int, str] = self._judgement_texts(draft)
+        verdicts: dict[str, HazardVerdict] = self._remembered_verdicts(
+            frozenset(texts.values()),
+        )
+        return tuple(
+            nudge
+            for nudge in self._nudges_from(draft, texts, verdicts)
+            if self._shown.get(_shown_key(texts, nudge)) is nudge.flag
+        )
+
+    def _judgement_texts(self, draft: Take5Draft) -> dict[int, str]:
+        """Write what the AI would be given about each hazard T6 judges.
+
+        Args:
+            draft: The worker's answers so far.
+
+        Returns:
+            The text for each judged hazard, by its place on the list.
+        """
+        return {
+            hazard.index: hazard_judgement_text(hazard, draft.job, draft.location)
+            for hazard in hazards_to_judge(draft, self._template)
+        }
+
+    def _nudges_from(
+        self,
+        draft: Take5Draft,
+        texts: dict[int, str],
+        verdicts: dict[str, HazardVerdict],
+    ) -> tuple[Nudge, ...]:
+        """Nudge each flagged hazard, by the AI's verdict where there is one.
+
+        Args:
+            draft: The worker's answers so far.
+            texts: The text for each judged hazard, by its place on the list.
+            verdicts: The AI's verdict on each text it judged.
+
+        Returns:
+            One nudge for each flagged hazard, in the order of the list.
+        """
         return specific_hazard_nudges(
             draft,
             self._template,
@@ -136,6 +261,24 @@ class HazardNudger:
                 if text in verdicts
             },
         )
+
+    def _remembered_verdicts(
+        self,
+        texts: frozenset[str],
+    ) -> dict[str, HazardVerdict]:
+        """Get the AI's remembered verdict on each text, asking it nothing new.
+
+        Args:
+            texts: What the AI would be given about each hazard.
+
+        Returns:
+            The verdict on each text the AI has already judged.
+        """
+        return {
+            text: verdict
+            for text in texts
+            if (verdict := self._remembered.get(text)) is not None
+        }
 
     def _ai_verdicts(self, texts: frozenset[str]) -> dict[str, HazardVerdict]:
         """Get the AI's verdict on each text: remembered, or asked for now.
@@ -222,16 +365,17 @@ class HazardNudger:
         """
         try:
             verdict: HazardVerdict | None = hazard_verdict(judge.judge(hazard_text))
-        except Exception:  # Any AI failure at all means the word rule decides.
+        except Exception as error:  # Any AI failure at all means the word rule decides.
             _logger.warning(
-                "The AI could not judge a hazard, so the word rule decided.",
-                exc_info=True,
+                "The AI could not judge a hazard (%s), so the word rule decided.",
+                ai_failure_kind(error),
+                exc_info=not is_expected_ai_failure(error),
             )
             verdict = None
         else:
             if verdict is None:
                 _logger.warning(
-                    "The AI replied with neither word, so the word rule decided.",
+                    "The AI replied with none of its words, so the word rule decided.",
                 )
             else:
                 self._remembered.remember(hazard_text, verdict)

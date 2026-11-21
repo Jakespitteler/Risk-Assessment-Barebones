@@ -5,6 +5,8 @@ module.exports = function shouldReview({ eventName, payload }) {
   if (!["opened", "synchronize", "ready_for_review", "reopened"].includes(payload.action)) return false;
   if (!pr.head.repo || pr.head.repo.full_name !== payload.repository.full_name) return false;
   if (pr.head.ref === payload.repository.default_branch) return false;
+  // Dependabot's PRs get no secrets, so a review could only fail. CI still checks them.
+  if (pr.user?.login === "dependabot[bot]") return false;
   // Only skip the reviewer's pushes, not PRs authored by Claude elsewhere.
   return !(payload.action === "synchronize" && payload.sender.login === "claude[bot]");
 };

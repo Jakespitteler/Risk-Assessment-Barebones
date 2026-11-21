@@ -2,6 +2,90 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-21: Risk by area counts every saved Take 5 while the app is a proof of concept
+
+- Decision: the risk-by-area page counts every saved Take 5 by default, and says "in every saved Take 5". A
+  setting, `TAKE5_AREA_LAST_30_DAYS_ONLY=true` in `backend/.env`, counts only the last 30 days again, and the
+  page then says "in the last 30 days" by itself, because the back end sends which one it counted. The 30-day
+  code is unchanged (spec A2, D119).
+- Why: Jake asked on 2026-11-21 for no time limit in the proof of concept, shown in the page's words, with the
+  30 days kept for later and the words changing back on their own.
+- Not chosen: a switch on the page (more to build, and the front end would hold a rule); keeping the 30 days.
+- Decided by: human.
+
+## 2026-11-21: Rank every saved Take 5 while the app is a proof of concept
+
+- Decision: the ranking page ranks every saved Take 5 by default, and says "Review of all saved". A setting,
+  `TAKE5_RANK_TODAY_ONLY=true` in `backend/.env`, ranks only today's again. The by-day code is unchanged (spec W7,
+  D118).
+- Why: Jake asked on 2026-11-21 for a setting to rank all saved Take 5s, since a proof of concept has few Take 5s
+  a day, while keeping the by-day ranking for later.
+- Not chosen: a switch on the page (more to build, and the front end would hold a rule); today only.
+- Decided by: human.
+
+## 2026-11-21: The repo goes public, still All rights reserved (task 0042)
+
+- Decision: Jake makes the repo public. The licence stays All rights reserved in his name, without the word
+  "confidential". Workflows that hold a secret or can write only start for the repo's own people: `claude.yml`
+  checks the commenter's association, and the agent review skips forks and Dependabot. Every action is pinned to a
+  commit SHA, kept current by Dependabot. `SECURITY.md` asks for private reports.
+- Why: Jake decided on 2026-11-21. On a public repo anyone can comment or open a PR, and a moved action tag could
+  run someone else's code with the API key. Public code can't be called confidential.
+- Not chosen: an open-source licence (Jake owns the app and wants it not copied); rewriting history to remove old
+  commit emails (nothing secret was found, and it would break every open PR).
+- Decided by: human (going public), Claude (the hardening).
+
+## 2026-11-21: CI skips the front end for Markdown-only pull requests, and waits for drafts (task 0041)
+
+- Decision: a pull request that changes only Markdown or the spelling and Markdown settings runs
+  `uv run check.py --no-front-end` (Markdown, spelling and the whole back end) instead of every check. CI waits
+  until a draft is marked ready. Agent review's gate job no longer starts a runner for a draft or a reviewer push.
+- Why: the browser tests and their install are about 9 of CI's 10 minutes, and can't fail on a Markdown change.
+  Of 1,736 billed minutes from 2026-11-13 to 2026-11-21, about 230 went on Markdown-only runs and skipped
+  reviews. Jake asked to cut the waste on 2026-11-21.
+- Not chosen: skipping the whole workflow with `paths-ignore` (a required check would then never report); a
+  third-party changed-files action (a new dependency for one `git diff`); fewer dark-mode browser tests (drops a
+  check, so Jake's call).
+- Decided by: proposed by claude; the human approves it by merging task 0041's pull request.
+
+## 2026-11-21: Risk by area, a ranked list before a map (task 0038)
+
+- Decision: a "Risk by area" page groups the last 30 days of Take 5s by where the job is, as typed, ignoring
+  capitals, spaces and punctuation. Areas are ranked by how many Take 5s had a hazard needing a JHA before
+  controls, then "Don't start yet", then thought gaps, and each shows its most common Yes answers (spec A1 to A5,
+  D111 to D117). No AI, no saved data, no data model change.
+- Why: a safety person needs to know where to walk first. The typed location is already saved, so this works on
+  every Take 5 so far. A JHA-needing hazard is a threshold the site already uses, set on each card. Jake asked on
+  2026-11-21 to go with every recommendation.
+- Not chosen: a fixed list of areas, the phone's GPS or AI grouping (each changes the data model or adds cost);
+  a drawn map on a site plan (needs plans and coordinates); the sum of scores (favours busy areas).
+- Decided by: human.
+
+## 2026-11-20: Push back on stock and made-up hazards, and count what is kept (task 0037)
+
+- Decision: the hazard check's AI can also call a hazard linked to a Yes *stock* (fits any job) or *unfit* (can't
+  happen on this job), and the nudge says so in the app's own words. The worker is never stopped. A hazard still
+  flagged when the Take 5 is submitted is saved with its flag, a new `kept_flag` on each hazard, and Today's review
+  counts it as a thought gap (spec T7, W10, D105 to D110). Submitting asks the AI nothing new.
+- Why: stock wording passes the word rule however little thought it shows, and a refusal on site would block a
+  worker whenever the AI is wrong. Jake took every recommendation on 2026-11-20, including the data model change.
+- Not chosen: refusing until reworded; a fixed list of stock phrases; spotting a hazard copied from the worker's
+  last Take 5 (needs sign-in); judging older Take 5s again (in `docs/ideas.md`).
+- Decided by: human.
+
+## 2026-11-20: The best Take 5 of the day, beside the worst (task 0036)
+
+- Decision: the ranking page, renamed "Today's review", shows the best Take 5 above the worst-first list.
+  The rules shortlist up to 5 finished Take 5s with no gap from W2 to W4; a rushed one can still be best, as
+  good answers are good however quick. An AI picks one and says what was good, never seeing names, checked as the
+  worst's lines are, with the rules' first pick when it fails. The card shows how long it took beside the day's
+  median time. Nothing is saved; it is remembered with the ranking (spec D98 to D104, W8, W9). Telling the worker
+  waits for later, in `docs/ideas.md`.
+- Why: a good example to point at, not only things to fix, and how long a good Take 5 takes. Jake took every
+  recommendation on 2026-11-20 except that rushed ones count, and picked the page's new name, "Today's review", from four.
+- Not chosen: the rules alone (can't tell specific answers from long stock wording); its own page.
+- Decided by: human.
+
 ## 2026-11-20: Reading a photo of a paper card (task 0033, part 1)
 
 - Decision: `POST /api/scans` reads one photo into a card for a person to check, and saves nothing. A new
@@ -38,6 +122,25 @@ Newest first. One short entry per non-obvious decision.
   generic or copied answers. Jake took every recommended answer on 2026-11-20.
 - Not chosen: the AI ordering them all (cost, and nothing to fall back on); saving rankings (a data model change).
 - Decided by: human.
+
+## 2026-11-20: Errors obvious in the terminal that runs the app (task 0028)
+
+- Decision: Browser crashes, `console.error` and `console.warn` print in the terminal through Vite's own
+  `server.forwardConsole`. The back end's lines share one format through `backend/dev_logging.json`, with no
+  "back end" or "front end" label. A handled AI failure logs one line naming its kind, with no trace; a bug in a
+  route logs one line naming the request, then its trace. Only failed requests print, through a small log
+  filter (`api/request_log.py`). No log file. While the back end isn't answering, Vite prints one short line per
+  failed request instead of a proxy error and stack, through a small custom logger.
+- Why: Jake's answers of 2026-11-19 and 2026-11-20: "it should always be obvious from a glance what/where is
+  going wrong". Labels would have brought back the output pipe that task 0029 removed for being complicated.
+- How: a custom logger makes Vite ignore the command line's `--logLevel` and `clearScreen`, so the logger reads
+  the level from the command line itself and never clears the screen. Only a time-out or an `AiReplyError` counts
+  as an expected AI failure; anything else while asking the AI is a bug and keeps its trace. So every AI adapter
+  wraps its library's errors in `LanguageModelError` (a kind of `AiReplyError`), keeping each as the cause; the
+  Claude adapter now does.
+- Not chosen: a plugin of our own or `vite-plugin-terminal` for browser errors; labels on each line; a stack trace
+  for every AI failure; two quiet 422s; a log file.
+- Decided by: human (the behaviour), agent (how).
 
 ## 2026-11-20: `start.py` restarts the back end itself (task 0034)
 
