@@ -648,7 +648,12 @@ it("“It’s on my list” links a Yes to the hazard picked, and it stays linke
 const NUDGE =
   'Make it specific: say what could hurt you, and where. For example: "Bitten by the guard dog at the side gate"';
 const NUDGES = [
-  { path: "hazards.0.description", message: NUDGE, question_id: "dogs" },
+  {
+    path: "hazards.0.description",
+    message: NUDGE,
+    question_id: "dogs",
+    flag: "vague",
+  },
 ];
 const NUDGED = { status: 200, body: NUDGES };
 const DOG: typeof HAZARD_DRAFT = {
@@ -666,6 +671,10 @@ it("nudges a short hazard linked to a Yes, and keeping it stops the nudge for go
   stubApi({ "POST /api/take5s/nudges": NUDGED });
   const beforeReload = renderWithApi(<FormAt start={{ page: "check" }} />);
   expect(await screen.findByText(NUDGE)).toBeTruthy();
+  // T7: the worker is told that keeping it shows in today's review.
+  expect(
+    screen.getByText("If you keep it as it is, it shows in today’s review."),
+  ).toBeTruthy();
   expect(screen.getByLabelText<HTMLTextAreaElement>("Hazard 1").value).toBe(
     "Dog",
   );

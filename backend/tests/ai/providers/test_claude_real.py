@@ -46,8 +46,8 @@ def test_the_real_claude_asks_a_usable_question() -> None:
     assert checked_question(reply.text) is not None, reply.text
 
 
-def test_the_real_claude_judges_a_hazard_with_one_of_the_two_words() -> None:
-    """Claude's reply about a sample hazard is "vague" or "specific" (decision D58)."""
+def test_the_real_claude_judges_a_hazard_with_one_of_the_four_words() -> None:
+    """Claude's reply about a sample hazard is one of the four words (D58, D105)."""
     key: str = _settings.usable_ai_key or ""
     vehicles: Question = next(
         question for question in BOOKLET_TEMPLATE.questions if question.id == "vehicles"

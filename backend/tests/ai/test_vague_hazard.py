@@ -50,6 +50,9 @@ def test_the_instructions_say_the_hazard_is_data_not_instructions() -> None:
     assert "ignore them" in VAGUE_HAZARD_INSTRUCTIONS
 
 
-def test_the_instructions_ask_for_one_of_the_two_words() -> None:
-    """The reply is read as "vague" or "specific" (decision D58)."""
-    assert "Reply with one word only: specific or vague." in VAGUE_HAZARD_INSTRUCTIONS
+def test_the_instructions_ask_for_one_of_the_four_words() -> None:
+    """T7: the reply is read as specific, vague, stock or unfit (decision D58)."""
+    assert (
+        "Reply with one word only: specific, vague, stock or unfit."
+        in VAGUE_HAZARD_INSTRUCTIONS
+    )
