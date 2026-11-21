@@ -3,7 +3,7 @@ id: 0033
 title: Photograph paper Take 5 cards into saved Take 5s, then rank the batch
 status: in-progress
 owner: claude
-branch: claude/0033-photo-reading (#71), claude/0033-reading-the-reply (#72), claude/0033-scan-paper-cards (#68), claude/0033-paper-cards-rules (#82), claude/0033-save-paper-cards (#83), claude/0033-scan-page (part 3a)
+branch: claude/0033-photo-reading (#71), claude/0033-reading-the-reply (#72), claude/0033-scan-paper-cards (#68), claude/0033-paper-cards-rules (#82), claude/0033-save-paper-cards (#83), claude/0033-scan-page (#84), claude/0033-scan-ranking (part 3b)
 ---
 
 ## Goal
@@ -113,8 +113,8 @@ Part 2, saving (part 2a, the rules, and part 2b, the endpoints):
 
 Part 3, the page (last pull request):
 
-- [ ] One page takes many photos, reads them, then shows each card beside its photo to check and save, then the
-  batch ranked worst first; designed for a desktop as well as a phone. (Part 3a: everything but the ranking.)
+- [x] One page takes many photos, reads them, then shows each card beside its photo to check and save, then the
+  batch ranked worst first; designed for a desktop as well as a phone (part 3a, then the ranking in part 3b).
 - [x] The page shrinks each photo before sending it (to about 2576 px on the long edge, the most Claude reads), so
   a big phone photo is neither refused by the 7 MB limit nor by Claude's 8000 px limit, and sends faster on a
   site's mobile signal.

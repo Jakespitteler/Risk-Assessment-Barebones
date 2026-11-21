@@ -359,3 +359,22 @@ export function useSavePaperTake5() {
     },
   });
 }
+
+/**
+ * Just these saved Take 5s, worst first, each with why, such as a scanned batch of paper
+ * cards (spec F10). Asked once; a failure shows "Try again", as Today's review does.
+ */
+export function useRankedBatch(ids: string[]) {
+  return useQuery({
+    queryKey: ["ranked-batch", ids],
+    queryFn: () =>
+      request<RankedTake5s>(
+        "/api/ranked-take5s/batch",
+        { ids },
+        RANKING_TIMEOUT_MS,
+      ),
+    retry: false,
+    refetchOnWindowFocus: false,
+    networkMode: NETWORK_MODE,
+  });
+}

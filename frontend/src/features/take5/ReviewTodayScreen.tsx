@@ -1,60 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import type { BestTake5Line, RankedTake5Line } from "../../api/take5";
+import type { BestTake5Line } from "../../api/take5";
 import { useRankedTake5s } from "../../api/take5";
 import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
 import { Screen } from "../../components/Screen";
-import { formatDateTime } from "./formatDateTime";
+import { RankedList } from "./RankedList";
 import { SavedListLink } from "./SavedListLink";
 import { VerdictTag } from "./VerdictTag";
 
 const HEADING = "text-3xl font-extrabold focus:outline-none";
-// The worst few show first; the rest wait for "Show all" (decision D92).
-const FIRST_SHOWN = 5;
 
 /** Midnight today where the phone is, as a moment the back end can compare (W7). */
 function midnightToday(): string {
   const midnight = new Date();
   midnight.setHours(0, 0, 0, 0);
   return midnight.toISOString();
-}
-
-/** One ranked Take 5: its place, verdict, job, worker, time and why. The card is the link. */
-function RankedItem({
-  take5,
-  place,
-}: {
-  take5: RankedTake5Line;
-  place: number;
-}) {
-  return (
-    <li>
-      <a
-        href={`/take5s/${take5.id}`}
-        className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-4 [overflow-wrap:anywhere] hover:bg-surface-subtle focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus"
-      >
-        <span className="flex items-center justify-between gap-2">
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="text-xl font-extrabold">{place}.</span>
-            <VerdictTag canStart={take5.can_start} />
-          </span>
-          <span aria-hidden="true" className="text-3xl leading-none">
-            ›
-          </span>
-        </span>
-        <span className="line-clamp-2 text-lg font-bold">{take5.job}</span>
-        <span className="rounded-lg border-l-4 border-caution-line bg-caution-soft px-3 py-2 text-on-caution-soft">
-          {take5.line}
-        </span>
-        <span className="flex flex-col">
-          <span>{take5.worker_name}</span>
-          <time dateTime={take5.created_at} className="text-ink-muted">
-            {formatDateTime(take5.created_at)}
-          </time>
-        </span>
-      </a>
-    </li>
-  );
 }
 
 /** "Took 9 minutes. Today's typical Take 5 took 3 minutes." (spec W9). */
@@ -132,9 +92,7 @@ function BestCard({
 export function ReviewTodayScreen() {
   const [since] = useState(midnightToday);
   const ranking = useRankedTake5s(since);
-  const [showAll, setShowAll] = useState(false);
   const take5s = ranking.data?.take5s ?? [];
-  const shownTake5s = showAll ? take5s : take5s.slice(0, FIRST_SHOWN);
   const byAi =
     take5s.some((take5) => take5.ranked_by_ai) ||
     ranking.data?.best?.picked_by_ai === true;
@@ -202,23 +160,7 @@ export function ReviewTodayScreen() {
                 <h2 className="text-2xl font-extrabold">Worst first</h2>
               </>
             )}
-            {take5s.length > 0 && (
-              <ol className="flex flex-col gap-3">
-                {shownTake5s.map((take5, index) => (
-                  <RankedItem key={take5.id} take5={take5} place={index + 1} />
-                ))}
-              </ol>
-            )}
-            {!showAll && take5s.length > FIRST_SHOWN && (
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setShowAll(true);
-                }}
-              >
-                Show all {take5s.length}
-              </Button>
-            )}
+            {take5s.length > 0 && <RankedList take5s={take5s} />}
           </>
         )}
       </div>

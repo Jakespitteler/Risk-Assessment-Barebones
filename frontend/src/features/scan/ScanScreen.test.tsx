@@ -170,3 +170,48 @@ it("says when scanning needs an AI that isn't set up", async () => {
     ),
   ).toBeTruthy();
 });
+
+it("ranks the saved cards worst first once the batch is done (F10)", async () => {
+  stubApi({
+    ...TEMPLATE,
+    "POST /api/scans": { status: 200, body: READ },
+    "POST /api/take5s/paper": { status: 200, body: SAVED },
+    "POST /api/ranked-take5s/batch": {
+      status: 200,
+      body: {
+        take5s: [
+          {
+            id: SAVED.take5.id,
+            created_at: SAVED.take5.created_at,
+            worker_name: "Sam Example",
+            job: "Change tyre",
+            can_start: false,
+            line: "No risk rated. “Moving wheel” has no rating.",
+            ranked_by_ai: false,
+          },
+        ],
+        best: null,
+        typical_minutes: null,
+        today_only: false,
+      },
+    },
+  });
+  const fetchStub = vi.mocked(fetch);
+  renderWithApi(<ScanScreen />);
+  choosePhotos(1);
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Save as written" }),
+  );
+  expect(
+    await screen.findByRole("heading", { name: "This batch, worst first" }),
+  ).toBeTruthy();
+  expect(
+    await screen.findByText("No risk rated. “Moving wheel” has no rating."),
+  ).toBeTruthy();
+  const batch = fetchStub.mock.calls.find(
+    ([input]) => input === "/api/ranked-take5s/batch",
+  );
+  expect(
+    typeof batch?.[1]?.body === "string" && JSON.parse(batch[1].body),
+  ).toEqual({ ids: [expect.any(String)] });
+});

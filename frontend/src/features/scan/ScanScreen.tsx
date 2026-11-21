@@ -3,6 +3,7 @@ import {
   ApiError,
   type ScannedCardResponse,
   type Take5Draft,
+  useRankedBatch,
   useReadCard,
   useSavePaperTake5,
   useTemplate,
@@ -10,6 +11,7 @@ import {
 import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
 import { Screen } from "../../components/Screen";
+import { RankedList } from "../take5/RankedList";
 import { SavedListLink } from "../take5/SavedListLink";
 import { COULDNT_READ, PaperCardForm } from "./PaperCardForm";
 import { shrinkPhoto } from "./shrinkPhoto";
@@ -236,7 +238,9 @@ export function ScanScreen() {
       )}
       {cards.length > 0 && !stillReading && !checking && (
         <Done
-          saved={cards.filter((card) => card.status === "saved").length}
+          savedIds={cards
+            .filter((card) => card.status === "saved")
+            .map((card) => card.id)}
           skipped={cards.filter((card) => card.status === "skipped").length}
           onMore={() => {
             setCards([]);
@@ -294,28 +298,74 @@ function Photo({ card }: { card: ScanCard }) {
   );
 }
 
-/** What happened to the batch. */
+/** What happened to the batch, and the saved cards worst first (F10). */
 function Done({
-  saved,
+  savedIds,
   skipped,
   onMore,
 }: {
-  saved: number;
+  savedIds: string[];
   skipped: number;
   onMore: () => void;
 }) {
+  const saved = savedIds.length;
   return (
-    <Card>
-      <p className="text-lg font-bold">
-        {saved === 1 ? "1 card saved" : `${String(saved)} cards saved`}
-        {skipped > 0 && `, ${String(skipped)} skipped`}.
-      </p>
-      <a className="font-semibold underline underline-offset-4" href="/take5s">
-        See them in the saved list
-      </a>
-      <Button variant="secondary" onClick={onMore}>
-        Scan more cards
-      </Button>
-    </Card>
+    <div className="flex flex-col gap-4">
+      <Card>
+        <p className="text-lg font-bold">
+          {saved === 1 ? "1 card saved" : `${String(saved)} cards saved`}
+          {skipped > 0 && `, ${String(skipped)} skipped`}.
+        </p>
+        <a
+          className="font-semibold underline underline-offset-4"
+          href="/take5s"
+        >
+          See them in the saved list
+        </a>
+        <Button variant="secondary" onClick={onMore}>
+          Scan more cards
+        </Button>
+      </Card>
+      {saved > 0 && <BatchRanking ids={savedIds} />}
+    </div>
+  );
+}
+
+/** The batch's saved cards worst first, each with why, as Today's review shows them. */
+function BatchRanking({ ids }: { ids: string[] }) {
+  const ranking = useRankedBatch(ids);
+  const byAi = ranking.data?.take5s.some((take5) => take5.ranked_by_ai);
+  return (
+    <section aria-labelledby="batch-heading" className="flex flex-col gap-3">
+      <h2 id="batch-heading" className="text-2xl font-extrabold">
+        This batch, worst first
+      </h2>
+      {ranking.isPending && (
+        <p role="status">
+          Ranking the cards… This can take up to half a minute.
+        </p>
+      )}
+      {ranking.isError && (
+        <>
+          <p>The cards couldn’t be ranked. Check your signal and try again.</p>
+          <Button onClick={() => void ranking.refetch()}>Try again</Button>
+        </>
+      )}
+      {ranking.data && (
+        <>
+          <p>
+            The riskiest jobs with the least thought on the card first, blanks
+            counted against them.
+          </p>
+          {byAi && (
+            <p className="text-ink-muted">
+              An AI helped choose these and wrote their reasons. Names aren’t
+              sent to it.
+            </p>
+          )}
+          <RankedList take5s={ranking.data.take5s} />
+        </>
+      )}
+    </section>
   );
 }
