@@ -190,8 +190,11 @@ class RankedTake5s(BaseModel):
 
     Attributes:
         take5s: The ranking. The page shows the first 5, then the rest on request.
+        today_only: True when only today's are ranked; False when every saved Take 5
+            is, as `TAKE5_RANK_TODAY_ONLY` sets (D118).
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     take5s: tuple[RankedTake5Line, ...]
+    today_only: bool

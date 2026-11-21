@@ -140,7 +140,7 @@ backend/
                                of an unexpected error in one log line above its trace
             request_log.py     FailedRequestsOnly: keeps the server's request lines to failures
         settings.py        settings read from the environment or `backend/.env`, which git ignores
-                           (database path, AI provider, AI model, hazard AI model, AI key)
+                           (database path, AI provider, AI model, hazard AI model, AI key, rank today only)
     tests/                 mirrors src/risk_assessment/
         conftest.py        hides any AI key from every test not marked `real_ai`
         samples.py         the made-up Take 5s that tests in more than one folder share

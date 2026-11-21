@@ -503,10 +503,14 @@ export interface components {
          *
          *     Attributes:
          *         take5s: The ranking. The page shows the first 5, then the rest on request.
+         *         today_only: True when only today's are ranked; False when every saved Take 5
+         *             is, as `TAKE5_RANK_TODAY_ONLY` sets (D118).
          */
         RankedTake5s: {
             /** Take5S */
             take5s: components["schemas"]["RankedTake5Line"][];
+            /** Today Only */
+            today_only: boolean;
         };
         /**
          * RatingChoice
