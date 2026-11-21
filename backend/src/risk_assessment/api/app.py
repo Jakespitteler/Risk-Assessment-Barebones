@@ -121,8 +121,10 @@ def create_app(
 def _show_app_logs() -> None:
     """Show the app's own info lines in the server's log, beside uvicorn's.
 
-    Uvicorn sets up only its own loggers, so without this Python shows the app's
-    warnings and nothing less, and lines such as which model asks would be lost.
+    `start.py` gives uvicorn `backend/dev_logging.json`, which sets this logger up, so
+    this does nothing then. Without it, as in the tests or a server started by hand,
+    Python shows the app's warnings and nothing less, and lines such as which model asks
+    would be lost.
     """
     app_logger: logging.Logger = logging.getLogger("risk_assessment")
     if app_logger.handlers:
