@@ -75,9 +75,10 @@ def test_a_failed_call_is_not_tried_again() -> None:
     """A server error raises at once: a retry would run past the 10-second wait."""
     api = FakeAnthropicApi(status_code=500)
 
-    with pytest.raises(anthropic.APIStatusError):
+    with pytest.raises(LanguageModelError) as failure:
         _claude(api).reply("Ask.", "{}")
 
+    assert isinstance(failure.value.__cause__, anthropic.APIStatusError)
     assert len(api.requests) == 1
 
 
