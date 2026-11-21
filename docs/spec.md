@@ -452,7 +452,8 @@ reads each photo into a filled-in card; a person checks it beside the photo and 
   With no rating before controls its highest risk counts as 0 ("No risk rated").
 - **P5 Its date.** The date written on the card, as read and checked, is when it was started, so the ranking's
   "today" (W7) and risk by area's 30 days (A2) go by it. A date with no time is the start of that day where the
-  person checking is; with no date the scan time stands in. How long a paper card took isn't known, so it is never
+  person checking is; with no date the scan time stands in. A date before 2000 or after 2100 is taken as misread
+  and refused beside the field, for the person to check. How long a paper card took isn't known, so it is never
   rushed (W5), it is left out of the typical time (W9), and it is never the best (W8).
 - **P6 Who and where.** Anyone can scan (D66). The saved list and the saved Take 5 say "From paper". The worker's
   name is read off the card to fill it in, and never sent to any other AI call (C1, W6).

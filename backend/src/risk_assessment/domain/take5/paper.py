@@ -1,6 +1,6 @@
 """A checked paper card saved as written, gaps and all (spec P1 to P5, task 0033).
 
-A paper card skips the rules a worker meets while filling in the app (F2, T2 to T5,
+A paper card skips the rules a worker meets while filling in the app (F2, T2 to T7,
 R6, K2, C6): it is kept exactly as the person checking it confirmed it. Only what no
 card can hold is refused: a level that isn't on the card's matrix, or a date or time
 zone that can't be read.
