@@ -37,7 +37,7 @@ function ranked(
 
 it("asks for today's Take 5s from midnight where the phone is (W7)", async () => {
   const calls = stubApi({
-    [RANKING_URL]: { status: 200, body: { take5s: [] } },
+    [RANKING_URL]: { status: 200, body: { take5s: [], today_only: true } },
   });
   renderWithApi(<WorstOfTodayScreen />);
   expect(
@@ -51,7 +51,10 @@ it("lists them worst first with place, verdict, job, reason and worker (W1)", as
   stubApi({
     [RANKING_URL]: {
       status: 200,
-      body: { take5s: [ranked(1, { can_start: null }), ranked(2)] },
+      body: {
+        take5s: [ranked(1, { can_start: null }), ranked(2)],
+        today_only: true,
+      },
     },
   });
   renderWithApi(<WorstOfTodayScreen />);
@@ -91,7 +94,10 @@ it("says when an AI ordered them, and that names aren't sent (W6)", async () => 
   stubApi({
     [RANKING_URL]: {
       status: 200,
-      body: { take5s: [ranked(1, { ranked_by_ai: true }), ranked(2)] },
+      body: {
+        take5s: [ranked(1, { ranked_by_ai: true }), ranked(2)],
+        today_only: true,
+      },
     },
   });
   renderWithApi(<WorstOfTodayScreen />);
@@ -104,15 +110,18 @@ it("says when an AI ordered them, and that names aren't sent (W6)", async () => 
 
 it("says while it ranks, and offers Try again when it can't (W6)", async () => {
   stubApi({
-    [RANKING_URL]: ["offline", { status: 200, body: { take5s: [ranked(1)] } }],
+    [RANKING_URL]: [
+      "offline",
+      { status: 200, body: { take5s: [ranked(1)], today_only: true } },
+    ],
   });
   renderWithApi(<WorstOfTodayScreen />);
   expect(
-    screen.getByRole("heading", { name: "Ranking today’s Take 5s…" }),
+    screen.getByRole("heading", { name: "Ranking Take 5s…" }),
   ).toBeTruthy();
   expect(
     await screen.findByRole("heading", {
-      name: "Today’s Take 5s couldn’t be ranked",
+      name: "Take 5s couldn’t be ranked",
     }),
   ).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
@@ -120,4 +129,15 @@ it("says while it ranks, and offers Try again when it can't (W6)", async () => {
     await screen.findByRole("heading", { name: "Worst of today" }),
   ).toBeTruthy();
   expect(screen.getByText("Reason 1.")).toBeTruthy();
+});
+
+it("says every saved Take 5 is ranked when the back end ranks them all (W7, D118)", async () => {
+  stubApi({
+    [RANKING_URL]: { status: 200, body: { take5s: [], today_only: false } },
+  });
+  renderWithApi(<WorstOfTodayScreen />);
+  expect(
+    await screen.findByRole("heading", { name: "Worst of all saved" }),
+  ).toBeTruthy();
+  expect(screen.getByText("No Take 5s have been saved yet.")).toBeTruthy();
 });

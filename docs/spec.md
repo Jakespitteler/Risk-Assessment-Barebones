@@ -372,6 +372,8 @@ batch (decisions D91 to D96).
 - **W7 Today.** "Today" is from midnight where the phone is: a Take 5 counts from when it was started, or when it
   was saved if it has no start time, finished or not. The ranking isn't saved; it is worked out when the page
   opens, and remembered until the server restarts or a Take 5 is added or finished.
+  While the app is a proof of concept, every saved Take 5 is ranked instead, and the page says "Worst of all
+  saved". The setting `TAKE5_RANK_TODAY_ONLY=true` brings back today only (D118).
 
 ### Worked examples
 
@@ -810,6 +812,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D95 | Is a ranking saved (2026-11-20) | No: worked out when the page opens, remembered until the server restarts | Saved, which changes the data model |
 | D96 | What the AI is given (2026-11-20) | What the challenge question gets (C1), plus the question, answer and minutes taken; never the name | Everything saved, name included |
 | D97 | The focus outline on the undo bar (2026-11-20) | The bar's own text colour (white on the dark bar in light mode, near-black on the light bar in dark mode), so it stands out | The blue used elsewhere, at about 2.3 to 1 on the bar |
+| D118 | Today only, or every saved Take 5 (2026-11-21) | Every saved Take 5 by default while the app is a proof of concept; `TAKE5_RANK_TODAY_ONLY=true` ranks today only, and the by-day code stays (W7) | Today only; a switch on the page |
 
 ## Open questions
 

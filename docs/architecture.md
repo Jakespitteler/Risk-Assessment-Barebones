@@ -135,7 +135,7 @@ backend/
             schemas.py         the shapes of requests and responses, including the error replies
             errors.py          turns errors into the declared error replies
         settings.py        settings read from the environment or `backend/.env`, which git ignores
-                           (database path, AI provider, AI model, hazard AI model, AI key)
+                           (database path, AI provider, AI model, hazard AI model, AI key, rank today only)
     tests/                 mirrors src/risk_assessment/
         conftest.py        hides any AI key from every test not marked `real_ai`
         samples.py         the made-up Take 5s that tests in more than one folder share

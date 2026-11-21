@@ -10,7 +10,7 @@ test("the saved list opens today's Take 5s worst first, each with why (W1, W7)",
 
   await page.goto("/take5s");
   await page.getByRole("link", { name: "Worst of today", exact: true }).click();
-  await expect(heading(page, "Worst of today")).toBeVisible();
+  await expect(heading(page, "Worst of all saved")).toBeVisible();
   const first = page.getByRole("listitem").first();
   await expect(first.getByText("1.", { exact: true })).toBeVisible();
   await expect(first.getByText(/^Highest risk \d+ /)).toBeVisible();

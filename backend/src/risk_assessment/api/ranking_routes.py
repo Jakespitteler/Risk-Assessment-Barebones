@@ -36,6 +36,7 @@ def create_ranking_router(service: Take5RankingService) -> APIRouter:
         """
         return RankedTake5s(
             take5s=tuple(_line(ranked) for ranked in service.worst_since(since)),
+            today_only=service.today_only,
         )
 
     return router
