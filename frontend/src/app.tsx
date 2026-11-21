@@ -12,6 +12,7 @@ import { RateRiskScreen } from "./features/take5/RateRiskScreen";
 import { SavedTake5sScreen } from "./features/take5/SavedTake5sScreen";
 import { Take5ResultScreen } from "./features/take5/Take5ResultScreen";
 import { ReviewTodayScreen } from "./features/take5/ReviewTodayScreen";
+import { ScanScreen } from "./features/scan/ScanScreen";
 import { RiskByAreaScreen } from "./features/take5/RiskByAreaScreen";
 import type { StoredDraft } from "./features/take5/useTake5Draft";
 import {
@@ -145,6 +146,7 @@ const router = createBrowserRouter([
   { path: "/review-today", element: <ReviewTodayScreen /> },
   { path: "/risk-by-area", element: <RiskByAreaScreen /> },
   { path: "/rate-risk", element: <RateRiskScreen /> },
+  { path: "/scan", element: <ScanScreen /> },
 ]);
 
 export function App() {

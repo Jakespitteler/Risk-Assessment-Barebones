@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import ClassVar
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from risk_assessment.domain.controls import ControlKind
 from risk_assessment.domain.questions import Answer, Question
@@ -63,6 +63,37 @@ class SubmissionRequest(BaseModel):
     draft: Take5Draft
 
 
+class PaperTake5Request(BaseModel):
+    """A checked paper card to save as written (spec P1, P5, task 0033).
+
+    Attributes:
+        id: Made once by the page and sent again, unchanged, on every retry.
+        draft: The card as the person checked it, with the worker's name as written.
+        filled_in_at: The card's date, "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM", as read
+            and checked, or None when it has none.
+        time_zone: The checker's time zone, such as "Australia/Perth", for the date.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    id: UUID
+    draft: Take5Draft
+    filled_in_at: str | None = None
+    time_zone: str
+
+
+class BatchRankingRequest(BaseModel):
+    """Saved Take 5s to rank on their own, such as a batch of scanned cards (F10).
+
+    Attributes:
+        ids: The Take 5s' IDs, at most 200.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    ids: tuple[UUID, ...] = Field(max_length=200)
+
+
 class AnswerRequest(BaseModel):
     """The worker's answer to a Take 5's challenge question.
 
@@ -81,7 +112,8 @@ class Take5Response(BaseModel):
     Attributes:
         take5: The saved Take 5, with its question and a copy of its template. Its
             verdict is empty until the question is answered.
-        rating: The Take 5's rating (spec R4 and R5).
+        rating: The Take 5's rating (spec R4 and R5), or None for a paper card with
+            no rated hazard (P2).
         fixed_by: The ID of the newest Take 5 that fixes this one, or None. It is
             found when the Take 5 is opened, because the saved one never changes.
         offers_fix: True when the result should offer to fix this Take 5 in a new
@@ -91,7 +123,7 @@ class Take5Response(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     take5: SavedTake5
-    rating: RiskRating
+    rating: RiskRating | None
     fixed_by: UUID | None
     offers_fix: bool
 
@@ -107,6 +139,7 @@ class Take5Summary(BaseModel):
         can_start: The verdict it was saved with: True for Good to go, False for
             Don't start yet, or None while its question is unanswered.
         fixed: True when a newer Take 5 fixes this one.
+        from_paper: True when it was photographed off a paper card (P6).
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -117,6 +150,7 @@ class Take5Summary(BaseModel):
     job: str
     can_start: bool | None
     fixed: bool
+    from_paper: bool
 
 
 class Take5ListPage(BaseModel):
@@ -173,6 +207,10 @@ class RankedTake5Line(BaseModel):
         line: One line saying why it sits where it does.
         ranked_by_ai: True when the AI placed it and wrote the line, False when the
             fixed rules did.
+        from_paper: True when it was photographed off a paper card (P6).
+        started_at: When it was started: for a paper card, the date on the card,
+            at midnight where the checker was when it has no time (P5). None when
+            not known.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -184,6 +222,8 @@ class RankedTake5Line(BaseModel):
     can_start: bool | None
     line: str
     ranked_by_ai: bool
+    from_paper: bool
+    started_at: datetime | None
 
 
 class BestTake5Line(BaseModel):
@@ -246,3 +286,24 @@ class RiskByArea(BaseModel):
 
     areas: tuple[AreaRisk, ...]
     last_30_days_only: bool
+
+
+class ScannedCardResponse(BaseModel):
+    """A paper card as the AI read it, for a person to check (task 0033).
+
+    Nothing is saved yet: the page keeps the card until the person has checked it.
+
+    Attributes:
+        draft: The card as a draft Take 5, with the worker's name as written.
+        filled_in_at: The date, or date and time, written on the card, as
+            "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM" with no time zone; None when there was
+            none or it couldn't be read.
+        unreadable: The dotted paths of fields left empty because the AI couldn't read
+            them, such as "job" or "hazards.0.before.likelihood".
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    draft: Take5Draft
+    filled_in_at: str | None
+    unreadable: tuple[str, ...]

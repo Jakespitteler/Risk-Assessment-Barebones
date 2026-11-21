@@ -17,9 +17,10 @@ from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict
 
+from risk_assessment.domain.risk import RiskRating
 from risk_assessment.domain.take5.challenge import challenge_text
 from risk_assessment.domain.take5.saved import SavedTake5
-from risk_assessment.domain.take5.take5 import Hazard, HazardFlag
+from risk_assessment.domain.take5.take5 import HazardFlag
 from risk_assessment.domain.wording import word_count
 
 # A hazard or an answer shorter than this shows little thought (W2, W4). It matches
@@ -29,6 +30,8 @@ THOUGHTFUL_WORDS: int = 6
 RUSHED_UNDER: timedelta = timedelta(minutes=2)
 # Each sign of little thought adds this to the score (W1).
 GAP_POINTS: int = 5
+# How a paper card's blank question is named among the thought gaps (P4).
+_NO_ANSWER: str = "has no answer"
 # How many of the worst the AI reorders and writes lines for (W6).
 AI_RANKED_COUNT: int = 10
 AI_RANKING_TIME_LIMIT_SECONDS: float = 20
@@ -70,16 +73,48 @@ class RankedTake5(BaseModel):
     ranked_by: RankedBy
 
 
-def highest_risk(take5: SavedTake5) -> Hazard:
-    """Find the hazard with the highest rating before controls (W1).
+def highest_risk(take5: SavedTake5) -> RiskRating | None:
+    """Find the highest rating before controls (W1).
 
     Args:
-        take5: A saved Take 5, which always has at least one hazard.
+        take5: A saved Take 5.
 
     Returns:
-        The first hazard with the highest before score.
+        The first highest before rating, or None for a paper card with no hazard
+        rated before controls (P4).
     """
-    return max(take5.hazards, key=lambda hazard: hazard.before.score)
+    ratings: list[RiskRating] = [
+        hazard.before for hazard in take5.hazards if hazard.before is not None
+    ]
+    return max(ratings, key=lambda rating: rating.score, default=None)
+
+
+def highest_score(take5: SavedTake5) -> int:
+    """Give the highest before-controls score, or 0 when nothing was rated (W1, P4).
+
+    Args:
+        take5: A saved Take 5.
+
+    Returns:
+        The score.
+    """
+    riskiest: RiskRating | None = highest_risk(take5)
+    return riskiest.score if riskiest is not None else 0
+
+
+def _highest_risk_words(take5: SavedTake5) -> str:
+    """Say a Take 5's highest risk, such as "Highest risk 18 Extreme".
+
+    Args:
+        take5: A saved Take 5.
+
+    Returns:
+        The words, or "No risk rated" for a paper card with no rating (P4).
+    """
+    riskiest: RiskRating | None = highest_risk(take5)
+    if riskiest is None:
+        return "No risk rated"
+    return f"Highest risk {riskiest.score} {riskiest.band}"
 
 
 def thought_gaps(take5: SavedTake5) -> tuple[str, ...]:
@@ -92,13 +127,21 @@ def thought_gaps(take5: SavedTake5) -> tuple[str, ...]:
         One phrase per sign found, such as "Question not answered". Each hazard
         counts on its own, so two short hazards give two phrases.
     """
-    gaps: list[str] = []
+    gaps: list[str] = list(paper_gaps(take5))
     for hazard in take5.hazards:
-        if word_count(hazard.description) < THOUGHTFUL_WORDS:
+        if not hazard.description:
+            gaps.append("a hazard has no description")
+        elif word_count(hazard.description) < THOUGHTFUL_WORDS:
             gaps.append(f"“{hazard.description}” is under {THOUGHTFUL_WORDS} words")
     for hazard in take5.hazards:
-        if hazard.controls and hazard.after.score == hazard.before.score:
-            gaps.append(f"the controls for “{hazard.description}” don't lower its risk")
+        if (
+            hazard.controls
+            and hazard.before is not None
+            and hazard.after is not None
+            and hazard.after.score == hazard.before.score
+        ):
+            name: str = f"“{hazard.description}”" if hazard.description else "a hazard"
+            gaps.append(f"the controls for {name} don't lower its risk")
     for hazard in take5.hazards:
         if (
             hazard.kept_flag is not None
@@ -116,6 +159,32 @@ def thought_gaps(take5: SavedTake5) -> tuple[str, ...]:
     return tuple(gaps)
 
 
+def paper_gaps(take5: SavedTake5) -> tuple[str, ...]:
+    """List each blank a paper card left, each one a thought gap (P4).
+
+    Args:
+        take5: A saved Take 5. Any other than a paper card has no blanks.
+
+    Returns:
+        One phrase per blank: a question with no answer, no hazard at all, a hazard
+        with no rating before controls, and a control with no kind.
+    """
+    gaps: list[str] = [
+        f"“{question.text}” {_NO_ANSWER}"
+        for question in take5.template.questions
+        if question.id not in take5.answers
+    ]
+    if take5.from_paper and not take5.hazards:
+        gaps.append("no hazard was written down")
+    for hazard in take5.hazards:
+        name: str = f"“{hazard.description}”" if hazard.description else "a hazard"
+        if hazard.before is None:
+            gaps.append(f"{name} has no rating")
+        if any(control.kind is None for control in hazard.controls):
+            gaps.append(f"a control for {name} has no kind")
+    return tuple(gaps)
+
+
 def time_taken(take5: SavedTake5) -> timedelta | None:
     """Find how long a Take 5 took, from its start to its save (W5).
 
@@ -123,10 +192,15 @@ def time_taken(take5: SavedTake5) -> timedelta | None:
         take5: A saved Take 5.
 
     Returns:
-        The time taken, or None when it has no start time, or a start time after it
-        was saved, as a phone whose clock is fast can send.
+        The time taken, or None when it has no start time, a start time after it
+        was saved, as a phone whose clock is fast can send, or it is a paper card,
+        whose time taken isn't known (P5).
     """
-    if take5.started_at is None or take5.started_at > take5.created_at:
+    if (
+        take5.from_paper
+        or take5.started_at is None
+        or take5.started_at > take5.created_at
+    ):
         return None
     return take5.created_at - take5.started_at
 
@@ -140,7 +214,7 @@ def worst_score(take5: SavedTake5) -> int:
     Returns:
         The highest before-controls score, plus `GAP_POINTS` for each thought gap.
     """
-    return highest_risk(take5).before.score + GAP_POINTS * len(thought_gaps(take5))
+    return highest_score(take5) + GAP_POINTS * len(thought_gaps(take5))
 
 
 def rule_line(take5: SavedTake5) -> str:
@@ -152,12 +226,29 @@ def rule_line(take5: SavedTake5) -> str:
     Returns:
         Such as "Highest risk 18 Extreme. The question was never answered."
     """
-    riskiest: Hazard = highest_risk(take5)
-    risk: str = f"Highest risk {riskiest.before.score} {riskiest.before.band}."
-    gaps: str = "; ".join(thought_gaps(take5))
+    risk: str = f"{_highest_risk_words(take5)}."
+    gaps: str = "; ".join(_summarised(thought_gaps(take5)))
     if not gaps:
         return f"{risk} No signs of a rushed Take 5."
     return f"{risk} {gaps[0].upper()}{gaps[1:]}."
+
+
+def _summarised(gaps: tuple[str, ...]) -> list[str]:
+    """Put a paper card's blank questions in one phrase, so the line stays readable.
+
+    Each blank still counts on its own in the score (P4); only the words are joined.
+
+    Args:
+        gaps: The thought gaps, in order.
+
+    Returns:
+        The gaps, with two or more blank questions as one "N questions have no answer".
+    """
+    blank: list[str] = [gap for gap in gaps if gap.endswith(_NO_ANSWER)]
+    if len(blank) < 2:
+        return list(gaps)
+    others: list[str] = [gap for gap in gaps if not gap.endswith(_NO_ANSWER)]
+    return [f"{len(blank)} questions have no answer", *others]
 
 
 def rank_by_rules(take5s: Sequence[SavedTake5]) -> tuple[RankedTake5, ...]:
@@ -392,7 +483,8 @@ def is_careful(take5: SavedTake5) -> bool:
 
     Returns:
         True when it is finished, its question was answered, every hazard has
-        controls, and only W5 may find a gap.
+        controls, and only W5 may find a gap. A paper card has no question, so it is
+        never the best (P5).
     """
     return (
         take5.is_finished
@@ -421,7 +513,7 @@ def best_shortlist(take5s: Sequence[SavedTake5]) -> tuple[SavedTake5, ...]:
     ordered: list[SavedTake5] = sorted(
         newest_first,
         key=lambda take5: (
-            highest_risk(take5).before.score,
+            highest_score(take5),
             time_taken(take5) or timedelta(0),
         ),
         reverse=True,
@@ -439,9 +531,8 @@ def best_rule_line(take5: SavedTake5) -> str:
         Such as "Highest risk 18 Extreme, with specific hazards, controls that lower
         each risk and a full answer to the question."
     """
-    riskiest: Hazard = highest_risk(take5)
     return (
-        f"Highest risk {riskiest.before.score} {riskiest.before.band}, with specific "
+        f"{_highest_risk_words(take5)}, with specific "
         "hazards, controls that lower each risk and a full answer to the question."
     )
 

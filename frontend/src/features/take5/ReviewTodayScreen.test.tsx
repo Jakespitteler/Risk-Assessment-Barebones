@@ -31,6 +31,8 @@ function ranked(
     can_start: true,
     line: `Reason ${String(number)}.`,
     ranked_by_ai: false,
+    from_paper: false,
+    started_at: null,
     ...changed,
   };
 }
@@ -232,4 +234,26 @@ it("says every saved Take 5 is reviewed when the back end ranks them all (W7, D1
   expect(
     screen.getByText("No saved Take 5 was free of signs of little thought."),
   ).toBeTruthy();
+});
+
+it("shows the date written on a paper card, with its time when it has one (D127)", async () => {
+  stubApi({
+    [RANKING_URL]: {
+      status: 200,
+      body: {
+        take5s: [
+          ranked(1, {
+            from_paper: true,
+            // Written in Sydney; shown as written wherever the phone is.
+            started_at: "2026-04-03T06:40:00+11:00",
+          }),
+        ],
+        best: null,
+        typical_minutes: null,
+        today_only: true,
+      },
+    },
+  });
+  renderWithApi(<ReviewTodayScreen />);
+  expect(await screen.findByText("Dated 3 Apr 2026, 6:40 am")).toBeTruthy();
 });

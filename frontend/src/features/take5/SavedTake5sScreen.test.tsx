@@ -26,6 +26,7 @@ const LIST: Take5Summary[] = [
     job: "Replace conveyor idler",
     can_start: false,
     fixed: true,
+    from_paper: false,
   },
   {
     id: "11111111-1111-4111-8111-111111111111",
@@ -34,6 +35,7 @@ const LIST: Take5Summary[] = [
     job: "Change tyre",
     can_start: true,
     fixed: false,
+    from_paper: false,
   },
 ];
 
@@ -69,6 +71,7 @@ it("says Not finished for a Take 5 whose question is unanswered", async () => {
     job: "Change tyre",
     can_start: null,
     fixed: false,
+    from_paper: false,
   };
   stubApi({
     "GET /api/take5s": {
@@ -137,6 +140,9 @@ it("says when nothing has been saved yet, and offers a new Take 5", async () => 
   expect(screen.queryByRole("list")).toBeNull();
   expect(screen.queryByRole("link", { name: "Today’s review" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Risk by area" })).toBeNull();
+  expect(
+    screen.getByRole("link", { name: "Scan paper cards" }).getAttribute("href"),
+  ).toBe("/scan");
   expect(
     screen
       .getByRole("link", { name: "Start a new Take 5" })
@@ -388,4 +394,13 @@ it("links to risk by area once anything is saved (A1)", async () => {
   renderWithApi(<SavedTake5sScreen />);
   const link = await screen.findByRole("link", { name: "Risk by area" });
   expect(link.getAttribute("href")).toBe("/risk-by-area");
+});
+
+it("marks a Take 5 that came from a paper card (P6)", async () => {
+  const paper = { ...LIST[1], from_paper: true } as Take5Summary;
+  stubApi({
+    "GET /api/take5s": { status: 200, body: { take5s: [paper], next: null } },
+  });
+  renderWithApi(<SavedTake5sScreen />);
+  expect(await screen.findByText("From paper")).toBeTruthy();
 });

@@ -29,6 +29,7 @@ from risk_assessment.domain.take5.hazard_nudges import (
     Nudge,
     with_kept_flags,
 )
+from risk_assessment.domain.take5.paper import saved_paper_take5
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.take5 import Hazard
 from risk_assessment.domain.take5.template import Take5Template
@@ -290,6 +291,53 @@ class Take5Service:
                 "This Take 5 was already saved with different answers.",
             )
         return self._with_question(saved, ask_ai=True)
+
+    def save_paper(
+        self,
+        take5_id: UUID,
+        draft: Take5Draft,
+        filled_in_at: str | None,
+        time_zone: str,
+    ) -> SavedTake5:
+        """Save a checked paper card once, as written, finished with its verdict (P1).
+
+        It gets no question (C6 doesn't apply) and isn't checked against the draft
+        rules or the time limit (F2, K2). A retry with the same ID returns the first
+        save.
+
+        Args:
+            take5_id: Made once by the page and sent again on every retry.
+            draft: The card as the person checked it.
+            filled_in_at: The card's date, as read and checked, or None (P5).
+            time_zone: The checker's time zone, such as "Australia/Perth".
+
+        Returns:
+            The saved paper Take 5.
+
+        Raises:
+            PaperCardError: If a level, the date or the time zone can't be used.
+            SubmissionConflictError: If the ID was already used for other answers.
+        """
+        previous: SavedTake5 | None = self._repository.get(take5_id)
+        template: Take5Template = (
+            previous.template if previous is not None else self._template
+        )
+        card: SavedTake5 = saved_paper_take5(
+            take5_id,
+            draft,
+            filled_in_at,
+            time_zone,
+            template,
+            self._clock(),
+        )
+        saved: SavedTake5 = (
+            previous if previous is not None else self._repository.add(card)
+        )
+        if _answers(saved) != _answers(card):
+            raise SubmissionConflictError(
+                "This Take 5 was already saved with different answers.",
+            )
+        return saved
 
     def answer(self, take5_id: UUID, answer: str) -> SavedTake5:
         """Save the answer to a Take 5's question, and finish it with its verdict.

@@ -10,6 +10,7 @@ import { ChallengeScreen } from "./ChallengeScreen";
 import { ChallengeSummary } from "./ChallengeSummary";
 import { FixPanel } from "./FixPanel";
 import { formatDateTime } from "./formatDateTime";
+import { FromPaperTag } from "./FromPaperTag";
 import { HazardSummary } from "./HazardSummary";
 import { SavedListLink } from "./SavedListLink";
 import { answersHere, forgetUnanswered } from "./unanswered";
@@ -99,6 +100,11 @@ export function Take5ResultScreen({
   return (
     <Screen subtitle="Your Take 5" aside={<SavedListLink />}>
       <div ref={page} className="flex flex-col gap-6">
+        {take5.from_paper && (
+          <p>
+            <FromPaperTag />
+          </p>
+        )}
         <VerdictPanel verdict={take5.verdict} />
         <FixPanel
           take5={take5}
@@ -111,7 +117,11 @@ export function Take5ResultScreen({
         />
         <Card>
           <h2 className="text-xl font-bold">Overall risk after controls</h2>
-          <RiskBadge score={rating.score} band={rating.band} />
+          {rating ? (
+            <RiskBadge score={rating.score} band={rating.band} />
+          ) : (
+            <p>Not rated</p>
+          )}
           <dl className="flex flex-col gap-2">
             {details.map(({ term, value }) => (
               <div key={term}>

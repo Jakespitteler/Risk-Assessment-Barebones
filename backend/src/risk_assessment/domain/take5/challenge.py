@@ -127,7 +127,10 @@ def _described_hazard(
         "description": hazard.description,
         "before_controls": _described_rating(hazard.before),
         "controls": [
-            {"description": control.description, "kind": control.kind.value}
+            {
+                "description": control.description,
+                "kind": control.kind.value if control.kind else "not given",
+            }
             for control in hazard.controls
         ],
         "after_controls": _described_rating(hazard.after),
@@ -140,15 +143,17 @@ def _described_hazard(
     return described
 
 
-def _described_rating(rating: RiskRating) -> str:
+def _described_rating(rating: RiskRating | None) -> str:
     """Write a rating the way the card says it.
 
     Args:
-        rating: A rating from the matrix.
+        rating: A rating from the matrix, or None when a paper card left it blank.
 
     Returns:
-        Such as "Possible / Major: 18 Extreme".
+        Such as "Possible / Major: 18 Extreme", or "not rated".
     """
+    if rating is None:
+        return "not rated"
     return f"{rating.likelihood} / {rating.consequence}: {rating.score} {rating.band}"
 
 
@@ -198,7 +203,10 @@ def fallback_challenge(take5: Take5) -> Challenge:
     Returns:
         The fixed question about the first hazard with the highest before score.
     """
-    riskiest: Hazard = max(take5.hazards, key=lambda hazard: hazard.before.score)
+    riskiest: Hazard = max(
+        take5.hazards,
+        key=lambda hazard: hazard.before.score if hazard.before else 0,
+    )
     return Challenge(
         question=(
             "What is the one thing that has to go right so that "

@@ -2,6 +2,20 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-21: A paper card is saved as written, blanks and all (task 0033, part 2a)
+
+- Decision: `Take5.from_paper` marks a photographed paper card. On one, an answer, a rating or a control's kind
+  may be empty and there may be no hazards, so `Hazard.before`, `Hazard.after` and `Control.kind` may be empty,
+  and only `Take5`'s validators allow it, for paper only. R6 moved from `Hazard` to `Take5` so it can skip paper.
+  A hazard with no after rating counts at its before rating. Blanks are "Don't start yet" reasons (no hazard, no
+  rating) and thought gaps; a paper card has no time taken, so it is never rushed, timed or the best. A date
+  alone is the start of that day in the checker's time zone; no date leaves `started_at` empty (spec P1 to P6,
+  D120 to D125).
+- Why: Jake's answers of 2026-11-21: "as written, gaps and all", with the gaps counted against the card.
+- Not chosen: the checker filling every gap in (it rewrites the worst cards); a separate paper model (two of
+  everything the ranking and risk by area read).
+- Decided by: human (the rules), agent (where the checks live).
+
 ## 2026-11-21: Risk by area counts every saved Take 5 while the app is a proof of concept
 
 - Decision: the risk-by-area page counts every saved Take 5 by default, and says "in every saved Take 5". A
@@ -85,6 +99,28 @@ Newest first. One short entry per non-obvious decision.
   recommendation on 2026-11-20 except that rushed ones count, and picked the page's new name, "Today's review", from four.
 - Not chosen: the rules alone (can't tell specific answers from long stock wording); its own page.
 - Decided by: human.
+
+## 2026-11-20: Reading a photo of a paper card (task 0033, part 1)
+
+- Decision: `POST /api/scans` reads one photo into a card for a person to check, and saves nothing. A new
+  `PhotoReadingModel` Protocol (a `LanguageModel` that also has `read_photo`) keeps the text jobs and their
+  stand-ins unchanged; the Claude adapter fills it, with its own 60-second limit for slow handwriting. The
+  main model (`TAKE5_AI_MODEL`) reads photos, at medium effort, unless `TAKE5_AI_SCAN_MODEL` names another.
+  `python-multipart` is added, so FastAPI can take the upload.
+- Why: Jake's answers of 2026-11-20 (task file): the provider's main model with its own setting, one new method
+  on the AI interface, and the package approved. Saving, with the approved `from_paper` field, and the page
+  follow in two more pull requests.
+- How: the AI's JSON is untrusted, so `domain/take5/scanned_card.py` reads it field by field, keeps only the
+  template's own words and marks the rest unreadable, so one bad field never loses a card, and never rewrites a
+  card to pass a rule. A field left out or given as "" is a blank on the card and stays blank, unmarked; only a
+  null, the wrong kind of value or a word the card doesn't have is marked unreadable. The instructions
+  (`card-reader-3`) say dates are written day first; the date comes back as `YYYY-MM-DD` or `YYYY-MM-DDTHH:MM`,
+  with any time zone the AI added dropped, so a missing time isn't read as midnight, and the saving device's
+  zone is added when the card is saved (part 2). A photo can be at most 7 MB, since Claude takes an image of up
+  to 10 MB once base64 has made it a third bigger. The photo is never kept (Jake didn't approve keeping it).
+- Not chosen: changing `reply()` to take images (it would touch every job's types); photos as base64 inside JSON
+  (no package, but a third bigger).
+- Decided by: human (the choices above), agent (how).
 
 ## 2026-11-20: Rank Take 5s worst first by fixed rules, then the AI (task 0032)
 

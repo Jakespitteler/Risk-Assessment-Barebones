@@ -44,7 +44,7 @@ export function AnswerSummary({
               >
                 <dt>{question.text}</dt>
                 <dd className="min-w-12 text-right font-bold">
-                  {answers[question.id]}
+                  {answers[question.id] ?? "Not answered"}
                 </dd>
                 {linked.map((hazard, index) => (
                   <dd key={index} className="col-span-2 text-success">

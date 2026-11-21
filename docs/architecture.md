@@ -31,6 +31,7 @@ Back end:
 | Packaging | uv | One tool for Python versions, dependencies and running commands |
 | Lint and format | ruff | Project rule |
 | Type checking | pyright in strict mode | The command-line version of Pylance's strict rules |
+| Uploads | python-multipart (task 0033) | FastAPI needs it to take a photo as a file upload |
 | Tests | pytest, with httpx2 for FastAPI's test client | Standard. httpx2 replaced httpx in task 0002; see `decisions.md` |
 
 Front end:
@@ -107,25 +108,32 @@ backend/
                                    and the check on its order and lines; the best's shortlist,
                                    its line and the check on the AI's pick; the typical time (spec W1 to W9)
                 areas.py           Take 5s grouped by area, hottest first; no AI        (spec A1 to A5)
+                scanned_card.py    ScannedCard: the AI's reading of a paper card, kept to the
+                                   words the card allows, never rewritten       (task 0033)
+                paper.py           a checked paper card as a finished SavedTake5, as written, and
+                                   the card's date as started_at                (spec P1 to P5)
         services/          what the app does
-            take5s.py          Take5Service: check a draft, nudge, submit, answer, get, list. It is
-                               given a clock, so tests can set the time
+            take5s.py          Take5Service: check a draft, nudge, submit, save a paper card,
+                               answer, get, list. It is given a clock, so tests can set the time
             hazard_nudges.py   HazardNudger: asks the AI about each hazard for up to 5 seconds,
                                remembers its verdicts until the server restarts      (spec T6)
-            ranking.py         Take5RankingService: today's Take 5s by the fixed rules, then the
+            ranking.py         Take5RankingService: today's Take 5s, or a batch, by the rules, then the
                                worst 10 ordered and the best picked by the AI, side by side, for
                                up to 20 seconds; remembers the result until the server restarts
                                                                                       (spec W6 to W9)
             areas.py           AreaRiskService: Take 5s by area, 30 days or all     (spec A2)
-            ports.py           Take5Repository, ChallengeAsker, HazardJudge and Take5Ranker (Protocols): what
-                               the service needs from storage and from an AI; AiReplyError, the
-                               AI failures it expects
+            card_scanning.py   CardScanner: checks a photo's type and size, has the AI read it,
+                               saves nothing                                         (task 0033)
+            ports.py           Take5Repository, ChallengeAsker, HazardJudge, Take5Ranker and
+                               CardReader (Protocols): what the service needs from storage and
+                               from an AI; AiReplyError, the AI failures it expects
             ai_failures.py     names the kind of AI failure for its one log line
         storage/           where things are kept
             sqlite.py          SqliteTake5Repository
         ai/                everything that talks to an AI
             model.py           LanguageModel (a Protocol): instructions and text in, text out;
-                               LanguageModelError for a reply with no usable text
+                               PhotoReadingModel, one that also reads a photo; LanguageModelError
+                               for a reply with no usable text
             challenge.py       the challenge question's instructions and their version, and
                                AiChallengeAsker, a ChallengeAsker that works with any LanguageModel
             vague_hazard.py    the hazard-check instructions (vague, stock or unfit) and their
@@ -134,10 +142,14 @@ backend/
             ranking.py         the ranking and best-pick instructions and their versions, and
                                AiTake5Ranker, a Take5Ranker that works with any LanguageModel
                                                                                       (spec W6, W8)
+            card_reader.py     the card-reading instructions, built from the template, and their
+                               version, and AiCardReader, a CardReader for any
+                               PhotoReadingModel                                     (task 0033)
             providers/
                 claude.py          ClaudeModel, the first LanguageModel: one Messages API call, an
                                    11-second network limit and no retries. QUICK_MODEL names the
-                                   model for short jobs (Haiku 5.5)
+                                   model for short jobs (Haiku 5.5). read_photo makes it a
+                                   PhotoReadingModel, with a 60-second limit     (task 0033)
         api/               the web API
             app.py             builds the FastAPI app and plugs the pieces together
             take5_routes.py    one function per Take 5 endpoint
@@ -168,7 +180,8 @@ frontend/
                            the risk band colours in RiskBadge.tsx are fixed, the same in both modes
         features/take5/    the Take 5's screens: the four parts of the form, the question, the result, and
                            the list of saved Take 5s (SavedTake5sScreen.tsx), and today's best and
-                           worst first (ReviewTodayScreen.tsx, spec F8), and risk by area
+                           worst first (ReviewTodayScreen.tsx, spec F8; RankedList.tsx is its list, which
+                           the scan page reuses), and risk by area
                            (RiskByAreaScreen.tsx, spec F9). formatDateTime.ts writes
                            every date the one way the spec sets (D17)
                            stage.ts is which page shows (kept in the URL); useTake5Draft.ts keeps the one
@@ -183,6 +196,11 @@ frontend/
                            ChallengeScreen.tsx asks the challenge question; ChallengeSummary.tsx shows it with
                            its answer on the result; unanswered.ts remembers which unanswered Take 5s this
                            phone submitted, so only it answers them and opening the app goes back to one
+        features/scan/     the scan page at /scan (ScanScreen.tsx, spec F10): photos shrunk to 2576 px on the
+                           long side (shrinkPhoto.ts), read one at a time, then each card checked beside
+                           its photo in PaperCardForm.tsx and saved as written, then the saved ones
+                           ranked worst first; the batch lives only in the page's memory (D20), and the
+                           photos never leave it except to be read
         dev/               startLogger.ts: Vite's terminal output while developing (only
                            vite.config.ts imports it; not part of the app)
         test-utils.tsx     the fake card, drafts and API replies the Vitest tests share
@@ -239,11 +257,14 @@ What the terminal running `uv run start.py` shows (task 0028). The aim: a glance
 | `POST /api/take5s/check` | Checks a draft and returns what is missing, its warnings (allowed, but they will stop the job), and which thinking rules apply. A draft that has run out (spec K2) has an error on `started_at`, and `runs_out_at` says when it runs out (empty with no time limit). Saves nothing |
 | `POST /api/take5s/nudges` | The T6 nudges for a draft (task 0027): one for each vague hazard linked to a Yes, judged by the AI for up to 5 seconds, then by the word rule. Saves nothing. Its own endpoint, not part of the check, so the phone asks it only when a hazard's words change and Continue never waits for an AI |
 | `POST /api/take5s` | Checks and saves a Take 5, unfinished, then asks the AI (or the fallback) for its question, and returns it with the question. A retry returns what was saved, with the same question |
+| `POST /api/take5s/paper` | Saves a checked paper card as written (task 0033, spec P1 to P5): `PaperTake5Request` (`id`, `draft`, `filled_in_at` as `YYYY-MM-DD` or `YYYY-MM-DDTHH:MM`, and the checker's IANA `time_zone`) to `Take5Response`, finished at once with its verdict and no question, marked `from_paper`. Blanks are kept, never refused. A level not on the matrix, an answer to a question the card lacks, or a date or zone that can't be read is a 422 `FormErrors` beside the field; the same ID with other answers is a 409 |
 | `POST /api/take5s/{id}/answer` | Saves the answer, works out the verdict, and returns the finished Take 5 (task 0008). A short answer is a 422 on `answer`; a different answer to a finished one is a 409; the same answer again returns the finished Take 5 |
-| `GET /api/take5s` | The list, newest first, 50 at a time: a `Take5ListPage` of `take5s` and `next`, the ID to send as `?before=` for the page after it (empty when there are no more). Each line is a `Take5Summary`: the ID, when it was saved, the worker, the job, the verdict (`can_start`, empty while the question is unanswered) and whether a newer Take 5 fixes it (`fixed`), not the whole card |
+| `GET /api/take5s` | The list, newest first, 50 at a time: a `Take5ListPage` of `take5s` and `next`, the ID to send as `?before=` for the page after it (empty when there are no more). Each line is a `Take5Summary`: the ID, when it was saved, the worker, the job, the verdict (`can_start`, empty while the question is unanswered) whether a newer Take 5 fixes it (`fixed`) and whether it came from a paper card (`from_paper`, P6), not the whole card |
 | `GET /api/take5s/{id}` | One Take 5, with `fixed_by` (the newest Take 5 that fixes it, if any) and `offers_fix` (whether its result offers a fix) |
-| `GET /api/ranked-take5s?since=` | Every Take 5 started since a moment (sent with its time zone, such as midnight where the phone is), worst first (task 0032, spec W1 to W7): `RankedTake5s`, each a `RankedTake5Line` with the ID, when it was saved, the worker, the job, the verdict, its `line` and `ranked_by_ai`. Fixed rules in `domain/take5/ranking.py` score them, then `Take5RankingService` gives the worst 10 to the AI in `ai/ranking.py` for up to 20 seconds. It also sends the `best` careful one as a `BestTake5Line` (or null), picked by the AI from up to 5 shortlisted by the rules, with `picked_by_ai` and `minutes_taken`, and `typical_minutes`, the median (task 0036, spec W8, W9). Saves nothing; a result is remembered in memory until the server restarts. A moment with no time zone is a 422 |
+| `GET /api/ranked-take5s?since=` | Every Take 5 started since a moment (sent with its time zone, such as midnight where the phone is), worst first (task 0032, spec W1 to W7): `RankedTake5s`, each a `RankedTake5Line` with the ID, when it was saved, the worker, the job, the verdict, its `line`, `ranked_by_ai`, `from_paper` and `started_at` (a paper card's date, P5). Fixed rules in `domain/take5/ranking.py` score them, then `Take5RankingService` gives the worst 10 to the AI in `ai/ranking.py` for up to 20 seconds. It also sends the `best` careful one as a `BestTake5Line` (or null), picked by the AI from up to 5 shortlisted by the rules, with `picked_by_ai` and `minutes_taken`, and `typical_minutes`, the median (task 0036, spec W8, W9). Saves nothing; a result is remembered in memory until the server restarts. A moment with no time zone is a 422 |
+| `POST /api/ranked-take5s/batch` | Ranks just the saved Take 5s whose `ids` are sent (at most 200), such as a batch of scanned paper cards (F10): the same `RankedTake5s` as `GET /api/ranked-take5s`, by the same rules and AI. An ID that isn't saved is left out. A paper card's text, as the AI read it and the person checked it, is ranked like any Take 5's, and its name is never sent (P6) |
 | `GET /api/risk-by-area?today=` | Every area with a saved Take 5, or with `TAKE5_AREA_LAST_30_DAYS_ONLY=true` only those started in the last 30 days, hottest first (task 0038, spec A1 to A5, D119). `today` is midnight where the phone is, with its offset from UTC, and the 30 days are 29 days of 24 hours back from it; the reply is `RiskByArea`: `areas`, each an `AreaRisk` with its name, counts, highest score and band, and `common_yes`; and `last_30_days_only`, so the page can say which it counted. Worked out by the fixed rules in `domain/take5/areas.py`; no AI, nothing saved. A moment with no time zone is a 422 |
+| `POST /api/scans` | Reads one photo of a paper card (a multipart upload, field `photo`: JPEG, PNG, WebP or GIF, at most 7 MB) into a card for a person to check (task 0033): `ScannedCardResponse`, with the `draft` as written, `filled_in_at` as read, as `YYYY-MM-DD` or `YYYY-MM-DDTHH:MM` with no time zone and the `unreadable` paths. Saves nothing. No AI set up is a 503 `ErrorMessage`; a wrong type, too big, or a photo the AI couldn't read as a card is a 422 on `photo` |
 
 Every error reply is declared in the OpenAPI description, so the front end's generated types know it. A 422 is
 always `FormErrors` (`detail` and a list of field errors, each with its dotted `path`), whether the draft has a
@@ -296,10 +317,10 @@ the built front-end files itself, so there is still only one program to run.
 
 | Entity | Key fields | Notes |
 | --- | --- | --- |
-| `Take5` | `id`, `created_at`, `worker_name`, `job`, `location`, `answers` (question ID to answer), `hazards`, `challenge`, `finished_at`, `verdict`, `template` | One filled-in card. `template` is a copy of the template it was filled in on, so it always shows the questions and matrix the worker was given. `finished_at` and `verdict` are empty until the challenge question is answered (spec C6). Never changed once finished |
-| `SavedTake5` (task 0004) | Extends the scoring `Take5` with `id`, `created_at`, `worker_name`, `job`, `location`, `finished_at`, `verdict`, `fixes`, `started_at`, `challenge` | The implemented submitted document. The base `Take5` holds what the verdict needs (the template, `answers` and the hazards); later tasks add the remaining card fields. `answers` (task 0005) has one answer for each of the template's questions, by question ID. A Take 5 saved before task 0005 has none, and its template copy has no questions, so it still opens. `fixes` (task 0010) is the ID of the Don't start yet it fixes, or empty. It points back only, so the first one is never changed; its fix is found by searching for its ID in `fixes`. `started_at` (task 0019) is when its draft was started, by the phone's clock, or empty for one saved before then (spec K3). From task 0008 it is saved unfinished, with `finished_at` and `verdict` empty; `challenge` is added once, then the answer, `verdict` and `finished_at` once (`Take5Repository.save_question` and `finish`, each of which only changes a row that is still unfinished). One finished before task 0008 has a verdict and no `challenge` |
-| `Hazard` | `description`, `before` (rating), `controls`, `after` (rating), `weak_controls_reason`, `covers`, `kept_flag` | Belongs to one Take 5. With no controls `after` is `before` (spec R6). `weak_controls_reason` is the worker's answer to spec T3, when it was asked. `covers` (task 0022) is the IDs of the hazard questions answered Yes that the worker linked to it (spec T5); it is empty for a Take 5 saved before then. The link lives on the hazard, so removing a hazard removes its links, and nothing else needs an ID. `kept_flag` (task 0037) is what the hazard check still said about its words when it was submitted (`vague`, `stock` or `unfit`, spec T7), so the worker kept them; null when nothing was flagged, or for a Take 5 saved before then. Today's review counts it (W10) |
-| `Control` | `description`, `kind` (`ControlKind`) | Belongs to one hazard |
+| `Take5` | `id`, `created_at`, `worker_name`, `job`, `location`, `answers` (question ID to answer), `hazards`, `from_paper`, `challenge`, `finished_at`, `verdict`, `template` | One filled-in card. `template` is a copy of the template it was filled in on, so it always shows the questions and matrix the worker was given. `finished_at` and `verdict` are empty until the challenge question is answered (spec C6). Never changed once finished |
+| `SavedTake5` (task 0004) | Extends the scoring `Take5` with `id`, `created_at`, `worker_name`, `job`, `location`, `finished_at`, `verdict`, `fixes`, `started_at`, `challenge` | The implemented submitted document. The base `Take5` holds what the verdict needs (the template, `answers` and the hazards); later tasks add the remaining card fields. `answers` (task 0005) has one answer for each of the template's questions, by question ID. A Take 5 saved before task 0005 has none, and its template copy has no questions, so it still opens. `fixes` (task 0010) is the ID of the Don't start yet it fixes, or empty. It points back only, so the first one is never changed; its fix is found by searching for its ID in `fixes`. `started_at` (task 0019) is when its draft was started, by the phone's clock, or empty for one saved before then (spec K3). From task 0008 it is saved unfinished, with `finished_at` and `verdict` empty; `challenge` is added once, then the answer, `verdict` and `finished_at` once (`Take5Repository.save_question` and `finish`, each of which only changes a row that is still unfinished). One finished before task 0008 has a verdict and no `challenge`. `from_paper` (task 0033, on the base `Take5`) is true for a photographed paper card: saved as written, so its answers, ratings and control kinds may be empty and it may have no hazards, finished at once with its verdict and no `challenge`, with the card's date in `started_at` (spec P1 to P5). Older documents read it as false |
+| `Hazard` | `description`, `before` (rating, empty only on a paper card), `controls`, `after` (rating, empty only on a paper card), `weak_controls_reason`, `covers`, `kept_flag` | Belongs to one Take 5. With no controls `after` is `before` (spec R6). `weak_controls_reason` is the worker's answer to spec T3, when it was asked. `covers` (task 0022) is the IDs of the hazard questions answered Yes that the worker linked to it (spec T5); it is empty for a Take 5 saved before then. The link lives on the hazard, so removing a hazard removes its links, and nothing else needs an ID. `kept_flag` (task 0037) is what the hazard check still said about its words when it was submitted (`vague`, `stock` or `unfit`, spec T7), so the worker kept them; null when nothing was flagged, or for a Take 5 saved before then. Today's review counts it (W10) |
+| `Control` | `description`, `kind` (`ControlKind`, empty only on a paper card) | Belongs to one hazard |
 | `RiskRating` | `likelihood`, `consequence`, and from the matrix: `score`, `band` | A value, not a stored row. Score and band are always worked out, never typed in |
 | `Take5Template` | `name`, `questions` (each an `id`, its `text`, its `role`: `stop` or `hazard`, and its `example`), `matrix`, `likelihood_guidance`, `consequence_guidance` (each a level and its meaning), `control_guidance`, `draft_time_limit_minutes`, `specific_hazard_words` | The card as data. The rules never name a question: a *stop* question answered No stops the job, whichever card it is on. The page a question shows on follows from its role, so there are no separate sections. `draft_time_limit_minutes` (task 0019) is how long a draft lasts (spec K2): 120 on the booklet, or none, which turns the check off. `GET /api/take5/template` leaves it out and the phone never reads it, though the copy of the template inside a checked or saved Take 5 carries it. `specific_hazard_words` and each hazard question's `example` (task 0022) are spec T6's minimum (6 on the booklet, or none to turn it off) and the example its nudge shows; `GET /api/take5/template` leaves the minimum out too |
 | `RiskMatrix` | the likelihood and consequence scales, the score and band of each cell, the score that needs a JHA | The matrix as data. `rate()` is given the matrix, so another company's matrix needs no new code |
@@ -348,19 +369,21 @@ api/app.py is the one exception: it also imports storage, ai and settings, to pl
 - **`api/app.py`** is the only place that knows which real pieces are plugged in (the composition root). Tests
   plug in an in-memory repository and a stand-in AI instead.
 
-Anything outside the app sits behind a Protocol, so it can be replaced without touching its callers. There are
-two: the database (`Take5Repository`) and the AI (`ChallengeAsker` and `HazardJudge`, each filled by any
-`LanguageModel`). Adding ChatGPT, Gemini, or a model a company runs itself means adding one file in
-`ai/providers/`, its library, and one line in `api/app.py` to plug it in; no rule and no job changes. The
-adapter wraps its library's errors in `LanguageModelError`, keeping each as the cause, so a failed call is logged
-in one line and not as a bug (see Logging).
+Anything outside the app sits behind a Protocol, so it can be replaced without touching its callers. There are two:
+the database (`Take5Repository`) and the AI (`ChallengeAsker`, `HazardJudge` and `Take5Ranker`, each filled by any
+`LanguageModel`, and `CardReader`, filled by any `PhotoReadingModel`). Adding ChatGPT, Gemini, or a model a company
+runs itself means adding one file in `ai/providers/`, its library, and one line in `api/app.py` to plug it in; no
+rule and no job changes. The adapter wraps its library's errors in `LanguageModelError`, keeping each as the cause,
+so a failed call is logged in one line and not as a bug (see Logging).
 
-The worker's name is never passed to an adapter (spec C1). The AI's key lives in the server's environment (or
+The worker's name is never passed to an adapter (spec C1), except on a paper card's photo, which the AI reads
+it off; it is never sent to any other AI call (task 0033). The AI's key lives in the server's environment (or
 `backend/.env` on a developer's computer, copied from the template `backend/.env.example`, which names every
 setting and holds no key) and is never in the repo or sent to the phone. With no key, no AI is plugged in: the
 fixed question is always asked and the word rule judges every hazard. `api/app.py` has one table from
 `AiProvider` (a setting) to the adapter that builds that provider's models and the name of its quick model, which
-judges hazards unless `TAKE5_AI_HAZARD_MODEL` names another (spec D61).
+judges hazards unless `TAKE5_AI_HAZARD_MODEL` names another (spec D61). The main model reads photos of paper
+cards, at medium effort, unless `TAKE5_AI_SCAN_MODEL` names another (task 0033).
 
 ## Ready for later
 
@@ -381,7 +404,7 @@ between Take 5s.
 
 | Risk | What it means | What stops it |
 | --- | --- | --- |
-| Poisoning | Wrong or hostile text gets in and is relied on | C2 checks every reply before it is shown, and W6 checks every ranking: each number once, one short line each, and no line that names the worker. W8 checks the best's pick the same way. The AI's text is never fed into another AI call and never decides the verdict. A worker could type instructions into the job ("ignore your rules"); the instructions in `ai/challenge.py` tell the model the Take 5 is only data and to ignore any instructions in it (task 0009), and C2 limits any reply to one short question |
+| Poisoning | Wrong or hostile text gets in and is relied on | C2 checks every reply before it is shown, and W6 checks every ranking: each number once, one short line each, and no line that names the worker. W8 checks the best's pick the same way. A card's photo is a new way in: whatever is written on it is data, which `ai/card_reader.py` says, `scanned_card.py` keeps only the words the card allows, and a person checks every card against its photo before it is saved (task 0033). The AI's text is never fed into another AI call and never decides the verdict. The worker's name is read off a card, but never sent to any other AI call. A worker could type instructions into the job ("ignore your rules"); the instructions in `ai/challenge.py` tell the model the Take 5 is only data and to ignore any instructions in it (task 0009), and C2 limits any reply to one short question |
 | Distraction | Too much in front of the model | Each call sends one Take 5 and nothing builds up, so nothing needs compacting. A ranking sends at most the worst 10, picked by fixed rules (W6), and the best's pick at most 5 (W8) |
 | Confusion | Irrelevant material mixed in | Only that Take 5's own fields are sent (C1). A ranking sends the same for each, plus its question, answer and minutes taken, and never a worker's name (W6) |
 | Clash | Sources that disagree | One source today. When company standards arrive, `StandardsSource` picks only the sections that matter. What happens when a standard and the card disagree is a product decision for then |

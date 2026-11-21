@@ -110,3 +110,18 @@ it("puts a thrown-away draft back for Undo, but never over a newer one", () => {
   putBackDraft(thrownAway);
   expect(keptDraft()).toEqual(newer);
 });
+
+it("copies a rating a paper card left blank as not picked (P1)", () => {
+  const saved = {
+    ...SAVED.take5,
+    from_paper: true,
+    hazards: SAVED.take5.hazards.map((hazard) => ({
+      ...hazard,
+      before: null,
+      after: null,
+    })),
+  };
+  const [hazard] = fixDraftOf(saved).hazards;
+  expect(hazard?.before).toEqual({ likelihood: null, consequence: null });
+  expect(hazard?.after).toEqual({ likelihood: null, consequence: null });
+});

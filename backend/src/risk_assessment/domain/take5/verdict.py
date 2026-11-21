@@ -1,11 +1,12 @@
-"""The fixed reasons a worker must not start (spec V1 to V3)."""
+"""The fixed reasons a worker must not start (spec V1 to V3, P3)."""
 
 from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict
 
 from risk_assessment.domain.questions import Answer, QuestionRole
-from risk_assessment.domain.take5.take5 import Take5
+from risk_assessment.domain.risk import RiskRating
+from risk_assessment.domain.take5.take5 import Hazard, Take5
 
 
 class Verdict(BaseModel):
@@ -13,13 +14,18 @@ class Verdict(BaseModel):
 
     Attributes:
         can_start: True for Good to go, False for Don't start yet.
-        reasons: Every reason that applies, in the order of the rules (V1, V2, then
-            V3).
+        reasons: Every reason that applies, in the order of the rules (V1, then a
+            paper card's blanks, P3, then V2 and V3).
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
     can_start: bool
     reasons: tuple[str, ...]
+
+
+NO_HAZARD_REASON: str = (
+    "No hazard was written down. Think about what could hurt someone."
+)
 
 
 def verdict(take5: Take5) -> Verdict:
@@ -32,18 +38,38 @@ def verdict(take5: Take5) -> Verdict:
         The verdict, with every reason that applies.
     """
     reasons: list[str] = _stop_answer_reasons(take5)
+    if not take5.hazards:
+        reasons.append(NO_HAZARD_REASON)
     reasons.extend(
-        f"Say how you will control: {hazard.description}"
+        f"Rate the risk of: {_named(hazard)}"
+        for hazard in take5.hazards
+        if hazard.before is None
+    )
+    reasons.extend(
+        f"Say how you will control: {_named(hazard)}"
         for hazard in take5.hazards
         if not hazard.controls
     )
-    if take5.needs_jha:
+    rating: RiskRating | None = take5.rating
+    if rating is not None and take5.needs_jha:
         reasons.append(
-            f"The risk is {take5.rating.band} ({take5.rating.score}). "
+            f"The risk is {rating.band} ({rating.score}). "
             f"At {take5.template.matrix.jha_threshold} or more you need a JHA before "
             "you start. Talk to your supervisor.",
         )
     return Verdict(can_start=not reasons, reasons=tuple(reasons))
+
+
+def _named(hazard: Hazard) -> str:
+    """Name a hazard in a reason by its words, or say it has none (a paper card, P3).
+
+    Args:
+        hazard: The hazard.
+
+    Returns:
+        Its description, or "the hazard with no description".
+    """
+    return hazard.description or "the hazard with no description"
 
 
 def _stop_answer_reasons(take5: Take5) -> list[str]:
@@ -62,5 +88,5 @@ def _stop_answer_reasons(take5: Take5) -> list[str]:
         f"You answered No to: {question.text} Sort this out first."
         for question in take5.template.questions
         if question.role is QuestionRole.STOP
-        and take5.answers[question.id] is Answer.NO
+        and take5.answers.get(question.id) is Answer.NO
     ]

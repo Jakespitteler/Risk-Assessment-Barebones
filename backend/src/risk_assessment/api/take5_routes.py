@@ -9,6 +9,7 @@ from risk_assessment.api.schemas import (
     AnswerRequest,
     ErrorMessage,
     FormErrors,
+    PaperTake5Request,
     SubmissionRequest,
     Take5ListPage,
     Take5Response,
@@ -105,6 +106,24 @@ def create_router(service: Take5Service) -> APIRouter:
             raise HTTPException(status_code=409, detail=str(error)) from error
         return _response(saved, service)
 
+    @router.post("/api/take5s/paper", responses=_UNREADABLE | _CONFLICT)
+    def save_paper(request: PaperTake5Request) -> Take5Response:
+        """Save a checked paper card as written, finished with its verdict (P1).
+
+        A level, date, time zone or question that can't be used raises
+        `PaperCardError`, which `api/errors.py` turns into a 422 beside that field.
+        """
+        try:
+            saved: SavedTake5 = service.save_paper(
+                request.id,
+                request.draft,
+                request.filled_in_at,
+                request.time_zone,
+            )
+        except SubmissionConflictError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        return _response(saved, service)
+
     @router.post(
         "/api/take5s/{take5_id}/answer",
         responses=_UNREADABLE | _NOT_FOUND | _ANSWERED,
@@ -167,6 +186,7 @@ def _summary(saved: SavedTake5, fixed: bool) -> Take5Summary:
         job=saved.job,
         can_start=saved.verdict.can_start if saved.verdict is not None else None,
         fixed=fixed,
+        from_paper=saved.from_paper,
     )
 
 

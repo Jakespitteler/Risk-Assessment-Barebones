@@ -6,6 +6,7 @@ import { Card } from "../../components/Card";
 import { Screen } from "../../components/Screen";
 import { UndoBar } from "../../components/UndoBar";
 import { formatDateTime } from "./formatDateTime";
+import { FromPaperTag } from "./FromPaperTag";
 import { KeptDraftCard } from "./KeptDraftCard";
 import { VerdictTag } from "./VerdictTag";
 import type { StoredDraft } from "./useTake5Draft";
@@ -40,6 +41,7 @@ function SavedTake5Item({ take5 }: { take5: Take5Summary }) {
           <span className="flex flex-wrap items-center gap-2">
             <VerdictTag canStart={take5.can_start} />
             {take5.fixed && <FixedTag />}
+            {take5.from_paper && <FromPaperTag />}
           </span>
           <span aria-hidden="true" className="text-3xl leading-none">
             ›
@@ -209,6 +211,9 @@ export function SavedTake5sScreen({
                 </a>
               </>
             )}
+            <a className={LOOK_BACK_LINK} href="/scan">
+              Scan paper cards
+            </a>
             {take5s.length === 0 ? (
               <Card>
                 <p>No Take 5s have been saved yet.</p>

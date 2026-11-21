@@ -2,24 +2,35 @@
 
 import logging
 from pathlib import Path
+from typing import cast
 
+import anthropic
 import pytest
 from pydantic import SecretStr
 
+from risk_assessment.ai.card_reader import AiCardReader
 from risk_assessment.ai.challenge import AiChallengeAsker
 from risk_assessment.ai.providers import claude
 from risk_assessment.ai.ranking import AiTake5Ranker
 from risk_assessment.ai.vague_hazard import AiHazardJudge
 from risk_assessment.api.app import (
+    build_card_reader,
     build_challenge_asker,
     build_hazard_judge,
     build_take5_ranker,
     create_app,
 )
 from risk_assessment.domain.take5.ranking import AI_RANKING_TIME_LIMIT_SECONDS
-from risk_assessment.services.ports import ChallengeAsker, HazardJudge, Take5Ranker
+from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
+from risk_assessment.services.ports import (
+    CardReader,
+    ChallengeAsker,
+    HazardJudge,
+    Take5Ranker,
+)
 from risk_assessment.settings import Settings
 from risk_assessment.storage.sqlite import SqliteTake5Repository
+from tests.ai.fake_anthropic import FakeAnthropicApi
 
 
 def test_with_no_key_no_ai_is_plugged_in() -> None:
@@ -113,3 +124,56 @@ def test_the_app_lets_its_info_lines_reach_the_log(tmp_path: Path) -> None:
 
     assert logging.getLogger("risk_assessment").isEnabledFor(logging.INFO)
     assert logging.getLogger("risk_assessment").handlers
+
+
+def test_with_no_key_cards_are_not_scanned() -> None:
+    """No key means no card reader, so scanning says it needs an AI (task 0033)."""
+    assert build_card_reader(Settings(ai_key=None)) is None
+
+
+def test_cards_are_read_by_the_main_model_at_medium_effort(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With no scan model set, the main model reads, thinking harder than usual."""
+    api = FakeAnthropicApi(reply="{}")
+    real_client = claude.anthropic.Anthropic
+
+    def fake_client(**settings: object) -> anthropic.Anthropic:
+        """Make Anthropic's client send every call to the stand-in API.
+
+        Args:
+            settings: What the client is set up with.
+
+        Returns:
+            A client that never reaches the network.
+        """
+        return real_client(
+            api_key=cast(str, settings["api_key"]),
+            max_retries=0,
+            http_client=api.http_client(),
+        )
+
+    monkeypatch.setattr(claude.anthropic, "Anthropic", fake_client)
+    reader: CardReader | None = build_card_reader(
+        Settings(ai_key=SecretStr("made-up-key"), ai_model="claude-sonnet-5-5"),
+    )
+    assert reader is not None
+
+    reader.read(b"photo", "image/jpeg", BOOKLET_TEMPLATE)
+
+    assert api.requests[0]["model"] == "claude-sonnet-5-5"
+    assert api.requests[0]["output_config"] == {"effort": "medium"}
+
+
+def test_the_scan_model_is_a_setting() -> None:
+    """`TAKE5_AI_SCAN_MODEL` picks another model for reading cards only."""
+    reader: CardReader | None = build_card_reader(
+        Settings(
+            ai_key=SecretStr("made-up-key"),
+            ai_model="claude-sonnet-5-5",
+            ai_scan_model="claude-fable-5-2",
+        ),
+    )
+
+    assert isinstance(reader, AiCardReader)
+    assert reader.model_name == "claude-fable-5-2"

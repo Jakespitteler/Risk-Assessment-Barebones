@@ -9,15 +9,20 @@ import { ThemeSwitch } from "./ThemeSwitch";
 export function Screen({
   subtitle,
   aside,
+  wide = false,
   children,
 }: {
   subtitle: string;
   aside?: ReactNode;
+  /** True for a screen with two columns on a desktop, such as a photo beside a form. */
+  wide?: boolean;
   children: ReactNode;
 }) {
   return (
     <div className="min-h-dvh bg-page text-base text-ink">
-      <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-6">
+      <main
+        className={`mx-auto flex w-full flex-col gap-6 px-4 py-6 ${wide ? "max-w-6xl" : "max-w-2xl"}`}
+      >
         <header className="flex items-center gap-3">
           <a
             href="/"

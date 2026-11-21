@@ -108,3 +108,11 @@ helpers, and API types, which come from `src/api/schema.d.ts` through `src/api/t
 | Area | Where the job is, as typed, ignoring capitals, spaces and punctuation; named by the spelling typed most. | `area_key` | `name` | A1 |
 | High risk | A Take 5 with a hazard whose before score needs a JHA on its card (11 or more on the booklet). | `is_high_risk` | `high_risk_count` | A3 |
 | Common Yes | A hazard question answered Yes often in an area, with how many times; up to 3 per area. | `CommonYes` | `common_yes` | A5 |
+
+## Paper cards
+
+| Term | Meaning | Back end | Front end | Rules |
+| --- | --- | --- | --- | --- |
+| Paper card | A Take 5 filled in by hand, photographed, checked beside its photo and saved as written. | `Take5.from_paper`, `saved_paper_take5` | `from_paper` | P1 to P6 |
+| Blank | A question, rating or control kind a paper card left empty; a reason and a thought gap. | `paper_gaps` | "Not rated" | P1, P3, P4 |
+| Card's date | The date written on a paper card, saved as when it was started. | `paper_started_at` | `filled_in_at` | P5 |

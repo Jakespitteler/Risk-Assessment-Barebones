@@ -1,5 +1,6 @@
 """Tests for the Claude adapter, with Anthropic's API replaced by a stand-in."""
 
+import base64
 from pathlib import Path
 from uuid import uuid4
 
@@ -11,7 +12,12 @@ from risk_assessment.ai.challenge import (
     AiChallengeAsker,
 )
 from risk_assessment.ai.model import LanguageModelError
-from risk_assessment.ai.providers.claude import DEFAULT_MODEL, ClaudeModel
+from risk_assessment.ai.providers.claude import (
+    DEFAULT_MODEL,
+    PHOTO_MAX_OUTPUT_TOKENS,
+    PHOTO_TIME_LIMIT_SECONDS,
+    ClaudeModel,
+)
 from risk_assessment.domain.take5.challenge import AskedBy, Challenge
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
@@ -102,3 +108,38 @@ def test_example_49_the_workers_name_is_not_sent_to_claude(tmp_path: Path) -> No
         model="claude-example",
         instructions_version=CHALLENGE_INSTRUCTIONS_VERSION,
     )
+
+
+def test_a_photo_is_sent_as_one_image_with_the_instructions() -> None:
+    """The card's photo goes as a base64 image beside a short ask (task 0033)."""
+    api = FakeAnthropicApi(reply='{"job": "Change the tyre"}')
+
+    reply: str = _claude(api, "claude-example").read_photo(
+        "Read it.",
+        b"photo bytes",
+        "image/jpeg",
+    )
+
+    (request,) = api.requests
+    image, ask = request["messages"][0]["content"]
+    assert reply == '{"job": "Change the tyre"}'
+    assert request["model"] == "claude-example"
+    assert request["system"] == "Read it."
+    assert image["source"] == {
+        "type": "base64",
+        "media_type": "image/jpeg",
+        "data": base64.b64encode(b"photo bytes").decode("ascii"),
+    }
+    assert ask == {"type": "text", "text": "Read this card."}
+    assert request["max_tokens"] == PHOTO_MAX_OUTPUT_TOKENS
+    assert api.read_time_limits == [PHOTO_TIME_LIMIT_SECONDS]
+
+
+def test_a_photo_type_claude_cant_read_is_refused_before_any_call() -> None:
+    """A PDF or HEIC photo raises at once, without a call."""
+    api = FakeAnthropicApi()
+
+    with pytest.raises(LanguageModelError):
+        _claude(api).read_photo("Read it.", b"%PDF", "application/pdf")
+
+    assert api.requests == []

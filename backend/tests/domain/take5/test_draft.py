@@ -36,6 +36,7 @@ def test_a_complete_draft_is_rated_and_can_be_submitted() -> None:
     assert check.errors == ()
     assert check.can_submit
     assert check.assessment is not None
+    assert check.assessment.rating is not None
     assert check.assessment.rating.score == 5
     assert check.assessment.rating.band == "Low"
 
@@ -205,6 +206,7 @@ def test_example_16_an_unchanged_score_is_allowed() -> None:
     check: DraftCheck = check_draft(sample_draft(hazard), BOOKLET_TEMPLATE)
 
     assert check.assessment is not None
+    assert check.assessment.rating is not None
     assert (check.assessment.rating.score, check.assessment.rating.band) == (
         8,
         "Moderate",
@@ -222,6 +224,7 @@ def test_example_17_with_no_controls_after_is_the_before_rating() -> None:
     assert check.assessment is not None
     rated: Hazard = check.assessment.hazards[0]
     assert rated.after == rated.before
+    assert check.assessment.rating is not None
     assert (check.assessment.rating.score, check.assessment.rating.band) == (
         8,
         "Moderate",

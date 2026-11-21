@@ -99,8 +99,9 @@ To use another model, add a line such as `TAKE5_AI_MODEL=claude-sonnet-5-5`. To 
 5s and see what each question costs and how long it takes, run `uv run scripts/try_challenge.py` in the repo
 root (name models after it to compare them). Vague hazards are judged by Claude Haiku 5.5 unless a line such as
 `TAKE5_AI_HAZARD_MODEL=claude-sonnet-5-5` names another; `uv run scripts/try_vague_hazard.py` tries it on twelve
-made-up hazards. `uv run test.py backend -m real_ai` runs the two tests that call the real AI. Each of
-these costs a little money; the normal tests and CI never call it.
+made-up hazards. Photos of paper cards are read by the main model unless a line such as
+`TAKE5_AI_SCAN_MODEL=claude-fable-5-2` names another. `uv run test.py backend -m real_ai` runs the two tests
+that call the real AI. Each of these costs a little money; the normal tests and CI never call it.
 
 The ranking page ranks every saved Take 5 while the app is a proof of concept. To rank only today's, add the
 line `TAKE5_RANK_TODAY_ONLY=true` to `backend/.env` and start the app again. Risk by area likewise counts every

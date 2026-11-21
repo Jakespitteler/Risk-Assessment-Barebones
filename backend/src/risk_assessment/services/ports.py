@@ -7,6 +7,7 @@ from uuid import UUID
 
 from risk_assessment.domain.take5.challenge import AiQuestion
 from risk_assessment.domain.take5.saved import SavedTake5
+from risk_assessment.domain.take5.template import Take5Template
 
 
 class AiReplyError(Exception):
@@ -182,5 +183,23 @@ class Take5Ranker(Protocol):
 
         Returns:
             The reply, unchecked; `checked_ai_pick()` decides whether it is used.
+        """
+        ...
+
+
+class CardReader(Protocol):
+    """Anything that can read a photo of a paper card: an AI, or a stand-in in tests."""
+
+    def read(self, photo: bytes, media_type: str, template: Take5Template) -> str:
+        """Write out what one paper card says (task 0033).
+
+        Args:
+            photo: The photo's bytes. It holds the worker's name, which is read off
+                the card and never sent to any other AI call.
+            media_type: The photo's type, such as "image/jpeg".
+            template: The card the photo is of.
+
+        Returns:
+            The reply, unchecked; `scanned_card()` decides what of it is kept.
         """
         ...

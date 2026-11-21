@@ -32,6 +32,8 @@ export type RiskByArea = Schemas["RiskByArea"];
 export type AreaRisk = Schemas["AreaRisk"];
 export type Verdict = Schemas["Verdict"];
 export type Challenge = Schemas["Challenge"];
+export type ScannedCardResponse = Schemas["ScannedCardResponse"];
+export type PaperTake5Request = Schemas["PaperTake5Request"];
 type FormErrors = Schemas["FormErrors"];
 
 // Long enough for one bar of signal, short enough that the worker isn't left waiting.
@@ -44,6 +46,8 @@ const SUBMIT_TIMEOUT_MS = 20_000;
 // The ranking waits for the AI, which the back end gives up to 20 seconds to order
 // the worst Take 5s before the fixed rules decide (spec W6).
 const RANKING_TIMEOUT_MS = 30_000;
+// Reading a photo of handwriting can take the AI up to a minute (task 0033).
+const SCAN_TIMEOUT_MS = 70_000;
 const NETWORK_RETRIES = 2;
 // Always send the request, even when the phone says it is offline. TanStack's default
 // pauses it until the phone is back online, which leaves the screen waiting for good.
@@ -69,11 +73,13 @@ async function request<T>(
     signal: AbortSignal.timeout(timeoutMs),
     ...(body === undefined
       ? {}
-      : {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        }),
+      : body instanceof FormData
+        ? { method: "POST", body }
+        : {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          }),
   });
   if (response.ok) return (await response.json()) as T;
   // Every error the API sends is declared in its OpenAPI description: 422 is FormErrors,
@@ -315,6 +321,59 @@ export function useRiskByArea(today: string) {
       ),
     retry: retryOnNetworkError,
     // The list doesn't reorder while it is read.
+    refetchOnWindowFocus: false,
+    networkMode: NETWORK_MODE,
+  });
+}
+
+/**
+ * Have the AI read one photo of a paper card into a card to check (task 0033). Nothing
+ * is saved. It isn't retried on its own: the scan page offers "Try again".
+ */
+export function useReadCard() {
+  return useMutation({
+    mutationFn: (photo: Blob) => {
+      const form = new FormData();
+      form.append("photo", photo, "card.jpg");
+      return request<ScannedCardResponse>("/api/scans", form, SCAN_TIMEOUT_MS);
+    },
+    retry: false,
+    networkMode: NETWORK_MODE,
+  });
+}
+
+/**
+ * Save a checked paper card as written (spec P1). The ID stays the same on every
+ * retry, so a retry after a lost answer can't save it twice.
+ */
+export function useSavePaperTake5() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (paper: PaperTake5Request) =>
+      request<Take5Response>("/api/take5s/paper", paper, SUBMIT_TIMEOUT_MS),
+    retry: retryOnNetworkError,
+    networkMode: NETWORK_MODE,
+    onSuccess: (saved) => {
+      queryClient.setQueryData(["take5", saved.take5.id], saved);
+      void queryClient.invalidateQueries({ queryKey: ["take5s"] });
+    },
+  });
+}
+
+/**
+ * Just these saved Take 5s, worst first, each with why, such as a scanned batch of paper
+ * cards (spec F10). Asked once; a failure shows "Try again", as Today's review does.
+ */
+export function useRankedBatch(ids: string[]) {
+  return useQuery({
+    queryKey: ["ranked-batch", ids],
+    queryFn: () =>
+      request<RankedTake5s>(
+        "/api/ranked-take5s/batch",
+        { ids },
+        RANKING_TIMEOUT_MS,
+      ),
+    retry: false,
     refetchOnWindowFocus: false,
     networkMode: NETWORK_MODE,
   });

@@ -50,7 +50,9 @@ function AreaItem({ area, hottest }: { area: AreaRisk; hottest: number }) {
         {area.high_risk_count} of {take5s(area.take5_count)} high risk
       </p>
       <p>
-        Highest risk before controls {area.highest_score} {area.highest_band}.{" "}
+        {area.highest_score === null
+          ? "No risk rated."
+          : `Highest risk before controls ${String(area.highest_score)} ${area.highest_band ?? ""}.`}{" "}
         {area.stopped_count} “Don’t start yet”, {gaps(area.thought_gap_count)}.
       </p>
       {area.common_yes.length > 0 && (

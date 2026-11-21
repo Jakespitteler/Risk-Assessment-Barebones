@@ -3,6 +3,7 @@
 import pytest
 from pydantic import BaseModel
 
+from risk_assessment.domain.controls import Control
 from risk_assessment.domain.questions import Answer
 from risk_assessment.domain.risk import RiskCell, RiskMatrix, RiskRating, rate
 from risk_assessment.domain.take5.take5 import Hazard, Take5
@@ -55,14 +56,18 @@ def test_example_13_after_not_before_decides_the_jha() -> None:
 
 def test_example_14_no_hazards_is_refused() -> None:
     """A Take 5 must contain at least one hazard, so it always has a rating."""
-    with pytest.raises(ValueError, match="at least 1 item"):
+    with pytest.raises(ValueError, match="at least one hazard"):
         Take5(template=BOOKLET_TEMPLATE, answers=sample_answers(), hazards=())
 
 
 def test_example_15_controls_cannot_raise_the_score() -> None:
     """An increase from 5 Low to 8 Moderate is refused."""
     with pytest.raises(ValueError, match="cannot make the after risk higher"):
-        sample_hazard(("Unlikely", "Minor"), ("Possible", "Minor"))
+        Take5(
+            template=BOOKLET_TEMPLATE,
+            answers=sample_answers(),
+            hazards=(sample_hazard(("Unlikely", "Minor"), ("Possible", "Minor")),),
+        )
 
 
 def test_example_16_controls_can_leave_the_score_unchanged() -> None:
@@ -97,13 +102,14 @@ def test_example_17_no_controls_reuses_the_before_rating() -> None:
 
 def test_no_controls_cannot_change_the_rating() -> None:
     """A lower second rating cannot disguise risk when no control was supplied."""
+    hazard = Hazard(
+        description="Example hazard",
+        controls=(),
+        before=rate(BOOKLET_MATRIX, "Possible", "Minor"),
+        after=rate(BOOKLET_MATRIX, "Unlikely", "Minor"),
+    )
     with pytest.raises(ValueError, match="Without controls"):
-        Hazard(
-            description="Example hazard",
-            controls=(),
-            before=rate(BOOKLET_MATRIX, "Possible", "Minor"),
-            after=rate(BOOKLET_MATRIX, "Unlikely", "Minor"),
-        )
+        Take5(template=BOOKLET_TEMPLATE, answers=sample_answers(), hazards=(hazard,))
 
 
 def test_the_highest_before_hazard_need_not_have_the_highest_after() -> None:
@@ -207,7 +213,7 @@ def test_a_take5_needs_an_answer_to_every_question_on_its_card() -> None:
 
 def test_a_take5_refuses_an_answer_to_a_question_its_card_does_not_ask() -> None:
     """An answer to a made-up question is never kept."""
-    with pytest.raises(ValueError, match="needs exactly one answer"):
+    with pytest.raises(ValueError, match="must be to a question on the card"):
         Take5(
             template=BOOKLET_TEMPLATE,
             answers=sample_answers() | {"made_up": Answer.YES},
@@ -233,3 +239,37 @@ def test_a_hazard_can_only_cover_hazard_questions_answered_yes(linked: str) -> N
             answers=sample_answers(permits=Answer.YES),
             hazards=(sample_hazard().model_copy(update={"covers": (linked,)}),),
         )
+
+
+@pytest.mark.parametrize(
+    ("hazard", "message"),
+    [
+        (
+            Hazard(description="Example hazard", before=None, controls=(), after=None),
+            "needs a rating before and after",
+        ),
+        (
+            Hazard(
+                description="Example hazard",
+                before=rate(BOOKLET_MATRIX, "Possible", "Minor"),
+                controls=(Control(description="Chock it", kind=None),),
+                after=rate(BOOKLET_MATRIX, "Unlikely", "Minor"),
+            ),
+            "needs a kind",
+        ),
+    ],
+    ids=["no_rating", "no_kind"],
+)
+def test_only_a_paper_card_may_leave_a_rating_or_kind_blank(
+    hazard: Hazard,
+    message: str,
+) -> None:
+    """Every Take 5 filled in in the app keeps all its ratings and kinds (P1, F2)."""
+    with pytest.raises(ValueError, match=message):
+        Take5(template=BOOKLET_TEMPLATE, answers=sample_answers(), hazards=(hazard,))
+    assert Take5(
+        template=BOOKLET_TEMPLATE,
+        answers=sample_answers(),
+        hazards=(hazard,),
+        from_paper=True,
+    ).from_paper

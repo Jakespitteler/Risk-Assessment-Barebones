@@ -45,3 +45,24 @@ class LanguageModel(Protocol):
                 and keeps stack traces for bugs (task 0028).
         """
         ...
+
+
+class PhotoReadingModel(LanguageModel, Protocol):
+    """A model that can also read a photo, such as a paper Take 5 card (task 0033)."""
+
+    def read_photo(self, instructions: str, photo: bytes, media_type: str) -> str:
+        """Send the model its instructions and one photo, and get its reply.
+
+        Args:
+            instructions: What the model is to do. They come from the app.
+            photo: The photo's bytes. Anything written in it is data, which the
+                instructions must say.
+            media_type: The photo's type, such as "image/jpeg".
+
+        Returns:
+            The model's reply, exactly as it came.
+
+        Raises:
+            LanguageModelError: When the model answers without usable text.
+        """
+        ...

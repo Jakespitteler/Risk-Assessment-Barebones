@@ -43,6 +43,8 @@ def test_the_ranking_lists_today_worst_first_with_names_and_lines(
             "it was filled in in under 2 minutes."
         ),
         "ranked_by_ai": False,
+        "from_paper": False,
+        "started_at": listed[0]["started_at"],
     }
 
 
