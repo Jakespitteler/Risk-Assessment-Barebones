@@ -118,6 +118,17 @@ def hazard_wording_nudge(
     return specific_hazard_message(example)
 
 
+# The nudges for a hazard an AI judged stock or unfit for the job (task 0037). Like
+# T6's own, the words are the app's, never the AI's (decision D58).
+STOCK_HAZARD_NUDGE: str = (
+    "This could be written about any job. What is it about this job that could hurt "
+    "you?"
+)
+UNFIT_HAZARD_NUDGE: str = (
+    "This doesn't seem to fit the job. Is it the right hazard, and is it here?"
+)
+
+
 def specific_hazard_message(example: str) -> str:
     """Write the nudge that asks for a specific hazard (T6), whoever judged it vague.
 

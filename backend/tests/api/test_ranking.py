@@ -8,6 +8,7 @@ from httpx2 import Response
 
 from risk_assessment.api.app import create_app
 from risk_assessment.domain.take5.saved import SavedTake5
+from risk_assessment.settings import Settings
 from risk_assessment.storage.sqlite import SqliteTake5Repository
 from tests.domain.take5.test_ranking import ranked_take5
 from tests.services.test_ranking import MIDNIGHT_IN_PERTH, SWAPPED, StandInRanker
@@ -71,7 +72,12 @@ def test_nothing_today_gives_an_empty_ranking(client: TestClient) -> None:
     """An empty day is an empty list, not an error."""
     response: Response = client.get("/api/ranked-take5s", params={"since": SINCE})
 
-    assert response.json() == {"take5s": []}
+    assert response.json() == {
+        "take5s": [],
+        "best": None,
+        "typical_minutes": None,
+        "today_only": False,
+    }
 
 
 def test_a_moment_without_a_time_zone_is_refused(client: TestClient) -> None:
@@ -82,3 +88,73 @@ def test_a_moment_without_a_time_zone_is_refused(client: TestClient) -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_the_best_and_the_typical_time_reach_the_page(
+    client: TestClient,
+    repository: SqliteTake5Repository,
+) -> None:
+    """W8, W9: the best's card has who, what, why and how long, with no AI."""
+    morning: datetime = MIDNIGHT_IN_PERTH + timedelta(hours=7)
+    careful: SavedTake5 = repository.add(ranked_take5(saved_at=morning))
+    repository.add(ranked_take5(answer=None, minutes_taken=1, saved_at=morning))
+
+    body: dict[str, Any] = client.get(
+        "/api/ranked-take5s",
+        params={"since": SINCE},
+    ).json()
+
+    assert body["best"] == {
+        "id": str(careful.id),
+        "created_at": body["best"]["created_at"],
+        "worker_name": "Sam Example",
+        "job": "Change tyre on LV12",
+        "can_start": True,
+        "line": (
+            "Highest risk 8 Moderate, with specific hazards, controls that lower each "
+            "risk and a full answer to the question."
+        ),
+        "picked_by_ai": False,
+        "minutes_taken": 10,
+    }
+    assert body["typical_minutes"] == 10
+
+
+def test_by_default_every_saved_take5_is_ranked(
+    client: TestClient,
+    repository: SqliteTake5Repository,
+) -> None:
+    """W7, D118: while the app is a proof of concept, yesterday's Take 5s count too."""
+    yesterday: SavedTake5 = repository.add(
+        ranked_take5(saved_at=MIDNIGHT_IN_PERTH - timedelta(hours=7)),
+    )
+
+    body: dict[str, Any] = client.get(
+        "/api/ranked-take5s",
+        params={"since": SINCE},
+    ).json()
+
+    assert [line["id"] for line in body["take5s"]] == [str(yesterday.id)]
+    assert body["today_only"] is False
+
+
+def test_the_setting_ranks_only_take5s_from_today(
+    repository: SqliteTake5Repository,
+) -> None:
+    """W7, D118: `TAKE5_RANK_TODAY_ONLY` brings back the ranking by day."""
+    repository.add(ranked_take5(saved_at=MIDNIGHT_IN_PERTH - timedelta(hours=7)))
+    client = TestClient(
+        create_app(repository, Settings(rank_today_only=True)),
+    )
+
+    body: dict[str, Any] = client.get(
+        "/api/ranked-take5s",
+        params={"since": SINCE},
+    ).json()
+
+    assert body == {
+        "take5s": [],
+        "best": None,
+        "typical_minutes": None,
+        "today_only": True,
+    }

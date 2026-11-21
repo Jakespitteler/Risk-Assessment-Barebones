@@ -6,7 +6,7 @@ import { FIELD_STYLE } from "../../components/fieldStyle";
 import { Warning } from "../../components/Warning";
 
 /**
- * The back end's nudge to make a hazard linked to a Yes specific (spec T6), under the
+ * The back end's nudge on a vague, stock or unfit hazard linked to a Yes (T6, T7), under the
  * question the back end names. The worker rewords the hazard in the box, which changes
  * it on the list as they type, or keeps it as it is. It never blocks Continue. While
  * the worker is typing the box and its message stay, and the page asks nothing: an AI
@@ -42,7 +42,12 @@ export function HazardNudge({
   const fieldId = `nudge.${path}`;
   return (
     <Warning>
-      {nudge && <p>{nudge.message}</p>}
+      {nudge && (
+        <>
+          <p>{nudge.message}</p>
+          <p>If you keep it as it is, it shows in today’s review.</p>
+        </>
+      )}
       <Field name={fieldId} label={`Hazard ${String(index + 1)}`}>
         <textarea
           id={fieldId}

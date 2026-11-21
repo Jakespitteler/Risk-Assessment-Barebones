@@ -1,4 +1,4 @@
-"""Tests for `check.py`: every check CI runs, and `--fix` for what can be fixed."""
+"""Tests for `check.py`: every check CI runs, `--fix`, and `--no-front-end`."""
 
 import subprocess
 from unittest.mock import MagicMock, call, patch
@@ -37,6 +37,25 @@ def test_with_nothing_after_it_every_check_runs_in_order() -> None:
             check=False,
         )
         for each in check.CHECKS
+    ]
+
+
+def test_no_front_end_runs_every_other_check_in_order() -> None:
+    """Markdown, spelling and the whole back end run; nothing in `frontend/` does."""
+    exit_code, run = run_with_success(["--no-front-end"])
+
+    folders_run: set[str] = {str(each.kwargs["cwd"]) for each in run.mock_calls}
+    commands_run: list[list[str]] = [each.args[0] for each in run.mock_calls]
+    by_name: dict[str, check.Check] = {each.name: each for each in check.CHECKS}
+    assert exit_code == 0
+    assert folders_run == {
+        str(check.REPO_ROOT),
+        str(check.REPO_ROOT / "backend"),
+    }
+    for name in ("Markdown", "Spelling", "Back end types", "Back end tests"):
+        assert by_name[name].command in commands_run
+    assert commands_run == [
+        each.command for each in check.CHECKS if each.folder != "frontend"
     ]
 
 
@@ -99,9 +118,9 @@ def test_fix_runs_every_fix_even_after_one_leaves_a_problem(
 def test_an_unknown_argument_shows_how_to_use_it(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Anything but `--fix`, such as a mistyped switch, runs nothing."""
+    """Anything but the two switches, such as a mistyped one, runs nothing."""
     exit_code, run = run_with_success(["--repair"])
 
     assert exit_code == 2
     run.assert_not_called()
-    assert "uv run check.py [--fix]" in capsys.readouterr().out
+    assert "uv run check.py [--fix | --no-front-end]" in capsys.readouterr().out

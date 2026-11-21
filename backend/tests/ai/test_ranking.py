@@ -1,6 +1,10 @@
 """Tests for the ranking job, with a stand-in for any model."""
 
-from risk_assessment.ai.ranking import RANKING_INSTRUCTIONS, AiTake5Ranker
+from risk_assessment.ai.ranking import (
+    BEST_INSTRUCTIONS,
+    RANKING_INSTRUCTIONS,
+    AiTake5Ranker,
+)
 
 
 class StandInModel:
@@ -38,3 +42,12 @@ def test_the_model_gets_the_instructions_and_the_take5s_unchanged() -> None:
 
     assert model.calls == [(RANKING_INSTRUCTIONS, '{"take5s": []}')]
     assert reply == '{"ranking": []}'
+
+
+def test_the_model_gets_the_best_instructions_to_pick_the_best() -> None:
+    """W8: picking the best sends its own instructions and the Take 5s as they are."""
+    model = StandInModel()
+
+    AiTake5Ranker(model).pick_best('{"take5s": []}')
+
+    assert model.calls == [(BEST_INSTRUCTIONS, '{"take5s": []}')]
