@@ -74,16 +74,19 @@ class ClaudeModel:
             The text of Claude's reply.
 
         Raises:
-            LanguageModelError: When Claude refuses or sends back no text.
-            anthropic.APIError: When the call fails or takes too long.
+            LanguageModelError: When Claude refuses, sends back no text, or the call
+                fails or takes too long (with the `anthropic.APIError` as its cause).
         """
-        message: Message = self._client.messages.create(
-            model=self.name,
-            max_tokens=MAX_OUTPUT_TOKENS,
-            system=instructions,
-            messages=[{"role": "user", "content": text}],
-            output_config={"effort": self._effort},
-        )
+        try:
+            message: Message = self._client.messages.create(
+                model=self.name,
+                max_tokens=MAX_OUTPUT_TOKENS,
+                system=instructions,
+                messages=[{"role": "user", "content": text}],
+                output_config={"effort": self._effort},
+            )
+        except anthropic.APIError as error:
+            raise LanguageModelError(f"The call to {self.name} failed.") from error
         _logger.info(
             "%s replied using %d input and %d output tokens.",
             self.name,

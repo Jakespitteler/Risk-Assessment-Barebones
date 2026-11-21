@@ -4,7 +4,7 @@ import logging
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 from risk_assessment.api.schemas import FormErrors
 from risk_assessment.domain.take5.draft import FieldError
@@ -27,6 +27,29 @@ def add_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(InvalidDraftError, _invalid_draft)
     app.add_exception_handler(InvalidAnswerError, _invalid_answer)
     app.add_exception_handler(RequestValidationError, _unreadable_request)
+    app.add_exception_handler(Exception, _unexpected_error)
+
+
+def _unexpected_error(request: Request, _error: Exception) -> PlainTextResponse:
+    """Name the request that hit a bug, in one line just above its stack trace.
+
+    Starlette sends this reply, then raises the error again, so uvicorn still prints the
+    trace below this line. Only the method and path are logged, never the body, which
+    may hold a worker's name. The reply is the same plain 500 as without this handler.
+
+    Args:
+        request: The request that failed.
+        _error: The unexpected error, whose trace uvicorn prints next.
+
+    Returns:
+        A plain "Internal Server Error" reply with status 500.
+    """
+    _logger.error(
+        "%s %s failed with an unexpected error; its trace follows.",
+        request.method,
+        request.url.path,
+    )
+    return PlainTextResponse("Internal Server Error", status_code=500)
 
 
 def _invalid_draft(_request: Request, error: Exception) -> JSONResponse:
