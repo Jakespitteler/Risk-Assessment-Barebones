@@ -65,11 +65,15 @@ scanning, which GitHub turns on for public repos, scans the whole history again 
      contributors".
    - "Workflow permissions": "Read repository contents and packages permissions", and leave "Allow GitHub
      Actions to create and approve pull requests" off. Each workflow already asks for what it needs.
+   - "Actions permissions": keep "Allow all actions and reusable workflows", and tick "Require actions to be
+     pinned to a full-length commit SHA" if your page shows it. Every action here, and the one action that
+     `claude-code-action` runs itself, is already pinned.
 5. **Protect `main`.** Settings → Rules → Rulesets → New ruleset → New branch ruleset. Name it `main`,
    Enforcement status Active, Target branches → Add target → Include default branch. Tick: Restrict deletions,
    Block force pushes, Require a pull request before merging (Required approvals 0, because GitHub won't let you
    approve a PR opened from your own account), and Require status checks to pass → Add checks → `checks` (the CI
-   job). Leave the bypass list empty. Save.
+   job). Leave the bypass list empty. Save. A required check that never starts blocks the merge, so if CI is
+   ever made to skip some pull requests (such as by a paths filter), change this rule in the same PR.
 6. **Leave "Automatically delete head branches" off** (Settings → General → Pull Requests). With stacked PRs, a
    deleted base branch closes the next PR (lesson of 2026-11-14 in AGENTS.md step 3).
 7. **Tidy.** Settings → General → Features: turn off Wikis and Projects if you don't use them. On the repo's front
@@ -80,10 +84,10 @@ scanning, which GitHub turns on for public repos, scans the whole history again 
 1. **Your personal email is in 22 old commits** (as "Jacob Spitteler"). Anyone can read it once the repo is
    public. Recommended: accept it and do step 1 above, so no new commit shows it. The only way to remove it is to
    rewrite the whole history, which force pushes `main` and breaks every open PR.
-2. **Talison is named in three files**: `docs/tasks/0015-licence.md`, `docs/decisions.md` (the licence entry) and
-   `.cspell/project-words.txt`. Task 0015 says you said the app "is the property of Talison Lithium". Public, that
-   reads as a statement about your employer. Recommended: reword those lines to drop the name (the old wording
-   stays in the git history).
+2. **Your employer is named in three files**: `docs/tasks/0015-licence.md`, `docs/decisions.md` (the licence
+   entry) and `.cspell/project-words.txt`. Task 0015 says you said the app is your employer's property. Public,
+   that reads as a statement about your employer. Recommended: reword those lines to drop the name (the old
+   wording stays in the git history).
 3. **The Take 5 card's wording** in `backend/.../take5/template.py` and `docs/spec.md` (the questions, the 5x5
    matrix's labels and the likelihood and consequence meanings) appears to be copied from your work's Take 5
    booklet. It names no company, and wording like it is common across sites, but it is your employer's
@@ -99,6 +103,10 @@ scanning, which GitHub turns on for public repos, scans the whole history again 
 - When the repo is public, GitHub-hosted runner minutes are free, so the minutes question changes. The API key and
   the Claude login used by the review workflows still cost money.
 - The `claude-code-action` also checks the commenter can write to the repo. The new `if:` is a second check that
-  stops the job before it starts, so a stranger's comment costs nothing.
+  stops the job before it starts, so a stranger's comment costs nothing. It also stops comments from
+  `claude[bot]` (a bot is not a collaborator), so the workflow's `allowed_bots: "claude[bot]"` no longer starts a
+  run: one Claude can't start another by writing `@claude` in a comment.
+- Don't write `@claude` on a pull request from a fork: the job would run a stranger's code with the API key and a
+  token that can push.
 - `agent-review.yml` runs on `pull_request`, not `pull_request_target`, so a fork's PR never gets the secrets or
   a token that can write. `scripts/agent_review.cjs` also refuses forks before the review job starts.

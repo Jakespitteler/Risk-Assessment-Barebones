@@ -1,5 +1,5 @@
 # Keeps the pinned GitHub Actions in the workflows up to date, in one pull request a month.
-# Security fixes for the Python and npm packages come from the "Dependabot security updates" setting instead, so
+# Security fixes for the npm (and, where GitHub supports uv.lock, Python) packages come from the "Dependabot security updates" setting instead, so
 # there is no flood of routine version bumps. Its pull requests still need Jake's review and merge, like any other.
 version: 2
 updates:
