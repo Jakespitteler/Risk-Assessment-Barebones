@@ -1,9 +1,9 @@
 ---
 id: 0039
 title: Investigate how time of year, week and day relate to hazards and incidents
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/0039-patterns-over-time
 ---
 
 ## Goal
@@ -15,6 +15,13 @@ shift, or riskier jobs on a Monday.
 ## Decide first
 
 Questions to investigate with Jake when it starts.
+
+**Jake's answers, 2026-11-23:**
+
+- 1: Take 5s alone for now; public incidents may be added later.
+- 3: plain sentences on their own page, "Patterns over time", linked from the saved list, with the counts by
+  month, weekday and hour beneath. Fixed rules, no AI.
+- 4: the clock hour where the Take 5 was started, not the hour into a shift.
 
 1. **Where do incidents come from?** The app has none. Options: a company's incident export, the publicly reported
    WA incidents (`docs/ideas.md`, "Compare with past Take 5s and public incidents"), or Take 5s alone at first.
