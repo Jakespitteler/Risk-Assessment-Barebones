@@ -474,13 +474,16 @@ It works out each value by the rules above; nothing new is decided about a Take 
 - **E2 Importance.** A row's importance is its worst score (W1): the highest risk before controls plus 5 for each
   thought gap. The most important row comes first, then the newest. It is worked out each time, so it follows
   the rules as they are; an AI's reworded line (W6) isn't kept, so it isn't shown.
-- **E3 Time.** The month, weekday and time of day are when the Take 5 was started, by the clock of the phone, or
-  of the checker who scanned it (P5); one with no start time goes by when it was saved, in the zone of whoever
-  asks. The time of day is one of four blocks: midnight to 6 am, 6 am to noon, noon to 6 pm, 6 pm to midnight. A
-  paper card with a date and no time has no time of day.
-- **E4 Filters.** Words are found in the job, location or worker, ignoring capitals. A date range keeps the days
-  from the first to the last, both included, by E3's day. The verdict, risk band, area (matched as A1 matches),
-  weekday, time of day and "from paper" each keep only rows that match. An empty filter keeps every row.
+- **E3 Time.** The month, weekday and time of day are when the Take 5 was started. A phone sends its start time
+  without its zone, so it is read in the zone of whoever asks, which on one site is the phone's; a paper card
+  keeps the date and time written on it (P5). One with no start time goes by when it was saved, read the same
+  way. The time of day is one of four blocks: midnight to 6 am, 6 am to noon, noon to 6 pm, 6 pm to midnight. A
+  paper card with a date and no time has no time of day (nor one whose written time is exactly midnight, which
+  is saved the same way).
+- **E4 Filters.** Each word searched must be found in the job, location or worker, ignoring capitals. A date
+  range keeps the days from the first to the last, both included, by E3's day. The verdict, risk band, area
+  (matched as A1 matches), weekday, time of day and "from paper" each keep only rows that match. An empty or
+  blank filter keeps every row.
 - **E5 CSV.** "Download CSV" exports the rows the filters keep, in the same order, one column per value in E1 and
   one per question on the card, with the worker's name as the saved list shows it. A cell that starts like a
   spreadsheet formula (with =, +, -, @, a tab or a return) starts with an apostrophe instead, so it is never run.
@@ -1073,7 +1076,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D129 | What importance is (2026-11-23) | The ranking's worst score, band and line, worked out each time, not stored (E2) | Stored as ranked, a data model change; a new rule |
 | D130 | Job type (2026-11-23) | Not yet: words are searched in the job, location and worker (E4) | An AI sorting each job; a pick-list on the form |
 | D131 | What the CSV holds (2026-11-23) | Every value, workers' names included, as the saved list shows them (E5) | Fewer columns; no names |
-| D132 | Time of day (2026-11-23) | The clock where it was started, in four 6-hour blocks (E3) | The hour into a shift, which needs each site's shift times |
+| D132 | Time of day (2026-11-23) | The clock where it was started, in four 6-hour blocks, read in the asker's zone as the phone's isn't saved (E3) | The hour into a shift, which needs each site's shift times |
 
 ## Open questions
 

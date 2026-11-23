@@ -49,3 +49,20 @@ def test_a_line_that_is_not_a_request_line_is_always_printed() -> None:
     )
 
     assert FailedRequestsOnly().filter(record)
+
+
+def test_a_failed_request_line_never_shows_its_query() -> None:
+    """The table's search can hold a worker's name, which is never logged (0043)."""
+    record = request_line(422)
+    record.args = (
+        "127.0.0.1:5000",
+        "GET",
+        "/api/take5-table.csv?zone=Australia/Perth&search=Sam%20Example",
+        "1.1",
+        422,
+    )
+
+    assert FailedRequestsOnly().filter(record)
+
+    assert "Sam" not in record.getMessage()
+    assert "/api/take5-table.csv" in record.getMessage()

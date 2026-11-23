@@ -255,3 +255,53 @@ def test_a_rushed_take5_is_marked_and_counts_its_gap() -> None:
 
     assert rushed.rushed
     assert rushed.importance == 13
+
+
+def test_a_phone_start_sent_in_utc_is_read_in_the_askers_zone() -> None:
+    """The phone sends UTC, so 11 pm on Friday UTC is Saturday morning in Perth (E3)."""
+    phone: SavedTake5 = started(SATURDAY_MORNING.astimezone(UTC))
+
+    laid_out: Take5Row = row(phone)
+
+    assert (laid_out.started_on, laid_out.weekday, laid_out.time_of_day) == (
+        date(2026, 11, 21),
+        "Saturday",
+        "6 am to noon",
+    )
+    assert matches(
+        laid_out,
+        Take5Filters(start=date(2026, 11, 21), end=date(2026, 11, 21)),
+    )
+
+
+@pytest.mark.parametrize("start", ["+", "-", "@", "\t", "\r"])
+def test_every_formula_start_is_made_safe(start: str) -> None:
+    """Not only "=": each character a spreadsheet reads as a formula (E5)."""
+    job: SavedTake5 = started(SATURDAY_MORNING).model_copy(
+        update={"job": f"{start}1+1"},
+    )
+
+    cells: list[list[str]] = list(
+        csv.reader(io.StringIO(table_csv([row(job)], BOOKLET_TEMPLATE))),
+    )
+
+    assert cells[1][cells[0].index("Job")] == f"'{start}1+1"
+
+
+def test_on_equal_importance_the_newest_comes_first() -> None:
+    """E2's tie-break."""
+    older: SavedTake5 = started(SATURDAY_MORNING)
+    newer: SavedTake5 = started(SATURDAY_MORNING + timedelta(hours=1))
+
+    rows: tuple[Take5Row, ...] = table_rows([older, newer], Take5Filters(), PERTH)
+
+    assert [each.id for each in rows] == [newer.id, older.id]
+
+
+def test_every_word_searched_is_found_somewhere() -> None:
+    """Words may be in different fields; an area of only punctuation filters nothing."""
+    careful: Take5Row = row(started(SATURDAY_MORNING))
+
+    assert matches(careful, Take5Filters(search="tyre sam"))
+    assert not matches(careful, Take5Filters(search="tyre crusher"))
+    assert matches(careful, Take5Filters(area="..."))

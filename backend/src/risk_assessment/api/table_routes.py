@@ -5,12 +5,13 @@ from typing import Annotated, Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, Query, Response
-from pydantic import AfterValidator
+from pydantic import AfterValidator, BeforeValidator
 
 from risk_assessment.api.schemas import FormErrors, Take5TablePage
 from risk_assessment.domain.take5.table import Take5Filters
 from risk_assessment.services.take5_table import Take5Table, Take5TableService
 
+_BYTE_ORDER_MARK: str = "\N{ZERO WIDTH NO-BREAK SPACE}"
 _UNREADABLE: dict[int | str, dict[str, Any]] = {
     422: {"model": FormErrors, "description": "A filter or the zone can't be read"},
 }
@@ -39,18 +40,30 @@ def _known_zone(name: str) -> str:
 type ZoneName = Annotated[str, AfterValidator(_known_zone)]
 
 
+def _blank(value: object) -> object:
+    """Read a filter left blank, as a plain form sends it, as no filter (E4).
+
+    Args:
+        value: The value from the query.
+
+    Returns:
+        None for a blank, or the value as it came.
+    """
+    return None if isinstance(value, str) and not value.strip() else value
+
+
 def _filters(  # noqa: PLR0913 - one argument per filter on the page
     search: str = "",
-    start: Annotated[date | None, Query(alias="from")] = None,
-    end: Annotated[date | None, Query(alias="to")] = None,
+    start: Annotated[date | None, Query(alias="from"), BeforeValidator(_blank)] = None,
+    end: Annotated[date | None, Query(alias="to"), BeforeValidator(_blank)] = None,
     verdict: str | None = None,
     band: str | None = None,
     area: str | None = None,
     weekday: str | None = None,
     time_of_day: str | None = None,
-    from_paper: bool | None = None,
+    from_paper: Annotated[bool | None, BeforeValidator(_blank)] = None,
 ) -> Take5Filters:
-    """Read the filters from the query (E4). An empty one lets every row through.
+    """Read the filters from the query (E4). An empty or blank one lets every row by.
 
     Args:
         search: Words to find in the job, location or worker.
@@ -125,7 +138,7 @@ def create_table_router(service: Take5TableService) -> APIRouter:
         today: date = datetime.now(ZoneInfo(zone)).date()
         # The byte-order mark lets Excel read the CSV's apostrophes and dashes.
         return Response(
-            content="﻿" + service.csv(filters, ZoneInfo(zone)),
+            content=_BYTE_ORDER_MARK + service.csv(filters, ZoneInfo(zone)),
             media_type="text/csv; charset=utf-8",
             headers={
                 "Content-Disposition": f'attachment; filename="take5s-{today}.csv"',

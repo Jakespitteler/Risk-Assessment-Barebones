@@ -14,6 +14,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
+from risk_assessment.domain.controls import Control
 from risk_assessment.domain.risk import RiskRating
 from risk_assessment.domain.take5.areas import area_key
 from risk_assessment.domain.take5.ranking import (
@@ -117,7 +118,7 @@ class Take5Filters(BaseModel):
     """What to narrow the table to (E4). Each empty filter lets every row through.
 
     Attributes:
-        search: Words to find in the job, location or worker, ignoring capitals.
+        search: Words to find, each in the job, location or worker, ignoring capitals.
         start: The first day to show, by `Take5Row.started_on`.
         end: The last day to show.
         verdict: One of `VERDICTS`.
@@ -151,14 +152,12 @@ def take5_row(take5: SavedTake5, zone: tzinfo) -> Take5Row:
     Returns:
         Its row.
     """
-    when: datetime = (
-        take5.started_at
-        if take5.started_at is not None
-        else take5.created_at.astimezone(zone)
-    )
+    when: datetime = _clock(take5, zone)
     riskiest: RiskRating | None = highest_risk(take5)
     gaps: tuple[str, ...] = thought_gaps(take5)
-    controls = [control for hazard in take5.hazards for control in hazard.controls]
+    controls: list[Control] = [
+        control for hazard in take5.hazards for control in hazard.controls
+    ]
     return Take5Row(
         id=take5.id,
         started_at=take5.started_at,
@@ -192,6 +191,27 @@ def take5_row(take5: SavedTake5, zone: tzinfo) -> Take5Row:
     )
 
 
+def _clock(take5: SavedTake5, zone: tzinfo) -> datetime:
+    """When a Take 5 was started, on the clock its time of day is read from (E3).
+
+    A paper card keeps the date and time written on it, at the checker's offset (P5).
+    A phone sends its start time in UTC, so it is read in the zone of whoever asks,
+    standing in for the phone's. One with no start time goes by when it was saved.
+
+    Args:
+        take5: A saved Take 5.
+        zone: The zone of whoever asked.
+
+    Returns:
+        The moment, on that clock.
+    """
+    if take5.started_at is None:
+        return take5.created_at.astimezone(zone)
+    if take5.from_paper:
+        return take5.started_at
+    return take5.started_at.astimezone(zone)
+
+
 def matches(row: Take5Row, filters: Take5Filters) -> bool:
     """Say whether a row is let through by every filter (E4).
 
@@ -202,15 +222,15 @@ def matches(row: Take5Row, filters: Take5Filters) -> bool:
     Returns:
         True when the row passes them all.
     """
-    words: str = filters.search.strip().casefold()
+    found_in: str = f"{row.job}\n{row.location}\n{row.worker_name}".casefold()
+    area: str = area_key(filters.area or "")
     checks: tuple[bool, ...] = (
-        not words
-        or words in f"{row.job}\n{row.location}\n{row.worker_name}".casefold(),
+        all(word in found_in for word in filters.search.casefold().split()),
         filters.start is None or row.started_on >= filters.start,
         filters.end is None or row.started_on <= filters.end,
         filters.verdict is None or row.verdict == filters.verdict,
         filters.band is None or row.highest_band == filters.band,
-        filters.area is None or area_key(row.location) == area_key(filters.area),
+        not area or area_key(row.location) == area,
         filters.weekday is None or row.weekday == filters.weekday,
         filters.time_of_day is None or row.time_of_day == filters.time_of_day,
         filters.from_paper is None or row.from_paper == filters.from_paper,
@@ -349,7 +369,11 @@ def _time_of_day(take5: SavedTake5, when: datetime) -> str | None:
         The block, or None for a paper card with a date and no time, which is saved
         as the start of that day (P5).
     """
-    if take5.from_paper and (when.hour, when.minute) == (0, 0):
+    if (
+        take5.from_paper
+        and take5.started_at is not None
+        and (when.hour, when.minute) == (0, 0)
+    ):
         return None
     return TIMES_OF_DAY[when.hour // _HOURS_PER_BLOCK]
 

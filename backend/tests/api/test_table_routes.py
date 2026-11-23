@@ -67,7 +67,9 @@ def test_the_csv_is_a_download_of_the_same_rows(
     assert response.headers["content-disposition"].startswith(
         'attachment; filename="take5s-',
     )
-    lines: list[str] = response.text.lstrip("﻿").splitlines()
+    lines: list[str] = response.text.lstrip(
+        "\N{ZERO WIDTH NO-BREAK SPACE}",
+    ).splitlines()
     assert lines[0].startswith("Started,Saved,Month,Weekday")
     assert len(lines) == 2
 
@@ -82,3 +84,20 @@ def test_an_unknown_zone_or_date_is_a_422(client: TestClient) -> None:
 
     assert (zone.status_code, day.status_code) == (422, 422)
     assert [error["path"] for error in zone.json()["errors"]] == ["zone"]
+
+
+def test_a_blank_filter_keeps_every_row(
+    client: TestClient,
+    repository: SqliteTake5Repository,
+) -> None:
+    """E4: a plain form sends empty filters, which narrow nothing."""
+    repository.add(started(SATURDAY_MORNING))
+    blank: dict[str, str] = {
+        name: ""
+        for name in ("search", "from", "to", "verdict", "band", "area", "from_paper")
+    }
+
+    response: Response = client.get("/api/take5-table", params=PERTH | blank)
+
+    assert response.status_code == 200
+    assert len(response.json()["rows"]) == 1

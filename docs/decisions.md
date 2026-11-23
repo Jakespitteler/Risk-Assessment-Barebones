@@ -6,7 +6,9 @@ Newest first. One short entry per non-obvious decision.
 
 - Decision: every saved Take 5 as a row, filtered by words, dates, verdict, band, area, weekday, time of day and
   from paper, and exported as CSV (spec E1 to E5, F11, D128 to D132). Importance is the ranking's worst score and
-  line, worked out each time, not stored. Time of day is the clock where it was started, in four 6-hour blocks.
+  line, worked out each time, not stored. Time of day is the clock where it was started, in four 6-hour blocks;
+  the phone sends its start in UTC, so it is read in the asker's zone, and a paper card keeps its written date.
+  A failed request's log line now drops its query, as the table's search can hold a worker's name.
   The CSV holds every value, workers' names included, with a cell that starts like a formula made safe, and a
   byte-order mark so Excel reads it as UTF-8. Filtering is done by the back end, so the page and the CSV always
   hold the same rows and the front end holds no rule.
