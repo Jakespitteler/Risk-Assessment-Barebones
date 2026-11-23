@@ -11,8 +11,9 @@ Recommended by Claude on 2026-11-13, agreed by Jake the same day. Tasks 0015 to 
 
 Complete: 0001 to 0026, 0028, 0030 to 0038 and 0042. Jake chose on 2026-11-19 to build 0024 (dark mode) then
 (spec D79). Task 0027 is merged, but stays `review` until Jake's measurement of the AI's verdicts is in its pull
-request, as its last criterion asks. Task 0029 stays `review` until Jake tries Ctrl+C on Windows. Task 0018 decided to keep the
-built-in `sqlite3` for now (`docs/decisions.md`, 2026-11-14), so no task to switch storage is in the order below.
+request, as its last criterion asks. Task 0029 stays `review` until Jake tries Ctrl+C on Windows. Task 0018
+decided to keep the built-in `sqlite3` for now (`docs/decisions.md`, 2026-11-14), so no task to switch storage is in
+the order below.
 
 1. **0028, errors obvious in the terminal.** Jake asked for it on 2026-11-19, after a blank page on Windows whose
    error showed only in the browser. It builds on 0029's start script and makes every later task quicker to
