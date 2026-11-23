@@ -18,6 +18,14 @@ for (const { width, name } of [
     await expect(heading(page, "All Take 5s")).toBeVisible();
     await expect(page.getByText(/^\d+ Take 5s? match(es)?\.$/)).toBeVisible();
 
+    // On a phone the filters start folded away.
+    const filters = page.locator("details");
+    if ((await filters.getAttribute("open")) === null)
+      await page.getByText("Filters", { exact: true }).click();
+    // Typing at speed keeps every letter, and the address follows once it pauses.
+    await page.getByLabel("Find words").pressSequentially("tyre lv12");
+    await expect(page.getByLabel("Find words")).toHaveValue("tyre lv12");
+    await expect(page).toHaveURL(/search=tyre\+lv12/);
     await page.getByLabel("Risk band").selectOption("Extreme");
     await expect(page).toHaveURL(/band=Extreme/);
     const table = page.getByRole("region", {

@@ -1,8 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Take5Row } from "../../api/take5";
-import { take5TableCsvUrl, useTake5Table } from "../../api/take5";
+import { ApiError, take5TableCsvUrl, useTake5Table } from "../../api/take5";
 import { Button } from "../../components/Button";
-import { Card } from "../../components/Card";
 import { Field } from "../../components/Field";
 import { FIELD_STYLE } from "../../components/fieldStyle";
 import { Screen } from "../../components/Screen";
@@ -10,22 +9,8 @@ import { formatAsWritten, formatDateTime } from "./formatDateTime";
 import { SavedListLink } from "./SavedListLink";
 
 const HEADING = "text-3xl font-extrabold focus:outline-none";
-const VERDICTS = ["Good to go", "Don't start yet", "Not finished"];
-const WEEKDAYS = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
-const TIMES_OF_DAY = [
-  "Midnight to 6 am",
-  "6 am to noon",
-  "Noon to 6 pm",
-  "6 pm to midnight",
-];
+// Typing waits this long after the last key before the table is asked again.
+const SEARCH_PAUSE_MS = 400;
 const DOWNLOAD_LINK =
   "flex min-h-14 items-center justify-center rounded-xl bg-action px-5 text-lg font-bold text-on-action hover:bg-action-hover focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
@@ -55,6 +40,25 @@ export function Take5TableScreen({
     onFilters(changed);
   };
   const rows = table.data?.rows ?? [];
+  // The search box keeps its own text, so typing is never interrupted, and the
+  // address follows once typing pauses.
+  const [words, setWords] = useState(filters.get("search") ?? "");
+  const searched = filters.get("search") ?? "";
+  useEffect(() => {
+    if (words === searched) return;
+    const timer = setTimeout(() => {
+      set("search", words.trim() ? words : "");
+    }, SEARCH_PAUSE_MS);
+    return () => {
+      clearTimeout(timer);
+    };
+  });
+  // Filters fill a phone's first screen, so they start folded there.
+  const [filtersOpen] = useState(
+    () => window.matchMedia("(min-width: 1024px)").matches,
+  );
+  const unreadableLink =
+    table.error instanceof ApiError && table.error.status < 500;
 
   return (
     <Screen subtitle="Look back" aside={<SavedListLink />} wide>
@@ -66,16 +70,22 @@ export function Take5TableScreen({
         least thought in the answers. Narrow them down, then download the same
         rows to open in a spreadsheet.
       </p>
-      <Card>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <details
+        open={filtersOpen}
+        className="rounded-2xl border border-line bg-surface p-4"
+      >
+        <summary className="flex min-h-12 cursor-pointer items-center text-lg font-bold focus-visible:outline-4 focus-visible:outline-focus">
+          Filters{filters.size > 0 ? ` (${String(filters.size)} on)` : ""}
+        </summary>
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Field name="search" label="Find words">
             <input
               id="search"
               type="search"
               className={FIELD_STYLE}
-              value={filters.get("search") ?? ""}
+              value={words}
               onChange={(event) => {
-                set("search", event.target.value);
+                setWords(event.target.value);
               }}
             />
           </Field>
@@ -104,7 +114,7 @@ export function Take5TableScreen({
           <Choice
             name="verdict"
             label="Verdict"
-            choices={VERDICTS}
+            choices={table.data?.verdicts ?? []}
             filters={filters}
             onChoose={set}
           />
@@ -125,14 +135,14 @@ export function Take5TableScreen({
           <Choice
             name="weekday"
             label="Weekday"
-            choices={WEEKDAYS}
+            choices={table.data?.weekdays ?? []}
             filters={filters}
             onChoose={set}
           />
           <Choice
             name="time_of_day"
             label="Time of day"
-            choices={TIMES_OF_DAY}
+            choices={table.data?.times_of_day ?? []}
             filters={filters}
             onChoose={set}
           />
@@ -155,20 +165,28 @@ export function Take5TableScreen({
           <Button
             variant="quiet"
             onClick={() => {
+              setWords("");
               onFilters(new URLSearchParams());
             }}
           >
             Clear the filters
           </Button>
         )}
-      </Card>
+      </details>
       {table.isError && !table.data ? (
-        <>
+        unreadableLink ? (
           <p>
-            The Take 5s couldn’t be loaded. Check your signal and try again.
+            A filter in this page’s address can’t be read. Clear the filters and
+            choose them again.
           </p>
-          <Button onClick={() => void table.refetch()}>Try again</Button>
-        </>
+        ) : (
+          <>
+            <p>
+              The Take 5s couldn’t be loaded. Check your signal and try again.
+            </p>
+            <Button onClick={() => void table.refetch()}>Try again</Button>
+          </>
+        )
       ) : !table.data ? (
         <p role="status">Loading the Take 5s…</p>
       ) : (
@@ -180,9 +198,13 @@ export function Take5TableScreen({
           </p>
           {rows.length > 0 && (
             <>
-              <a className={DOWNLOAD_LINK} href={take5TableCsvUrl(filters)}>
-                Download CSV
-              </a>
+              {/* While a new filter loads, the old rows still show, so the
+                  download waits for the rows it would hold. */}
+              {!table.isPlaceholderData && (
+                <a className={DOWNLOAD_LINK} href={take5TableCsvUrl(filters)}>
+                  Download CSV
+                </a>
+              )}
               <RowsTable rows={rows} />
             </>
           )}
@@ -217,7 +239,12 @@ function Choice({
         }}
       >
         <option value="">Any</option>
-        {choices.map((choice) => (
+        {[
+          ...choices,
+          ...(filters.get(name) && !choices.includes(filters.get(name) ?? "")
+            ? [filters.get(name) ?? ""]
+            : []),
+        ].map((choice) => (
           <option key={choice} value={choice}>
             {choice}
           </option>
@@ -234,7 +261,7 @@ function Choice({
 function RowsTable({ rows }: { rows: Take5Row[] }) {
   return (
     <div
-      className="overflow-x-auto rounded-2xl border border-line bg-surface"
+      className="overflow-x-auto rounded-2xl border border-line bg-surface focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus"
       tabIndex={0}
       role="region"
       aria-label="Take 5s, the most important first"

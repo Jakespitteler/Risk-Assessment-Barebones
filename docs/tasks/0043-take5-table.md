@@ -1,9 +1,9 @@
 ---
 id: 0043
 title: A table of saved Take 5s, with filters and CSV export
-status: in-progress
+status: review
 owner: claude
-branch: claude/0043-take5-table (#87), claude/0043-table-page (part 2)
+branch: claude/0043-take5-table (#87), claude/0043-table-page (#88)
 ---
 
 ## Goal

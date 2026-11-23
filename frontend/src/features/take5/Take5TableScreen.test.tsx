@@ -60,8 +60,24 @@ const PAGE: Take5TablePage = {
     }),
     row(),
   ],
-  areas: ["Example workshop"],
+  verdicts: ["Good to go", "Don't start yet", "Not finished"],
   bands: ["Low", "Moderate", "High", "Extreme"],
+  areas: ["Example workshop"],
+  weekdays: [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ],
+  times_of_day: [
+    "Midnight to 6 am",
+    "6 am to noon",
+    "Noon to 6 pm",
+    "6 pm to midnight",
+  ],
 };
 
 function open(filters = "", onFilters = vi.fn()) {
@@ -171,4 +187,49 @@ it("says when nothing matches, with no download", async () => {
   open("search=crusher");
   expect(await screen.findByText("0 Take 5s match.")).toBeTruthy();
   expect(screen.queryByRole("link", { name: "Download CSV" })).toBeNull();
+});
+
+it("keeps every letter typed, and searches once typing pauses (E4)", async () => {
+  stubApi({ [tableUrl()]: { status: 200, body: PAGE } });
+  const onFilters = open();
+  await screen.findByText("2 Take 5s match.");
+  vi.useFakeTimers();
+  const box = screen.getByLabelText("Find words");
+  for (const typed of ["t", "ty", "tyr", "tyre"])
+    fireEvent.change(box, { target: { value: typed } });
+  expect(box).toHaveProperty("value", "tyre");
+  expect(onFilters).not.toHaveBeenCalled();
+  vi.advanceTimersByTime(400);
+  vi.useRealTimers();
+  expect(onFilters).toHaveBeenCalledOnce();
+  expect((onFilters.mock.calls[0]?.[0] as URLSearchParams).toString()).toBe(
+    "search=tyre",
+  );
+});
+
+it("says a filter in the address can't be read, without offering to try again", async () => {
+  stubApi({
+    [tableUrl("from=21%2F11%2F2026")]: {
+      status: 422,
+      body: { detail: "Check the dates.", errors: [] },
+    },
+  });
+  open("from=21%2F11%2F2026");
+  expect(
+    await screen.findByText(/A filter in this page’s address can’t be read/),
+  ).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+});
+
+it("says 1 Take 5 matches, and shows how many filters are on", async () => {
+  stubApi({
+    [tableUrl("from_paper=false")]: {
+      status: 200,
+      body: { ...PAGE, rows: [row()] },
+    },
+  });
+  open("from_paper=false");
+  expect(await screen.findByText("1 Take 5 matches.")).toBeTruthy();
+  expect(screen.getByText("Filters (1 on)")).toBeTruthy();
+  expect(screen.getByLabelText("From paper")).toHaveProperty("value", "false");
 });
