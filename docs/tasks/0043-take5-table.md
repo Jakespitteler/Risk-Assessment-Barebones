@@ -3,7 +3,7 @@ id: 0043
 title: A table of saved Take 5s, with filters and CSV export
 status: in-progress
 owner: claude
-branch: claude/0043-take5-table
+branch: claude/0043-take5-table (#87), claude/0043-table-page (part 2)
 ---
 
 ## Goal
@@ -38,7 +38,7 @@ Part 1, the back end:
 
 Part 2, the page:
 
-- [ ] "All Take 5s" at `/take5-table`, linked from the saved list, shows the table with its filters, kept in the
+- [x] "All Take 5s" at `/take5-table`, linked from the saved list, shows the table with its filters, kept in the
   URL, and a "Download CSV" link for the same rows; it works at 360 px and 1280 px.
 
 ## Out of scope

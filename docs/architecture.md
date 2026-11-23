@@ -185,7 +185,9 @@ frontend/
         features/take5/    the Take 5's screens: the four parts of the form, the question, the result, and
                            the list of saved Take 5s (SavedTake5sScreen.tsx), and today's best and
                            worst first (ReviewTodayScreen.tsx, spec F8; RankedList.tsx is its list, which
-                           the scan page reuses), and risk by area
+                           the scan page reuses), every saved Take 5 as a filtered table with a CSV
+                           download (Take5TableScreen.tsx, spec F11; its filters live in the URL), and risk
+                           by area
                            (RiskByAreaScreen.tsx, spec F9). formatDateTime.ts writes
                            every date the one way the spec sets (D17)
                            stage.ts is which page shows (kept in the URL); useTake5Draft.ts keeps the one

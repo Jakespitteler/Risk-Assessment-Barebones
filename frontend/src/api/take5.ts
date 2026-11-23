@@ -34,6 +34,8 @@ export type Verdict = Schemas["Verdict"];
 export type Challenge = Schemas["Challenge"];
 export type ScannedCardResponse = Schemas["ScannedCardResponse"];
 export type PaperTake5Request = Schemas["PaperTake5Request"];
+export type Take5TablePage = Schemas["Take5TablePage"];
+export type Take5Row = Schemas["Take5Row"];
 type FormErrors = Schemas["FormErrors"];
 
 // Long enough for one bar of signal, short enough that the worker isn't left waiting.
@@ -374,6 +376,35 @@ export function useRankedBatch(ids: string[]) {
         RANKING_TIMEOUT_MS,
       ),
     retry: false,
+    refetchOnWindowFocus: false,
+    networkMode: NETWORK_MODE,
+  });
+}
+
+/** The table's address on the API, with its filters and the phone's time zone (E1 to E5). */
+function take5TableQuery(filters: URLSearchParams): string {
+  const query = new URLSearchParams(filters);
+  query.set("zone", Intl.DateTimeFormat().resolvedOptions().timeZone);
+  return query.toString();
+}
+
+/** Where the CSV of the same rows downloads from (E5). */
+export function take5TableCsvUrl(filters: URLSearchParams): string {
+  return `/api/take5-table.csv?${take5TableQuery(filters)}`;
+}
+
+/**
+ * Every saved Take 5 as a row, the most important first, narrowed by the filters in
+ * the page's address (spec E1 to E4). The back end does the filtering, so the CSV
+ * holds the same rows.
+ */
+export function useTake5Table(filters: URLSearchParams) {
+  const query = take5TableQuery(filters);
+  return useQuery({
+    queryKey: ["take5-table", query],
+    queryFn: () => request<Take5TablePage>(`/api/take5-table?${query}`),
+    retry: retryOnNetworkError,
+    placeholderData: (previous) => previous,
     refetchOnWindowFocus: false,
     networkMode: NETWORK_MODE,
   });
