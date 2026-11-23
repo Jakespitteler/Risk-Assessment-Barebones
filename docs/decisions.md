@@ -2,6 +2,20 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-23: A table of every saved Take 5, with filters and CSV export (task 0043)
+
+- Decision: every saved Take 5 as a row, filtered by words, dates, verdict, band, area, weekday, time of day and
+  from paper, and exported as CSV (spec E1 to E5, F11, D128 to D132). Importance is the ranking's worst score and
+  line, worked out each time, not stored. Time of day is the clock where it was started, in four 6-hour blocks.
+  The CSV holds every value, workers' names included, with a cell that starts like a formula made safe, and a
+  byte-order mark so Excel reads it as UTF-8. Filtering is done by the back end, so the page and the CSV always
+  hold the same rows and the front end holds no rule.
+- Why: Jake asked on 2026-11-23 for a table to filter and export, ahead of task 0039, with importance from the
+  ranking worked out on export.
+- Not chosen: storing the values (a data model change, and they would go stale when a rule changes); a job type
+  (no list yet); filtering in the browser (the CSV would need the same rule in TypeScript).
+- Decided by: human (the choices above), agent (where the filtering lives, the formula guard).
+
 ## 2026-11-21: A paper card is saved as written, blanks and all (task 0033, part 2a)
 
 - Decision: `Take5.from_paper` marks a photographed paper card. On one, an answer, a rating or a control's kind

@@ -30,11 +30,11 @@ desktop or a phone.
 
 Part 1, the back end:
 
-- [ ] `GET /api/take5-table` returns one row per saved Take 5, worst importance first, with every column in the
+- [x] `GET /api/take5-table` returns one row per saved Take 5, worst importance first, with every column in the
   spec's "Table and export" section, and the choices each filter offers.
-- [ ] The filters narrow the rows; `GET /api/take5-table.csv` exports the same rows as CSV, with a cell that
+- [x] The filters narrow the rows; `GET /api/take5-table.csv` exports the same rows as CSV, with a cell that
   starts like a formula made safe.
-- [ ] The spec gets the section's rules and worked examples, and the tests are named by them.
+- [x] The spec gets the section's rules and worked examples, and the tests are named by them.
 
 Part 2, the page:
 

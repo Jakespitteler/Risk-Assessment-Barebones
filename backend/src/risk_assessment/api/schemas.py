@@ -12,6 +12,7 @@ from risk_assessment.domain.risk import RiskMatrix, RiskRating
 from risk_assessment.domain.take5.areas import AreaRisk
 from risk_assessment.domain.take5.draft import FieldError, Take5Draft
 from risk_assessment.domain.take5.saved import SavedTake5
+from risk_assessment.domain.take5.table import Take5Row
 from risk_assessment.domain.take5.template import LevelGuidance
 
 
@@ -307,3 +308,19 @@ class ScannedCardResponse(BaseModel):
     draft: Take5Draft
     filled_in_at: str | None
     unreadable: tuple[str, ...]
+
+
+class Take5TablePage(BaseModel):
+    """Every saved Take 5 the filters let through, as rows, and the filters' choices.
+
+    Attributes:
+        rows: One row per Take 5, the most important first (E1, E2).
+        areas: Every area with a Take 5, by the spelling typed most (A1).
+        bands: The card's risk bands, lowest first.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    rows: tuple[Take5Row, ...]
+    areas: tuple[str, ...]
+    bands: tuple[str, ...]

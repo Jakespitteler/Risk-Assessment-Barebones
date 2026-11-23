@@ -108,6 +108,8 @@ backend/
                                    and the check on its order and lines; the best's shortlist,
                                    its line and the check on the AI's pick; the typical time (spec W1 to W9)
                 areas.py           Take 5s grouped by area, hottest first; no AI        (spec A1 to A5)
+                table.py           every saved Take 5 as a row, its filters and its CSV,
+                                   from the rules above                         (spec E1 to E5)
                 scanned_card.py    ScannedCard: the AI's reading of a paper card, kept to the
                                    words the card allows, never rewritten       (task 0033)
                 paper.py           a checked paper card as a finished SavedTake5, as written, and
@@ -122,6 +124,8 @@ backend/
                                up to 20 seconds; remembers the result until the server restarts
                                                                                       (spec W6 to W9)
             areas.py           AreaRiskService: Take 5s by area, 30 days or all     (spec A2)
+            take5_table.py     Take5TableService: every saved Take 5 as a filtered table, and
+                               as CSV; saves nothing                            (spec E1 to E5)
             card_scanning.py   CardScanner: checks a photo's type and size, has the AI read it,
                                saves nothing                                         (task 0033)
             ports.py           Take5Repository, ChallengeAsker, HazardJudge, Take5Ranker and
@@ -264,6 +268,8 @@ What the terminal running `uv run start.py` shows (task 0028). The aim: a glance
 | `GET /api/ranked-take5s?since=` | Every Take 5 started since a moment (sent with its time zone, such as midnight where the phone is), worst first (task 0032, spec W1 to W7): `RankedTake5s`, each a `RankedTake5Line` with the ID, when it was saved, the worker, the job, the verdict, its `line`, `ranked_by_ai`, `from_paper` and `started_at` (a paper card's date, P5). Fixed rules in `domain/take5/ranking.py` score them, then `Take5RankingService` gives the worst 10 to the AI in `ai/ranking.py` for up to 20 seconds. It also sends the `best` careful one as a `BestTake5Line` (or null), picked by the AI from up to 5 shortlisted by the rules, with `picked_by_ai` and `minutes_taken`, and `typical_minutes`, the median (task 0036, spec W8, W9). Saves nothing; a result is remembered in memory until the server restarts. A moment with no time zone is a 422 |
 | `POST /api/ranked-take5s/batch` | Ranks just the saved Take 5s whose `ids` are sent (at most 200), such as a batch of scanned paper cards (F10): the same `RankedTake5s` as `GET /api/ranked-take5s`, by the same rules and AI. An ID that isn't saved is left out. A paper card's text, as the AI read it and the person checked it, is ranked like any Take 5's, and its name is never sent (P6) |
 | `GET /api/risk-by-area?today=` | Every area with a saved Take 5, or with `TAKE5_AREA_LAST_30_DAYS_ONLY=true` only those started in the last 30 days, hottest first (task 0038, spec A1 to A5, D119). `today` is midnight where the phone is, with its offset from UTC, and the 30 days are 29 days of 24 hours back from it; the reply is `RiskByArea`: `areas`, each an `AreaRisk` with its name, counts, highest score and band, and `common_yes`; and `last_30_days_only`, so the page can say which it counted. Worked out by the fixed rules in `domain/take5/areas.py`; no AI, nothing saved. A moment with no time zone is a 422 |
+| `GET /api/take5-table?zone=` | Every saved Take 5 as a row, the most important first (task 0043, spec E1 to E4): `Take5TablePage`, with the `rows` (each a `Take5Row`), and the `areas` and `bands` the page offers as filters. `zone` is the page's IANA time zone, for a Take 5 with no start time. Optional filters: `search`, `from` and `to` (dates), `verdict`, `band`, `area`, `weekday`, `time_of_day` and `from_paper`. Importance and the line are worked out each time by the ranking's rules (W1). A zone or date that can't be read is a 422 `FormErrors`. Saves nothing |
+| `GET /api/take5-table.csv?zone=` | The same rows as a CSV download (`text/csv`, `Content-Disposition: attachment`), one column per value and per question on the card, with a cell that starts like a formula made safe (spec E5) |
 | `POST /api/scans` | Reads one photo of a paper card (a multipart upload, field `photo`: JPEG, PNG, WebP or GIF, at most 7 MB) into a card for a person to check (task 0033): `ScannedCardResponse`, with the `draft` as written, `filled_in_at` as read, as `YYYY-MM-DD` or `YYYY-MM-DDTHH:MM` with no time zone and the `unreadable` paths. Saves nothing. No AI set up is a 503 `ErrorMessage`; a wrong type, too big, or a photo the AI couldn't read as a card is a 422 on `photo` |
 
 Every error reply is declared in the OpenAPI description, so the front end's generated types know it. A 422 is

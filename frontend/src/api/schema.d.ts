@@ -235,6 +235,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/take5-table": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Take5 Table
+         * @description Lay out every saved Take 5 as a row, the most important first (E1 to E4).
+         *
+         *     Args:
+         *         zone: The page's time zone, for a Take 5 with no start time.
+         *         filters: What to narrow the table to.
+         */
+        get: operations["take5_table_api_take5_table_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/take5-table.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Take5 Table Csv
+         * @description Export the same rows as CSV, to open in a spreadsheet (E5).
+         *
+         *     Args:
+         *         zone: The page's time zone.
+         *         filters: What to narrow the table to.
+         */
+        get: operations["take5_table_csv_api_take5_table_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/scans": {
         parameters: {
             query?: never;
@@ -1069,6 +1117,100 @@ export interface components {
             offers_fix: boolean;
         };
         /**
+         * Take5Row
+         * @description One saved Take 5 laid out as a row (E1).
+         *
+         *     Attributes:
+         *         id: The Take 5's ID, to open it.
+         *         started_at: When it was started, at its own clock's offset: a paper card's
+         *             date (P5). None when not known.
+         *         saved_at: When it was saved.
+         *         started_on: The day it was started, or saved when the start isn't known, by
+         *             the same clock as the month and weekday.
+         *         month: Such as "2026-11".
+         *         weekday: Such as "Monday".
+         *         time_of_day: One of `TIMES_OF_DAY`, or None for a paper card with no time.
+         *         worker_name: Who did it.
+         *         job: What the job is.
+         *         location: Where the job is, as typed.
+         *         verdict: One of `VERDICTS`.
+         *         importance: The ranking's worst score (W1): the highest risk before controls
+         *             plus points for each thought gap.
+         *         highest_score: The highest score before controls, or None when unrated.
+         *         highest_band: That score's band, or None.
+         *         needs_jha: True when that score needs a JHA on its card (R3, A3).
+         *         why: The fixed rules' line for it (W1).
+         *         thought_gaps: Each sign of little thought (W2 to W5, W10, P4).
+         *         rushed: True when it was filled in in under 2 minutes (W5).
+         *         minutes_taken: The minutes it took, or None when not known.
+         *         hazard_count: How many hazards it has.
+         *         control_count: How many controls, over every hazard.
+         *         strong_control: True when any control is a strong kind (T3).
+         *         answers: Each question's answer, by question ID; a blank is left out.
+         *         from_paper: True when it was photographed off a paper card (P6).
+         */
+        Take5Row: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Started At */
+            started_at: string | null;
+            /**
+             * Saved At
+             * Format: date-time
+             */
+            saved_at: string;
+            /**
+             * Started On
+             * Format: date
+             */
+            started_on: string;
+            /** Month */
+            month: string;
+            /** Weekday */
+            weekday: string;
+            /** Time Of Day */
+            time_of_day: string | null;
+            /** Worker Name */
+            worker_name: string;
+            /** Job */
+            job: string;
+            /** Location */
+            location: string;
+            /** Verdict */
+            verdict: string;
+            /** Importance */
+            importance: number;
+            /** Highest Score */
+            highest_score: number | null;
+            /** Highest Band */
+            highest_band: string | null;
+            /** Needs Jha */
+            needs_jha: boolean;
+            /** Why */
+            why: string;
+            /** Thought Gaps */
+            thought_gaps: string[];
+            /** Rushed */
+            rushed: boolean;
+            /** Minutes Taken */
+            minutes_taken: number | null;
+            /** Hazard Count */
+            hazard_count: number;
+            /** Control Count */
+            control_count: number;
+            /** Strong Control */
+            strong_control: boolean;
+            /** Answers */
+            answers: {
+                [key: string]: string;
+            };
+            /** From Paper */
+            from_paper: boolean;
+        };
+        /**
          * Take5Summary
          * @description One line of the saved Take 5 list: enough to find it, not the whole card.
          *
@@ -1103,6 +1245,23 @@ export interface components {
             fixed: boolean;
             /** From Paper */
             from_paper: boolean;
+        };
+        /**
+         * Take5TablePage
+         * @description Every saved Take 5 the filters let through, as rows, and the filters' choices.
+         *
+         *     Attributes:
+         *         rows: One row per Take 5, the most important first (E1, E2).
+         *         areas: Every area with a Take 5, by the spelling typed most (A1).
+         *         bands: The card's risk bands, lowest first.
+         */
+        Take5TablePage: {
+            /** Rows */
+            rows: components["schemas"]["Take5Row"][];
+            /** Areas */
+            areas: string[];
+            /** Bands */
+            bands: string[];
         };
         /**
          * Take5Template
@@ -1624,6 +1783,86 @@ export interface operations {
                 };
             };
             /** @description The moment is missing or has no zone */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormErrors"];
+                };
+            };
+        };
+    };
+    take5_table_api_take5_table_get: {
+        parameters: {
+            query: {
+                zone: string;
+                search?: string;
+                from?: string | null;
+                to?: string | null;
+                verdict?: string | null;
+                band?: string | null;
+                area?: string | null;
+                weekday?: string | null;
+                time_of_day?: string | null;
+                from_paper?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Take5TablePage"];
+                };
+            };
+            /** @description A filter or the zone can't be read */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormErrors"];
+                };
+            };
+        };
+    };
+    take5_table_csv_api_take5_table_csv_get: {
+        parameters: {
+            query: {
+                zone: string;
+                search?: string;
+                from?: string | null;
+                to?: string | null;
+                verdict?: string | null;
+                band?: string | null;
+                area?: string | null;
+                weekday?: string | null;
+                time_of_day?: string | null;
+                from_paper?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The rows as CSV */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description A filter or the zone can't be read */
             422: {
                 headers: {
                     [name: string]: unknown;
