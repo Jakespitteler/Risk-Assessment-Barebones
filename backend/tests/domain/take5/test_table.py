@@ -305,3 +305,43 @@ def test_every_word_searched_is_found_somewhere() -> None:
     assert matches(careful, Take5Filters(search="tyre sam"))
     assert not matches(careful, Take5Filters(search="tyre crusher"))
     assert matches(careful, Take5Filters(area="..."))
+
+
+def test_a_paper_card_keeps_its_written_date_wherever_it_is_asked_from() -> None:
+    """Checked in Sydney, asked from Perth: still Friday, no time of day (E3, P5)."""
+    sydney = ZoneInfo("Australia/Sydney")
+    card: SavedTake5 = started(datetime(2026, 4, 3, tzinfo=sydney)).model_copy(
+        update={"from_paper": True},
+    )
+
+    paper: Take5Row = row(card)
+
+    assert (paper.started_on, paper.weekday, paper.time_of_day) == (
+        date(2026, 4, 3),
+        "Friday",
+        None,
+    )
+
+
+def test_a_paper_card_with_no_date_keeps_the_scan_times_time_of_day() -> None:
+    """Scanned at midnight with no date on the card: the scan time stands in (E3)."""
+    scanned_at: datetime = datetime(2026, 11, 21, 0, 0, tzinfo=PERTH)
+    card: SavedTake5 = ranked_take5(minutes_taken=None, saved_at=scanned_at).model_copy(
+        update={"from_paper": True},
+    )
+
+    assert row(card).time_of_day == "Midnight to 6 am"
+
+
+def test_the_csv_writes_times_on_the_same_clock_as_the_weekday() -> None:
+    """A phone's UTC start is written in the asker's zone, as the page shows it (E5)."""
+    phone: SavedTake5 = started(SATURDAY_MORNING.astimezone(UTC))
+
+    header, values = list(
+        csv.reader(io.StringIO(table_csv([row(phone)], BOOKLET_TEMPLATE))),
+    )
+    cell: dict[str, str] = dict(zip(header, values, strict=True))
+
+    assert cell["Started"] == "2026-11-21T07:00:00+08:00"
+    assert cell["Saved"] == "2026-11-21T07:10:00+08:00"
+    assert cell["Weekday"] == "Saturday"

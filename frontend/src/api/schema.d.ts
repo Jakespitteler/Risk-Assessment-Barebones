@@ -1122,9 +1122,9 @@ export interface components {
          *
          *     Attributes:
          *         id: The Take 5's ID, to open it.
-         *         started_at: When it was started, at its own clock's offset: a paper card's
-         *             date (P5). None when not known.
-         *         saved_at: When it was saved.
+         *         started_at: When it was started, on the clock E3 reads it by: in the
+         *             asker's zone, or a paper card's date as written (P5). None when not known.
+         *         saved_at: When it was saved, in the asker's zone.
          *         started_on: The day it was started, or saved when the start isn't known, by
          *             the same clock as the month and weekday.
          *         month: Such as "2026-11".
@@ -1250,18 +1250,29 @@ export interface components {
          * Take5TablePage
          * @description Every saved Take 5 the filters let through, as rows, and the filters' choices.
          *
+         *     The page draws these choices, so it holds no copy of them.
+         *
          *     Attributes:
          *         rows: One row per Take 5, the most important first (E1, E2).
-         *         areas: Every area with a Take 5, by the spelling typed most (A1).
+         *         verdicts: The verdicts a row can have.
          *         bands: The card's risk bands, lowest first.
+         *         areas: Every area with a Take 5, by the spelling typed most (A1).
+         *         weekdays: Monday to Sunday.
+         *         times_of_day: The four blocks of the clock (E3).
          */
         Take5TablePage: {
             /** Rows */
             rows: components["schemas"]["Take5Row"][];
-            /** Areas */
-            areas: string[];
+            /** Verdicts */
+            verdicts: string[];
             /** Bands */
             bands: string[];
+            /** Areas */
+            areas: string[];
+            /** Weekdays */
+            weekdays: string[];
+            /** Times Of Day */
+            times_of_day: string[];
         };
         /**
          * Take5Template

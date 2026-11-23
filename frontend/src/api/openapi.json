@@ -2412,7 +2412,7 @@
           "from_paper"
         ],
         "title": "Take5Row",
-        "description": "One saved Take 5 laid out as a row (E1).\n\nAttributes:\n    id: The Take 5's ID, to open it.\n    started_at: When it was started, at its own clock's offset: a paper card's\n        date (P5). None when not known.\n    saved_at: When it was saved.\n    started_on: The day it was started, or saved when the start isn't known, by\n        the same clock as the month and weekday.\n    month: Such as \"2026-11\".\n    weekday: Such as \"Monday\".\n    time_of_day: One of `TIMES_OF_DAY`, or None for a paper card with no time.\n    worker_name: Who did it.\n    job: What the job is.\n    location: Where the job is, as typed.\n    verdict: One of `VERDICTS`.\n    importance: The ranking's worst score (W1): the highest risk before controls\n        plus points for each thought gap.\n    highest_score: The highest score before controls, or None when unrated.\n    highest_band: That score's band, or None.\n    needs_jha: True when that score needs a JHA on its card (R3, A3).\n    why: The fixed rules' line for it (W1).\n    thought_gaps: Each sign of little thought (W2 to W5, W10, P4).\n    rushed: True when it was filled in in under 2 minutes (W5).\n    minutes_taken: The minutes it took, or None when not known.\n    hazard_count: How many hazards it has.\n    control_count: How many controls, over every hazard.\n    strong_control: True when any control is a strong kind (T3).\n    answers: Each question's answer, by question ID; a blank is left out.\n    from_paper: True when it was photographed off a paper card (P6)."
+        "description": "One saved Take 5 laid out as a row (E1).\n\nAttributes:\n    id: The Take 5's ID, to open it.\n    started_at: When it was started, on the clock E3 reads it by: in the\n        asker's zone, or a paper card's date as written (P5). None when not known.\n    saved_at: When it was saved, in the asker's zone.\n    started_on: The day it was started, or saved when the start isn't known, by\n        the same clock as the month and weekday.\n    month: Such as \"2026-11\".\n    weekday: Such as \"Monday\".\n    time_of_day: One of `TIMES_OF_DAY`, or None for a paper card with no time.\n    worker_name: Who did it.\n    job: What the job is.\n    location: Where the job is, as typed.\n    verdict: One of `VERDICTS`.\n    importance: The ranking's worst score (W1): the highest risk before controls\n        plus points for each thought gap.\n    highest_score: The highest score before controls, or None when unrated.\n    highest_band: That score's band, or None.\n    needs_jha: True when that score needs a JHA on its card (R3, A3).\n    why: The fixed rules' line for it (W1).\n    thought_gaps: Each sign of little thought (W2 to W5, W10, P4).\n    rushed: True when it was filled in in under 2 minutes (W5).\n    minutes_taken: The minutes it took, or None when not known.\n    hazard_count: How many hazards it has.\n    control_count: How many controls, over every hazard.\n    strong_control: True when any control is a strong kind (T3).\n    answers: Each question's answer, by question ID; a blank is left out.\n    from_paper: True when it was photographed off a paper card (P6)."
       },
       "Take5Summary": {
         "properties": {
@@ -2476,12 +2476,12 @@
             "type": "array",
             "title": "Rows"
           },
-          "areas": {
+          "verdicts": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Areas"
+            "title": "Verdicts"
           },
           "bands": {
             "items": {
@@ -2489,16 +2489,40 @@
             },
             "type": "array",
             "title": "Bands"
+          },
+          "areas": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Areas"
+          },
+          "weekdays": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Weekdays"
+          },
+          "times_of_day": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Times Of Day"
           }
         },
         "type": "object",
         "required": [
           "rows",
+          "verdicts",
+          "bands",
           "areas",
-          "bands"
+          "weekdays",
+          "times_of_day"
         ],
         "title": "Take5TablePage",
-        "description": "Every saved Take 5 the filters let through, as rows, and the filters' choices.\n\nAttributes:\n    rows: One row per Take 5, the most important first (E1, E2).\n    areas: Every area with a Take 5, by the spelling typed most (A1).\n    bands: The card's risk bands, lowest first."
+        "description": "Every saved Take 5 the filters let through, as rows, and the filters' choices.\n\nThe page draws these choices, so it holds no copy of them.\n\nAttributes:\n    rows: One row per Take 5, the most important first (E1, E2).\n    verdicts: The verdicts a row can have.\n    bands: The card's risk bands, lowest first.\n    areas: Every area with a Take 5, by the spelling typed most (A1).\n    weekdays: Monday to Sunday.\n    times_of_day: The four blocks of the clock (E3)."
       },
       "Take5Template": {
         "properties": {

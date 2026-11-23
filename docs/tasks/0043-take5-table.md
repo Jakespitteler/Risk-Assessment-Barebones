@@ -49,3 +49,13 @@ Part 2, the page:
 ## Notes / assumptions
 
 Added by Claude on 2026-11-23 from Jake's request and answers.
+
+For Jake to approve (Claude, 2026-11-23, found in review): the phone saves its start time in UTC and not its
+zone, so the table can't read a Take 5's own clock as Jake's answer asked. It reads a phone's start in the zone of
+whoever opens the table, which on one site is the phone's; a paper card keeps the date written on it (E3, D132).
+The other way, having the phone send its zone, changes the draft and the data model. Jake chose the proof of
+concept's simplest way for paper cards' fixes on 2026-11-21, and this follows the same reasoning.
+
+Noted, not fixed (outside this task): while developing, if the back end is down, Vite's proxy logs the address it
+couldn't reach, query included, so a search for a worker's name could show in the terminal. Only on a developer's
+computer, and only when the back end is restarting.

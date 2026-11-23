@@ -58,9 +58,9 @@ class Take5Row(BaseModel):
 
     Attributes:
         id: The Take 5's ID, to open it.
-        started_at: When it was started, at its own clock's offset: a paper card's
-            date (P5). None when not known.
-        saved_at: When it was saved.
+        started_at: When it was started, on the clock E3 reads it by: in the
+            asker's zone, or a paper card's date as written (P5). None when not known.
+        saved_at: When it was saved, in the asker's zone.
         started_on: The day it was started, or saved when the start isn't known, by
             the same clock as the month and weekday.
         month: Such as "2026-11".
@@ -160,8 +160,8 @@ def take5_row(take5: SavedTake5, zone: tzinfo) -> Take5Row:
     ]
     return Take5Row(
         id=take5.id,
-        started_at=take5.started_at,
-        saved_at=take5.created_at,
+        started_at=when if take5.started_at is not None else None,
+        saved_at=take5.created_at.astimezone(zone),
         started_on=when.date(),
         month=f"{when.year:04d}-{when.month:02d}",
         weekday=WEEKDAYS[when.weekday()],

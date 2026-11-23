@@ -62,7 +62,12 @@ class Take5TableService:
         take5s: tuple[SavedTake5, ...] = self._repository.list_saved_since(_EVERY_TAKE5)
         return Take5Table(
             rows=table_rows(take5s, filters, zone),
-            areas=tuple(sorted(area.name for area in risk_by_area(take5s))),
+            areas=tuple(
+                sorted(
+                    (area.name for area in risk_by_area(take5s)),
+                    key=str.casefold,
+                ),
+            ),
             bands=self.bands,
         )
 
