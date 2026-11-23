@@ -219,6 +219,22 @@ it("says a filter in the address can't be read, without offering to try again", 
     await screen.findByText(/A filter in this page’s address can’t be read/),
   ).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+  expect(
+    screen.getAllByRole("button", { name: "Clear the filters" }).length,
+  ).toBeGreaterThan(0);
+});
+
+it("never searches for only spaces", async () => {
+  stubApi({ [tableUrl()]: { status: 200, body: PAGE } });
+  const onFilters = open();
+  await screen.findByText("2 Take 5s match.");
+  vi.useFakeTimers();
+  fireEvent.change(screen.getByLabelText("Find words"), {
+    target: { value: "   " },
+  });
+  vi.advanceTimersByTime(2000);
+  vi.useRealTimers();
+  expect(onFilters).not.toHaveBeenCalled();
 });
 
 it("says 1 Take 5 matches, and shows how many filters are on", async () => {

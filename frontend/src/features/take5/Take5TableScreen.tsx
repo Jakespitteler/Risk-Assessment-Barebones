@@ -45,9 +45,11 @@ export function Take5TableScreen({
   const [words, setWords] = useState(filters.get("search") ?? "");
   const searched = filters.get("search") ?? "";
   useEffect(() => {
-    if (words === searched) return;
+    // Only spaces is no search, so it never rewrites an address without one.
+    const wanted = words.trim() ? words : "";
+    if (wanted === searched) return;
     const timer = setTimeout(() => {
-      set("search", words.trim() ? words : "");
+      set("search", wanted);
     }, SEARCH_PAUSE_MS);
     return () => {
       clearTimeout(timer);
@@ -175,10 +177,20 @@ export function Take5TableScreen({
       </details>
       {table.isError && !table.data ? (
         unreadableLink ? (
-          <p>
-            A filter in this page’s address can’t be read. Clear the filters and
-            choose them again.
-          </p>
+          <>
+            <p>
+              A filter in this page’s address can’t be read. Clear the filters
+              and choose them again.
+            </p>
+            <Button
+              onClick={() => {
+                setWords("");
+                onFilters(new URLSearchParams());
+              }}
+            >
+              Clear the filters
+            </Button>
+          </>
         ) : (
           <>
             <p>
