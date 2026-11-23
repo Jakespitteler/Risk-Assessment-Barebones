@@ -8,7 +8,12 @@ from fastapi import APIRouter, Depends, Query, Response
 from pydantic import AfterValidator, BeforeValidator
 
 from risk_assessment.api.schemas import FormErrors, Take5TablePage
-from risk_assessment.domain.take5.table import Take5Filters
+from risk_assessment.domain.take5.table import (
+    TIMES_OF_DAY,
+    VERDICTS,
+    WEEKDAYS,
+    Take5Filters,
+)
 from risk_assessment.services.take5_table import Take5Table, Take5TableService
 
 _BYTE_ORDER_MARK: str = "\N{ZERO WIDTH NO-BREAK SPACE}"
@@ -83,13 +88,25 @@ def _filters(  # noqa: PLR0913 - one argument per filter on the page
         search=search,
         start=start,
         end=end,
-        verdict=verdict or None,
-        band=band or None,
-        area=area or None,
-        weekday=weekday or None,
-        time_of_day=time_of_day or None,
+        verdict=_given(verdict),
+        band=_given(band),
+        area=_given(area),
+        weekday=_given(weekday),
+        time_of_day=_given(time_of_day),
         from_paper=from_paper,
     )
+
+
+def _given(value: str | None) -> str | None:
+    """Read a filter of only spaces as no filter (E4).
+
+    Args:
+        value: The value from the query.
+
+    Returns:
+        The value, trimmed, or None when it was empty.
+    """
+    return value.strip() or None if value is not None else None
 
 
 def create_table_router(service: Take5TableService) -> APIRouter:
@@ -115,7 +132,14 @@ def create_table_router(service: Take5TableService) -> APIRouter:
             filters: What to narrow the table to.
         """
         table: Take5Table = service.table(filters, ZoneInfo(zone))
-        return Take5TablePage(rows=table.rows, areas=table.areas, bands=table.bands)
+        return Take5TablePage(
+            rows=table.rows,
+            verdicts=VERDICTS,
+            bands=table.bands,
+            areas=table.areas,
+            weekdays=WEEKDAYS,
+            times_of_day=TIMES_OF_DAY,
+        )
 
     @router.get(
         "/api/take5-table.csv",

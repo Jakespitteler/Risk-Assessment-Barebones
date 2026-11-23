@@ -30,6 +30,14 @@ def test_the_table_lists_every_take5_most_important_first(
     assert body["rows"][1]["weekday"] == "Saturday"
     assert body["areas"] == ["Example workshop"]
     assert body["bands"] == ["Low", "Moderate", "High", "Extreme"]
+    assert body["verdicts"] == ["Good to go", "Don't start yet", "Not finished"]
+    assert body["weekdays"][0] == "Monday"
+    assert body["times_of_day"] == [
+        "Midnight to 6 am",
+        "6 am to noon",
+        "Noon to 6 pm",
+        "6 pm to midnight",
+    ]
 
 
 def test_the_filters_narrow_the_rows(
@@ -94,10 +102,25 @@ def test_a_blank_filter_keeps_every_row(
     repository.add(started(SATURDAY_MORNING))
     blank: dict[str, str] = {
         name: ""
-        for name in ("search", "from", "to", "verdict", "band", "area", "from_paper")
+        for name in (
+            "search",
+            "from",
+            "to",
+            "verdict",
+            "band",
+            "area",
+            "weekday",
+            "time_of_day",
+            "from_paper",
+        )
+    }
+    spaces: dict[str, str] = {
+        name: " " for name in ("verdict", "band", "weekday", "time_of_day")
     }
 
     response: Response = client.get("/api/take5-table", params=PERTH | blank)
+    spaced: Response = client.get("/api/take5-table", params=PERTH | spaces)
 
     assert response.status_code == 200
     assert len(response.json()["rows"]) == 1
+    assert len(spaced.json()["rows"]) == 1

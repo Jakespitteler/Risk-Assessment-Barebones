@@ -313,14 +313,22 @@ class ScannedCardResponse(BaseModel):
 class Take5TablePage(BaseModel):
     """Every saved Take 5 the filters let through, as rows, and the filters' choices.
 
+    The page draws these choices, so it holds no copy of them.
+
     Attributes:
         rows: One row per Take 5, the most important first (E1, E2).
-        areas: Every area with a Take 5, by the spelling typed most (A1).
+        verdicts: The verdicts a row can have.
         bands: The card's risk bands, lowest first.
+        areas: Every area with a Take 5, by the spelling typed most (A1).
+        weekdays: Monday to Sunday.
+        times_of_day: The four blocks of the clock (E3).
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     rows: tuple[Take5Row, ...]
-    areas: tuple[str, ...]
+    verdicts: tuple[str, ...]
     bands: tuple[str, ...]
+    areas: tuple[str, ...]
+    weekdays: tuple[str, ...]
+    times_of_day: tuple[str, ...]
