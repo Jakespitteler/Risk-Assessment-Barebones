@@ -23,7 +23,9 @@ fastapi
 Flesch
 formatters
 frontmatter
+getpid
 httpx
+inodes
 isort
 jsdom
 killpg
@@ -35,6 +37,8 @@ netrc
 nudger
 oneline
 parametrize
+pids
+psutil
 psycopg
 pushback
 pydantic

@@ -88,6 +88,7 @@ def test_a_busy_port_stops_it_before_anything_is_installed(
     with (
         patch.object(start.install, "cloud_sync_service", return_value=None),
         patch.object(start, "port_is_busy", side_effect=only_the_app_port_is_busy),
+        patch.object(start, "listening_pids", return_value=set()),
         patch.object(start.install, "missing_tools") as missing_tools,
         patch.object(start, "install_what_changed") as install,
         patch.object(start, "run_servers") as run_servers,
@@ -100,6 +101,186 @@ def test_a_busy_port_stops_it_before_anything_is_installed(
     missing_tools.assert_not_called()
     install.assert_not_called()
     run_servers.assert_not_called()
+
+
+NETSTAT: str = """
+Active Connections
+
+  Proto  Local Address          Foreign Address        State           PID
+  TCP    0.0.0.0:135            0.0.0.0:0              LISTENING       1044
+  TCP    127.0.0.1:8000         0.0.0.0:0              LISTENING       5120
+  TCP    127.0.0.1:8000         127.0.0.1:61234        ESTABLISHED     5120
+  TCP    [::1]:5173             [::]:0                 LISTENING       7344
+  TCP    127.0.0.1:18000        0.0.0.0:0              LISTENING       9999
+"""
+
+
+def test_windows_listeners_are_read_from_netstat() -> None:
+    """Only LISTENING lines on exactly that port count, on IPv4 or IPv6 (task 0044)."""
+    assert start.windows_listeners(NETSTAT, 8000) == {5120}
+    assert start.windows_listeners(NETSTAT, 5173) == {7344}
+    assert start.windows_listeners(NETSTAT, 3000) == set()
+
+
+# cspell:ignore retrnsmt
+def made_up_proc(folder: Path, port: int, pid: int) -> Path:
+    """Make a /proc with one process listening on a port.
+
+    Args:
+        folder: Where to make it.
+        port: The port it listens on.
+        pid: Its process ID.
+
+    Returns:
+        The made-up /proc.
+    """
+    proc: Path = folder / "proc"
+    (proc / "net").mkdir(parents=True)
+    header: str = "  sl  local_address rem_address   st tx_queue rx_queue tr tm->when "
+    header += "retrnsmt   uid  timeout inode\n"
+    (proc / "net" / "tcp").write_text(
+        header
+        + f"   0: 0100007F:{port:04X} 00000000:0000 0A 00000000:00000000 00:00000000 "
+        "00000000  1000        0 424242 1 0000000000000000 100 0 0 10 0\n"
+        + f"   1: 0100007F:{port:04X} 0100007F:D431 01 00000000:00000000 00:00000000 "
+        "00000000  1000        0 515151 1 0000000000000000 20 4 30 10 -1\n",
+        encoding="ascii",
+    )
+    fd: Path = proc / str(pid) / "fd"
+    fd.mkdir(parents=True)
+    (fd / "3").symlink_to("socket:[424242]")
+    (proc / str(pid) / "cmdline").write_bytes(b"node\0vite.js\0")
+    other: Path = proc / "99" / "fd"
+    other.mkdir(parents=True)
+    (other / "3").symlink_to("socket:[515151]")
+    return proc
+
+
+def test_linux_listeners_are_found_in_proc(tmp_path: Path) -> None:
+    """The listening socket's inode leads to its process; a connection doesn't count."""
+    proc: Path = made_up_proc(tmp_path, 5173, 4321)
+
+    assert start.linux_listeners(proc, 5173) == {4321}
+    assert start.linux_listeners(proc, 8000) == set()
+    assert start.command_line(4321, proc) == "node vite.js "
+
+
+@pytest.mark.parametrize(
+    ("command", "ours"),
+    [
+        ("/repo/backend/.venv/bin/python /repo/backend/.venv/bin/uvicorn app", True),
+        (
+            "node /repo/frontend/node_modules/.bin/../vite/bin/vite.js --logLevel warn",
+            True,
+        ),
+        ("/repo/backend/.venv/bin/python -m http.server 8000", False),
+        ("/elsewhere/.venv/bin/uvicorn other.app:app --port 8000", False),
+        ("", False),
+    ],
+    ids=["back_end", "vite", "other_program_here", "uvicorn_elsewhere", "unknown"],
+)
+def test_only_this_apps_back_end_and_vite_are_recognised(
+    command: str,
+    ours: bool,
+) -> None:
+    """Its own uvicorn or Vite, run from this folder, and nothing else (task 0044)."""
+    assert start.is_this_apps(command, Path("/repo")) is ours
+
+
+def test_a_leftover_copy_of_the_app_is_stopped_and_the_app_starts(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A port held only by this app's leftover is freed, then all goes on (0044)."""
+    busy: list[bool] = [True, False]
+
+    def api_port_busy_once(port: int) -> bool:
+        """Say the back end's port is busy until the leftover is stopped.
+
+        Args:
+            port: The port being checked.
+        """
+        return port == start.API_PORT and busy.pop(0)
+
+    with (
+        patch.object(start.install, "cloud_sync_service", return_value=None),
+        patch.object(
+            start,
+            "port_is_busy",
+            side_effect=api_port_busy_once,
+        ),
+        patch.object(start, "listening_pids", return_value={5120}),
+        patch.object(
+            start,
+            "command_line",
+            return_value=f"{start.REPO_ROOT}/backend/.venv/bin/uvicorn app",
+        ),
+        patch.object(start, "stop_leftover") as stop_leftover,
+        patch.object(start.install, "missing_tools", return_value=[]),
+        patch.object(start, "install_what_changed", return_value=0),
+        patch.object(start, "run_servers", return_value=0) as run_servers,
+    ):
+        exit_code: int = start.main()
+
+    assert exit_code == 0
+    stop_leftover.assert_called_once_with(5120)
+    run_servers.assert_called_once()
+    assert "left running on port 8000; stopping it." in capsys.readouterr().out
+
+
+def test_another_program_on_the_port_is_never_stopped(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Something that isn't this app keeps its port, and the app says what to do."""
+    with (
+        patch.object(start.install, "cloud_sync_service", return_value=None),
+        patch.object(start, "port_is_busy", side_effect=only_the_app_port_is_busy),
+        patch.object(start, "listening_pids", return_value={7344}),
+        patch.object(start, "command_line", return_value="C:\\Games\\server.exe"),
+        patch.object(start, "stop_leftover") as stop_leftover,
+        patch.object(start, "install_what_changed") as install,
+    ):
+        exit_code: int = start.main()
+
+    assert exit_code == 1
+    stop_leftover.assert_not_called()
+    install.assert_not_called()
+    assert capsys.readouterr().out.strip() == start.busy_port_message(5173)
+
+
+def test_a_leftover_that_wont_stop_leaves_the_message(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """If the port is still taken after the wait, nothing is installed or started."""
+    with (
+        patch.object(start.install, "cloud_sync_service", return_value=None),
+        patch.object(start, "port_is_busy", side_effect=only_the_app_port_is_busy),
+        patch.object(start, "listening_pids", return_value={7344}),
+        patch.object(
+            start,
+            "command_line",
+            return_value=f"node {start.REPO_ROOT}/frontend/node_modules/vite/vite.js",
+        ),
+        patch.object(start, "stop_leftover"),
+        patch.object(start, "FREE_PORT_WAIT_SECONDS", 0.01),
+        patch.object(start, "install_what_changed") as install,
+    ):
+        exit_code: int = start.main()
+
+    assert exit_code == 1
+    install.assert_not_called()
+    assert start.busy_port_message(5173) in capsys.readouterr().out
+
+
+@pytest.mark.skipif(not Path("/proc/net/tcp").exists(), reason="Linux's /proc only")
+def test_a_real_listener_is_found_with_its_command_line() -> None:
+    """On Linux, the real /proc finds this test's own listening socket and process."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+        listener.bind(("127.0.0.1", 0))
+        listener.listen()
+        port: int = listener.getsockname()[1]
+
+        assert os.getpid() in start.listening_pids(port)
+        assert "python" in start.command_line(os.getpid()).casefold()
 
 
 def test_a_missing_tool_stops_it_before_anything_is_installed(

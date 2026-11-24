@@ -30,6 +30,7 @@ Built out of the order:
 - **0038, risk by area.** Jake asked on 2026-11-21 for the next task, with every recommendation (spec D111 to
   D117).
 - **0041, cut wasted GitHub Actions minutes.** Jake asked on 2026-11-21, as the free minutes were running out.
+- **0044, start.py frees its ports from a leftover copy of the app.** Jake asked on 2026-11-24.
 
 To investigate when we get to them (Jake, 2026-11-20). Each file holds the questions to settle first; none has
 a place in the order yet:
