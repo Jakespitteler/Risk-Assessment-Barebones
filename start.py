@@ -8,8 +8,9 @@ Press Ctrl+C to stop it. Both halves restart by themselves when their code chang
 
 In order, it:
 
-1. Stops if ports 8000 or 5173 are already in use, before installing anything, since the
-   app is probably running in another terminal.
+1. Frees ports 8000 and 5173 when only a leftover copy of this app holds them (its own
+   back end or Vite, run from this folder), such as one left by a closed terminal. If
+   anything else holds one, it stops before installing anything and says what to do.
 2. Checks for git and Node.js, as `install.py` does.
 3. Brings the installs in line with the lock files the repo holds: the back end's
    packages every time (quick when nothing changed), and the front end's, then the
@@ -81,6 +82,11 @@ QUIET_BACKEND_INSTALL_STEP: install.InstallStep = install.BACKEND_INSTALL_STEP._
 # The back end's code, watched for saves so the back end can be restarted.
 BACKEND_CODE: Path = BACKEND / "src"
 READY_WAIT_SECONDS: float = 30.0
+FREE_PORT_WAIT_SECONDS: float = 5.0
+# The programs this app runs, as they show in a command line (task 0044).
+APP_PROGRAMS: tuple[str, ...] = ("uvicorn", "vite")
+# A listening socket in /proc/net/tcp: state 0A.
+_LISTEN_STATE: str = "0A"
 STOP_WAIT_SECONDS: float = 10.0
 
 # The readiness checks ask this computer directly, never through an HTTP proxy.
@@ -124,6 +130,194 @@ def busy_port_message(port: int) -> str:
         "another terminal: use that one, or press Ctrl+C there first. Nothing was "
         "installed or started."
     )
+
+
+def listening_pids(port: int, proc: Path = Path("/proc")) -> set[int]:
+    """Find the processes listening on a port, with no package: each system's own tool.
+
+    Args:
+        port: The port.
+        proc: Linux's process folder, which tests replace with a made-up one.
+
+    Returns:
+        Their process IDs, or none when the system can't say.
+    """
+    try:
+        if sys.platform == "win32":
+            netstat: str = _run_for_output(["netstat", "-ano", "-p", "TCP"])
+            return windows_listeners(netstat, port)
+        if (proc / "net" / "tcp").exists():
+            return linux_listeners(proc, port)
+        found: str = _run_for_output(
+            ["lsof", "-nP", f"-iTCP:{port}", "-sTCP:LISTEN", "-t"],
+        )
+        return {int(line) for line in found.split() if line.isdigit()}
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return set()
+
+
+def windows_listeners(netstat: str, port: int) -> set[int]:
+    """Read the processes listening on a port from Windows' `netstat -ano` (task 0044).
+
+    Args:
+        netstat: What `netstat -ano -p TCP` printed.
+        port: The port.
+
+    Returns:
+        The listening processes' IDs.
+    """
+    found: set[int] = set()
+    for line in netstat.splitlines():
+        fields: list[str] = line.split()
+        if (
+            len(fields) == 5  # noqa: PLR2004 - protocol, local, remote, state, PID
+            and fields[3] == "LISTENING"
+            and fields[1].endswith(f":{port}")
+            and fields[4].isdigit()
+        ):
+            found.add(int(fields[4]))
+    return found
+
+
+def linux_listeners(proc: Path, port: int) -> set[int]:
+    """Find the processes listening on a port in Linux's /proc (task 0044).
+
+    Args:
+        proc: The process folder, usually /proc.
+        port: The port.
+
+    Returns:
+        The IDs of the processes holding a listening socket on it, among those this
+        user may look at.
+    """
+    inodes: set[str] = set()
+    for table in ("tcp", "tcp6"):
+        path: Path = proc / "net" / table
+        if not path.exists():
+            continue
+        for line in path.read_text(encoding="ascii").splitlines()[1:]:
+            fields: list[str] = line.split()
+            local_port: str = fields[1].rsplit(":", 1)[-1]
+            if int(local_port, 16) == port and fields[3] == _LISTEN_STATE:
+                inodes.add(fields[9])
+    found: set[int] = set()
+    for process in proc.iterdir():
+        if not process.name.isdigit():
+            continue
+        with contextlib.suppress(OSError):
+            for handle in (process / "fd").iterdir():
+                if os.readlink(handle).removeprefix("socket:[").rstrip("]") in inodes:
+                    found.add(int(process.name))
+                    break
+    return found
+
+
+def command_line(pid: int, proc: Path = Path("/proc")) -> str:
+    """Say how a process was started, or "" when the system can't tell.
+
+    Args:
+        pid: The process's ID.
+        proc: Linux's process folder.
+
+    Returns:
+        Its command line.
+    """
+    try:
+        if sys.platform == "win32":
+            return _run_for_output(
+                [
+                    "powershell",
+                    "-NoProfile",
+                    "-Command",
+                    f"(Get-CimInstance Win32_Process -Filter 'ProcessId={pid}')"
+                    ".CommandLine",
+                ],
+            ).strip()
+        cmdline: Path = proc / str(pid) / "cmdline"
+        if cmdline.exists():
+            return cmdline.read_bytes().replace(b"\0", b" ").decode(errors="replace")
+        return _run_for_output(["ps", "-o", "command=", "-p", str(pid)]).strip()
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+def is_this_apps(command: str, repo_root: Path) -> bool:
+    """Say whether a process is this app's own back end or Vite, run from this folder.
+
+    Args:
+        command: The process's command line.
+        repo_root: This repo's folder.
+
+    Returns:
+        True only for `uvicorn` or `vite` whose command line holds this folder.
+    """
+    seen: str = command.casefold() if sys.platform == "win32" else command
+    folder: str = str(repo_root)
+    folder = folder.casefold() if sys.platform == "win32" else folder
+    runs_ours: bool = any(program in seen.casefold() for program in APP_PROGRAMS)
+    return folder in seen and runs_ours
+
+
+def stop_leftover(pid: int) -> None:
+    """Stop a leftover copy of this app's back end or Vite, and what it started.
+
+    Args:
+        pid: The leftover's process ID.
+    """
+    with contextlib.suppress(OSError, subprocess.SubprocessError):
+        if sys.platform == "win32":
+            subprocess.run(
+                ["taskkill", "/PID", str(pid), "/T", "/F"],
+                capture_output=True,
+                check=False,
+            )
+        else:
+            os.kill(pid, signal.SIGTERM)
+
+
+def free_port(port: int) -> bool:
+    """Free a port held only by a leftover copy of this app (task 0044).
+
+    Args:
+        port: The port, which is busy.
+
+    Returns:
+        True when the port is free now; False when something else holds it, or the
+        leftover didn't stop in time.
+    """
+    pids: set[int] = listening_pids(port)
+    if not pids or not all(is_this_apps(command_line(pid), REPO_ROOT) for pid in pids):
+        return False
+    print(
+        f"A copy of this app was left running on port {port}; stopping it.",
+        flush=True,
+    )
+    for pid in pids:
+        stop_leftover(pid)
+    deadline: float = time.monotonic() + FREE_PORT_WAIT_SECONDS
+    while time.monotonic() < deadline:
+        if not port_is_busy(port):
+            return True
+        time.sleep(0.2)
+    return not port_is_busy(port)
+
+
+def _run_for_output(command: list[str]) -> str:
+    """Run one of the system's own tools and give what it printed.
+
+    Args:
+        command: The tool and its arguments.
+
+    Returns:
+        Its output.
+    """
+    return subprocess.run(
+        command,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=10,
+    ).stdout
 
 
 def app_url(environment: Mapping[str, str]) -> str:
@@ -489,7 +683,7 @@ def main() -> int:
     if cloud_service is not None:
         print(install.cloud_sync_warning(cloud_service), flush=True)
     for port in (API_PORT, APP_PORT):
-        if port_is_busy(port):
+        if port_is_busy(port) and not free_port(port):
             print(busy_port_message(port))
             return 1
     problems: list[str] = install.missing_tools()

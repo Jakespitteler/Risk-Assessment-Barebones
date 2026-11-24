@@ -1,9 +1,9 @@
 ---
 id: 0044
 title: start.py frees its ports from a leftover copy of the app
-status: in-progress
+status: review
 owner: claude
-branch: claude/0044-free-ports
+branch: claude/0044-free-ports (#89)
 ---
 
 ## Goal
@@ -20,13 +20,13 @@ do, as today. No new package. Based on `main`, with its own pull request to `mai
 
 ## Acceptance criteria
 
-- [ ] When port 8000 or 5173 is held only by a leftover copy of this app, `start.py` says so, stops it, and
+- [x] When port 8000 or 5173 is held only by a leftover copy of this app, `start.py` says so, stops it, and
   starts as usual.
-- [ ] When anything else holds the port, nothing is stopped and today's message shows, with nothing installed or
+- [x] When anything else holds the port, nothing is stopped and today's message shows, with nothing installed or
   started.
-- [ ] It works on Windows, macOS and Linux with no new package; when the system can't say what holds the port,
+- [x] It works on Windows, macOS and Linux with no new package; when the system can't say what holds the port,
   today's message shows.
-- [ ] Tests cover finding what listens on a port, recognising this app, and both outcomes in `main`.
+- [x] Tests cover finding what listens on a port, recognising this app, and both outcomes in `main`.
 
 ## Out of scope
 
@@ -34,4 +34,6 @@ do, as today. No new package. Based on `main`, with its own pull request to `mai
 
 ## Notes / assumptions
 
-Added by Claude on 2026-11-24 from Jake's request and answer.
+Added by Claude on 2026-11-24 from Jake's request and answer. Tried in a Linux container: a run whose
+`start.py` was killed left both servers running; the next `uv run start.py` stopped them and started. An
+unrelated program on port 8000 was left alone, with the old message. Jake to try it on Windows.

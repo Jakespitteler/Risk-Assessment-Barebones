@@ -2,6 +2,18 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-24: start.py frees its ports from a leftover copy of the app (task 0044)
+
+- Decision: when port 8000 or 5173 is busy, `start.py` finds what listens on it and stops it only when every
+  listener is this app's own back end (`uvicorn`) or Vite, with this repo's folder in its command line. Anything
+  else keeps its port and the old message shows. It uses each system's own tools: `netstat -ano` and PowerShell on
+  Windows, `/proc` on Linux, `lsof` and `ps` elsewhere; when they can't say, nothing is stopped.
+- Why: Jake asked on 2026-11-24, after leftovers from a closed terminal blocked the next start, and chose to stop
+  only the app's own leftovers.
+- Not chosen: stopping whatever holds the port (it could close another program); `psutil` (a new package for one
+  check).
+- Decided by: human (what may be stopped), agent (how it is found).
+
 ## 2026-11-21: A paper card is saved as written, blanks and all (task 0033, part 2a)
 
 - Decision: `Take5.from_paper` marks a photographed paper card. On one, an answer, a rating or a control's kind
