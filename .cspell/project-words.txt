@@ -24,6 +24,7 @@ Flesch
 formatters
 frontmatter
 getpid
+getppid
 httpx
 inodes
 isort
@@ -65,4 +66,5 @@ vitest
 watchfiles
 WCAG
 winget
+worktrees
 xhigh

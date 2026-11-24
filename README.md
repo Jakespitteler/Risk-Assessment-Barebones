@@ -66,7 +66,8 @@ syncing the folder as well adds little, and it causes problems:
 ## Run it
 
 1. In the repo root: `uv run start.py`. If a copy of the app was left running, such as by a terminal closed
-   without Ctrl+C, it stops that copy first; if another program holds port 8000 or 5173, it says so and stops. Then
+   without Ctrl+C, it stops that copy first; if another program, or the app running in another terminal, holds
+   port 8000 or 5173, it says so and stops. Then
    it brings the installs in line with the lock files (the exact versions the repo was tested with; it
    never upgrades a package), then starts the back end and the front end.
 2. When it prints "The Take 5 app is ready", open the address on that line, <http://localhost:5173>. It is the

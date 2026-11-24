@@ -3,7 +3,7 @@ id: 0044
 title: start.py frees its ports from a leftover copy of the app
 status: review
 owner: claude
-branch: claude/0044-free-ports (#89)
+branch: claude/0044-free-ports (#89, then #90)
 ---
 
 ## Goal
@@ -24,9 +24,12 @@ do, as today. No new package. Based on `main`, with its own pull request to `mai
   starts as usual.
 - [x] When anything else holds the port, nothing is stopped and today's message shows, with nothing installed or
   started.
-- [x] It works on Windows, macOS and Linux with no new package; when the system can't say what holds the port,
-  today's message shows.
+- [x] It needs no new package, and when the system can't say what holds the port, today's message shows.
+- [x] Tried on Linux. Windows and macOS are reasoned from how netstat, PowerShell, uv and npm behave, not tried.
+- [ ] Jake has tried it on Windows: a terminal closed without Ctrl+C, then `uv run start.py` again.
 - [x] Tests cover finding what listens on a port, recognising this app, and both outcomes in `main`.
+- [x] The app running in another terminal, and the whole-app tests' servers, are not leftovers and keep their ports
+  (from the review).
 
 ## Out of scope
 
@@ -37,3 +40,18 @@ do, as today. No new package. Based on `main`, with its own pull request to `mai
 Added by Claude on 2026-11-24 from Jake's request and answer. Tried in a Linux container: a run whose
 `start.py` was killed left both servers running; the next `uv run start.py` stopped them and started. An
 unrelated program on port 8000 was left alone, with the old message. Jake to try it on Windows.
+
+The review of `536ad99` found: netstat's `-p TCP` hid Vite's IPv6 socket on Windows; the folder check matched
+other copies of the repo, worktrees inside it and words holding "vite"; a copy still running in another terminal
+or under the whole-app tests would be stopped; and PowerShell's output could fail to decode. All are fixed: plain
+`netstat -ano`, read by the empty remote address rather than the translated state; a match on start.py's own
+commands only; the `.start.pid` check; UTF-8 output. A leftover that ignores the request to stop is forced after
+5 seconds. Tried again in the Linux container: a second `uv run start.py` beside a running one left it alone;
+after the first was killed it stopped the leftovers and started; a server started as the whole-app tests start
+it was left alone.
+
+PR #89 was merged at `536ad99`, before these fixes, so they follow in a second pull request to `main`. Its review of
+`ea2a8b2` found: a second start.py could overwrite a running one's `.start.pid` (the check now runs first, before
+the ports, with its own message); a copy at a longer path ending in this repo's path matched (the folder must now
+start a word); a netstat state of two words was missed; and the main path, a stale `.start.pid` from a killed
+start.py, had no test. All are fixed and tested.
