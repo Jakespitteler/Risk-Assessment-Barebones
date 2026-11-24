@@ -3,7 +3,7 @@ id: 0045
 title: ChatGPT as a second AI provider
 status: review
 owner: claude
-branch: claude/0045-chatgpt
+branch: claude/0045-chatgpt (#91)
 ---
 
 ## Goal
