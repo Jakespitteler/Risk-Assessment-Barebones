@@ -8,7 +8,6 @@ import base64
 import logging
 from typing import Literal
 
-import httpx2
 import openai
 from openai.types.responses import (
     EasyInputMessageParam,
@@ -18,6 +17,7 @@ from openai.types.responses import (
     ResponseInputTextParam,
     ResponseOutputMessage,
     ResponseOutputRefusal,
+    ResponseOutputText,
 )
 
 from risk_assessment.ai.model import LanguageModelError
@@ -60,7 +60,7 @@ class ChatGptModel:
         api_key: str,
         model: str | None = None,
         effort: Effort = "low",
-        http_client: httpx2.Client | None = None,
+        http_client: openai.DefaultHttpxClient | None = None,
         network_time_limit_seconds: float = NETWORK_TIME_LIMIT_SECONDS,
     ) -> None:
         """Set up the client. Nothing is sent until `reply()` is called.
@@ -95,8 +95,8 @@ class ChatGptModel:
             The text of the model's reply.
 
         Raises:
-            LanguageModelError: When the model refuses, is cut off, sends back no
-                text, or the call fails or takes too long (with the `openai.APIError`
+            LanguageModelError: When the model refuses, doesn't finish, sends back
+                no text, or the call fails or takes too long (with the `openai.APIError`
                 as its cause).
         """
         return self._send(instructions, text, MAX_OUTPUT_TOKENS, None)
@@ -114,8 +114,8 @@ class ChatGptModel:
 
         Raises:
             LanguageModelError: When the photo's type isn't one the model reads, the
-                model refuses, is cut off or sends back no text, or the call fails or
-                takes longer than `PHOTO_TIME_LIMIT_SECONDS` (with the
+                model refuses, doesn't finish or sends back no text, or the call fails
+                or takes longer than `PHOTO_TIME_LIMIT_SECONDS` (with the
                 `openai.APIError` as its cause).
         """
         if media_type not in PHOTO_TYPES:
@@ -157,8 +157,8 @@ class ChatGptModel:
             The text of the model's reply.
 
         Raises:
-            LanguageModelError: When the model refuses, is cut off, sends back no
-                text, or the call fails or takes too long (with the `openai.APIError`
+            LanguageModelError: When the model refuses, doesn't finish, sends back
+                no text, or the call fails or takes too long (with the `openai.APIError`
                 as its cause).
         """
         client: openai.OpenAI = (
@@ -173,15 +173,20 @@ class ChatGptModel:
                 input=content,
                 max_output_tokens=max_output_tokens,
                 reasoning={"effort": self._effort},
+                # OpenAI would otherwise keep each call, a card's photo and the
+                # worker's name included, for anyone in the project to look up.
+                store=False,
             )
         except openai.APIError as error:
             raise LanguageModelError(f"The call to {self.name} failed.") from error
         self._log_usage(response)
         if _refused(response):
             raise LanguageModelError(f"{self.name} refused to reply.")
-        if response.status == "incomplete":
-            raise LanguageModelError(f"{self.name} was cut off before it finished.")
-        reply_text: str = response.output_text
+        if response.status != "completed":
+            raise LanguageModelError(
+                f"{self.name} didn't finish its reply ({response.status}).",
+            )
+        reply_text: str = _final_text(response)
         if not reply_text:
             raise LanguageModelError(f"{self.name} sent back no text.")
         return reply_text
@@ -204,6 +209,25 @@ class ChatGptModel:
                 "output_tokens": response.usage.output_tokens,
             },
         )
+
+
+def _final_text(response: Response) -> str:
+    """Give the text of the model's answer, leaving out any commentary on the way.
+
+    Args:
+        response: The Responses API's answer.
+
+    Returns:
+        The answer's text, or "" when it has none.
+    """
+    return "".join(
+        part.text
+        for item in response.output
+        if isinstance(item, ResponseOutputMessage)
+        and item.phase in (None, "final_answer")
+        for part in item.content
+        if isinstance(part, ResponseOutputText)
+    )
 
 
 def _refused(response: Response) -> bool:

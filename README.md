@@ -108,7 +108,7 @@ To use ChatGPT's models instead of Claude's, make the key at <https://platform.o
 monthly limit, as above), paste it after `TAKE5_AI_KEY=`, and add the line `TAKE5_AI_PROVIDER=chatgpt` to the same
 settings file. An OpenAI API key is billed by use, apart from any ChatGPT subscription. Every AI job then uses
 OpenAI's `gpt-6.2-astra`, and vague hazards `gpt-6-luna`; the model lines above take OpenAI's model names. The
-try scripts still use Claude.
+try scripts try Claude only, so they stop when ChatGPT is chosen.
 
 The ranking page ranks every saved Take 5 while the app is a proof of concept. To rank only today's, add the
 line `TAKE5_RANK_TODAY_ONLY=true` to `backend/.env` and start the app again. Risk by area likewise counts every

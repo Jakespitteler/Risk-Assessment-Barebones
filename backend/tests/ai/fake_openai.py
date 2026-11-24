@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 import httpx2
+import openai
 
 CHATGPT_REPLY: str = "What stops the tray moving while you're on it?"
 
@@ -22,6 +23,7 @@ class FakeOpenAiApi:
         *,
         refuse: bool = False,
         status: str = "completed",
+        commentary: str = "",
         status_code: int = 200,
     ) -> None:
         """Set what the stand-in sends back.
@@ -30,22 +32,24 @@ class FakeOpenAiApi:
             reply: The text of the model's reply. Empty sends back no text at all.
             refuse: Whether the reply is a refusal instead of text.
             status: The response's status, such as "completed" or "incomplete".
+            commentary: Text the model sends on the way, before its answer, if any.
             status_code: The HTTP status to answer with.
         """
         self._reply: str = reply
         self._refuse: bool = refuse
         self._status: str = status
+        self._commentary: str = commentary
         self._status_code: int = status_code
         self.requests: list[dict[str, Any]] = []
         self.read_time_limits: list[float | None] = []
 
-    def http_client(self) -> httpx2.Client:
+    def http_client(self) -> openai.DefaultHttpxClient:
         """Make an HTTP client for the adapter that sends every call here.
 
         Returns:
             A client that never reaches the network.
         """
-        return httpx2.Client(transport=httpx2.MockTransport(self._answer))
+        return openai.DefaultHttpxClient(transport=httpx2.MockTransport(self._answer))
 
     def _answer(self, request: httpx2.Request) -> httpx2.Response:
         """Record one request and answer it.
@@ -88,11 +92,17 @@ class FakeOpenAiApi:
                 else None
             ),
             "output": [
+                # A reasoning model thinks first, in an item of its own.
+                {"type": "reasoning", "id": "rs_example", "summary": []},
+                *self._commentary_message(),
                 {
                     "type": "message",
                     "id": "msg_example",
                     "role": "assistant",
-                    "status": "completed",
+                    "status": "completed"
+                    if self._status == "completed"
+                    else "incomplete",
+                    "phase": "final_answer",
                     "content": part,
                 },
             ],
@@ -103,7 +113,31 @@ class FakeOpenAiApi:
                 "input_tokens": 1,
                 "output_tokens": 1,
                 "total_tokens": 2,
-                "input_tokens_details": {"cached_tokens": 0},
+                "input_tokens_details": {"cached_tokens": 0, "cache_write_tokens": 0},
                 "output_tokens_details": {"reasoning_tokens": 0},
             },
         }
+
+    def _commentary_message(self) -> list[dict[str, Any]]:
+        """Build the message the model sends on the way, if it sends one.
+
+        Returns:
+            None or one message, in the commentary phase.
+        """
+        if not self._commentary:
+            return []
+        text: dict[str, Any] = {
+            "type": "output_text",
+            "text": self._commentary,
+            "annotations": [],
+        }
+        return [
+            {
+                "type": "message",
+                "id": "msg_commentary",
+                "role": "assistant",
+                "status": "completed",
+                "phase": "commentary",
+                "content": [text],
+            },
+        ]

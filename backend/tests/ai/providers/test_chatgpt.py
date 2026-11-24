@@ -14,6 +14,8 @@ from risk_assessment.ai.challenge import (
 from risk_assessment.ai.model import LanguageModelError
 from risk_assessment.ai.providers.chatgpt import (
     DEFAULT_MODEL,
+    MAX_OUTPUT_TOKENS,
+    NETWORK_TIME_LIMIT_SECONDS,
     PHOTO_MAX_OUTPUT_TOKENS,
     PHOTO_TIME_LIMIT_SECONDS,
     ChatGptModel,
@@ -52,6 +54,9 @@ def test_the_instructions_are_the_instructions_and_the_text_the_input() -> None:
     assert api.requests[0]["instructions"] == "Ask one question."
     assert api.requests[0]["input"] == "{}"
     assert api.requests[0]["reasoning"] == {"effort": "low"}
+    assert api.requests[0]["max_output_tokens"] == MAX_OUTPUT_TOKENS
+    assert api.requests[0]["store"] is False
+    assert api.read_time_limits == [NETWORK_TIME_LIMIT_SECONDS]
 
 
 def test_with_no_model_set_the_default_model_is_asked() -> None:
@@ -71,10 +76,21 @@ def test_a_refusal_is_an_error_not_a_reply() -> None:
         _chatgpt(FakeOpenAiApi(refuse=True)).reply("Ask.", "{}")
 
 
-def test_a_reply_cut_off_before_it_finished_is_an_error() -> None:
-    """A reply that ran out of room may be half a question, so it isn't used."""
+@pytest.mark.parametrize(
+    "status",
+    ["incomplete", "failed", "cancelled", "in_progress", "queued"],
+)
+def test_a_reply_that_did_not_finish_is_an_error(status: str) -> None:
+    """A reply cut off or stopped may be half a question, even with text in it."""
     with pytest.raises(LanguageModelError):
-        _chatgpt(FakeOpenAiApi(status="incomplete")).reply("Ask.", "{}")
+        _chatgpt(FakeOpenAiApi(status=status)).reply("Ask.", "{}")
+
+
+def test_commentary_on_the_way_is_left_out_of_the_reply() -> None:
+    """Only the model's answer is used, so card or ranking JSON stays whole."""
+    api = FakeOpenAiApi(commentary="Let me look at that.")
+
+    assert _chatgpt(api).reply("Ask.", "{}") == CHATGPT_REPLY
 
 
 def test_a_reply_with_no_text_is_an_error() -> None:
@@ -140,6 +156,7 @@ def test_a_photo_is_sent_as_one_image_with_the_instructions() -> None:
     }
     assert ask == {"type": "input_text", "text": "Read this card."}
     assert request["max_output_tokens"] == PHOTO_MAX_OUTPUT_TOKENS
+    assert request["store"] is False
     assert api.read_time_limits == [PHOTO_TIME_LIMIT_SECONDS]
 
 
@@ -151,3 +168,13 @@ def test_a_photo_type_chatgpt_cant_read_is_refused_before_any_call() -> None:
         _chatgpt(api).read_photo("Read it.", b"%PDF", "application/pdf")
 
     assert api.requests == []
+
+
+def test_a_failed_photo_call_is_not_tried_again() -> None:
+    """The photo's longer time limit keeps the no-retry rule."""
+    api = FakeOpenAiApi(status_code=500)
+
+    with pytest.raises(LanguageModelError):
+        _chatgpt(api).read_photo("Read it.", b"photo bytes", "image/png")
+
+    assert len(api.requests) == 1

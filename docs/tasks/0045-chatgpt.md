@@ -24,7 +24,8 @@ package may be added. An OpenAI API key is pay-as-you-go, billed apart from a Ch
 - [x] The adapter sends what it should and turns refusals, cut-off replies, empty replies and failed calls into
   `LanguageModelError`, tested against a stand-in with no network.
 - [x] The real-AI test for each provider runs only with that provider chosen and a key set.
-- [ ] Jake has tried it with an OpenAI key.
+- [ ] Jake approves the models (spec D133): `gpt-6.2-astra`, and `gpt-6-luna` for vague hazards.
+- [ ] Jake has tried it with an OpenAI key, which also confirms the model names.
 
 ## Out of scope
 
@@ -40,4 +41,13 @@ dates were read from OpenAI's docs and PyPI on 2026-11-24, not from memory (spec
   `LanguageModelError`, so the app falls back as it does for Claude. No real OpenAI key was available.
 - To check with Jake: if the settings template's comment lists the provider values, add `chatgpt` there (agents
   may not edit that file).
-- Unrelated, left alone: `scripts/try_challenge.py` and `scripts/try_vague_hazard.py` still call Claude only.
+- `scripts/try_challenge.py` and `scripts/try_vague_hazard.py` try Claude only; they now stop when another
+  provider is chosen, so an OpenAI key never goes to Anthropic.
+
+The review of `deba42a` found no high problems. Fixed from it: any status but `completed` is refused, not only
+`incomplete`; `store=False`, so OpenAI keeps no calls; commentary before the answer is left out; no `httpx2`
+import in the app (typed with `openai.DefaultHttpxClient`, as the Claude adapter does); the try scripts' guard;
+a more faithful stand-in and the limits checked in tests. Left for Jake: `gpt-6.2-astra` is newer than the
+pinned package's list of model names, which only a real key can confirm; `"detail": "high"` for card photos may
+be worth comparing with `"original"` then. The branch starts from `main`, as Jake asked, not stacked on the
+open pull requests #87, #88 and #90.
