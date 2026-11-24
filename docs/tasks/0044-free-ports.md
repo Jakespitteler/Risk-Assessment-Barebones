@@ -3,7 +3,7 @@ id: 0044
 title: start.py frees its ports from a leftover copy of the app
 status: review
 owner: claude
-branch: claude/0044-free-ports (#89)
+branch: claude/0044-free-ports (#89, then #90)
 ---
 
 ## Goal
