@@ -6,7 +6,8 @@ import os
 import signal
 import socket
 import subprocess
-from pathlib import Path
+from collections.abc import Iterator
+from pathlib import Path, PureWindowsPath
 from typing import Any
 from unittest.mock import MagicMock, call, patch
 from urllib.error import URLError
@@ -14,6 +15,21 @@ from urllib.error import URLError
 import pytest
 import start
 import uvicorn.config
+
+
+@pytest.fixture(autouse=True)
+def running_file(tmp_path: Path) -> Iterator[Path]:
+    """Keep start.py's process-ID file out of the repo during tests.
+
+    Args:
+        tmp_path: A folder for this test.
+
+    Yields:
+        Where start.py writes its process ID in this test.
+    """
+    path: Path = tmp_path / ".start.pid"
+    with patch.object(start, "RUNNING_FILE", path):
+        yield path
 
 
 def make_backend(folder: Path) -> Path:
@@ -110,19 +126,27 @@ Active Connections
   TCP    0.0.0.0:135            0.0.0.0:0              LISTENING       1044
   TCP    127.0.0.1:8000         0.0.0.0:0              LISTENING       5120
   TCP    127.0.0.1:8000         127.0.0.1:61234        ESTABLISHED     5120
-  TCP    [::1]:5173             [::]:0                 LISTENING       7344
   TCP    127.0.0.1:18000        0.0.0.0:0              LISTENING       9999
+  TCP    [::1]:5173             [::]:0                 LISTENING       7344
+  TCP    [::1]:5173             [::1]:61240            ESTABLISHED     7344
+  TCP    [::]:3000              [::]:0                 ABHÖREN         2020
+  UDP    0.0.0.0:5173           *:*                                    6060
 """
 
 
 def test_windows_listeners_are_read_from_netstat() -> None:
-    """Only LISTENING lines on exactly that port count, on IPv4 or IPv6 (task 0044)."""
+    """Listening sockets on exactly that port count, on IPv4 or IPv6 (task 0044).
+
+    A listening socket has no remote end, which netstat shows the same in every
+    language, while the state's name is translated (here German).
+    """
     assert start.windows_listeners(NETSTAT, 8000) == {5120}
     assert start.windows_listeners(NETSTAT, 5173) == {7344}
-    assert start.windows_listeners(NETSTAT, 3000) == set()
+    assert start.windows_listeners(NETSTAT, 3000) == {2020}
+    assert start.windows_listeners(NETSTAT, 4000) == set()
 
 
-# cspell:ignore retrnsmt
+# cspell:ignore retrnsmt ABHÖREN
 def made_up_proc(folder: Path, port: int, pid: int) -> Path:
     """Make a /proc with one process listening on a port.
 
@@ -165,26 +189,68 @@ def test_linux_listeners_are_found_in_proc(tmp_path: Path) -> None:
     assert start.command_line(4321, proc) == "node vite.js "
 
 
+BACK_END: str = (
+    "/repo/backend/.venv/bin/python /repo/backend/.venv/bin/uvicorn "
+    "risk_assessment.api.app:create_app --factory --port 8000 "
+    "--log-config dev_logging.json"
+)
+VITE: str = "node /repo/frontend/node_modules/.bin/vite --logLevel warn"
+
+
 @pytest.mark.parametrize(
     ("command", "ours"),
     [
-        ("/repo/backend/.venv/bin/python /repo/backend/.venv/bin/uvicorn app", True),
+        (BACK_END, True),
+        (VITE, True),
         (
             "node /repo/frontend/node_modules/.bin/../vite/bin/vite.js --logLevel warn",
             True,
         ),
-        ("/repo/backend/.venv/bin/python -m http.server 8000", False),
+        (BACK_END.removesuffix(" --log-config dev_logging.json"), False),
+        (VITE.removesuffix(" --logLevel warn"), False),
+        (VITE.replace("/repo/", "/repo-old/"), False),
+        (BACK_END.replace("/repo/", "/repo/.claude/worktrees/agent-1/"), False),
+        ("python -m http.server 8000 --directory /repo/docs/invite", False),
+        (
+            "/repo/backend/.venv/bin/python -m pytest -k uvicorn dev_logging.json",
+            False,
+        ),
         ("/elsewhere/.venv/bin/uvicorn other.app:app --port 8000", False),
         ("", False),
     ],
-    ids=["back_end", "vite", "other_program_here", "uvicorn_elsewhere", "unknown"],
+    ids=[
+        "back_end",
+        "vite",
+        "vite_script",
+        "whole_app_tests_back_end",
+        "whole_app_tests_vite",
+        "another_copy_of_the_repo",
+        "a_worktree_inside_the_repo",
+        "a_word_holding_vite",
+        "uvicorn_as_a_word",
+        "uvicorn_elsewhere",
+        "unknown",
+    ],
 )
 def test_only_this_apps_back_end_and_vite_are_recognised(
     command: str,
     ours: bool,
 ) -> None:
-    """Its own uvicorn or Vite, run from this folder, and nothing else (task 0044)."""
+    """Only start.py's own uvicorn or Vite, run from this folder (task 0044)."""
     assert start.is_this_apps(command, Path("/repo")) is ours
+
+
+def test_a_windows_command_line_is_matched_ignoring_case() -> None:
+    """Windows paths have backslashes, may hold spaces, and ignore case."""
+    repo: PureWindowsPath = PureWindowsPath("C:/Users/Sam Example/Risk Assessment")
+    scripts: str = f"{repo}\\BACKEND\\.venv\\Scripts"
+    command: str = (
+        f'"{scripts}\\python.exe" "{scripts}\\uvicorn.exe" '
+        "risk_assessment.api.app:create_app --log-config dev_logging.json"
+    )
+    with patch.object(start.sys, "platform", "win32"):
+        assert start.is_this_apps(command, repo)
+        assert not start.is_this_apps(command.replace("Risk ", "Old Risk "), repo)
 
 
 def test_a_leftover_copy_of_the_app_is_stopped_and_the_app_starts(
@@ -212,7 +278,7 @@ def test_a_leftover_copy_of_the_app_is_stopped_and_the_app_starts(
         patch.object(
             start,
             "command_line",
-            return_value=f"{start.REPO_ROOT}/backend/.venv/bin/uvicorn app",
+            return_value=BACK_END.replace("/repo", str(start.REPO_ROOT)),
         ),
         patch.object(start, "stop_leftover") as stop_leftover,
         patch.object(start.install, "missing_tools", return_value=[]),
@@ -222,7 +288,7 @@ def test_a_leftover_copy_of_the_app_is_stopped_and_the_app_starts(
         exit_code: int = start.main()
 
     assert exit_code == 0
-    stop_leftover.assert_called_once_with(5120)
+    stop_leftover.assert_called_once_with(5120, force=False)
     run_servers.assert_called_once()
     assert "left running on port 8000; stopping it." in capsys.readouterr().out
 
@@ -258,17 +324,98 @@ def test_a_leftover_that_wont_stop_leaves_the_message(
         patch.object(
             start,
             "command_line",
-            return_value=f"node {start.REPO_ROOT}/frontend/node_modules/vite/vite.js",
+            return_value=VITE.replace("/repo", str(start.REPO_ROOT)),
         ),
-        patch.object(start, "stop_leftover"),
+        patch.object(start, "stop_leftover") as stop_leftover,
         patch.object(start, "FREE_PORT_WAIT_SECONDS", 0.01),
         patch.object(start, "install_what_changed") as install,
     ):
         exit_code: int = start.main()
 
     assert exit_code == 1
+    assert stop_leftover.call_args_list == [
+        call(7344, force=False),
+        call(7344, force=True),
+    ]
     install.assert_not_called()
     assert start.busy_port_message(5173) in capsys.readouterr().out
+
+
+def test_a_copy_whose_start_py_still_runs_is_left_alone(
+    running_file: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The app running in another terminal isn't a leftover, so it keeps its port."""
+    running_file.write_text("4242", encoding="ascii")
+
+    def command_line(pid: int) -> str:
+        """Say what each process runs: 4242 is the other start.py.
+
+        Args:
+            pid: The process's ID.
+        """
+        if pid == 4242:  # noqa: PLR2004 - the other start.py
+            return "python start.py"
+        return VITE.replace("/repo", str(start.REPO_ROOT))
+
+    with (
+        patch.object(start.install, "cloud_sync_service", return_value=None),
+        patch.object(start, "port_is_busy", side_effect=only_the_app_port_is_busy),
+        patch.object(start, "listening_pids", return_value={7344}),
+        patch.object(start, "command_line", side_effect=command_line),
+        patch.object(start, "stop_leftover") as stop_leftover,
+        patch.object(start, "install_what_changed") as install,
+    ):
+        exit_code: int = start.main()
+
+    assert exit_code == 1
+    stop_leftover.assert_not_called()
+    install.assert_not_called()
+    assert capsys.readouterr().out.strip() == start.busy_port_message(5173)
+    assert running_file.read_text(encoding="ascii") == "4242"
+
+
+def test_a_port_shared_with_another_program_is_never_freed() -> None:
+    """Every listener must be this app's; one other program keeps the port."""
+    vite: str = VITE.replace("/repo", str(start.REPO_ROOT))
+    with (
+        patch.object(start, "listening_pids", return_value={7344, 8080}),
+        patch.object(start, "command_line", side_effect=[vite, "nginx"]),
+        patch.object(start, "stop_leftover") as stop_leftover,
+    ):
+        assert not start.free_port(5173)
+
+    stop_leftover.assert_not_called()
+
+
+def test_the_running_file_is_written_while_it_runs_and_removed_after(
+    running_file: Path,
+) -> None:
+    """A second start.py can tell this one runs; the file goes when it stops."""
+    seen: list[str] = []
+
+    def run_servers(_url: str, _cloud_service: str | None) -> int:
+        """Note what the file holds while the app runs.
+
+        Returns:
+            0, as after Ctrl+C.
+        """
+        seen.append(running_file.read_text(encoding="ascii"))
+        return 0
+
+    running_file.write_text("999999", encoding="ascii")
+    with (
+        patch.object(start.install, "cloud_sync_service", return_value=None),
+        patch.object(start, "port_is_busy", return_value=False),
+        patch.object(start.install, "missing_tools", return_value=[]),
+        patch.object(start, "install_what_changed", return_value=0),
+        patch.object(start, "run_servers", side_effect=run_servers),
+    ):
+        assert start.main() == 0
+
+    assert seen == [str(os.getpid())]
+    assert not running_file.exists()
+    assert not start.another_start_is_running(running_file)
 
 
 @pytest.mark.skipif(not Path("/proc/net/tcp").exists(), reason="Linux's /proc only")
