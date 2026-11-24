@@ -104,6 +104,12 @@ made-up hazards. Photos of paper cards are read by the main model unless a line 
 `TAKE5_AI_SCAN_MODEL=claude-fable-5-2` names another. `uv run test.py backend -m real_ai` runs the two tests
 that call the real AI. Each of these costs a little money; the normal tests and CI never call it.
 
+To use ChatGPT's models instead of Claude's, make the key at <https://platform.openai.com> (with credit and a
+monthly limit, as above), paste it after `TAKE5_AI_KEY=`, and add the line `TAKE5_AI_PROVIDER=chatgpt` to the same
+settings file. An OpenAI API key is billed by use, apart from any ChatGPT subscription. Every AI job then uses
+OpenAI's `gpt-6.2-astra`, and vague hazards `gpt-6-luna`; the model lines above take OpenAI's model names. The
+try scripts still use Claude.
+
 The ranking page ranks every saved Take 5 while the app is a proof of concept. To rank only today's, add the
 line `TAKE5_RANK_TODAY_ONLY=true` to `backend/.env` and start the app again. Risk by area likewise counts every
 saved Take 5; the line `TAKE5_AREA_LAST_30_DAYS_ONLY=true` makes it count only the last 30 days.

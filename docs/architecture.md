@@ -27,7 +27,7 @@ Back end:
 | Data checking | pydantic, with pydantic-settings for settings | One definition of each shape, checked on the way in. Settings such as the AI key come from the environment |
 | Server | uvicorn | The usual server for FastAPI |
 | Database | SQLite through Python's built-in `sqlite3` | One file, nothing to install, every SQL statement is in the repo to read |
-| AI | One provider's own Python library per adapter, starting with `anthropic` (spec decision D9; added in task 0009) | Each provider sits behind the same small interface |
+| AI | One provider's own Python library per adapter: `anthropic` (spec decision D9; added in task 0009) and `openai` (task 0045) | Each provider sits behind the same small interface |
 | Packaging | uv | One tool for Python versions, dependencies and running commands |
 | Lint and format | ruff | Project rule |
 | Type checking | pyright in strict mode | The command-line version of Pylance's strict rules |
@@ -150,6 +150,8 @@ backend/
                                    11-second network limit and no retries. QUICK_MODEL names the
                                    model for short jobs (Haiku 5.5). read_photo makes it a
                                    PhotoReadingModel, with a 60-second limit     (task 0033)
+                chatgpt.py         ChatGptModel, the same for OpenAI: one Responses API call, the same
+                                   limits; QUICK_MODEL is gpt-6-luna            (task 0045, D133)
         api/               the web API
             app.py             builds the FastAPI app and plugs the pieces together
             take5_routes.py    one function per Take 5 endpoint
@@ -165,6 +167,7 @@ backend/
         conftest.py        hides any AI key from every test not marked `real_ai`
         samples.py         the made-up Take 5s that tests in more than one folder share
         ai/fake_anthropic.py  a stand-in for Anthropic's API, so the real adapter runs with no network
+        ai/fake_openai.py  the same for OpenAI's API                                    (task 0045)
         api/conftest.py    the API tests' set-up: an empty database and a client for each test
 frontend/
     package.json

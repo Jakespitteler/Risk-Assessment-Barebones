@@ -2,6 +2,19 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-24: ChatGPT is a second AI provider, with the `openai` package (task 0045)
+
+- Decision: `TAKE5_AI_PROVIDER=chatgpt` runs every AI job on OpenAI's models through `ai/providers/chatgpt.py`,
+  which uses OpenAI's own package, `openai` (pinned at 3.48.0, the newest release at least two weeks old). Its
+  default is the flagship, `gpt-6.2-astra`; vague hazards go to `gpt-6-luna`, its most efficient model (D133).
+  The key, model and effort settings are the same as Claude's, so there are no new settings. Each real-AI test
+  runs only with its own provider chosen, so a key is never sent to the other company. The AI package may
+  import `httpx2`, which both SDKs use, to type the stand-in client tests pass in.
+- Why: Jake asked on 2026-11-24 for the app's AI to work with ChatGPT, and approved the package.
+- Not chosen: calling the API with `httpx2` by hand (more code for errors and photos); a key setting per
+  provider (one provider is chosen at a time).
+- Decided by: human (ChatGPT, the package), agent (the models and the adapter).
+
 ## 2026-11-24: start.py frees its ports from a leftover copy of the app (task 0044)
 
 - Decision: when port 8000 or 5173 is busy, `start.py` finds what listens on it and stops it only when every

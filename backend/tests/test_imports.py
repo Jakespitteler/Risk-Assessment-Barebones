@@ -38,7 +38,8 @@ _OUTSIDE: dict[str, tuple[str, ...]] = {
     "domain": ("pydantic",),
     "services": ("pydantic",),
     "storage": ("pydantic",),
-    "ai": ("pydantic", "anthropic"),
+    # Each provider's library; httpx2, which both use, types ChatGPT's test client.
+    "ai": ("pydantic", "anthropic", "openai", "httpx2"),
     "api": ("pydantic", "fastapi", "starlette"),
 }
 

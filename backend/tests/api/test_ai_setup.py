@@ -5,12 +5,13 @@ from pathlib import Path
 from typing import cast
 
 import anthropic
+import openai
 import pytest
 from pydantic import SecretStr
 
 from risk_assessment.ai.card_reader import AiCardReader
 from risk_assessment.ai.challenge import AiChallengeAsker
-from risk_assessment.ai.providers import claude
+from risk_assessment.ai.providers import chatgpt, claude
 from risk_assessment.ai.ranking import AiTake5Ranker
 from risk_assessment.ai.vague_hazard import AiHazardJudge
 from risk_assessment.api.app import (
@@ -28,9 +29,10 @@ from risk_assessment.services.ports import (
     HazardJudge,
     Take5Ranker,
 )
-from risk_assessment.settings import Settings
+from risk_assessment.settings import AiProvider, Settings
 from risk_assessment.storage.sqlite import SqliteTake5Repository
 from tests.ai.fake_anthropic import FakeAnthropicApi
+from tests.ai.fake_openai import FakeOpenAiApi
 
 
 def test_with_no_key_no_ai_is_plugged_in() -> None:
@@ -177,3 +179,62 @@ def test_the_scan_model_is_a_setting() -> None:
 
     assert isinstance(reader, AiCardReader)
     assert reader.model_name == "claude-fable-5-2"
+
+
+CHATGPT_KEY: SecretStr = SecretStr("made-up-key")
+
+
+def test_chatgpt_does_every_ai_job_when_it_is_chosen(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """`TAKE5_AI_PROVIDER=chatgpt` plugs OpenAI's models into every job (0045)."""
+    settings = Settings(ai_provider=AiProvider.CHATGPT, ai_key=CHATGPT_KEY)
+
+    with caplog.at_level(logging.INFO, logger="risk_assessment"):
+        asker: ChallengeAsker | None = build_challenge_asker(settings)
+        ranker: Take5Ranker | None = build_take5_ranker(settings)
+    judge: HazardJudge | None = build_hazard_judge(settings)
+    reader: CardReader | None = build_card_reader(settings)
+
+    assert isinstance(asker, AiChallengeAsker)
+    assert isinstance(ranker, AiTake5Ranker)
+    assert f"The challenge question is asked of {chatgpt.DEFAULT_MODEL}." in (
+        caplog.messages
+    )
+    assert f"Take 5s are ranked by {chatgpt.DEFAULT_MODEL}." in caplog.messages
+    assert isinstance(judge, AiHazardJudge)
+    assert judge.model_name == chatgpt.QUICK_MODEL
+    assert isinstance(reader, AiCardReader)
+    assert reader.model_name == chatgpt.DEFAULT_MODEL
+
+
+def test_chatgpt_reads_cards_at_medium_effort(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Reading handwriting thinks harder than usual with ChatGPT too (task 0045)."""
+    api = FakeOpenAiApi(reply="{}")
+    real_client = chatgpt.openai.OpenAI
+
+    def fake_client(**settings: object) -> openai.OpenAI:
+        """Make OpenAI's client send every call to the stand-in API.
+
+        Args:
+            settings: What the client is set up with.
+
+        Returns:
+            A client that never reaches the network.
+        """
+        return real_client(
+            api_key=cast(str, settings["api_key"]),
+            max_retries=0,
+            http_client=api.http_client(),
+        )
+
+    monkeypatch.setattr(chatgpt.openai, "OpenAI", fake_client)
+    reader: CardReader | None = build_card_reader(
+        Settings(ai_provider=AiProvider.CHATGPT, ai_key=CHATGPT_KEY),
+    )
+    assert reader is not None
+
+    reader.read(b"photo", "image/jpeg", BOOKLET_TEMPLATE)
+
+    assert api.requests[0]["model"] == chatgpt.DEFAULT_MODEL
+    assert api.requests[0]["reasoning"] == {"effort": "medium"}

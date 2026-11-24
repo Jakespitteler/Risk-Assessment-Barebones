@@ -14,9 +14,12 @@ _LOCAL_SETTINGS_FILE: Path = _BACKEND_FOLDER / ".env"
 
 
 class AiProvider(StrEnum):
-    """Which company's AI writes the challenge question and judges vague hazards."""
+    """Which company's AI does the app's AI jobs, such as the challenge question."""
 
     CLAUDE = "claude"
+    # OpenAI's models, as ChatGPT uses (task 0045). Its API key is billed apart from
+    # a ChatGPT subscription.
+    CHATGPT = "chatgpt"
 
 
 class Settings(BaseSettings):
@@ -28,8 +31,8 @@ class Settings(BaseSettings):
     Attributes:
         database_path: Where the SQLite file is kept (`TAKE5_DATABASE_PATH`). By
             default it is `backend/.data/take5.sqlite3`, which git ignores.
-        ai_provider: Whose AI writes the challenge question and judges vague hazards
-            (`TAKE5_AI_PROVIDER`).
+        ai_provider: Whose AI does every AI job (`TAKE5_AI_PROVIDER`): `claude`, the
+            default, or `chatgpt` (task 0045).
         ai_model: Which of that provider's models writes the challenge question
             (`TAKE5_AI_MODEL`). None means the provider's own default.
         ai_hazard_model: Which of that provider's models judges vague hazards
@@ -37,9 +40,10 @@ class Settings(BaseSettings):
             (decision D61).
         ai_scan_model: Which of that provider's models reads photos of paper cards
             (`TAKE5_AI_SCAN_MODEL`, task 0033). None means the main model, `ai_model`.
-        ai_key: The key for the provider's API (`TAKE5_AI_KEY`). With none, or an
-            empty one, no AI is asked: the fixed question is used (spec C3) and the
-            word rule judges hazards (spec T6).
+        ai_key: The key for the chosen provider's API (`TAKE5_AI_KEY`): Anthropic's
+            for Claude, OpenAI's for ChatGPT. With none, or an empty one, no AI is
+            asked: the fixed question is used (spec C3) and the word rule judges
+            hazards (spec T6).
         rank_today_only: Whether the ranking counts only today's Take 5s
             (`TAKE5_RANK_TODAY_ONLY`). False, the default while the app is a proof of
             concept, ranks every saved Take 5 (spec W7, decision D118).
