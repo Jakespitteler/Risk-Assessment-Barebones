@@ -10,7 +10,7 @@ In order, it:
 
 1. Frees ports 8000 and 5173 when only a leftover copy of this app holds them (its own
    back end or Vite, run from this folder), such as one left by a closed terminal. If
-   anything else holds one, including a copy whose start.py still runs, it stops
+   anything else holds one, or the app already runs in another terminal, it stops
    before installing anything and says what to do.
 2. Checks for git and Node.js, as `install.py` does.
 3. Brings the installs in line with the lock files the repo holds: the back end's
@@ -92,6 +92,10 @@ _LISTEN_STATE: str = "0A"
 _NETSTAT_NO_REMOTE: tuple[str, ...] = ("0.0.0.0:0", "[::]:0")
 # Where a running start.py writes its process ID, so a second one leaves it alone.
 RUNNING_FILE: Path = REPO_ROOT / ".start.pid"
+ALREADY_RUNNING_MESSAGE: str = (
+    "The app is already running in another terminal: use that one, or press Ctrl+C "
+    "there first. Nothing was installed or started."
+)
 STOP_WAIT_SECONDS: float = 10.0
 
 # The readiness checks ask this computer directly, never through an HTTP proxy.
@@ -175,13 +179,14 @@ def windows_listeners(netstat: str, port: int) -> set[int]:
     for line in netstat.splitlines():
         fields: list[str] = line.split()
         if (
-            len(fields) == 5  # noqa: PLR2004 - protocol, local, remote, state, PID
+            # Protocol, local, remote, then the state (perhaps several words) and PID.
+            len(fields) >= 5  # noqa: PLR2004
             and fields[0].upper().startswith("TCP")
             and fields[1].endswith(f":{port}")
             and fields[2] in _NETSTAT_NO_REMOTE
-            and fields[4].isdigit()
+            and fields[-1].isdigit()
         ):
-            found.add(int(fields[4]))
+            found.add(int(fields[-1]))
     return found
 
 
@@ -286,9 +291,10 @@ def is_this_apps(command: str, repo_root: PurePath) -> bool:
     node_modules: str = re.escape(str(repo_root / "frontend" / "node_modules"))
     backend: str = rf"{venv}{separator}(?:bin|Scripts){separator}uvicorn(?:\.exe)?"
     frontend: str = rf"{node_modules}{separator}(?:[^\s\"']*{separator})?vite(?:\.js)?"
-    if re.search(backend + word_end, command, flags):
+    word_start: str = r"""(?:^|(?<=["'\s]))"""
+    if re.search(word_start + backend + word_end, command, flags):
         return "dev_logging.json" in command
-    if re.search(frontend + word_end, command, flags):
+    if re.search(word_start + frontend + word_end, command, flags):
         return "--logLevel" in command
     return False
 
@@ -307,7 +313,8 @@ def another_start_is_running(running_file: Path) -> bool:
         pid: int = int(running_file.read_text(encoding="ascii").strip())
     except (OSError, ValueError):
         return False
-    return pid != os.getpid() and "start.py" in command_line(pid)
+    # Not this start.py, nor the `uv run start.py` that started it.
+    return pid not in {os.getpid(), os.getppid()} and "start.py" in command_line(pid)
 
 
 def mark_running(running_file: Path) -> None:
@@ -352,8 +359,6 @@ def stop_leftover(pid: int, *, force: bool = False) -> None:
 def free_port(port: int) -> bool:
     """Free a port held only by a leftover copy of this app (task 0044).
 
-    A copy whose start.py is still running isn't a leftover, so it keeps its port.
-
     Args:
         port: The port, which is busy.
 
@@ -361,8 +366,6 @@ def free_port(port: int) -> bool:
         True when the port is free now; False when something else holds it, or the
         leftover didn't stop in time.
     """
-    if another_start_is_running(RUNNING_FILE):
-        return False
     pids: set[int] = listening_pids(port)
     if not pids or not all(is_this_apps(command_line(pid), REPO_ROOT) for pid in pids):
         return False
@@ -776,6 +779,9 @@ def main() -> int:
     cloud_service: str | None = install.cloud_sync_service(REPO_ROOT)
     if cloud_service is not None:
         print(install.cloud_sync_warning(cloud_service), flush=True)
+    if another_start_is_running(RUNNING_FILE):
+        print(ALREADY_RUNNING_MESSAGE)
+        return 1
     for port in (API_PORT, APP_PORT):
         if port_is_busy(port) and not free_port(port):
             print(busy_port_message(port))

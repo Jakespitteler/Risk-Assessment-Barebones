@@ -24,6 +24,7 @@ Flesch
 formatters
 frontmatter
 getpid
+getppid
 httpx
 inodes
 isort

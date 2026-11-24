@@ -8,10 +8,11 @@ Newest first. One short entry per non-obvious decision.
   listener is the back end or Vite that `start.py` itself runs: this repo's own `backend/.venv` uvicorn given
   `dev_logging.json`, or its own `frontend/node_modules` Vite given `--logLevel`. So the whole-app tests' servers,
   other copies of the repo and worktrees inside it are never stopped. A running `start.py` writes its process ID
-  to `.start.pid` (ignored by git); while that `start.py` still runs, its servers aren't leftovers and keep their
-  ports. Anything else keeps its port and the old message shows. A leftover is asked to stop, then forced after
-  5 seconds. It uses each system's own tools: `netstat -ano` and PowerShell on Windows, `/proc` on Linux, `lsof`
-  and `ps` elsewhere; when they can't say, nothing is stopped.
+  to `.start.pid` (ignored by git). A second `start.py` checks it first: while the first still runs, it says the
+  app is already running and stops, so its servers keep their ports and its file is never overwritten. Anything
+  else keeps its port and the old message shows. A leftover is asked to stop, then forced after 5 seconds. It
+  uses each system's own tools: `netstat -ano` and PowerShell on Windows, `/proc` on Linux, `lsof` and `ps`
+  elsewhere; when they can't say, nothing is stopped.
 - Why: Jake asked on 2026-11-24, after leftovers from a closed terminal blocked the next start, and chose to stop
   only the app's own leftovers.
 - Not chosen: stopping whatever holds the port (it could close another program); `psutil` (a new package for one

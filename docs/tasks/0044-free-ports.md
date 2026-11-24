@@ -24,8 +24,9 @@ do, as today. No new package. Based on `main`, with its own pull request to `mai
   starts as usual.
 - [x] When anything else holds the port, nothing is stopped and today's message shows, with nothing installed or
   started.
-- [x] It works on Windows, macOS and Linux with no new package; when the system can't say what holds the port,
-  today's message shows.
+- [x] It needs no new package, and when the system can't say what holds the port, today's message shows.
+- [x] Tried on Linux. Windows and macOS are reasoned from how netstat, PowerShell, uv and npm behave, not tried.
+- [ ] Jake has tried it on Windows: a terminal closed without Ctrl+C, then `uv run start.py` again.
 - [x] Tests cover finding what listens on a port, recognising this app, and both outcomes in `main`.
 - [x] The app running in another terminal, and the whole-app tests' servers, are not leftovers and keep their ports
   (from the review).
@@ -48,3 +49,9 @@ commands only; the `.start.pid` check; UTF-8 output. A leftover that ignores the
 5 seconds. Tried again in the Linux container: a second `uv run start.py` beside a running one left it alone;
 after the first was killed it stopped the leftovers and started; a server started as the whole-app tests start
 it was left alone.
+
+PR #89 was merged at `536ad99`, before these fixes, so they follow in a second pull request to `main`. Its review of
+`ea2a8b2` found: a second start.py could overwrite a running one's `.start.pid` (the check now runs first, before
+the ports, with its own message); a copy at a longer path ending in this repo's path matched (the folder must now
+start a word); a netstat state of two words was missed; and the main path, a stale `.start.pid` from a killed
+start.py, had no test. All are fixed and tested.

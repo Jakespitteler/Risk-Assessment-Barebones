@@ -130,6 +130,7 @@ Active Connections
   TCP    [::1]:5173             [::]:0                 LISTENING       7344
   TCP    [::1]:5173             [::1]:61240            ESTABLISHED     7344
   TCP    [::]:3000              [::]:0                 ABHÖREN         2020
+  TCP    0.0.0.0:4100           0.0.0.0:0              EN ÉCOUTE       4141
   UDP    0.0.0.0:5173           *:*                                    6060
 """
 
@@ -143,10 +144,11 @@ def test_windows_listeners_are_read_from_netstat() -> None:
     assert start.windows_listeners(NETSTAT, 8000) == {5120}
     assert start.windows_listeners(NETSTAT, 5173) == {7344}
     assert start.windows_listeners(NETSTAT, 3000) == {2020}
+    assert start.windows_listeners(NETSTAT, 4100) == {4141}
     assert start.windows_listeners(NETSTAT, 4000) == set()
 
 
-# cspell:ignore retrnsmt ABHÖREN
+# cspell:ignore retrnsmt ABHÖREN ÉCOUTE
 def made_up_proc(folder: Path, port: int, pid: int) -> Path:
     """Make a /proc with one process listening on a port.
 
@@ -209,6 +211,7 @@ VITE: str = "node /repo/frontend/node_modules/.bin/vite --logLevel warn"
         (BACK_END.removesuffix(" --log-config dev_logging.json"), False),
         (VITE.removesuffix(" --logLevel warn"), False),
         (VITE.replace("/repo/", "/repo-old/"), False),
+        (BACK_END.replace("/repo/", "/mnt/backup/repo/"), False),
         (BACK_END.replace("/repo/", "/repo/.claude/worktrees/agent-1/"), False),
         ("python -m http.server 8000 --directory /repo/docs/invite", False),
         (
@@ -225,6 +228,7 @@ VITE: str = "node /repo/frontend/node_modules/.bin/vite --logLevel warn"
         "whole_app_tests_back_end",
         "whole_app_tests_vite",
         "another_copy_of_the_repo",
+        "a_copy_whose_path_ends_the_same",
         "a_worktree_inside_the_repo",
         "a_word_holding_vite",
         "uvicorn_as_a_word",
@@ -251,6 +255,12 @@ def test_a_windows_command_line_is_matched_ignoring_case() -> None:
     with patch.object(start.sys, "platform", "win32"):
         assert start.is_this_apps(command, repo)
         assert not start.is_this_apps(command.replace("Risk ", "Old Risk "), repo)
+        # npm's vite.cmd runs Vite like this, doubled backslash and all.
+        assert start.is_this_apps(
+            f'"node"  "{repo}\\frontend\\node_modules\\.bin\\\\..\\vite\\bin\\vite.js" '
+            "--logLevel warn",
+            repo,
+        )
 
 
 def test_a_leftover_copy_of_the_app_is_stopped_and_the_app_starts(
@@ -341,28 +351,20 @@ def test_a_leftover_that_wont_stop_leaves_the_message(
     assert start.busy_port_message(5173) in capsys.readouterr().out
 
 
-def test_a_copy_whose_start_py_still_runs_is_left_alone(
+def test_the_app_running_in_another_terminal_is_left_alone(
     running_file: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """The app running in another terminal isn't a leftover, so it keeps its port."""
+    """A running start.py isn't a leftover: its servers keep their ports.
+
+    It is checked before the ports, so a second start.py never overwrites the first
+    one's process ID, even while the first is still installing and the ports are free.
+    """
     running_file.write_text("4242", encoding="ascii")
-
-    def command_line(pid: int) -> str:
-        """Say what each process runs: 4242 is the other start.py.
-
-        Args:
-            pid: The process's ID.
-        """
-        if pid == 4242:  # noqa: PLR2004 - the other start.py
-            return "python start.py"
-        return VITE.replace("/repo", str(start.REPO_ROOT))
-
     with (
         patch.object(start.install, "cloud_sync_service", return_value=None),
-        patch.object(start, "port_is_busy", side_effect=only_the_app_port_is_busy),
-        patch.object(start, "listening_pids", return_value={7344}),
-        patch.object(start, "command_line", side_effect=command_line),
+        patch.object(start, "command_line", return_value="python start.py"),
+        patch.object(start, "port_is_busy", return_value=False),
         patch.object(start, "stop_leftover") as stop_leftover,
         patch.object(start, "install_what_changed") as install,
     ):
@@ -371,7 +373,53 @@ def test_a_copy_whose_start_py_still_runs_is_left_alone(
     assert exit_code == 1
     stop_leftover.assert_not_called()
     install.assert_not_called()
-    assert capsys.readouterr().out.strip() == start.busy_port_message(5173)
+    assert capsys.readouterr().out.strip() == start.ALREADY_RUNNING_MESSAGE
+    assert running_file.read_text(encoding="ascii") == "4242"
+
+
+def test_a_leftover_is_stopped_when_its_start_py_has_gone(
+    running_file: Path,
+) -> None:
+    """A killed start.py leaves its process ID behind; a gone process doesn't count."""
+    running_file.write_text("4242", encoding="ascii")
+
+    def command_line(pid: int) -> str:
+        """Say what each process runs: 4242 has gone, 7344 is the leftover Vite.
+
+        Args:
+            pid: The process's ID.
+        """
+        if pid == 4242:  # noqa: PLR2004 - the gone start.py
+            return ""
+        return VITE.replace("/repo", str(start.REPO_ROOT))
+
+    with (
+        patch.object(start, "command_line", side_effect=command_line),
+        patch.object(start, "listening_pids", return_value={7344}),
+        patch.object(start, "port_is_busy", side_effect=[True, False]),
+        patch.object(start, "stop_leftover") as stop_leftover,
+    ):
+        assert not start.another_start_is_running(running_file)
+        assert start.free_port(start.APP_PORT)
+
+    stop_leftover.assert_called_once_with(7344, force=False)
+
+
+def test_another_programs_process_id_in_the_file_does_not_count(
+    running_file: Path,
+) -> None:
+    """A reused process ID that isn't a start.py, or no ID at all, doesn't count."""
+    running_file.write_text("4242", encoding="ascii")
+    with patch.object(start, "command_line", return_value="C:\\Games\\game.exe"):
+        assert not start.another_start_is_running(running_file)
+    running_file.write_text("not a number", encoding="ascii")
+    assert not start.another_start_is_running(running_file)
+
+
+def test_stopping_leaves_another_start_pys_file_alone(running_file: Path) -> None:
+    """Only the start.py that wrote the file removes it."""
+    running_file.write_text("4242", encoding="ascii")
+    start.unmark_running(running_file)
     assert running_file.read_text(encoding="ascii") == "4242"
 
 
