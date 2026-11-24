@@ -897,7 +897,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D6 | Which rating decides a JHA | The *after* rating, as the paper card's column order (hazard, controls, score) implies | The *before* rating: stricter, but almost any job with a fatal hazard would then need a JHA |
 | D7 | The list of control kinds | The card's six "Make the changes" options, the first three counted as strong | The booklet's formal hierarchy of controls |
 | D8 | Who can see saved Take 5s | Everyone using the app, since there is no sign-in | Only the phone that made them |
-| D9 | Which AI provider is set up first | Claude. The others plug into the same interface | ChatGPT or Gemini first |
+| D9 | Which AI provider is set up first | Claude. The others plug into the same interface; ChatGPT was added second (task 0045, D133) | ChatGPT or Gemini first |
 | D10 | What happens when the AI can't be reached | The fixed fallback question (C3), so a Take 5 can always be finished | Wait for the AI |
 | D11 | Whether the AI judges the answer | No. It asks one question and the answer is saved (C5) | The AI marks the answer and can ask again |
 | D12 | The front-end libraries | React, TypeScript, Vite, Tailwind CSS, TanStack Query, React Router (see `architecture.md`) | Svelte or Vue |
@@ -1016,6 +1016,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D125 | The page (2026-11-21) | "Scan paper cards" at `/scan`, linked from the saved list; a "From paper" tag on the list and the saved Take 5 (P6) | Another name |
 | D126 | Fixing a paper card (2026-11-21) | Not offered, and refused: whoever checks a card isn't the worker who wrote it, and the proof of concept stays simple (P6) | "Fix this Take 5" on the checker's phone, copied from someone else's card |
 | D127 | Which date a ranked paper card shows (2026-11-21) | The date on the card, with its time when it has one; the ranking's API sends `started_at` and `from_paper` (P5) | The time it was scanned, the same for every card in a batch |
+| D133 | Which OpenAI models ChatGPT uses (2026-11-24) | `TAKE5_AI_PROVIDER=chatgpt` with an OpenAI key. OpenAI's flagship, `gpt-6.2-astra`, does every job but vague hazards, which its most efficient model, `gpt-6-luna`, judges, as Haiku does for Claude (D61). The same model settings work for either provider | One model for every job (proposed by Claude, for Jake to approve) |
 
 ## Open questions
 

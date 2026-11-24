@@ -38,7 +38,7 @@ _OUTSIDE: dict[str, tuple[str, ...]] = {
     "domain": ("pydantic",),
     "services": ("pydantic",),
     "storage": ("pydantic",),
-    "ai": ("pydantic", "anthropic"),
+    "ai": ("pydantic", "anthropic", "openai"),
     "api": ("pydantic", "fastapi", "starlette"),
 }
 
