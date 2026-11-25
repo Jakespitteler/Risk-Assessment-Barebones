@@ -1,4 +1,5 @@
 import { fireEvent, screen, within } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, expect, it, vi } from "vitest";
 import type { Take5Row, Take5TablePage } from "../../api/take5";
 import { renderWithApi, stubApi } from "../../test-utils";
@@ -78,6 +79,7 @@ const PAGE: Take5TablePage = {
     "Noon to 6 pm",
     "6 pm to midnight",
   ],
+  thought_gap_choices: ["No gaps", "Some gaps", "Rushed"],
 };
 
 function open(filters = "", onFilters = vi.fn()) {
@@ -98,7 +100,7 @@ it("lists every Take 5, the most important first, as the back end sends them (E1
   const table = screen.getByRole("region", {
     name: "Take 5s, the most important first",
   });
-  const [, first, second] = within(table).getAllByRole("row");
+  const [, , first, second] = within(table).getAllByRole("row");
   expect(within(first as HTMLElement).getByText("23")).toBeTruthy();
   expect(within(first as HTMLElement).getByText("18 Extreme")).toBeTruthy();
   expect(within(first as HTMLElement).getByText("Needs a JHA")).toBeTruthy();
@@ -117,7 +119,7 @@ it("asks the back end for the filters in the address, and downloads the same row
   open(filters);
   await screen.findByText("2 Take 5s match.");
   expect(calls).toEqual([tableUrl(filters)]);
-  expect(screen.getByLabelText("Verdict")).toHaveProperty(
+  expect(screen.getByLabelText("Verdict filter")).toHaveProperty(
     "value",
     "Don't start yet",
   );
@@ -138,7 +140,7 @@ it("puts a chosen filter in the address, and clears them all (F11)", async () =>
   expect((onFilters.mock.calls[0]?.[0] as URLSearchParams).toString()).toBe(
     "band=Extreme&weekday=Monday",
   );
-  fireEvent.click(screen.getByRole("button", { name: "Clear the filters" }));
+  fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
   expect((onFilters.mock.calls[1]?.[0] as URLSearchParams).toString()).toBe("");
 });
 
@@ -146,7 +148,7 @@ it("offers the areas and bands the back end sends", async () => {
   stubApi({ [tableUrl()]: { status: 200, body: PAGE } });
   open();
   await screen.findByText("2 Take 5s match.");
-  const area = screen.getByLabelText("Area");
+  const area = screen.getByLabelText("Location filter");
   expect(
     within(area)
       .getAllByRole("option")
@@ -187,6 +189,9 @@ it("says when nothing matches, with no download", async () => {
   open("search=crusher");
   expect(await screen.findByText("0 Take 5s match.")).toBeTruthy();
   expect(screen.queryByRole("link", { name: "Download CSV" })).toBeNull();
+  // The column filters stay, so the one that emptied the table can be changed.
+  expect(screen.getByText("No Take 5s match these filters.")).toBeTruthy();
+  expect(screen.getByLabelText("Job filter")).toBeTruthy();
 });
 
 it("keeps every letter typed, and searches once typing pauses (E4)", async () => {
@@ -220,7 +225,7 @@ it("says a filter in the address can't be read, without offering to try again", 
   ).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
   expect(
-    screen.getAllByRole("button", { name: "Clear the filters" }).length,
+    screen.getAllByRole("button", { name: "Clear filters" }).length,
   ).toBeGreaterThan(0);
 });
 
@@ -248,4 +253,74 @@ it("says 1 Take 5 matches, and shows how many filters are on", async () => {
   expect(await screen.findByText("1 Take 5 matches.")).toBeTruthy();
   expect(screen.getByText("Filters (1 on)")).toBeTruthy();
   expect(screen.getByLabelText("From paper")).toHaveProperty("value", "false");
+});
+
+it("filters each column under its heading, with the choices the back end sends (E6)", async () => {
+  stubApi({ [tableUrl()]: { status: 200, body: PAGE } });
+  const onFilters = open();
+  await screen.findByText("2 Take 5s match.");
+  const table = screen.getByRole("region", {
+    name: "Take 5s, the most important first",
+  });
+  expect(
+    within(within(table).getByLabelText("Thought gaps filter"))
+      .getAllByRole("option")
+      .map((option) => option.textContent),
+  ).toEqual(["Any", "No gaps", "Some gaps", "Rushed"]);
+  fireEvent.change(within(table).getByLabelText("Highest risk filter"), {
+    target: { value: "Extreme" },
+  });
+  expect((onFilters.mock.calls[0]?.[0] as URLSearchParams).toString()).toBe(
+    "band=Extreme",
+  );
+  vi.useFakeTimers();
+  fireEvent.change(within(table).getByLabelText("Job filter"), {
+    target: { value: "LV12" },
+  });
+  fireEvent.change(within(table).getByLabelText("Importance at least"), {
+    target: { value: "13" },
+  });
+  vi.advanceTimersByTime(400);
+  vi.useRealTimers();
+  const sent = onFilters.mock.calls.map((call) =>
+    (call[0] as URLSearchParams).toString(),
+  );
+  expect(sent).toContain("job=LV12");
+  expect(sent).toContain("min_importance=13");
+});
+
+it("can't clear when no filter is on", async () => {
+  stubApi({ [tableUrl()]: { status: 200, body: PAGE } });
+  open();
+  await screen.findByText("2 Take 5s match.");
+  expect(screen.getByRole("button", { name: "Clear filters" })).toHaveProperty(
+    "disabled",
+    true,
+  );
+});
+
+/** The page with its filters held as the app's address holds them. */
+function LiveFilters({ start }: { start: string }) {
+  const [filters, setFilters] = useState(new URLSearchParams(start));
+  return <Take5TableScreen filters={filters} onFilters={setFilters} />;
+}
+
+it("clears every filter, above and in the columns, and empties the typed boxes", async () => {
+  stubApi({
+    [tableUrl()]: { status: 200, body: PAGE },
+    [tableUrl("worker=sam&search=tyre")]: { status: 200, body: PAGE },
+  });
+  renderWithApi(<LiveFilters start="worker=sam&search=tyre" />);
+  await screen.findByText("2 Take 5s match.");
+  // A column filter isn't counted in the folded box's heading.
+  expect(screen.getByText("Filters (1 on)")).toBeTruthy();
+  expect(screen.getByLabelText("Worker filter")).toHaveProperty("value", "sam");
+  fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+  expect(await screen.findByText("Filters")).toBeTruthy();
+  expect(screen.getByLabelText("Worker filter")).toHaveProperty("value", "");
+  expect(screen.getByLabelText("Find words")).toHaveProperty("value", "");
+  expect(screen.getByRole("button", { name: "Clear filters" })).toHaveProperty(
+    "disabled",
+    true,
+  );
 });

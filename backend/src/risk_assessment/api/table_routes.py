@@ -9,6 +9,7 @@ from pydantic import AfterValidator, BeforeValidator
 
 from risk_assessment.api.schemas import FormErrors, Take5TablePage
 from risk_assessment.domain.take5.table import (
+    THOUGHT_GAP_CHOICES,
     TIMES_OF_DAY,
     VERDICTS,
     WEEKDAYS,
@@ -67,8 +68,16 @@ def _filters(  # noqa: PLR0913 - one argument per filter on the page
     weekday: str | None = None,
     time_of_day: str | None = None,
     from_paper: Annotated[bool | None, BeforeValidator(_blank)] = None,
+    job: str = "",
+    worker: str = "",
+    min_importance: Annotated[
+        int | None,
+        Query(ge=0),
+        BeforeValidator(_blank),
+    ] = None,
+    thought_gaps: str | None = None,
 ) -> Take5Filters:
-    """Read the filters from the query (E4). An empty or blank one lets every row by.
+    """Read the filters from the query (E4, E6). An empty or blank one keeps every row.
 
     Args:
         search: Words to find in the job, location or worker.
@@ -80,6 +89,10 @@ def _filters(  # noqa: PLR0913 - one argument per filter on the page
         weekday: Such as "Monday".
         time_of_day: Such as "6 am to noon".
         from_paper: True for paper cards only, False for none.
+        job: Words to find in the job.
+        worker: Words to find in the worker's name.
+        min_importance: The lowest importance to show.
+        thought_gaps: Such as "Rushed".
 
     Returns:
         The filters.
@@ -94,6 +107,10 @@ def _filters(  # noqa: PLR0913 - one argument per filter on the page
         weekday=_given(weekday),
         time_of_day=_given(time_of_day),
         from_paper=from_paper,
+        job=job,
+        worker=worker,
+        min_importance=min_importance,
+        thought_gaps=_given(thought_gaps),
     )
 
 
@@ -125,7 +142,7 @@ def create_table_router(service: Take5TableService) -> APIRouter:
         zone: ZoneName,
         filters: Annotated[Take5Filters, Depends(_filters)],
     ) -> Take5TablePage:
-        """Lay out every saved Take 5 as a row, the most important first (E1 to E4).
+        """Lay out every saved Take 5 as a row, the most important first (E1 to E4, E6).
 
         Args:
             zone: The page's time zone, for a Take 5 with no start time.
@@ -139,6 +156,7 @@ def create_table_router(service: Take5TableService) -> APIRouter:
             areas=table.areas,
             weekdays=WEEKDAYS,
             times_of_day=TIMES_OF_DAY,
+            thought_gap_choices=THOUGHT_GAP_CHOICES,
         )
 
     @router.get(

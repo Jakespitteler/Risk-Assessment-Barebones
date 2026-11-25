@@ -487,6 +487,13 @@ It works out each value by the rules above; nothing new is decided about a Take 
 - **E5 CSV.** "Download CSV" exports the rows the filters keep, in the same order, one column per value in E1 and
   one per question on the card, with the worker's name as the saved list shows it. A cell that starts like a
   spreadsheet formula (with =, +, -, @, a tab or a return) starts with an apostrophe instead, so it is never run.
+- **E6 Column filters.** The table's columns filter too, from a row under their headings (task 0048, D135 to
+  D137). Each word typed in the job column must be found in the job, and each in the worker column in the
+  worker's name, ignoring capitals. The importance column keeps rows whose importance is at least the number
+  typed, a whole number of 0 or more. The thought gaps column keeps "No gaps", "Some gaps" (1 or more) or
+  "Rushed" (W5). The verdict, highest risk and location columns are E4's verdict, risk band and area filters,
+  moved into their columns. Every filter, above the table or in a column, narrows both the page and the CSV, and
+  an empty one keeps every row.
 
 ### Worked examples
 
@@ -710,7 +717,7 @@ named, and the checker is in Perth.
 | 139 | No date | Started at is empty; the scan time stands in | P5 |
 | 140 | A card with a control and both ratings, dated 1 minute before the scan | Not rushed, no "Took" time, left out of the typical time, never the best | P5 |
 
-Table and export (E1 to E5). Unless the row says otherwise, each Take 5 is the ranking examples' careful one,
+Table and export (E1 to E6). Unless the row says otherwise, each Take 5 is the ranking examples' careful one,
 started on Saturday 21 Nov 2026 at 7:00 am in Perth.
 
 | # | Situation | Expected | Why |
@@ -725,6 +732,10 @@ started on Saturday 21 Nov 2026 at 7:00 am in Perth.
 | 148 | Area "light-vehicle workshop."; the location is "Light vehicle workshop" | Kept | E4, A1 |
 | 149 | The job is "=HYPERLINK(...)" | The CSV cell is "'=HYPERLINK(...)" | E5 |
 | 150 | The careful one exported | A header row, then one row with its values and each question's answer | E5 |
+| 151 | Job "lv12", worker "SAM", or worker "tyre" | Kept, kept, not kept: the worker column doesn't look in the job | E6 |
+| 152 | Importance at least 13; the careful one (8) and one with a hazard "Moving wheel" (13) | Only the 13 | E6 |
+| 153 | "No gaps" and "Some gaps"; the careful one and one with "Moving wheel" | The careful one has no gaps; the other has some | E6 |
+| 154 | "Rushed"; one filled in in 1 minute and one with "Moving wheel" | Only the 1-minute one | E6, W5 |
 
 ## Features
 
@@ -894,15 +905,18 @@ P6). For whoever collects a crew's cards, on a desktop or a phone.
 
 ### F11: All Take 5s
 
-Every saved Take 5 as a row, filtered, and downloaded as CSV (E1 to E5). For whoever looks through many Take 5s
+Every saved Take 5 as a row, filtered, and downloaded as CSV (E1 to E6). For whoever looks through many Take 5s
 or takes them into a spreadsheet, on a desktop or a phone.
 
 - Acceptance: the saved list has "All Take 5s" beside "Risk by area" once anything is saved.
-- Acceptance: the filters (words, a date range, verdict, risk band, area, weekday, time of day and from paper) are
-  kept in the page's address, so a link opens the same view, and the page says how many Take 5s match.
+- Acceptance: the filters above the table (words, a date range, weekday, time of day and from paper) and in its
+  columns (importance, job, verdict, highest risk, thought gaps, worker and location) are kept in the page's
+  address, so a link opens the same view, and the page says how many Take 5s match.
+- Acceptance: "Clear filters" is always beside the count, outside the folded filters, and turns every filter
+  off; it can't be pressed while none is on.
 - Acceptance: "Download CSV" downloads exactly the rows shown.
 - Acceptance: on a 360 px phone the table scrolls sideways inside its box and the page never does.
-- Acceptance: worked examples 141 to 150 pass as tests.
+- Acceptance: worked examples 141 to 154 pass as tests.
 
 ## Out of scope (for now)
 
@@ -1078,6 +1092,9 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D131 | What the CSV holds (2026-11-23) | Every value, workers' names included, as the saved list shows them (E5) | Fewer columns; no names |
 | D132 | Time of day (2026-11-23) | The clock where it was started, in four 6-hour blocks, read in the asker's zone as the phone's isn't saved (E3) | The hour into a shift, which needs each site's shift times |
 | D133 | Which OpenAI models ChatGPT uses (2026-11-24) | `TAKE5_AI_PROVIDER=chatgpt` with an OpenAI key. OpenAI's flagship, `gpt-6.2-astra`, does every job but vague hazards, which its most efficient model, `gpt-6-luna`, judges, as Haiku does for Claude (D61). The same model settings work for either provider | One model for every job (proposed by Claude, for Jake to approve) |
+| D135 | Column filters (2026-11-25) | A row of filters under the table's headings; verdict, risk band and area move from above into their columns, and the rest stay above (E6) | Every filter above as well; a filter button in each heading, as in a spreadsheet |
+| D136 | What each column filters by (2026-11-25) | Words in the job and in the worker, importance at least a number, thought gaps as "No gaps", "Some gaps" or "Rushed". The started column has none, as the date range above covers it (E6) | A range for importance; a count of gaps |
+| D137 | Clear filters (2026-11-25) | Always shown beside the count, outside the folded filters, and can't be pressed while no filter is on | Shown only while a filter is on, inside the folded filters |
 
 ## Open questions
 

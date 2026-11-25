@@ -11,7 +11,10 @@ from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.table import (
     DONT_START_YET,
     GOOD_TO_GO,
+    NO_GAPS,
     NOT_FINISHED,
+    RUSHED,
+    SOME_GAPS,
     Take5Filters,
     Take5Row,
     matches,
@@ -205,6 +208,59 @@ def test_example_150_the_careful_one_exported() -> None:
     assert cell[BOOKLET_TEMPLATE.questions[0].text] == "Yes"
     assert cell["ID"] == str(careful.id)
     assert len(header) == 23 + len(BOOKLET_TEMPLATE.questions)
+
+
+def test_example_151_a_column_looks_only_in_its_own_values() -> None:
+    """The job column finds "LV12"; the worker column doesn't look in the job (E6)."""
+    careful: Take5Row = row(started(SATURDAY_MORNING))
+
+    assert matches(careful, Take5Filters(job="lv12"))
+    assert matches(careful, Take5Filters(worker="SAM"))
+    assert not matches(careful, Take5Filters(worker="tyre"))
+
+
+def test_example_152_importance_at_least_keeps_its_own_number() -> None:
+    """At least 13 keeps the 13 and drops the 8 (E6)."""
+    careful: SavedTake5 = started(SATURDAY_MORNING)
+    short_hazard: SavedTake5 = started(
+        SATURDAY_MORNING,
+        ranked_take5(description="Moving wheel"),
+    )
+
+    rows: tuple[Take5Row, ...] = table_rows(
+        [careful, short_hazard],
+        Take5Filters(min_importance=13),
+        PERTH,
+    )
+
+    assert [each.importance for each in rows] == [13]
+
+
+def test_example_153_no_gaps_and_some_gaps_split_the_rows() -> None:
+    """The careful one has no gaps; a short hazard has some (E6)."""
+    careful: Take5Row = row(started(SATURDAY_MORNING))
+    short_hazard: Take5Row = row(ranked_take5(description="Moving wheel"))
+
+    assert matches(careful, Take5Filters(thought_gaps=NO_GAPS))
+    assert not matches(careful, Take5Filters(thought_gaps=SOME_GAPS))
+    assert matches(short_hazard, Take5Filters(thought_gaps=SOME_GAPS))
+    assert not matches(short_hazard, Take5Filters(thought_gaps=NO_GAPS))
+
+
+def test_example_154_rushed_keeps_only_a_rushed_take5() -> None:
+    """A short hazard is a gap but not rushed; under 2 minutes is (E6, W5)."""
+    rushed: Take5Row = row(ranked_take5(minutes_taken=1))
+    short_hazard: Take5Row = row(ranked_take5(description="Moving wheel"))
+
+    assert matches(rushed, Take5Filters(thought_gaps=RUSHED))
+    assert not matches(short_hazard, Take5Filters(thought_gaps=RUSHED))
+
+
+def test_an_unknown_thought_gaps_choice_keeps_no_rows() -> None:
+    """A choice the column doesn't offer matches nothing, as a verdict does (E6)."""
+    careful: Take5Row = row(started(SATURDAY_MORNING))
+
+    assert not matches(careful, Take5Filters(thought_gaps="Lots"))
 
 
 @pytest.mark.parametrize(

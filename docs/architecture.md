@@ -109,7 +109,7 @@ backend/
                                    its line and the check on the AI's pick; the typical time (spec W1 to W9)
                 areas.py           Take 5s grouped by area, hottest first; no AI        (spec A1 to A5)
                 table.py           every saved Take 5 as a row, its filters and its CSV,
-                                   from the rules above                         (spec E1 to E5)
+                                   from the rules above                         (spec E1 to E6)
                 scanned_card.py    ScannedCard: the AI's reading of a paper card, kept to the
                                    words the card allows, never rewritten       (task 0033)
                 paper.py           a checked paper card as a finished SavedTake5, as written, and

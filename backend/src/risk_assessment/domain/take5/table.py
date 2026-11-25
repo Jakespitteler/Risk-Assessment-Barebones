@@ -49,6 +49,11 @@ TIMES_OF_DAY: tuple[str, ...] = (
     "6 pm to midnight",
 )
 _HOURS_PER_BLOCK: int = 6
+NO_GAPS: str = "No gaps"
+SOME_GAPS: str = "Some gaps"
+RUSHED: str = "Rushed"
+# The choices of the thought gaps column's filter (E6).
+THOUGHT_GAP_CHOICES: tuple[str, ...] = (NO_GAPS, SOME_GAPS, RUSHED)
 # A cell a spreadsheet would run as a formula starts with one of these (E5).
 _FORMULA_STARTS: tuple[str, ...] = ("=", "+", "-", "@", "\t", "\r")
 
@@ -127,6 +132,10 @@ class Take5Filters(BaseModel):
         weekday: One of `WEEKDAYS`.
         time_of_day: One of `TIMES_OF_DAY`.
         from_paper: True for paper cards only, False for none.
+        job: Words to find, each in the job, ignoring capitals (E6).
+        worker: Words to find, each in the worker's name, ignoring capitals (E6).
+        min_importance: The lowest importance to show (E6).
+        thought_gaps: One of `THOUGHT_GAP_CHOICES` (E6).
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -140,6 +149,10 @@ class Take5Filters(BaseModel):
     weekday: str | None = None
     time_of_day: str | None = None
     from_paper: bool | None = None
+    job: str = ""
+    worker: str = ""
+    min_importance: int | None = None
+    thought_gaps: str | None = None
 
 
 def take5_row(take5: SavedTake5, zone: tzinfo) -> Take5Row:
@@ -213,7 +226,7 @@ def _clock(take5: SavedTake5, zone: tzinfo) -> datetime:
 
 
 def matches(row: Take5Row, filters: Take5Filters) -> bool:
-    """Say whether a row is let through by every filter (E4).
+    """Say whether a row is let through by every filter (E4, E6).
 
     Args:
         row: A row of the table.
@@ -234,8 +247,44 @@ def matches(row: Take5Row, filters: Take5Filters) -> bool:
         filters.weekday is None or row.weekday == filters.weekday,
         filters.time_of_day is None or row.time_of_day == filters.time_of_day,
         filters.from_paper is None or row.from_paper == filters.from_paper,
+        _has_words(row.job, filters.job),
+        _has_words(row.worker_name, filters.worker),
+        filters.min_importance is None or row.importance >= filters.min_importance,
+        _has_thought_gaps(row, filters.thought_gaps),
     )
     return all(checks)
+
+
+def _has_words(text: str, words: str) -> bool:
+    """Say whether every word searched is in a text, ignoring capitals (E6).
+
+    Args:
+        text: A row's value, such as its job.
+        words: The words to find; none finds every text.
+
+    Returns:
+        True when each word is found.
+    """
+    return all(word in text.casefold() for word in words.casefold().split())
+
+
+def _has_thought_gaps(row: Take5Row, choice: str | None) -> bool:
+    """Say whether a row's thought gaps match the column's filter (E6).
+
+    Args:
+        row: A row of the table.
+        choice: One of `THOUGHT_GAP_CHOICES`, or None for every row.
+
+    Returns:
+        True when the row matches.
+    """
+    if choice is None:
+        return True
+    if choice == NO_GAPS:
+        return not row.thought_gaps
+    if choice == SOME_GAPS:
+        return bool(row.thought_gaps)
+    return choice == RUSHED and row.rushed
 
 
 def table_rows(

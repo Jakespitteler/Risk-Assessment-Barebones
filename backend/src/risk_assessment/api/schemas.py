@@ -322,6 +322,7 @@ class Take5TablePage(BaseModel):
         areas: Every area with a Take 5, by the spelling typed most (A1).
         weekdays: Monday to Sunday.
         times_of_day: The four blocks of the clock (E3).
+        thought_gap_choices: The thought gaps column's filter choices (E6).
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -332,3 +333,4 @@ class Take5TablePage(BaseModel):
     areas: tuple[str, ...]
     weekdays: tuple[str, ...]
     times_of_day: tuple[str, ...]
+    thought_gap_choices: tuple[str, ...]

@@ -26,11 +26,14 @@ for (const { width, name } of [
     await page.getByLabel("Find words").pressSequentially("tyre lv12");
     await expect(page.getByLabel("Find words")).toHaveValue("tyre lv12");
     await expect(page).toHaveURL(/search=tyre\+lv12/);
-    await page.getByLabel("Risk band").selectOption("Extreme");
-    await expect(page).toHaveURL(/band=Extreme/);
     const table = page.getByRole("region", {
       name: "Take 5s, the most important first",
     });
+    // The columns filter too, from the row under their headings (E6).
+    await table.getByLabel("Highest risk filter").selectOption("Extreme");
+    await expect(page).toHaveURL(/band=Extreme/);
+    await table.getByLabel("Job filter").pressSequentially("tyre");
+    await expect(page).toHaveURL(/job=tyre/);
     await expect(table.getByText("Needs a JHA").first()).toBeVisible();
     await capture(page, name);
 
@@ -41,5 +44,14 @@ for (const { width, name } of [
     );
     expect(csv.headers()["content-type"]).toContain("text/csv");
     expect(await csv.text()).toContain("Extreme");
+
+    // One button turns every filter off, above and in the columns.
+    await page.getByRole("button", { name: "Clear filters" }).click();
+    await expect(page).toHaveURL(/\/take5-table$/);
+    await expect(table.getByLabel("Job filter")).toHaveValue("");
+    await expect(page.getByLabel("Find words")).toHaveValue("");
+    await expect(
+      page.getByRole("button", { name: "Clear filters" }),
+    ).toBeDisabled();
   });
 }

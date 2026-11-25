@@ -1,5 +1,10 @@
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+} from "react";
 import { useEffect, useRef, useState } from "react";
-import type { Take5Row } from "../../api/take5";
+import type { Take5Row, Take5TablePage } from "../../api/take5";
 import { ApiError, take5TableCsvUrl, useTake5Table } from "../../api/take5";
 import { Button } from "../../components/Button";
 import { Field } from "../../components/Field";
@@ -11,13 +16,27 @@ import { SavedListLink } from "./SavedListLink";
 const HEADING = "text-3xl font-extrabold focus:outline-none";
 // Typing waits this long after the last key before the table is asked again.
 const SEARCH_PAUSE_MS = 400;
+// The filters in the folded box above the table; the rest are in its columns.
+const FILTERS_ABOVE = [
+  "search",
+  "from",
+  "to",
+  "weekday",
+  "time_of_day",
+  "from_paper",
+];
+// A filter under a column's heading: the same look as the boxes above, a size
+// smaller to fit a column.
+const COLUMN_FILTER =
+  "min-h-12 w-full rounded-lg border-2 border-line-field bg-surface px-2 py-1 text-base font-normal text-ink focus-visible:outline-4 focus-visible:outline-focus";
 const DOWNLOAD_LINK =
   "flex min-h-14 items-center justify-center rounded-xl bg-action px-5 text-lg font-bold text-on-action hover:bg-action-hover focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
 /**
  * Every saved Take 5 in one table, the most important first, with filters kept in the
- * page's address and a CSV of the same rows (spec F11, E1 to E5). The back end does
- * the filtering and works out every value; this page only draws them.
+ * page's address and a CSV of the same rows (spec F11, E1 to E6). Some filters sit
+ * above the table and the rest under its column headings. The back end does the
+ * filtering and works out every value; this page only draws them.
  */
 export function Take5TableScreen({
   filters,
@@ -40,21 +59,10 @@ export function Take5TableScreen({
     onFilters(changed);
   };
   const rows = table.data?.rows ?? [];
-  // The search box keeps its own text, so typing is never interrupted, and the
-  // address follows once typing pauses.
-  const [words, setWords] = useState(filters.get("search") ?? "");
-  const searched = filters.get("search") ?? "";
-  useEffect(() => {
-    // Only spaces is no search, so it never rewrites an address without one.
-    const wanted = words.trim() ? words : "";
-    if (wanted === searched) return;
-    const timer = setTimeout(() => {
-      set("search", wanted);
-    }, SEARCH_PAUSE_MS);
-    return () => {
-      clearTimeout(timer);
-    };
-  });
+  const clear = () => {
+    onFilters(new URLSearchParams());
+  };
+  const filtersAboveOn = FILTERS_ABOVE.filter((name) => filters.has(name));
   // Filters fill a phone's first screen, so they start folded there.
   const [filtersOpen] = useState(
     () => window.matchMedia("(min-width: 1024px)").matches,
@@ -77,17 +85,20 @@ export function Take5TableScreen({
         className="rounded-2xl border border-line bg-surface p-4"
       >
         <summary className="flex min-h-12 cursor-pointer items-center text-lg font-bold focus-visible:outline-4 focus-visible:outline-focus">
-          Filters{filters.size > 0 ? ` (${String(filters.size)} on)` : ""}
+          Filters
+          {filtersAboveOn.length > 0
+            ? ` (${String(filtersAboveOn.length)} on)`
+            : ""}
         </summary>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Field name="search" label="Find words">
-            <input
+            <TypedFilter
               id="search"
               type="search"
               className={FIELD_STYLE}
-              value={words}
-              onChange={(event) => {
-                setWords(event.target.value);
+              value={filters.get("search") ?? ""}
+              onSettle={(value) => {
+                set("search", value);
               }}
             />
           </Field>
@@ -113,27 +124,6 @@ export function Take5TableScreen({
               }}
             />
           </Field>
-          <Choice
-            name="verdict"
-            label="Verdict"
-            choices={table.data?.verdicts ?? []}
-            filters={filters}
-            onChoose={set}
-          />
-          <Choice
-            name="band"
-            label="Risk band"
-            choices={table.data?.bands ?? []}
-            filters={filters}
-            onChoose={set}
-          />
-          <Choice
-            name="area"
-            label="Area"
-            choices={table.data?.areas ?? []}
-            filters={filters}
-            onChoose={set}
-          />
           <Choice
             name="weekday"
             label="Weekday"
@@ -163,17 +153,6 @@ export function Take5TableScreen({
             </select>
           </Field>
         </div>
-        {filters.size > 0 && (
-          <Button
-            variant="quiet"
-            onClick={() => {
-              setWords("");
-              onFilters(new URLSearchParams());
-            }}
-          >
-            Clear the filters
-          </Button>
-        )}
       </details>
       {table.isError && !table.data ? (
         unreadableLink ? (
@@ -182,14 +161,7 @@ export function Take5TableScreen({
               A filter in this page’s address can’t be read. Clear the filters
               and choose them again.
             </p>
-            <Button
-              onClick={() => {
-                setWords("");
-                onFilters(new URLSearchParams());
-              }}
-            >
-              Clear the filters
-            </Button>
+            <Button onClick={clear}>Clear filters</Button>
           </>
         ) : (
           <>
@@ -203,30 +175,44 @@ export function Take5TableScreen({
         <p role="status">Loading the Take 5s…</p>
       ) : (
         <>
-          <p role="status" className="text-lg font-bold">
-            {rows.length === 1
-              ? "1 Take 5 matches."
-              : `${String(rows.length)} Take 5s match.`}
-          </p>
-          {rows.length > 0 && (
-            <>
-              {/* While a new filter loads, the old rows still show, so the
-                  download waits for the rows it would hold. */}
-              {!table.isPlaceholderData && (
-                <a className={DOWNLOAD_LINK} href={take5TableCsvUrl(filters)}>
-                  Download CSV
-                </a>
-              )}
-              <RowsTable rows={rows} />
-            </>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p role="status" className="text-lg font-bold">
+              {rows.length === 1
+                ? "1 Take 5 matches."
+                : `${String(rows.length)} Take 5s match.`}
+            </p>
+            <Button
+              variant="secondary"
+              disabled={filters.size === 0}
+              onClick={clear}
+            >
+              Clear filters
+            </Button>
+          </div>
+          {/* While a new filter loads, the old rows still show, so the
+              download waits for the rows it would hold. */}
+          {rows.length > 0 && !table.isPlaceholderData && (
+            <a className={DOWNLOAD_LINK} href={take5TableCsvUrl(filters)}>
+              Download CSV
+            </a>
           )}
+          <RowsTable
+            rows={rows}
+            columnFilters={
+              <ColumnFilters
+                page={table.data}
+                filters={filters}
+                onFilter={set}
+              />
+            }
+          />
         </>
       )}
     </Screen>
   );
 }
 
-/** A filter with a fixed list of choices, and "Any" for no filter. */
+/** A filter above the table with a fixed list of choices, and "Any" for none. */
 function Choice({
   name,
   label,
@@ -242,27 +228,158 @@ function Choice({
 }) {
   return (
     <Field name={name} label={label}>
-      <select
+      <ChoiceList
         id={name}
+        name={name}
+        choices={choices}
+        filters={filters}
+        onChoose={onChoose}
         className={FIELD_STYLE}
-        value={filters.get(name) ?? ""}
-        onChange={(event) => {
-          onChoose(name, event.target.value);
-        }}
-      >
-        <option value="">Any</option>
-        {[
-          ...choices,
-          ...(filters.get(name) && !choices.includes(filters.get(name) ?? "")
-            ? [filters.get(name) ?? ""]
-            : []),
-        ].map((choice) => (
-          <option key={choice} value={choice}>
-            {choice}
-          </option>
-        ))}
-      </select>
+      />
     </Field>
+  );
+}
+
+/**
+ * A list box of a filter's choices, with "Any" for no filter. A choice in the
+ * address that the back end no longer offers still shows, so the box says what
+ * the table is filtered by.
+ */
+function ChoiceList({
+  name,
+  choices,
+  filters,
+  onChoose,
+  ...box
+}: {
+  name: string;
+  choices: string[];
+  filters: URLSearchParams;
+  onChoose: (name: string, value: string) => void;
+} & SelectHTMLAttributes<HTMLSelectElement>) {
+  const chosen = filters.get(name) ?? "";
+  return (
+    <select
+      {...box}
+      value={chosen}
+      onChange={(event) => {
+        onChoose(name, event.target.value);
+      }}
+    >
+      <option value="">Any</option>
+      {[
+        ...choices,
+        ...(chosen && !choices.includes(chosen) ? [chosen] : []),
+      ].map((choice) => (
+        <option key={choice} value={choice}>
+          {choice}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/**
+ * A typed filter. It keeps its own text, so typing is never interrupted, and
+ * passes it on once typing pauses. Only spaces is no filter, so it never rewrites
+ * an address without one. When the address changes it by other means, such as
+ * "Clear filters", the box shows the address's value.
+ */
+function TypedFilter({
+  value,
+  onSettle,
+  ...box
+}: {
+  /** The filter as the address holds it. */
+  value: string;
+  /** Called with the text once typing pauses. */
+  onSettle: (value: string) => void;
+} & Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange">) {
+  const [text, setText] = useState(value);
+  // The address's value last seen, and the text last passed on, so the address
+  // catching up with typing is told apart from a change made elsewhere.
+  const [seen, setSeen] = useState(value);
+  const [sent, setSent] = useState(value);
+  if (value !== seen) {
+    setSeen(value);
+    if (value !== sent) setText(value);
+  }
+  useEffect(() => {
+    const wanted = text.trim() ? text : "";
+    if (wanted === value) return;
+    const timer = setTimeout(() => {
+      setSent(wanted);
+      onSettle(wanted);
+    }, SEARCH_PAUSE_MS);
+    return () => {
+      clearTimeout(timer);
+    };
+  });
+  return (
+    <input
+      {...box}
+      value={text}
+      onChange={(event) => {
+        setText(event.target.value);
+      }}
+    />
+  );
+}
+
+/**
+ * The row of filters under the table's headings, one cell per column (E6). The
+ * started column has none, as the date range above covers it.
+ */
+function ColumnFilters({
+  page,
+  filters,
+  onFilter,
+}: {
+  page: Take5TablePage;
+  filters: URLSearchParams;
+  onFilter: (name: string, value: string) => void;
+}) {
+  const typed = (name: string, label: string, inputMode?: "numeric") => (
+    <TypedFilter
+      aria-label={label}
+      type={inputMode ? "number" : "search"}
+      inputMode={inputMode}
+      min={inputMode ? 0 : undefined}
+      placeholder={inputMode ? "At least" : "Words"}
+      className={COLUMN_FILTER}
+      value={filters.get(name) ?? ""}
+      onSettle={(value) => {
+        onFilter(name, value);
+      }}
+    />
+  );
+  const choice = (name: string, label: string, choices: string[]) => (
+    <ChoiceList
+      aria-label={label}
+      name={name}
+      choices={choices}
+      filters={filters}
+      onChoose={onFilter}
+      className={`${COLUMN_FILTER} min-w-40`}
+    />
+  );
+  return (
+    <tr className="border-t border-line">
+      {[
+        typed("min_importance", "Importance at least", "numeric"),
+        typed("job", "Job filter"),
+        choice("verdict", "Verdict filter", page.verdicts),
+        choice("band", "Highest risk filter", page.bands),
+        choice("thought_gaps", "Thought gaps filter", page.thought_gap_choices),
+        typed("worker", "Worker filter"),
+        choice("area", "Location filter", page.areas),
+        null,
+      ].map((filter, column) => (
+        <td key={column} className="px-2 pb-2 align-top">
+          {filter}
+        </td>
+      ))}
+    </tr>
   );
 }
 
@@ -270,7 +387,14 @@ function Choice({
  * The rows as a table. On a phone it scrolls sideways in its own box, so the page
  * never does. The CSV holds every value; the table shows the ones to scan.
  */
-function RowsTable({ rows }: { rows: Take5Row[] }) {
+function RowsTable({
+  rows,
+  columnFilters,
+}: {
+  rows: Take5Row[];
+  /** The row of filters drawn under the headings. */
+  columnFilters: ReactNode;
+}) {
   return (
     <div
       className="overflow-x-auto rounded-2xl border border-line bg-surface focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus"
@@ -278,7 +402,7 @@ function RowsTable({ rows }: { rows: Take5Row[] }) {
       role="region"
       aria-label="Take 5s, the most important first"
     >
-      <table className="w-full min-w-[56rem] border-collapse text-left">
+      <table className="w-full min-w-[72rem] border-collapse text-left">
         <thead className="bg-surface-subtle">
           <tr>
             {[
@@ -296,8 +420,16 @@ function RowsTable({ rows }: { rows: Take5Row[] }) {
               </th>
             ))}
           </tr>
+          {columnFilters}
         </thead>
         <tbody>
+          {rows.length === 0 && (
+            <tr className="border-t border-line">
+              <td colSpan={8} className="px-3 py-4">
+                No Take 5s match these filters.
+              </td>
+            </tr>
+          )}
           {rows.map((row) => (
             <tr key={row.id} className="border-t border-line align-top">
               <td className="px-3 py-2 text-lg font-extrabold">

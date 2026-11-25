@@ -532,7 +532,7 @@
           "table"
         ],
         "summary": "Take5 Table",
-        "description": "Lay out every saved Take 5 as a row, the most important first (E1 to E4).\n\nArgs:\n    zone: The page's time zone, for a Take 5 with no start time.\n    filters: What to narrow the table to.",
+        "description": "Lay out every saved Take 5 as a row, the most important first (E1 to E4, E6).\n\nArgs:\n    zone: The page's time zone, for a Take 5 with no start time.\n    filters: What to narrow the table to.",
         "operationId": "take5_table_api_take5_table_get",
         "parameters": [
           {
@@ -682,6 +682,59 @@
                 }
               ],
               "title": "From Paper"
+            }
+          },
+          {
+            "name": "job",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Job"
+            }
+          },
+          {
+            "name": "worker",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Worker"
+            }
+          },
+          {
+            "name": "min_importance",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Importance"
+            }
+          },
+          {
+            "name": "thought_gaps",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Thought Gaps"
             }
           }
         ],
@@ -865,6 +918,59 @@
                 }
               ],
               "title": "From Paper"
+            }
+          },
+          {
+            "name": "job",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Job"
+            }
+          },
+          {
+            "name": "worker",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Worker"
+            }
+          },
+          {
+            "name": "min_importance",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Importance"
+            }
+          },
+          {
+            "name": "thought_gaps",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Thought Gaps"
             }
           }
         ],
@@ -2510,6 +2616,13 @@
             },
             "type": "array",
             "title": "Times Of Day"
+          },
+          "thought_gap_choices": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Thought Gap Choices"
           }
         },
         "type": "object",
@@ -2519,10 +2632,11 @@
           "bands",
           "areas",
           "weekdays",
-          "times_of_day"
+          "times_of_day",
+          "thought_gap_choices"
         ],
         "title": "Take5TablePage",
-        "description": "Every saved Take 5 the filters let through, as rows, and the filters' choices.\n\nThe page draws these choices, so it holds no copy of them.\n\nAttributes:\n    rows: One row per Take 5, the most important first (E1, E2).\n    verdicts: The verdicts a row can have.\n    bands: The card's risk bands, lowest first.\n    areas: Every area with a Take 5, by the spelling typed most (A1).\n    weekdays: Monday to Sunday.\n    times_of_day: The four blocks of the clock (E3)."
+        "description": "Every saved Take 5 the filters let through, as rows, and the filters' choices.\n\nThe page draws these choices, so it holds no copy of them.\n\nAttributes:\n    rows: One row per Take 5, the most important first (E1, E2).\n    verdicts: The verdicts a row can have.\n    bands: The card's risk bands, lowest first.\n    areas: Every area with a Take 5, by the spelling typed most (A1).\n    weekdays: Monday to Sunday.\n    times_of_day: The four blocks of the clock (E3).\n    thought_gap_choices: The thought gaps column's filter choices (E6)."
       },
       "Take5Template": {
         "properties": {

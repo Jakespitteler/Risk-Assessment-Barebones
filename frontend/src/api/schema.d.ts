@@ -244,7 +244,7 @@ export interface paths {
         };
         /**
          * Take5 Table
-         * @description Lay out every saved Take 5 as a row, the most important first (E1 to E4).
+         * @description Lay out every saved Take 5 as a row, the most important first (E1 to E4, E6).
          *
          *     Args:
          *         zone: The page's time zone, for a Take 5 with no start time.
@@ -1259,6 +1259,7 @@ export interface components {
          *         areas: Every area with a Take 5, by the spelling typed most (A1).
          *         weekdays: Monday to Sunday.
          *         times_of_day: The four blocks of the clock (E3).
+         *         thought_gap_choices: The thought gaps column's filter choices (E6).
          */
         Take5TablePage: {
             /** Rows */
@@ -1273,6 +1274,8 @@ export interface components {
             weekdays: string[];
             /** Times Of Day */
             times_of_day: string[];
+            /** Thought Gap Choices */
+            thought_gap_choices: string[];
         };
         /**
          * Take5Template
@@ -1817,6 +1820,10 @@ export interface operations {
                 weekday?: string | null;
                 time_of_day?: string | null;
                 from_paper?: boolean | null;
+                job?: string;
+                worker?: string;
+                min_importance?: number | null;
+                thought_gaps?: string | null;
             };
             header?: never;
             path?: never;
@@ -1857,6 +1864,10 @@ export interface operations {
                 weekday?: string | null;
                 time_of_day?: string | null;
                 from_paper?: boolean | null;
+                job?: string;
+                worker?: string;
+                min_importance?: number | null;
+                thought_gaps?: string | null;
             };
             header?: never;
             path?: never;

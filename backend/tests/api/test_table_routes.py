@@ -112,10 +112,22 @@ def test_a_blank_filter_keeps_every_row(
             "weekday",
             "time_of_day",
             "from_paper",
+            "job",
+            "worker",
+            "min_importance",
+            "thought_gaps",
         )
     }
     spaces: dict[str, str] = {
-        name: " " for name in ("verdict", "band", "weekday", "time_of_day")
+        name: " "
+        for name in (
+            "verdict",
+            "band",
+            "weekday",
+            "time_of_day",
+            "min_importance",
+            "thought_gaps",
+        )
     }
 
     response: Response = client.get("/api/take5-table", params=PERTH | blank)
@@ -124,3 +136,42 @@ def test_a_blank_filter_keeps_every_row(
     assert response.status_code == 200
     assert len(response.json()["rows"]) == 1
     assert len(spaced.json()["rows"]) == 1
+
+
+def test_the_column_filters_narrow_the_rows_and_the_csv(
+    client: TestClient,
+    repository: SqliteTake5Repository,
+) -> None:
+    """E6: the job, worker, importance and thought gaps columns narrow both."""
+    repository.add(started(SATURDAY_MORNING))
+    repository.add(
+        started(SATURDAY_MORNING, ranked_take5(description="Moving wheel")),
+    )
+    columns: dict[str, str] = {
+        "job": "LV12",
+        "worker": "sam",
+        "min_importance": "13",
+        "thought_gaps": "Some gaps",
+    }
+
+    page: dict[str, Any] = client.get(
+        "/api/take5-table",
+        params=PERTH | columns,
+    ).json()
+    exported: Response = client.get("/api/take5-table.csv", params=PERTH | columns)
+
+    assert [row["importance"] for row in page["rows"]] == [13]
+    assert page["thought_gap_choices"] == ["No gaps", "Some gaps", "Rushed"]
+    assert len(exported.text.splitlines()) == 2
+
+
+def test_an_importance_that_isnt_a_whole_number_of_0_or_more_is_a_422(
+    client: TestClient,
+) -> None:
+    """E6: "-1" or "high" can't be read, so it is a form error."""
+    responses: list[Response] = [
+        client.get("/api/take5-table", params=PERTH | {"min_importance": value})
+        for value in ("-1", "high")
+    ]
+
+    assert [response.status_code for response in responses] == [422, 422]
