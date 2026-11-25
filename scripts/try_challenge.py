@@ -39,7 +39,7 @@ from risk_assessment.domain.take5.draft import (
 )
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
 from risk_assessment.services.ai_failures import ai_failure_kind
-from risk_assessment.settings import Settings
+from risk_assessment.settings import AiProvider, Settings
 
 # US dollars per million input and output tokens, from Anthropic's price list.
 PRICES_PER_MILLION_TOKENS: dict[str, tuple[float, float]] = {
@@ -290,6 +290,10 @@ def main() -> int:
         The exit code: 0, or 1 when no key is set.
     """
     settings = Settings()
+    if settings.ai_provider != AiProvider.CLAUDE:
+        # Its key is for another company, so it must never go to Anthropic (0045).
+        print("This script tries Claude only, and TAKE5_AI_PROVIDER isn't claude.")
+        return 1
     api_key: str | None = settings.usable_ai_key
     if api_key is None:
         print("Set TAKE5_AI_KEY in backend/.env first (see the README).")

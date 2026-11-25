@@ -2,6 +2,37 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-24: ChatGPT is a second AI provider, with the `openai` package (task 0045)
+
+- Decision: `TAKE5_AI_PROVIDER=chatgpt` runs every AI job on OpenAI's models through `ai/providers/chatgpt.py`,
+  which uses OpenAI's own package, `openai` (pinned at 3.48.0, the newest release at least two weeks old). Its
+  default is the flagship, `gpt-6.2-astra`; vague hazards go to `gpt-6-luna`, its most efficient model (D133).
+  The key, model and effort settings are the same as Claude's, so there are no new settings. Each real-AI test
+  runs only with its own provider chosen, and the two try scripts stop unless Claude is chosen, so a key is never
+  sent to the other company. Each call sets `store=False`, so OpenAI doesn't keep it (a card's photo holds the
+  worker's name), and only a finished reply's answer is used.
+- Why: Jake asked on 2026-11-24 for the app's AI to work with ChatGPT, and approved the package.
+- Not chosen: calling the API with `httpx2` by hand (more code for errors and photos); a key setting per
+  provider (one provider is chosen at a time).
+- Decided by: human (ChatGPT, the package), agent (the models and the adapter).
+
+## 2026-11-24: start.py frees its ports from a leftover copy of the app (task 0044)
+
+- Decision: when port 8000 or 5173 is busy, `start.py` finds what listens on it and stops it only when every
+  listener is the back end or Vite that `start.py` itself runs: this repo's own `backend/.venv` uvicorn given
+  `dev_logging.json`, or its own `frontend/node_modules` Vite given `--logLevel`. So the whole-app tests' servers,
+  other copies of the repo and worktrees inside it are never stopped. A running `start.py` writes its process ID
+  to `.start.pid` (ignored by git). A second `start.py` checks it first: while the first still runs, it says the
+  app is already running and stops, so its servers keep their ports and its file is never overwritten. Anything
+  else keeps its port and the old message shows. A leftover is asked to stop, then forced after 5 seconds. It
+  uses each system's own tools: `netstat -ano` and PowerShell on Windows, `/proc` on Linux, `lsof` and `ps`
+  elsewhere; when they can't say, nothing is stopped.
+- Why: Jake asked on 2026-11-24, after leftovers from a closed terminal blocked the next start, and chose to stop
+  only the app's own leftovers.
+- Not chosen: stopping whatever holds the port (it could close another program); `psutil` (a new package for one
+  check).
+- Decided by: human (what may be stopped), agent (how it is found).
+
 ## 2026-11-23: A table of every saved Take 5, with filters and CSV export (task 0043)
 
 - Decision: every saved Take 5 as a row, filtered by words, dates, verdict, band, area, weekday, time of day and

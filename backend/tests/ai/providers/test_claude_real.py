@@ -21,7 +21,7 @@ from risk_assessment.domain.take5.hazard_nudges import (
 )
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
-from risk_assessment.settings import Settings
+from risk_assessment.settings import AiProvider, Settings
 from tests.samples import sample_saved_take5
 
 _settings = Settings()
@@ -31,6 +31,11 @@ pytestmark = [
     pytest.mark.skipif(
         _settings.usable_ai_key is None,
         reason="No TAKE5_AI_KEY is set, so the real AI isn't called.",
+    ),
+    # The key is for the chosen provider, so it is never sent to another (task 0045).
+    pytest.mark.skipif(
+        _settings.ai_provider != AiProvider.CLAUDE,
+        reason="TAKE5_AI_PROVIDER isn't claude, so the key isn't Anthropic's.",
     ),
 ]
 

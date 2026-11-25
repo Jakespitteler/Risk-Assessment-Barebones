@@ -27,7 +27,7 @@ Back end:
 | Data checking | pydantic, with pydantic-settings for settings | One definition of each shape, checked on the way in. Settings such as the AI key come from the environment |
 | Server | uvicorn | The usual server for FastAPI |
 | Database | SQLite through Python's built-in `sqlite3` | One file, nothing to install, every SQL statement is in the repo to read |
-| AI | One provider's own Python library per adapter, starting with `anthropic` (spec decision D9; added in task 0009) | Each provider sits behind the same small interface |
+| AI | One provider's own Python library per adapter: `anthropic` (spec decision D9; added in task 0009) and `openai` (task 0045) | Each provider sits behind the same small interface |
 | Packaging | uv | One tool for Python versions, dependencies and running commands |
 | Lint and format | ruff | Project rule |
 | Type checking | pyright in strict mode | The command-line version of Pylance's strict rules |
@@ -154,6 +154,8 @@ backend/
                                    11-second network limit and no retries. QUICK_MODEL names the
                                    model for short jobs (Haiku 5.5). read_photo makes it a
                                    PhotoReadingModel, with a 60-second limit     (task 0033)
+                chatgpt.py         ChatGptModel, the same for OpenAI: one Responses API call, the same
+                                   limits; QUICK_MODEL is gpt-6-luna            (task 0045, D133)
         api/               the web API
             app.py             builds the FastAPI app and plugs the pieces together
             take5_routes.py    one function per Take 5 endpoint
@@ -169,6 +171,7 @@ backend/
         conftest.py        hides any AI key from every test not marked `real_ai`
         samples.py         the made-up Take 5s that tests in more than one folder share
         ai/fake_anthropic.py  a stand-in for Anthropic's API, so the real adapter runs with no network
+        ai/fake_openai.py  the same for OpenAI's API                                    (task 0045)
         api/conftest.py    the API tests' set-up: an empty database and a client for each test
 frontend/
     package.json
@@ -457,7 +460,7 @@ cloud account, or a model the company runs itself.
 | End to end | A worker fills in every screen in a real browser and reaches the right verdict | Playwright against the real front end and back end, with a stand-in AI |
 | Visual | Each changed screen looks right on a phone, and on a desktop | Playwright screenshots at 360 px wide, and at 1280 px for `e2e/desktop.spec.ts` (which also checks hover and focus), attached to the PR; checked by eye, not in CI |
 | Accessibility | Every screenshot the whole-app tests take, in both modes, is readable: text contrast to 7 to 1 (spec D76) and axe's other WCAG 2.2 AA rules | `@axe-core/playwright`, Deque's checker, inside the screenshot helper (`capture` in `e2e/helpers.ts`) |
-| AI adapter | The adapter sends what it should and reads the reply, refusals and errors | The real adapter against a stand-in for the provider's API (`tests/ai/fake_anthropic.py`), so nothing leaves the computer |
+| AI adapter | The adapter sends what it should and reads the reply, refusals and errors | The real adapter against a stand-in for the provider's API (`tests/ai/fake_anthropic.py`, `tests/ai/fake_openai.py`), so nothing leaves the computer |
 | Real AI | The real provider answers with a usable question | `uv run test.py backend -m real_ai`, skipped with no key; plain `pytest` and CI never run it. `scripts/try_challenge.py` measures questions, and `scripts/try_vague_hazard.py` verdicts on hazards, with time and cost |
 
 CI runs, on every PR and every push to `main` (task 0002): for the back end `ruff check`, `ruff format --check`,
