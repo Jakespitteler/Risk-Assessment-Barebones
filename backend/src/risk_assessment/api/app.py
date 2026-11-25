@@ -17,6 +17,7 @@ from risk_assessment.api.area_routes import create_area_router
 from risk_assessment.api.errors import add_error_handlers
 from risk_assessment.api.ranking_routes import create_ranking_router
 from risk_assessment.api.scan_routes import create_scan_router
+from risk_assessment.api.table_routes import create_table_router
 from risk_assessment.api.take5_routes import create_router
 from risk_assessment.domain.take5.ranking import AI_RANKING_TIME_LIMIT_SECONDS
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
@@ -30,6 +31,7 @@ from risk_assessment.services.ports import (
     Take5Repository,
 )
 from risk_assessment.services.ranking import Take5RankingService
+from risk_assessment.services.take5_table import Take5TableService
 from risk_assessment.services.take5s import Take5Service
 from risk_assessment.settings import AiProvider, Settings
 from risk_assessment.storage.sqlite import SqliteTake5Repository
@@ -140,6 +142,9 @@ def create_app(
         last_30_days_only=app_settings.area_last_30_days_only,
     )
     app.include_router(create_area_router(area_service))
+    app.include_router(
+        create_table_router(Take5TableService(storage, BOOKLET_TEMPLATE)),
+    )
     scanner = CardScanner(
         card_reader if card_reader is not None else build_card_reader(app_settings),
         BOOKLET_TEMPLATE,

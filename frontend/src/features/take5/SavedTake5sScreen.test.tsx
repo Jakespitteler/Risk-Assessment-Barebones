@@ -404,3 +404,10 @@ it("marks a Take 5 that came from a paper card (P6)", async () => {
   renderWithApi(<SavedTake5sScreen />);
   expect(await screen.findByText("From paper")).toBeTruthy();
 });
+
+it("links to every Take 5 as a table once anything is saved (F11)", async () => {
+  stubApi({ "GET /api/take5s": { status: 200, body: PAGE } });
+  renderWithApi(<SavedTake5sScreen />);
+  const link = await screen.findByRole("link", { name: "All Take 5s" });
+  expect(link.getAttribute("href")).toBe("/take5-table");
+});

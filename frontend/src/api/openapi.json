@@ -526,6 +526,538 @@
         }
       }
     },
+    "/api/take5-table": {
+      "get": {
+        "tags": [
+          "table"
+        ],
+        "summary": "Take5 Table",
+        "description": "Lay out every saved Take 5 as a row, the most important first (E1 to E4, E6).\n\nArgs:\n    zone: The page's time zone, for a Take 5 with no start time.\n    filters: What to narrow the table to.",
+        "operationId": "take5_table_api_take5_table_get",
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Zone"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Search"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          },
+          {
+            "name": "weekday",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Weekday"
+            }
+          },
+          {
+            "name": "time_of_day",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time Of Day"
+            }
+          },
+          {
+            "name": "from_paper",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Paper"
+            }
+          },
+          {
+            "name": "verdict",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Verdict"
+            }
+          },
+          {
+            "name": "band",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Band"
+            }
+          },
+          {
+            "name": "area",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Area"
+            }
+          },
+          {
+            "name": "job",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
+            }
+          },
+          {
+            "name": "worker",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Worker"
+            }
+          },
+          {
+            "name": "importance",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Importance"
+            }
+          },
+          {
+            "name": "thought_gaps",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Thought Gaps"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Take5TablePage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A filter or the zone can't be read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormErrors"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/take5-table.csv": {
+      "get": {
+        "tags": [
+          "table"
+        ],
+        "summary": "Take5 Table Csv",
+        "description": "Export the same rows as CSV, to open in a spreadsheet (E5).\n\nArgs:\n    zone: The page's time zone.\n    filters: What to narrow the table to.",
+        "operationId": "take5_table_csv_api_take5_table_csv_get",
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Zone"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Search"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          },
+          {
+            "name": "weekday",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Weekday"
+            }
+          },
+          {
+            "name": "time_of_day",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time Of Day"
+            }
+          },
+          {
+            "name": "from_paper",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Paper"
+            }
+          },
+          {
+            "name": "verdict",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Verdict"
+            }
+          },
+          {
+            "name": "band",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Band"
+            }
+          },
+          {
+            "name": "area",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Area"
+            }
+          },
+          {
+            "name": "job",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
+            }
+          },
+          {
+            "name": "worker",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Worker"
+            }
+          },
+          {
+            "name": "importance",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Importance"
+            }
+          },
+          {
+            "name": "thought_gaps",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Thought Gaps"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The rows as CSV",
+            "content": {
+              "text/csv": {}
+            }
+          },
+          "422": {
+            "description": "A filter or the zone can't be read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormErrors"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/scans": {
       "post": {
         "tags": [
@@ -1878,6 +2410,180 @@
         "title": "Take5Response",
         "description": "A saved Take 5, with the overall rating the back end worked out for it.\n\nAttributes:\n    take5: The saved Take 5, with its question and a copy of its template. Its\n        verdict is empty until the question is answered.\n    rating: The Take 5's rating (spec R4 and R5), or None for a paper card with\n        no rated hazard (P2).\n    fixed_by: The ID of the newest Take 5 that fixes this one, or None. It is\n        found when the Take 5 is opened, because the saved one never changes.\n    offers_fix: True when the result should offer to fix this Take 5 in a new\n        one: it said Don't start yet and has no fix yet."
       },
+      "Take5Row": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "saved_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Saved At"
+          },
+          "started_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Started On"
+          },
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "weekday": {
+            "type": "string",
+            "title": "Weekday"
+          },
+          "time_of_day": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Of Day"
+          },
+          "worker_name": {
+            "type": "string",
+            "title": "Worker Name"
+          },
+          "job": {
+            "type": "string",
+            "title": "Job"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "verdict": {
+            "type": "string",
+            "title": "Verdict"
+          },
+          "importance": {
+            "type": "integer",
+            "title": "Importance"
+          },
+          "highest_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest Score"
+          },
+          "highest_band": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest Band"
+          },
+          "needs_jha": {
+            "type": "boolean",
+            "title": "Needs Jha"
+          },
+          "why": {
+            "type": "string",
+            "title": "Why"
+          },
+          "thought_gaps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Thought Gaps"
+          },
+          "rushed": {
+            "type": "boolean",
+            "title": "Rushed"
+          },
+          "minutes_taken": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minutes Taken"
+          },
+          "hazard_count": {
+            "type": "integer",
+            "title": "Hazard Count"
+          },
+          "control_count": {
+            "type": "integer",
+            "title": "Control Count"
+          },
+          "strong_control": {
+            "type": "boolean",
+            "title": "Strong Control"
+          },
+          "answers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Answers"
+          },
+          "from_paper": {
+            "type": "boolean",
+            "title": "From Paper"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "started_at",
+          "saved_at",
+          "started_on",
+          "month",
+          "weekday",
+          "time_of_day",
+          "worker_name",
+          "job",
+          "location",
+          "verdict",
+          "importance",
+          "highest_score",
+          "highest_band",
+          "needs_jha",
+          "why",
+          "thought_gaps",
+          "rushed",
+          "minutes_taken",
+          "hazard_count",
+          "control_count",
+          "strong_control",
+          "answers",
+          "from_paper"
+        ],
+        "title": "Take5Row",
+        "description": "One saved Take 5 laid out as a row (E1).\n\nAttributes:\n    id: The Take 5's ID, to open it.\n    started_at: When it was started, on the clock E3 reads it by: in the\n        asker's zone, or a paper card's date as written (P5). None when not known.\n    saved_at: When it was saved, in the asker's zone.\n    started_on: The day it was started, or saved when the start isn't known, by\n        the same clock as the month and weekday.\n    month: Such as \"2026-11\".\n    weekday: Such as \"Monday\".\n    time_of_day: One of `TIMES_OF_DAY`, or None for a paper card with no time.\n    worker_name: Who did it.\n    job: What the job is.\n    location: Where the job is, as typed.\n    verdict: One of `VERDICTS`.\n    importance: The ranking's worst score (W1): the highest risk before controls\n        plus points for each thought gap.\n    highest_score: The highest score before controls, or None when unrated.\n    highest_band: That score's band, or None.\n    needs_jha: True when that score needs a JHA on its card (R3, A3).\n    why: The fixed rules' line for it (W1).\n    thought_gaps: Each sign of little thought (W2 to W5, W10, P4).\n    rushed: True when it was filled in in under 2 minutes (W5).\n    minutes_taken: The minutes it took, or None when not known.\n    hazard_count: How many hazards it has.\n    control_count: How many controls, over every hazard.\n    strong_control: True when any control is a strong kind (T3).\n    answers: Each question's answer, by question ID; a blank is left out.\n    from_paper: True when it was photographed off a paper card (P6)."
+      },
       "Take5Summary": {
         "properties": {
           "id": {
@@ -1930,6 +2636,95 @@
         ],
         "title": "Take5Summary",
         "description": "One line of the saved Take 5 list: enough to find it, not the whole card.\n\nAttributes:\n    id: The Take 5's ID, to open it.\n    created_at: When it was saved.\n    worker_name: Who did it.\n    job: What the job is.\n    can_start: The verdict it was saved with: True for Good to go, False for\n        Don't start yet, or None while its question is unanswered.\n    fixed: True when a newer Take 5 fixes this one.\n    from_paper: True when it was photographed off a paper card (P6)."
+      },
+      "Take5TablePage": {
+        "properties": {
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/Take5Row"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "verdicts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Verdicts"
+          },
+          "bands": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Bands"
+          },
+          "areas": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Areas"
+          },
+          "weekdays": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Weekdays"
+          },
+          "times_of_day": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Times Of Day"
+          },
+          "thought_gap_choices": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Thought Gap Choices"
+          },
+          "jobs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Jobs"
+          },
+          "workers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Workers"
+          },
+          "importances": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Importances"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rows",
+          "verdicts",
+          "bands",
+          "areas",
+          "weekdays",
+          "times_of_day",
+          "thought_gap_choices",
+          "jobs",
+          "workers",
+          "importances"
+        ],
+        "title": "Take5TablePage",
+        "description": "Every saved Take 5 the filters let through, as rows, and the filters' choices.\n\nThe page draws these choices, so it holds no copy of them.\n\nAttributes:\n    rows: One row per Take 5, the most important first (E1, E2).\n    verdicts: The verdicts a row can have.\n    bands: The card's risk bands, lowest first.\n    areas: Every area with a Take 5, by the spelling typed most (A1).\n    weekdays: Monday to Sunday.\n    times_of_day: The four blocks of the clock (E3).\n    thought_gap_choices: The thought gaps column's filter choices (E6).\n    jobs: Every job, each once, to tick (E6).\n    workers: Every worker, each once, to tick (E6).\n    importances: Every importance, highest first, to tick (E6)."
       },
       "Take5Template": {
         "properties": {

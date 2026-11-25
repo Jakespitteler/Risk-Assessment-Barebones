@@ -44,11 +44,11 @@ design choice: **if the app is boring and can be used without thinking, people w
 
 | Role | Who | What they can do |
 | --- | --- | --- |
-| Worker | Anyone on a mine-site crew about to start a task | Fill in a Take 5, see its verdict, look back at saved Take 5s, see today's ranked worst first (F8) and risk by area (F9), and scan a pile of paper cards (F10) |
+| Worker | Anyone on a mine-site crew about to start a task | Fill in a Take 5, see its verdict, look back at saved Take 5s, see today's ranked worst first (F8) and risk by area (F9), scan a pile of paper cards (F10), and look through every saved Take 5 in a table and export it (F11) |
 
-There is one role for now. There is no sign-in: the worker types their name and the
-phone remembers it. Anyone can rank Take 5s and scan paper cards, and the ranking shows each worker's name, as the
-saved list does (decision D66).
+There is one role for now. There is no sign-in: the worker types their name and the phone remembers it. Anyone
+can rank Take 5s, scan paper cards and export the table, and the ranking shows each worker's name, as the saved
+list does (decision D66).
 
 Where and when it is used (confirmed by Jake for task 0004):
 
@@ -460,6 +460,43 @@ reads each photo into a filled-in card; a person checks it beside the photo and 
   that says "Don't start yet" offers no fix (F3): whoever checks it isn't the worker who wrote it. The worker's
   name is read off the card to fill it in, and never sent to any other AI call (C1, W6).
 
+### Table and export
+
+Every saved Take 5 in one table, filtered, and exported as CSV for a spreadsheet (task 0043, decisions D128 to D132).
+It works out each value by the rules above; nothing new is decided about a Take 5, and nothing is saved.
+
+- **E1 One row each.** Every saved Take 5 is a row, finished or not: when it was started and saved, its month,
+  weekday and time of day, the worker, job and location, its verdict ("Good to go", "Don't start yet" or "Not
+  finished"), its importance, its highest risk before controls with its band and whether that needs a JHA (R3),
+  the ranking's line (W1), its thought gaps (W2 to W5, W10, P4), whether it was rushed and the minutes it took
+  (W5), its numbers of hazards and controls, whether any control is strong (T3), each question's answer, and
+  whether it came from paper (P6).
+- **E2 Importance.** A row's importance is its worst score (W1): the highest risk before controls plus 5 for each
+  thought gap. The most important row comes first, then the newest. It is worked out each time, so it follows
+  the rules as they are; an AI's reworded line (W6) isn't kept, so it isn't shown.
+- **E3 Time.** The month, weekday and time of day are when the Take 5 was started. A phone sends its start time
+  without its zone, so it is read in the zone of whoever asks, which on one site is the phone's; a paper card
+  keeps the date and time written on it (P5). One with no start time goes by when it was saved, read the same
+  way. The time of day is one of four blocks: midnight to 6 am, 6 am to noon, noon to 6 pm, 6 pm to midnight. A
+  paper card with a date and no time has no time of day (nor one whose written time is exactly midnight, which
+  is saved the same way).
+- **E4 Filters.** Each word searched must be found in the job, location or worker, ignoring capitals. A date
+  range keeps the days from the first to the last, both included, by E3's day. The verdict, risk band, area
+  (matched as A1 matches), weekday, time of day and "from paper" each keep only rows that match. An empty or
+  blank filter keeps every row.
+- **E5 CSV.** "Download CSV" exports the rows the filters keep, in the same order, one column per value in E1 and
+  one per question on the card, with the worker's name as the saved list shows it. A cell that starts like a
+  spreadsheet formula (with =, +, -, @, a tab or a return) starts with an apostrophe instead, so it is never run.
+- **E6 Column filters.** Each column's heading has a filter button that opens a list of the values to tick, as a
+  spreadsheet does (task 0048, D135 to D137). A row is kept when its value is any of the ones ticked, and nothing
+  ticked keeps every row. As in a spreadsheet, a column lists only the values of the rows that every other filter
+  keeps, so the lists narrow as filters are set, while its own ticks stay listed. Importance lists importances,
+  highest first; job and worker list each value once, ignoring capitals and spaces at either end, A to Z, with
+  blanks left out; verdict, highest risk (band) and location (area, matched as A1 matches) take E4's choices, moved
+  from above the table into their columns, in E4's order; thought gaps offers "No gaps", "Some gaps" (1 or more)
+  and "Rushed" (W5), each only when some row matches it. A long list has a box to find a value in it. Every filter,
+  above the table or in a column, narrows both the page and the CSV.
+
 ### Worked examples
 
 Each example becomes an automated test, named by its number. Add one for every rule and every boundary.
@@ -682,6 +719,27 @@ named, and the checker is in Perth.
 | 139 | No date | Started at is empty; the scan time stands in | P5 |
 | 140 | A card with a control and both ratings, dated 1 minute before the scan | Not rushed, no "Took" time, left out of the typical time, never the best | P5 |
 
+Table and export (E1 to E6). Unless the row says otherwise, each Take 5 is the ranking examples' careful one,
+started on Saturday 21 Nov 2026 at 7:00 am in Perth.
+
+| # | Situation | Expected | Why |
+| --- | --- | --- | --- |
+| 141 | The careful one | Month 2026-11, Saturday, "6 am to noon", "Good to go", importance 8, Moderate | E1, E2, E3 |
+| 142 | One at Possible / Major (18) and one at 8 with a thought gap | The 18 first (importance 18), then the 13 | E2 |
+| 143 | Started at 11:59 pm and at midnight | "6 pm to midnight", then "Midnight to 6 am" on Sunday | E3 |
+| 144 | A paper card dated 3 Apr 2026 with no time | April, Friday, no time of day | E3, P5 |
+| 145 | Saved before start times were kept, at 11 pm UTC on 20 Nov, asked from Perth | Saturday 21 Nov, "6 am to noon" | E3 |
+| 146 | Search "TYRE"; the job is "Change tyre on LV12" | Kept | E4 |
+| 147 | From 21 Nov to 21 Nov, one started on each of 20, 21 and 22 Nov | Only 21 Nov | E4 |
+| 148 | Area "light-vehicle workshop."; the location is "Light vehicle workshop" | Kept | E4, A1 |
+| 149 | The job is "=HYPERLINK(...)" | The CSV cell is "'=HYPERLINK(...)" | E5 |
+| 150 | The careful one exported | A header row, then one row with its values and each question's answer | E5 |
+| 151 | Job ticked "change tyre on lv12"; worker ticked "Alex Example" and "SAM EXAMPLE"; or only "Alex Example" | Kept, kept, not kept | E6 |
+| 152 | Importance 13 and 18 ticked; the careful one (8) and one with a hazard "Moving wheel" (13) | Only the 13 | E6 |
+| 153 | "No gaps" and "Rushed" ticked; the careful one, one filled in in 1 minute, one with "Moving wheel" | The first two | E6, W5 |
+| 154 | Verdicts "Good to go" and "Not finished" ticked; one "Good to go", one "Don't start yet" | Only the first | E4, E6 |
+| 155 | Importance 13 ticked; the careful one (8) and one with "Moving wheel" (13) | The thought gaps list offers only "Some gaps"; the importance list still offers 8 and 13 | E6 |
+
 ## Features
 
 ### F1: Rate a risk
@@ -847,6 +905,22 @@ P6). For whoever collects a crew's cards, on a desktop or a phone.
   with the date written on the card in place of the time it was saved (D127).
 - Acceptance: with no AI set up it says scanning needs one; a photo that can't be read says to take it again.
 - Acceptance: worked examples 131 to 140 pass as tests.
+
+### F11: All Take 5s
+
+Every saved Take 5 as a row, filtered, and downloaded as CSV (E1 to E6). For whoever looks through many Take 5s
+or takes them into a spreadsheet, on a desktop or a phone.
+
+- Acceptance: the saved list has "All Take 5s" beside "Risk by area" once anything is saved.
+- Acceptance: the filters above the table (words, a date range, weekday, time of day and from paper) and in its
+  column headings (importance, job, verdict, highest risk, thought gaps, worker and location, each a list to
+  tick) are kept in the page's address, so a link opens the same view, and the page says how many Take 5s match.
+- Acceptance: "Clear filters" is always beside "Download CSV", outside the folded filters, and turns every
+  filter off; it can't be pressed while none is on.
+- Acceptance: "Download CSV" downloads exactly the rows shown.
+- Acceptance: when the table is wider than the screen, it scrolls sideways inside its box instead of squeezing
+  its headings, and the page never does.
+- Acceptance: worked examples 141 to 155 pass as tests.
 
 ## Out of scope (for now)
 
@@ -1016,8 +1090,16 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D125 | The page (2026-11-21) | "Scan paper cards" at `/scan`, linked from the saved list; a "From paper" tag on the list and the saved Take 5 (P6) | Another name |
 | D126 | Fixing a paper card (2026-11-21) | Not offered, and refused: whoever checks a card isn't the worker who wrote it, and the proof of concept stays simple (P6) | "Fix this Take 5" on the checker's phone, copied from someone else's card |
 | D127 | Which date a ranked paper card shows (2026-11-21) | The date on the card, with its time when it has one; the ranking's API sends `started_at` and `from_paper` (P5) | The time it was scanned, the same for every card in a batch |
+| D128 | A table of every saved Take 5 (2026-11-23) | Before task 0039, which later reads its columns (F11) | Patterns as sentences first |
+| D129 | What importance is (2026-11-23) | The ranking's worst score, band and line, worked out each time, not stored (E2) | Stored as ranked, a data model change; a new rule |
+| D130 | Job type (2026-11-23) | Not yet: words are searched in the job, location and worker (E4) | An AI sorting each job; a pick-list on the form |
+| D131 | What the CSV holds (2026-11-23) | Every value, workers' names included, as the saved list shows them (E5) | Fewer columns; no names |
+| D132 | Time of day (2026-11-23) | The clock where it was started, in four 6-hour blocks, read in the asker's zone as the phone's isn't saved (E3) | The hour into a shift, which needs each site's shift times |
 | D133 | Which OpenAI models ChatGPT uses (2026-11-24) | `TAKE5_AI_PROVIDER=chatgpt` with an OpenAI key. OpenAI's flagship, `gpt-6.2-astra`, does every job but vague hazards, which its most efficient model, `gpt-6-luna`, judges, as Haiku does for Claude (D61). The same model settings work for either provider | One model for every job (proposed by Claude, for Jake to approve) |
 | D134 | Which hazard is being assessed (2026-11-25) | On the before, controls and after pages, the hazard shows under the page's heading in a card with an amber edge, labelled "Hazard N of M" (task 0047) | The hazard as the page's heading; a bold "Hazard:" before the plain line |
+| D135 | Column filters (2026-11-25) | A filter button in each column's heading opens a list of its values to tick, as in a spreadsheet; verdict, risk band and area move from above into their columns, and the rest stay above (E6) | A row of filter boxes under the headings; every filter above as well |
+| D136 | What each column lists (2026-11-25) | The values of the rows the other filters keep, as Excel does (Jake): importances highest first, jobs and workers once each A to Z, thought gaps as "No gaps", "Some gaps" or "Rushed". The started column has none, as the date range above covers it (E6) | Every saved Take 5's values, whatever is filtered; a list of days to tick |
+| D137 | Clear filters (2026-11-25) | Always shown beside "Download CSV" (Jake), outside the folded filters, and can't be pressed while no filter is on | Shown only while a filter is on, inside the folded filters |
 
 ## Open questions
 

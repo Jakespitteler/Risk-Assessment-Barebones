@@ -9,10 +9,11 @@ Recommended by Claude on 2026-11-13, agreed by Jake the same day. Tasks 0015 to 
 2026-11-21, when 0041 and 0042 were added. Task 0030's set it after Jake agreed the app's goal (top of
 `docs/spec.md`). Every task is judged against that goal.
 
-Complete: 0001 to 0026, 0030 to 0032 and 0034 to 0038. Jake chose on 2026-11-19 to build 0024 (dark mode) then (spec D79).
-Task 0027 is merged, but stays `review` until Jake's measurement of the AI's verdicts is in its pull request, as
-its last criterion asks. Task 0029 stays `review` until Jake tries Ctrl+C on Windows. Task 0018 decided to keep the
-built-in `sqlite3` for now (`docs/decisions.md`, 2026-11-14), so no task to switch storage is in the order below.
+Complete: 0001 to 0026, 0028, 0030 to 0038 and 0042. Jake chose on 2026-11-19 to build 0024 (dark mode) then
+(spec D79). Task 0027 is merged, but stays `review` until Jake's measurement of the AI's verdicts is in its pull
+request, as its last criterion asks. Task 0029 stays `review` until Jake tries Ctrl+C on Windows. Task 0018
+decided to keep the built-in `sqlite3` for now (`docs/decisions.md`, 2026-11-14), so no task to switch storage is in
+the order below.
 
 1. **0028, errors obvious in the terminal.** Jake asked for it on 2026-11-19, after a blank page on Windows whose
    error showed only in the browser. It builds on 0029's start script and makes every later task quicker to
@@ -30,10 +31,13 @@ Built out of the order:
 - **0038, risk by area.** Jake asked on 2026-11-21 for the next task, with every recommendation (spec D111 to
   D117).
 - **0041, cut wasted GitHub Actions minutes.** Jake asked on 2026-11-21, as the free minutes were running out.
+- **0043, a table of saved Take 5s with filters and CSV export.** Jake asked on 2026-11-23, ahead of 0039.
 - **0044, start.py frees its ports from a leftover copy of the app.** Jake asked on 2026-11-24.
 - **0045, ChatGPT as a second AI provider.** Jake asked on 2026-11-24.
 - **0046, say how to set the AI key when none is set.** Jake asked on 2026-11-25.
 - **0047, the hazard being assessed stands out.** Jake asked on 2026-11-25.
+- **0048, filter the Take 5 table's columns, and a Clear filters button.** Jake asked on 2026-11-25, on top of
+  0043.
 
 To investigate when we get to them (Jake, 2026-11-20). Each file holds the questions to settle first; none has
 a place in the order yet:

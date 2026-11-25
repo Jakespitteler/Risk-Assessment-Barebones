@@ -203,10 +203,10 @@ def all_backend_tests() -> list[ExampleTest]:
 
 
 def test_the_worked_examples_are_found() -> None:
-    """All 140 are read, so a change to the spec's layout can't empty the check."""
+    """All 155 are read, so a change to the spec's layout can't empty the check."""
     examples: list[int] = worked_example_numbers(SPEC_PATH.read_text(encoding="utf-8"))
 
-    assert examples == list(range(1, 141))
+    assert examples == list(range(1, 156))
 
 
 def test_every_worked_example_has_a_test_named_by_its_number() -> None:

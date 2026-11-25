@@ -12,6 +12,7 @@ from risk_assessment.domain.risk import RiskMatrix, RiskRating
 from risk_assessment.domain.take5.areas import AreaRisk
 from risk_assessment.domain.take5.draft import FieldError, Take5Draft
 from risk_assessment.domain.take5.saved import SavedTake5
+from risk_assessment.domain.take5.table import Take5Row
 from risk_assessment.domain.take5.template import LevelGuidance
 
 
@@ -307,3 +308,35 @@ class ScannedCardResponse(BaseModel):
     draft: Take5Draft
     filled_in_at: str | None
     unreadable: tuple[str, ...]
+
+
+class Take5TablePage(BaseModel):
+    """Every saved Take 5 the filters let through, as rows, and the filters' choices.
+
+    The page draws these choices, so it holds no copy of them.
+
+    Attributes:
+        rows: One row per Take 5, the most important first (E1, E2).
+        verdicts: The verdicts a row can have.
+        bands: The card's risk bands, lowest first.
+        areas: Every area with a Take 5, by the spelling typed most (A1).
+        weekdays: Monday to Sunday.
+        times_of_day: The four blocks of the clock (E3).
+        thought_gap_choices: The thought gaps column's filter choices (E6).
+        jobs: Every job, each once, to tick (E6).
+        workers: Every worker, each once, to tick (E6).
+        importances: Every importance, highest first, to tick (E6).
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    rows: tuple[Take5Row, ...]
+    verdicts: tuple[str, ...]
+    bands: tuple[str, ...]
+    areas: tuple[str, ...]
+    weekdays: tuple[str, ...]
+    times_of_day: tuple[str, ...]
+    thought_gap_choices: tuple[str, ...]
+    jobs: tuple[str, ...]
+    workers: tuple[str, ...]
+    importances: tuple[int, ...]

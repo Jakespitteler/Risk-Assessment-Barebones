@@ -186,8 +186,8 @@ def test_no_endpoint_changes_a_saved_take5() -> None:
     Saving again with the same ID returns the first save (see the retry tests). The
     only routes that write add a new Take 5, or answer an unfinished one's question
     once (spec C6). Saving a checked paper card adds a new one (P1). The check, the
-    nudges, the ranking, risk by area and reading a scanned card (task 0033) save
-    nothing.
+    nudges, the ranking, risk by area, the table and its CSV, and reading a scanned
+    card (task 0033) save nothing.
     """
     paths: dict[str, dict[str, Any]] = create_app().openapi()["paths"]
 
@@ -205,6 +205,8 @@ def test_no_endpoint_changes_a_saved_take5() -> None:
         "/api/ranked-take5s/batch": {"post"},
         "/api/risk-by-area": {"get"},
         "/api/scans": {"post"},
+        "/api/take5-table": {"get"},
+        "/api/take5-table.csv": {"get"},
     }
 
 
