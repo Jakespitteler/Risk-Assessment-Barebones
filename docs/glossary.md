@@ -116,7 +116,8 @@ helpers, and API types, which come from `src/api/schema.d.ts` through `src/api/t
 | Row | One saved Take 5 laid out with every value the app knows about it. | `Take5Row`, `take5_row` | `rows` | E1 |
 | Importance | The ranking's worst score: highest risk before controls plus 5 per thought gap. | `Take5Row.importance` | `importance` | E2, W1 |
 | Time of day | Which of four 6-hour blocks of the clock a Take 5 was started in. | `TIMES_OF_DAY` | `time_of_day` | E3 |
-| Filters | What the table is narrowed to: words, dates, verdict, band, area, weekday, time of day, from paper. | `Take5Filters`, `matches` | the table page's filters | E4 |
+| Filters | What the table is narrowed to. Above it: words, dates, weekday, time of day, from paper. | `Take5Filters`, `matches` | the table page's filters | E4 |
+| Column filter | A heading's list of the column's values to tick; a row with any ticked value is kept. | `Take5Filters` (`verdict`, `band`, `area`, `job`, `worker`, `importance`, `thought_gaps`), `column_values`, `THOUGHT_GAP_CHOICES` | `ColumnFilter` | E6 |
 | CSV export | The rows kept, as a spreadsheet file, with formula-like cells made safe. | `table_csv` | "Download CSV" | E5 |
 
 ## Paper cards

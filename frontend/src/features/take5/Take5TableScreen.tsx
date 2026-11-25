@@ -78,7 +78,10 @@ export function Take5TableScreen({
     for (const value of ticked) changed.append(name, value);
     onFilters(changed);
   };
+  // Clearing starts the search box afresh, even with typing not yet sent.
+  const [cleared, setCleared] = useState(0);
   const clear = () => {
+    setCleared((count) => count + 1);
     onFilters(new URLSearchParams());
   };
   const filtersAboveOn = FILTERS_ABOVE.filter((name) => filters.has(name));
@@ -112,6 +115,7 @@ export function Take5TableScreen({
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Field name="search" label="Find words">
             <TypedFilter
+              key={cleared}
               id="search"
               type="search"
               className={FIELD_STYLE}

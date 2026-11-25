@@ -97,10 +97,7 @@ function TickList({
   const [chosen, setChosen] = useState(ticked);
   const [found, setFound] = useState("");
   // A ticked value the back end no longer lists still shows, so it can be unticked.
-  const values = [
-    ...choices,
-    ...ticked.filter((value) => !choices.includes(value)),
-  ];
+  const values = [...new Set([...choices, ...ticked])];
   const shown = values.filter((value) =>
     value.toLowerCase().includes(found.trim().toLowerCase()),
   );
@@ -161,7 +158,7 @@ function TickList({
         {values.length > FIND_FROM && (
           <input
             type="search"
-            aria-label={`Find a ${title.toLowerCase()}`}
+            aria-label="Find a value"
             placeholder="Find"
             className={FIELD_STYLE}
             value={found}

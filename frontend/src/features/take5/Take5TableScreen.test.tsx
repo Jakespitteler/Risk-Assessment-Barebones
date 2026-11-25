@@ -323,3 +323,18 @@ it("clears every filter, above and in the columns, and empties the search box", 
     true,
   );
 });
+
+it("clears typing in the search box that hasn't been sent yet", async () => {
+  stubApi({
+    [tableUrl()]: { status: 200, body: PAGE },
+    [tableUrl("band=Extreme")]: { status: 200, body: PAGE },
+  });
+  renderWithApi(<LiveFilters start="band=Extreme" />);
+  await screen.findByText("2 Take 5s match.");
+  fireEvent.change(screen.getByLabelText("Find words"), {
+    target: { value: "tyre" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+  expect(await screen.findByText("Filters")).toBeTruthy();
+  expect(screen.getByLabelText("Find words")).toHaveProperty("value", "");
+});

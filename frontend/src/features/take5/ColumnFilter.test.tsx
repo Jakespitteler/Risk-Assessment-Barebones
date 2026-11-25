@@ -57,7 +57,7 @@ it("unticks every value at once, which applies as no filter", () => {
 it("finds a value in a long list, ignoring capitals", () => {
   show([], ["Ann", "Bob", "Cy", "Di", "Ed", "Flo", "Gus", "Hal", "Ivy"]);
   fireEvent.click(screen.getByRole("button", { name: "Filter Worker" }));
-  fireEvent.change(screen.getByLabelText("Find a worker"), {
+  fireEvent.change(screen.getByLabelText("Find a value"), {
     target: { value: "IV" },
   });
   expect(

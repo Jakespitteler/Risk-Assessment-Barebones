@@ -1,4 +1,4 @@
-"""Every saved Take 5 as a row of a table, filtered and written as CSV (spec E1 to E5).
+"""Every saved Take 5 as a row of a table, filtered and written as CSV (spec E1 to E6).
 
 Each value comes from rules the app already has: the ranking's importance, line and
 thought gaps (W1 to W5, W10, P4), the area (A1) and the verdict (V1 to V3). Nothing
@@ -251,11 +251,8 @@ def matches(row: Take5Row, filters: Take5Filters) -> bool:
             area_key(row.location),
             tuple(key for key in map(area_key, filters.area) if key),
         ),
-        _ticked(row.job.casefold(), tuple(job.casefold() for job in filters.job)),
-        _ticked(
-            row.worker_name.casefold(),
-            tuple(worker.casefold() for worker in filters.worker),
-        ),
+        _ticked(_folded(row.job), tuple(map(_folded, filters.job))),
+        _ticked(_folded(row.worker_name), tuple(map(_folded, filters.worker))),
         _ticked(row.importance, filters.importance),
         not filters.thought_gaps
         or any(_has_thought_gaps(row, choice) for choice in filters.thought_gaps),
@@ -276,6 +273,18 @@ def _ticked[Value](value: Value, ticked: tuple[Value, ...]) -> bool:
     return not ticked or value in ticked
 
 
+def _folded(text: str) -> str:
+    """Fold a typed value so capitals and spaces at either end don't matter (E6).
+
+    Args:
+        text: A job or a worker's name.
+
+    Returns:
+        The text, trimmed, in one case.
+    """
+    return text.strip().casefold()
+
+
 def _has_thought_gaps(row: Take5Row, choice: str) -> bool:
     """Say whether a row's thought gaps match one of the column's choices (E6).
 
@@ -294,7 +303,7 @@ def _has_thought_gaps(row: Take5Row, choice: str) -> bool:
 
 
 def column_values(values: Iterable[str]) -> tuple[str, ...]:
-    """List a column's values to tick, each once, ignoring capitals, A to Z (E6).
+    """List a column's values to tick, each once, ignoring capitals and end spaces (E6).
 
     Args:
         values: The column's values, one per row.
@@ -305,7 +314,7 @@ def column_values(values: Iterable[str]) -> tuple[str, ...]:
     first_spellings: dict[str, str] = {}
     for value in values:
         if value.strip():
-            first_spellings.setdefault(value.casefold(), value)
+            first_spellings.setdefault(_folded(value), value.strip())
     return tuple(sorted(first_spellings.values(), key=str.casefold))
 
 

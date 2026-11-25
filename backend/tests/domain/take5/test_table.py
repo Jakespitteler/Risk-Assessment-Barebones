@@ -215,7 +215,7 @@ def test_example_151_a_ticked_job_or_worker_keeps_its_rows() -> None:
     """Ticked values match ignoring capitals; an unticked worker drops it (E6)."""
     careful: Take5Row = row(started(SATURDAY_MORNING))
 
-    assert matches(careful, Take5Filters(job=("change tyre on lv12",)))
+    assert matches(careful, Take5Filters(job=("change tyre on lv12 ",)))
     assert matches(careful, Take5Filters(worker=("Alex Example", "SAM EXAMPLE")))
     assert not matches(careful, Take5Filters(worker=("Alex Example",)))
 
@@ -263,7 +263,7 @@ def test_example_154_two_ticked_verdicts_keep_both() -> None:
 
 def test_a_columns_values_are_listed_once_ignoring_capitals_a_to_z() -> None:
     """The first spelling stands for the rest, and blanks are left out (E6)."""
-    assert column_values(["tyre change", "Crusher", "Tyre Change", " ", ""]) == (
+    assert column_values(["tyre change", "Crusher", "Tyre Change ", " ", ""]) == (
         "Crusher",
         "tyre change",
     )

@@ -490,11 +490,11 @@ It works out each value by the rules above; nothing new is decided about a Take 
 - **E6 Column filters.** Each column's heading has a filter button that opens a list of the values to tick, as a
   spreadsheet does (task 0048, D135 to D137). A row is kept when its value is any of the ones ticked, and nothing
   ticked keeps every row. Importance lists every importance, highest first; job and worker list each value once,
-  ignoring capitals, A to Z, with blanks left out; verdict, highest risk (band) and location (area, matched as A1
-  matches) take E4's choices, moved from above the table into their columns; thought gaps offers "No gaps",
-  "Some gaps" (1 or more) and "Rushed" (W5). The lists hold every saved Take 5's values, whatever else is
-  filtered. A long list has a box to find a value in it. Every filter, above the table or in a column, narrows
-  both the page and the CSV.
+  ignoring capitals and spaces at either end, A to Z, with blanks left out; verdict, highest risk (band) and
+  location (area, matched as A1 matches) take E4's choices, moved from above the table into their columns; thought
+  gaps offers "No gaps", "Some gaps" (1 or more) and "Rushed" (W5). The lists hold every saved Take 5's values,
+  whatever else is filtered. A long list has a box to find a value in it. Every filter, above the table or in a
+  column, narrows both the page and the CSV.
 
 ### Worked examples
 
