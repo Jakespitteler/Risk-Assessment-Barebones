@@ -1,5 +1,5 @@
 [tool.pyright]
-include = ["backend", "scripts", "start.py", "install.py", "check.py", "test.py"]
+include = ["backend", "scripts", "start.py", "install.py", "check.py", "test.py", "set_ai_key.py"]
 extraPaths = ["backend/src"]
 venvPath = "backend"
 venv = ".venv"

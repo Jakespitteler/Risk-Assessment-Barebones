@@ -90,12 +90,13 @@ Without a key the app works, and asks the fixed challenge question every time. T
 1. Sign in at <https://console.anthropic.com>, add some credit, and set a monthly spend limit under Billing, so a
    mistake can't run up a bill.
 2. Make an API key under API keys. Copy it: it is only shown once.
-3. Copy the settings template: in PowerShell, in the repo root, `Copy-Item backend\.env.example backend\.env`
-   (on a Mac or Linux, `cp backend/.env.example backend/.env`). Open `backend/.env` in VS Code and paste the key
-   after `TAKE5_AI_KEY=`. Git ignores `.env`, so the key never goes to GitHub. Never put a key in
-   `.env.example` or anywhere else in the repo. (Don't make the file with PowerShell's `>`, which saves it in a
-   form the app can't read.)
-4. Restart `uv run start.py`. The back end's log says which model asks the question.
+3. In the repo root, run `uv run set_ai_key.py` and paste the key when it asks. It doesn't show the key, and
+   saves it as the `TAKE5_AI_KEY=` line in `backend/.env`, making that file if there is none. Git ignores
+   `.env`, so the key never goes to GitHub. Never put a key in `.env.example` or anywhere else in the repo. (To
+   see every setting, copy the template first: in PowerShell, `Copy-Item backend\.env.example backend\.env`.
+   Don't make the file with PowerShell's `>`, which saves it in a form the app can't read.)
+4. Restart `uv run start.py`. The back end's log says which model asks the question. While no key is set, it
+   says where to make one and to run `uv run set_ai_key.py`.
 
 To use another model, add a line such as `TAKE5_AI_MODEL=claude-sonnet-5-5`. To try the AI on five made-up Take
 5s and see what each question costs and how long it takes, run `uv run scripts/try_challenge.py` in the repo
@@ -106,7 +107,7 @@ made-up hazards. Photos of paper cards are read by the main model unless a line 
 that call the real AI. Each of these costs a little money; the normal tests and CI never call it.
 
 To use ChatGPT's models instead of Claude's, make the key at <https://platform.openai.com> (with credit and a
-monthly limit, as above), paste it after `TAKE5_AI_KEY=`, and add the line `TAKE5_AI_PROVIDER=chatgpt` to the same
+monthly limit, as above), save it with `uv run set_ai_key.py`, and add the line `TAKE5_AI_PROVIDER=chatgpt` to the same
 settings file. An OpenAI API key is billed by use, apart from any ChatGPT subscription. Every AI job then uses
 OpenAI's `gpt-6.2-astra`, and vague hazards `gpt-6-luna`; the model lines above take OpenAI's model names. The
 try scripts try Claude only, so they stop when ChatGPT is chosen.

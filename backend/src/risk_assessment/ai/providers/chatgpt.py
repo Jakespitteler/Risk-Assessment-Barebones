@@ -31,6 +31,8 @@ DEFAULT_MODEL: str = "gpt-6.2-astra"
 # OpenAI's most efficient model, for a short yes-or-no job such as judging whether a
 # hazard is vague, as Claude Haiku is for Claude (decision D61).
 QUICK_MODEL: str = "gpt-6-luna"
+# Where a person makes a key for OpenAI's API.
+KEY_PAGE: str = "https://platform.openai.com/api-keys"
 # Just over the service's 10 seconds, so a call the service has given up on also
 # ends soon, instead of keeping its thread (and a stopping server) waiting.
 NETWORK_TIME_LIMIT_SECONDS: float = 11

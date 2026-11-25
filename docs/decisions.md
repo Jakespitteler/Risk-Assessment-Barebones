@@ -2,6 +2,18 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-25: A missing AI key is fixed with `uv run set_ai_key.py` (task 0046)
+
+- Decision: With no AI key, the back end logs one warning naming the chosen provider's key page and the command
+  `uv run set_ai_key.py`. That command, a new file in the repo root with no packages of its own, asks for the key
+  with hidden input and writes the `TAKE5_AI_KEY=` line in `backend/.env`, keeping every other line.
+- Why: Jake asked on 2026-11-25 for one command he can type. Typing the key at a prompt keeps it out of the
+  shell's history and off the screen, and one Python command works the same in PowerShell and on a Mac.
+- Not chosen: printing a PowerShell line such as `Add-Content backend\.env "TAKE5_AI_KEY=..."` (the key lands in
+  PowerShell's history, a second key line piles up, and Mac and Linux need another line); a user environment
+  variable with `setx` (the key then reaches every program, and the app's own file is the documented place).
+- Decided by: agent; the human approves it by merging task 0046's pull request.
+
 ## 2026-11-24: ChatGPT is a second AI provider, with the `openai` package (task 0045)
 
 - Decision: `TAKE5_AI_PROVIDER=chatgpt` runs every AI job on OpenAI's models through `ai/providers/chatgpt.py`,

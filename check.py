@@ -52,6 +52,7 @@ PYTHON_FOLDERS: list[str] = [
     "../install.py",
     "../check.py",
     "../test.py",
+    "../set_ai_key.py",
 ]
 RUFF: list[str] = ["uv", "run", "ruff"]
 RUFF_SETTINGS: list[str] = ["--config", "pyproject.toml"]
