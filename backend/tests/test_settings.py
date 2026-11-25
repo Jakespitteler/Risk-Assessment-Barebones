@@ -55,6 +55,15 @@ def test_the_ai_settings_can_be_set_from_the_environment(
     assert settings.usable_ai_key == "made-up-key"
 
 
+def test_chatgpt_can_be_chosen_from_the_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`TAKE5_AI_PROVIDER=chatgpt` chooses OpenAI's models (task 0045)."""
+    monkeypatch.setenv("TAKE5_AI_PROVIDER", "chatgpt")
+
+    assert Settings().ai_provider == AiProvider.CHATGPT
+
+
 def test_the_ai_key_can_be_kept_in_a_local_file(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

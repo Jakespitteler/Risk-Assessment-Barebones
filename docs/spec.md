@@ -953,7 +953,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D6 | Which rating decides a JHA | The *after* rating, as the paper card's column order (hazard, controls, score) implies | The *before* rating: stricter, but almost any job with a fatal hazard would then need a JHA |
 | D7 | The list of control kinds | The card's six "Make the changes" options, the first three counted as strong | The booklet's formal hierarchy of controls |
 | D8 | Who can see saved Take 5s | Everyone using the app, since there is no sign-in | Only the phone that made them |
-| D9 | Which AI provider is set up first | Claude. The others plug into the same interface | ChatGPT or Gemini first |
+| D9 | Which AI provider is set up first | Claude. The others plug into the same interface; ChatGPT was added second (task 0045, D133) | ChatGPT or Gemini first |
 | D10 | What happens when the AI can't be reached | The fixed fallback question (C3), so a Take 5 can always be finished | Wait for the AI |
 | D11 | Whether the AI judges the answer | No. It asks one question and the answer is saved (C5) | The AI marks the answer and can ask again |
 | D12 | The front-end libraries | React, TypeScript, Vite, Tailwind CSS, TanStack Query, React Router (see `architecture.md`) | Svelte or Vue |
@@ -1077,6 +1077,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D130 | Job type (2026-11-23) | Not yet: words are searched in the job, location and worker (E4) | An AI sorting each job; a pick-list on the form |
 | D131 | What the CSV holds (2026-11-23) | Every value, workers' names included, as the saved list shows them (E5) | Fewer columns; no names |
 | D132 | Time of day (2026-11-23) | The clock where it was started, in four 6-hour blocks, read in the asker's zone as the phone's isn't saved (E3) | The hour into a shift, which needs each site's shift times |
+| D133 | Which OpenAI models ChatGPT uses (2026-11-24) | `TAKE5_AI_PROVIDER=chatgpt` with an OpenAI key. OpenAI's flagship, `gpt-6.2-astra`, does every job but vague hazards, which its most efficient model, `gpt-6-luna`, judges, as Haiku does for Claude (D61). The same model settings work for either provider | One model for every job (proposed by Claude, for Jake to approve) |
 
 ## Open questions
 

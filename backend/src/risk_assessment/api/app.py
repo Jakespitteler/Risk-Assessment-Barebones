@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict
 from risk_assessment.ai.card_reader import AiCardReader
 from risk_assessment.ai.challenge import AiChallengeAsker
 from risk_assessment.ai.model import LanguageModel, PhotoReadingModel
-from risk_assessment.ai.providers import claude
+from risk_assessment.ai.providers import chatgpt, claude
 from risk_assessment.ai.ranking import AiTake5Ranker
 from risk_assessment.ai.vague_hazard import AiHazardJudge
 from risk_assessment.api.area_routes import create_area_router
@@ -64,6 +64,11 @@ _PROVIDERS: dict[AiProvider, _ProviderModels] = {
         build=claude.ClaudeModel,
         quick_model=claude.QUICK_MODEL,
         build_photo_reader=claude.ClaudeModel,
+    ),
+    AiProvider.CHATGPT: _ProviderModels(
+        build=chatgpt.ChatGptModel,
+        quick_model=chatgpt.QUICK_MODEL,
+        build_photo_reader=chatgpt.ChatGptModel,
     ),
 }
 

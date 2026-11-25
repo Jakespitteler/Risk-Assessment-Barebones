@@ -65,8 +65,10 @@ syncing the folder as well adds little, and it causes problems:
 
 ## Run it
 
-1. In the repo root: `uv run start.py`. If the app is already running in another terminal, it says so and stops.
-   Otherwise it brings the installs in line with the lock files (the exact versions the repo was tested with; it
+1. In the repo root: `uv run start.py`. If a copy of the app was left running, such as by a terminal closed
+   without Ctrl+C, it stops that copy first; if another program, or the app running in another terminal, holds
+   port 8000 or 5173, it says so and stops. Then
+   it brings the installs in line with the lock files (the exact versions the repo was tested with; it
    never upgrades a package), then starts the back end and the front end.
 2. When it prints "The Take 5 app is ready", open the address on that line, <http://localhost:5173>. It is the
    only address it prints. In a GitHub Codespace it prints the Codespace's forwarded address instead.
@@ -102,6 +104,12 @@ root (name models after it to compare them). Vague hazards are judged by Claude 
 made-up hazards. Photos of paper cards are read by the main model unless a line such as
 `TAKE5_AI_SCAN_MODEL=claude-fable-5-2` names another. `uv run test.py backend -m real_ai` runs the two tests
 that call the real AI. Each of these costs a little money; the normal tests and CI never call it.
+
+To use ChatGPT's models instead of Claude's, make the key at <https://platform.openai.com> (with credit and a
+monthly limit, as above), paste it after `TAKE5_AI_KEY=`, and add the line `TAKE5_AI_PROVIDER=chatgpt` to the same
+settings file. An OpenAI API key is billed by use, apart from any ChatGPT subscription. Every AI job then uses
+OpenAI's `gpt-6.2-astra`, and vague hazards `gpt-6-luna`; the model lines above take OpenAI's model names. The
+try scripts try Claude only, so they stop when ChatGPT is chosen.
 
 The ranking page ranks every saved Take 5 while the app is a proof of concept. To rank only today's, add the
 line `TAKE5_RANK_TODAY_ONLY=true` to `backend/.env` and start the app again. Risk by area likewise counts every
