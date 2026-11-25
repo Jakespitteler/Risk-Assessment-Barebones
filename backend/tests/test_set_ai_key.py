@@ -89,7 +89,7 @@ def test_the_empty_key_line_from_the_template_is_filled_in(
 ) -> None:
     """A file copied from `.env.example` keeps its comments and other settings."""
     settings_file.write_text(
-        "﻿# The key.\nTAKE5_AI_KEY=\n# TAKE5_AI_KEY=old-example\n"
+        "\N{BYTE ORDER MARK}# The key.\nTAKE5_AI_KEY=\n# TAKE5_AI_KEY=old-example\n"
         "TAKE5_AI_PROVIDER=chatgpt\n",
         encoding="utf-8",
     )
@@ -101,6 +101,56 @@ def test_the_empty_key_line_from_the_template_is_filled_in(
         "# The key.\nTAKE5_AI_KEY=made-up-key\n# TAKE5_AI_KEY=old-example\n"
         "TAKE5_AI_PROVIDER=chatgpt\n"
     )
+
+
+def test_a_utf16_file_from_powershell_is_saved_again_as_utf8(
+    settings_file: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A file made with PowerShell's `>` keeps its lines and becomes UTF-8."""
+    settings_file.write_text("TAKE5_AI_PROVIDER=chatgpt\n", encoding="utf-16")
+    paste(monkeypatch, "made-up-key")
+
+    assert set_ai_key.main() == 0
+
+    assert settings_file.read_text(encoding="utf-8") == (
+        "TAKE5_AI_PROVIDER=chatgpt\nTAKE5_AI_KEY=made-up-key\n"
+    )
+
+
+def test_an_unreadable_file_is_left_alone(
+    settings_file: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A file that isn't UTF-8 or UTF-16 is kept, with a message, not a stack trace."""
+    unreadable_bytes: bytes = b"TAKE5_AI_PROVIDER=\xff\xfe\xfa\n"
+    settings_file.write_bytes(unreadable_bytes)
+    paste(monkeypatch, "made-up-key")
+
+    assert set_ai_key.main() == 1
+
+    assert settings_file.read_bytes() == unreadable_bytes
+    assert "nothing was saved" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "pasted",
+    ["made-up key", "\x16", "made-up-key\x16", "made-up\tkey"],
+)
+def test_a_paste_with_a_space_or_hidden_character_is_not_saved(
+    pasted: str,
+    settings_file: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A Ctrl+V the terminal didn't paste, or two words, never becomes the key."""
+    paste(monkeypatch, pasted)
+
+    assert set_ai_key.main() == 1
+
+    assert not settings_file.exists()
+    assert "nothing was saved" in capsys.readouterr().out
 
 
 def test_an_old_key_is_replaced_and_a_repeated_line_dropped() -> None:

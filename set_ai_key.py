@@ -12,6 +12,7 @@ one, and every other line is kept. Git ignores `.env`, so the key never leaves t
 computer. The key is never printed.
 """
 
+import codecs
 import getpass
 import sys
 from pathlib import Path
@@ -58,16 +59,57 @@ def with_key(lines: list[str], key: str) -> list[str]:
     return new_lines
 
 
+def is_usable_key(key: str) -> bool:
+    """Tell whether a pasted key can be saved as one settings line.
+
+    No provider's key has a space or a hidden character in it, and one would break
+    the line, so such a paste is a mistake (such as a Ctrl+V the terminal didn't paste).
+
+    Args:
+        key: The pasted key, without spaces at its ends.
+
+    Returns:
+        True when the key is not empty and every character is visible.
+    """
+    return key != "" and all(
+        character.isprintable() and not character.isspace() for character in key
+    )
+
+
+def read_settings_text(settings_file: Path) -> str:
+    """Read the settings file's text, however Windows saved it.
+
+    Args:
+        settings_file: The `.env` file, which exists.
+
+    Returns:
+        The file's text.
+
+    Raises:
+        UnicodeDecodeError: When the file is neither UTF-8 nor UTF-16.
+    """
+    file_bytes: bytes = settings_file.read_bytes()
+    # PowerShell's `>` saves UTF-16, which the app can't read; saving again fixes it.
+    if file_bytes.startswith((codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE)):
+        return file_bytes.decode("utf-16")
+    # A file saved on Windows may start with a byte order mark.
+    return file_bytes.decode("utf-8-sig")
+
+
 def save_key(settings_file: Path, key: str) -> None:
     """Write the key into the settings file, keeping its other lines.
+
+    The file is always written as UTF-8, which the app reads.
 
     Args:
         settings_file: The `.env` file. It is made if it doesn't exist.
         key: The key to save.
+
+    Raises:
+        UnicodeDecodeError: When the existing file is neither UTF-8 nor UTF-16.
     """
     old_lines: list[str] = (
-        # A file saved on Windows may start with a byte order mark.
-        settings_file.read_text(encoding="utf-8-sig").splitlines()
+        read_settings_text(settings_file).splitlines()
         if settings_file.is_file()
         else []
     )
@@ -91,7 +133,20 @@ def main() -> int:
     if not key:
         print("No key was pasted, so nothing was saved.")
         return 1
-    save_key(SETTINGS_FILE, key)
+    if not is_usable_key(key):
+        print(
+            "That has a space or a hidden character in it, so it isn't a key and"
+            " nothing was saved. Copy the key again and paste it.",
+        )
+        return 1
+    try:
+        save_key(SETTINGS_FILE, key)
+    except UnicodeDecodeError:
+        print(
+            "backend/.env isn't saved as text this command can read, so nothing was"
+            " saved. Save it as UTF-8 in VS Code, or delete it, and run this again.",
+        )
+        return 1
     print("Saved the key in backend/.env. Start the app again: uv run start.py")
     return 0
 
