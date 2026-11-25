@@ -47,6 +47,7 @@ class _ProviderModels(BaseModel):
             provider's default), and takes `network_time_limit_seconds` for a job
             that waits longer than usual.
         quick_model: The provider's fastest model, for short jobs (decision D61).
+        key_page: Where a person makes a key for the provider's API.
         build_photo_reader: Builds a model that also reads photos, as `build` does,
             or None when the provider's adapter can't read one (task 0033).
     """
@@ -55,6 +56,7 @@ class _ProviderModels(BaseModel):
 
     build: Callable[..., LanguageModel]
     quick_model: str
+    key_page: str
     build_photo_reader: Callable[..., PhotoReadingModel] | None = None
 
 
@@ -63,11 +65,13 @@ _PROVIDERS: dict[AiProvider, _ProviderModels] = {
     AiProvider.CLAUDE: _ProviderModels(
         build=claude.ClaudeModel,
         quick_model=claude.QUICK_MODEL,
+        key_page=claude.KEY_PAGE,
         build_photo_reader=claude.ClaudeModel,
     ),
     AiProvider.CHATGPT: _ProviderModels(
         build=chatgpt.ChatGptModel,
         quick_model=chatgpt.QUICK_MODEL,
+        key_page=chatgpt.KEY_PAGE,
         build_photo_reader=chatgpt.ChatGptModel,
     ),
 }
@@ -146,7 +150,32 @@ def create_app(
         BOOKLET_TEMPLATE,
     )
     app.include_router(create_scan_router(scanner))
+    if app_settings.usable_ai_key is None:
+        _logger.warning(missing_key_help(app_settings.ai_provider))
     return app
+
+
+def missing_key_help(provider: AiProvider) -> str:
+    """Say how to turn the AI on when no key is set (task 0046).
+
+    The command sits on a line of its own, so it can be copied straight from the
+    terminal. It is the same on Windows, Mac and Linux.
+
+    Args:
+        provider: The provider in the settings, whose key page is named.
+
+    Returns:
+        The lines to log.
+    """
+    key_page: str = _PROVIDERS[provider].key_page
+    return (
+        "No AI key is set, so the app runs without AI. To turn it on, make a key at\n"
+        f"{key_page}, then run this in the repo root and paste the key when asked:\n"
+        "\n"
+        "    uv run set_ai_key.py\n"
+        "\n"
+        "It saves the key in backend/.env. Then start the app again."
+    )
 
 
 def _show_app_logs() -> None:

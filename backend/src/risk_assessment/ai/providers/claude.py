@@ -27,6 +27,8 @@ DEFAULT_MODEL: str = "claude-opus-5-5"
 # The fastest and cheapest model, for a short yes-or-no job such as judging whether a
 # hazard is vague (decision D61).
 QUICK_MODEL: str = "claude-haiku-5-5"
+# Where a person makes a key for Anthropic's API.
+KEY_PAGE: str = "https://console.anthropic.com/settings/keys"
 # Just over the service's 10 seconds, so a call the service has given up on also
 # ends soon, instead of keeping its thread (and a stopping server) waiting.
 NETWORK_TIME_LIMIT_SECONDS: float = 11
