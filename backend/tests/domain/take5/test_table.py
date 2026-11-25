@@ -18,10 +18,12 @@ from risk_assessment.domain.take5.table import (
     Take5Filters,
     Take5Row,
     column_values,
+    left_by_other_filters,
     matches,
     table_csv,
     table_rows,
     take5_row,
+    thought_gap_choices,
 )
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
 from risk_assessment.domain.take5.verdict import Verdict
@@ -259,6 +261,25 @@ def test_example_154_two_ticked_verdicts_keep_both() -> None:
 
     assert matches(row(started(SATURDAY_MORNING)), ticked)
     assert not matches(row(stopped), ticked)
+
+
+def test_example_155_a_columns_list_narrows_by_the_other_filters_only() -> None:
+    """Ticking 13 leaves only that row for the gaps list, but every importance (E6)."""
+    rows: tuple[Take5Row, ...] = (
+        row(started(SATURDAY_MORNING)),
+        row(started(SATURDAY_MORNING, ranked_take5(description="Moving wheel"))),
+    )
+    ticked = Take5Filters(importance=(13,))
+
+    gaps_list: tuple[str, ...] = thought_gap_choices(
+        left_by_other_filters(rows, ticked, "thought_gaps"),
+    )
+    importances: list[int] = [
+        each.importance for each in left_by_other_filters(rows, ticked, "importance")
+    ]
+
+    assert gaps_list == (SOME_GAPS,)
+    assert importances == [8, 13]
 
 
 def test_a_columns_values_are_listed_once_ignoring_capitals_a_to_z() -> None:

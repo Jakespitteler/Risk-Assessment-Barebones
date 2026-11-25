@@ -19,7 +19,7 @@ filters that aren't a column stay above the table, and one button turns every fi
   weekday, time of day and from paper stay above (spec E6).
 - [x] The back end does every column filter, so the CSV holds the rows shown, and the filters are kept in the
   page's address.
-- [x] "Clear filters" is always beside the count, outside the folded filters, and turns every filter off,
+- [x] "Clear filters" is always beside "Download CSV", outside the folded filters, and turns every filter off,
   including the typed ones.
 - [x] Worked examples 151 to 154 in the spec, with tests; Vitest and Playwright tests at 360 px and 1280 px,
   light and dark, with screenshots.

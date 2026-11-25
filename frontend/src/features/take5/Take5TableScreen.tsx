@@ -198,12 +198,22 @@ export function Take5TableScreen({
         <p role="status">Loading the Take 5s…</p>
       ) : (
         <>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p role="status" className="text-lg font-bold">
-              {rows.length === 1
-                ? "1 Take 5 matches."
-                : `${String(rows.length)} Take 5s match.`}
-            </p>
+          <p role="status" className="text-lg font-bold">
+            {rows.length === 1
+              ? "1 Take 5 matches."
+              : `${String(rows.length)} Take 5s match.`}
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:flex">
+            {/* While a new filter loads, the old rows still show, so the
+                download waits for the rows it would hold. */}
+            {rows.length > 0 && !table.isPlaceholderData && (
+              <a
+                className={`${DOWNLOAD_LINK} grow`}
+                href={take5TableCsvUrl(filters)}
+              >
+                Download CSV
+              </a>
+            )}
             <Button
               variant="secondary"
               disabled={filters.size === 0}
@@ -212,13 +222,6 @@ export function Take5TableScreen({
               Clear filters
             </Button>
           </div>
-          {/* While a new filter loads, the old rows still show, so the
-              download waits for the rows it would hold. */}
-          {rows.length > 0 && !table.isPlaceholderData && (
-            <a className={DOWNLOAD_LINK} href={take5TableCsvUrl(filters)}>
-              Download CSV
-            </a>
-          )}
           <RowsTable
             rows={rows}
             filterOf={(title) => {
@@ -364,9 +367,9 @@ function RowsTable({
               <th
                 key={title}
                 scope="col"
-                className="px-3 py-2 align-top font-bold whitespace-nowrap"
+                className="px-3 py-2 align-bottom font-bold whitespace-nowrap"
               >
-                <span className="flex flex-col items-start">
+                <span className="flex items-center gap-1">
                   {title}
                   {filterOf(title)}
                 </span>
@@ -387,7 +390,7 @@ function RowsTable({
               <td className="px-3 py-2 text-lg font-extrabold">
                 {row.importance}
               </td>
-              <td className="px-3 py-2">
+              <td className="min-w-56 px-3 py-2">
                 <a
                   href={`/take5s/${row.id}`}
                   className="inline-flex min-h-12 items-center font-semibold underline underline-offset-4 hover:decoration-2 focus-visible:outline-4 focus-visible:outline-focus"

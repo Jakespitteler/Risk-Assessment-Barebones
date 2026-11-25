@@ -2,18 +2,22 @@
 
 from datetime import UTC, datetime, tzinfo
 from typing import ClassVar
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
 from risk_assessment.domain.take5.areas import risk_by_area
 from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.table import (
+    VERDICTS,
     Take5Filters,
     Take5Row,
     column_values,
+    left_by_other_filters,
     matches,
     table_csv,
     table_rows,
+    thought_gap_choices,
 )
 from risk_assessment.domain.take5.template import Take5Template
 from risk_assessment.services.ports import Take5Repository
@@ -25,18 +29,24 @@ _EVERY_TAKE5: datetime = datetime.min.replace(tzinfo=UTC)
 class Take5Table(BaseModel):
     """The rows let through, and the values each column's filter can tick.
 
+    Each column lists only the values of the rows the other filters keep (E6).
+
     Attributes:
         rows: The rows, the most important first (E2).
-        areas: Every area with a Take 5, by the spelling typed most (A1).
-        bands: The card's risk bands, lowest first.
-        jobs: Every job, each once, A to Z (E6).
-        workers: Every worker, each once, A to Z (E6).
-        importances: Every importance, highest first (E6).
+        verdicts: The verdicts, in the order of `VERDICTS`.
+        areas: The areas, by the spelling typed most (A1), A to Z.
+        bands: The risk bands, lowest first.
+        thought_gap_choices: The thought gaps choices some row matches.
+        jobs: The jobs, each once, A to Z.
+        workers: The workers, each once, A to Z.
+        importances: The importances, highest first.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     rows: tuple[Take5Row, ...]
+    verdicts: tuple[str, ...]
+    thought_gap_choices: tuple[str, ...]
     areas: tuple[str, ...]
     bands: tuple[str, ...]
     jobs: tuple[str, ...]
@@ -69,19 +79,34 @@ class Take5TableService:
         """
         take5s: tuple[SavedTake5, ...] = self._repository.list_saved_since(_EVERY_TAKE5)
         every_row: tuple[Take5Row, ...] = table_rows(take5s, Take5Filters(), zone)
+
+        def left(column: str) -> tuple[Take5Row, ...]:
+            """Keep the rows every filter but this column's own lets through."""
+            return left_by_other_filters(every_row, filters, column)
+
+        area_ids: set[UUID] = {row.id for row in left("area")}
+        verdicts: set[str] = {row.verdict for row in left("verdict")}
+        bands: set[str | None] = {row.highest_band for row in left("band")}
         return Take5Table(
             rows=tuple(row for row in every_row if matches(row, filters)),
+            verdicts=tuple(verdict for verdict in VERDICTS if verdict in verdicts),
+            thought_gap_choices=thought_gap_choices(left("thought_gaps")),
             areas=tuple(
                 sorted(
-                    (area.name for area in risk_by_area(take5s)),
+                    (
+                        area.name
+                        for area in risk_by_area(
+                            [take5 for take5 in take5s if take5.id in area_ids],
+                        )
+                    ),
                     key=str.casefold,
                 ),
             ),
-            bands=self.bands,
-            jobs=column_values(row.job for row in every_row),
-            workers=column_values(row.worker_name for row in every_row),
+            bands=tuple(band for band in self.bands if band in bands),
+            jobs=column_values(row.job for row in left("job")),
+            workers=column_values(row.worker_name for row in left("worker")),
             importances=tuple(
-                sorted({row.importance for row in every_row}, reverse=True),
+                sorted({row.importance for row in left("importance")}, reverse=True),
             ),
         )
 

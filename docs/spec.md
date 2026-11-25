@@ -489,12 +489,13 @@ It works out each value by the rules above; nothing new is decided about a Take 
   spreadsheet formula (with =, +, -, @, a tab or a return) starts with an apostrophe instead, so it is never run.
 - **E6 Column filters.** Each column's heading has a filter button that opens a list of the values to tick, as a
   spreadsheet does (task 0048, D135 to D137). A row is kept when its value is any of the ones ticked, and nothing
-  ticked keeps every row. Importance lists every importance, highest first; job and worker list each value once,
-  ignoring capitals and spaces at either end, A to Z, with blanks left out; verdict, highest risk (band) and
-  location (area, matched as A1 matches) take E4's choices, moved from above the table into their columns; thought
-  gaps offers "No gaps", "Some gaps" (1 or more) and "Rushed" (W5). The lists hold every saved Take 5's values,
-  whatever else is filtered. A long list has a box to find a value in it. Every filter, above the table or in a
-  column, narrows both the page and the CSV.
+  ticked keeps every row. As in a spreadsheet, a column lists only the values of the rows that every other filter
+  keeps, so the lists narrow as filters are set, while its own ticks stay listed. Importance lists importances,
+  highest first; job and worker list each value once, ignoring capitals and spaces at either end, A to Z, with
+  blanks left out; verdict, highest risk (band) and location (area, matched as A1 matches) take E4's choices, moved
+  from above the table into their columns, in E4's order; thought gaps offers "No gaps", "Some gaps" (1 or more)
+  and "Rushed" (W5), each only when some row matches it. A long list has a box to find a value in it. Every filter,
+  above the table or in a column, narrows both the page and the CSV.
 
 ### Worked examples
 
@@ -737,6 +738,7 @@ started on Saturday 21 Nov 2026 at 7:00 am in Perth.
 | 152 | Importance 13 and 18 ticked; the careful one (8) and one with a hazard "Moving wheel" (13) | Only the 13 | E6 |
 | 153 | "No gaps" and "Rushed" ticked; the careful one, one filled in in 1 minute, one with "Moving wheel" | The first two | E6, W5 |
 | 154 | Verdicts "Good to go" and "Not finished" ticked; one "Good to go", one "Don't start yet" | Only the first | E4, E6 |
+| 155 | Importance 13 ticked; the careful one (8) and one with "Moving wheel" (13) | The thought gaps list offers only "Some gaps"; the importance list still offers 8 and 13 | E6 |
 
 ## Features
 
@@ -913,11 +915,12 @@ or takes them into a spreadsheet, on a desktop or a phone.
 - Acceptance: the filters above the table (words, a date range, weekday, time of day and from paper) and in its
   column headings (importance, job, verdict, highest risk, thought gaps, worker and location, each a list to
   tick) are kept in the page's address, so a link opens the same view, and the page says how many Take 5s match.
-- Acceptance: "Clear filters" is always beside the count, outside the folded filters, and turns every filter
-  off; it can't be pressed while none is on.
+- Acceptance: "Clear filters" is always beside "Download CSV", outside the folded filters, and turns every
+  filter off; it can't be pressed while none is on.
 - Acceptance: "Download CSV" downloads exactly the rows shown.
-- Acceptance: on a 360 px phone the table scrolls sideways inside its box and the page never does.
-- Acceptance: worked examples 141 to 154 pass as tests.
+- Acceptance: when the table is wider than the screen, it scrolls sideways inside its box instead of squeezing
+  its headings, and the page never does.
+- Acceptance: worked examples 141 to 155 pass as tests.
 
 ## Out of scope (for now)
 
@@ -1094,8 +1097,8 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D132 | Time of day (2026-11-23) | The clock where it was started, in four 6-hour blocks, read in the asker's zone as the phone's isn't saved (E3) | The hour into a shift, which needs each site's shift times |
 | D133 | Which OpenAI models ChatGPT uses (2026-11-24) | `TAKE5_AI_PROVIDER=chatgpt` with an OpenAI key. OpenAI's flagship, `gpt-6.2-astra`, does every job but vague hazards, which its most efficient model, `gpt-6-luna`, judges, as Haiku does for Claude (D61). The same model settings work for either provider | One model for every job (proposed by Claude, for Jake to approve) |
 | D135 | Column filters (2026-11-25) | A filter button in each column's heading opens a list of its values to tick, as in a spreadsheet; verdict, risk band and area move from above into their columns, and the rest stay above (E6) | A row of filter boxes under the headings; every filter above as well |
-| D136 | What each column lists (2026-11-25) | Every saved Take 5's values: importances highest first, jobs and workers once each A to Z, thought gaps as "No gaps", "Some gaps" or "Rushed". The started column has none, as the date range above covers it (E6) | Only the values left by the other filters, as Excel does; a list of days to tick |
-| D137 | Clear filters (2026-11-25) | Always shown beside the count, outside the folded filters, and can't be pressed while no filter is on | Shown only while a filter is on, inside the folded filters |
+| D136 | What each column lists (2026-11-25) | The values of the rows the other filters keep, as Excel does (Jake): importances highest first, jobs and workers once each A to Z, thought gaps as "No gaps", "Some gaps" or "Rushed". The started column has none, as the date range above covers it (E6) | Every saved Take 5's values, whatever is filtered; a list of days to tick |
+| D137 | Clear filters (2026-11-25) | Always shown beside "Download CSV" (Jake), outside the folded filters, and can't be pressed while no filter is on | Shown only while a filter is on, inside the folded filters |
 
 ## Open questions
 

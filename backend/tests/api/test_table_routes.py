@@ -29,8 +29,9 @@ def test_the_table_lists_every_take5_most_important_first(
     assert [row["importance"] for row in body["rows"]] == [18, 8]
     assert body["rows"][1]["weekday"] == "Saturday"
     assert body["areas"] == ["Example workshop"]
-    assert body["bands"] == ["Low", "Moderate", "High", "Extreme"]
-    assert body["verdicts"] == ["Good to go", "Don't start yet", "Not finished"]
+    # Only the bands some Take 5 has, lowest first (E6).
+    assert body["bands"] == ["Moderate", "Extreme"]
+    assert body["verdicts"] == ["Good to go"]
     assert body["weekdays"][0] == "Monday"
     assert body["times_of_day"] == [
         "Midnight to 6 am",
@@ -158,10 +159,12 @@ def test_the_column_filters_narrow_the_rows_and_the_csv(
     exported: Response = client.get("/api/take5-table.csv", params=ticked)
 
     assert [row["importance"] for row in page["rows"]] == [13]
-    assert page["thought_gap_choices"] == ["No gaps", "Some gaps", "Rushed"]
+    # Each list holds what the other filters leave, as a spreadsheet's does.
+    assert page["thought_gap_choices"] == ["Some gaps"]
     assert page["jobs"] == ["Change tyre on LV12"]
     assert page["workers"] == ["Sam Example"]
-    assert page["importances"] == [13, 8]
+    assert page["importances"] == [13]
+    assert page["verdicts"] == ["Good to go"]
     assert len(exported.text.splitlines()) == 2
 
 

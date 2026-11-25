@@ -32,13 +32,14 @@ for (const { width, name } of [
     // Each heading's filter opens a list of the column's values to tick (E6).
     await table.getByRole("button", { name: "Filter Highest risk" }).click();
     const list = page.getByRole("dialog", { name: "Filter highest risk" });
+    // The list holds only the bands of the rows the other filters keep (E6).
+    await expect(list.getByLabel("Low")).toHaveCount(0);
     await list.getByLabel("Extreme").check();
-    await list.getByLabel("High", { exact: true }).check();
     await capture(page, `${name}-ticking`);
     await list.getByRole("button", { name: "Apply" }).click();
-    await expect(page).toHaveURL(/band=Extreme&band=High/);
+    await expect(page).toHaveURL(/band=Extreme/);
     await expect(
-      table.getByRole("button", { name: "Filter Highest risk, 2 ticked" }),
+      table.getByRole("button", { name: "Filter Highest risk, 1 ticked" }),
     ).toBeFocused();
     await expect(table.getByText("Needs a JHA").first()).toBeVisible();
     await capture(page, name);

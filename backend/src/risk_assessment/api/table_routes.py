@@ -9,9 +9,7 @@ from pydantic import AfterValidator, BeforeValidator
 
 from risk_assessment.api.schemas import FormErrors, Take5TablePage
 from risk_assessment.domain.take5.table import (
-    THOUGHT_GAP_CHOICES,
     TIMES_OF_DAY,
-    VERDICTS,
     WEEKDAYS,
     Take5Filters,
 )
@@ -171,12 +169,12 @@ def create_table_router(service: Take5TableService) -> APIRouter:
         table: Take5Table = service.table(filters, ZoneInfo(zone))
         return Take5TablePage(
             rows=table.rows,
-            verdicts=VERDICTS,
+            verdicts=table.verdicts,
             bands=table.bands,
             areas=table.areas,
             weekdays=WEEKDAYS,
             times_of_day=TIMES_OF_DAY,
-            thought_gap_choices=THOUGHT_GAP_CHOICES,
+            thought_gap_choices=table.thought_gap_choices,
             jobs=table.jobs,
             workers=table.workers,
             importances=table.importances,

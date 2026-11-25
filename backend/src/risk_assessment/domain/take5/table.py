@@ -302,6 +302,46 @@ def _has_thought_gaps(row: Take5Row, choice: str) -> bool:
     return choice == RUSHED and row.rushed
 
 
+def left_by_other_filters(
+    rows: Iterable[Take5Row],
+    filters: Take5Filters,
+    column: str,
+) -> tuple[Take5Row, ...]:
+    """Keep the rows every filter but one column's own lets through (E6).
+
+    A column's list of values to tick comes from these rows, as a spreadsheet's does,
+    so it narrows as the other filters are set, and still shows the column's own
+    ticked values.
+
+    Args:
+        rows: Every row of the table.
+        filters: What to narrow the table to.
+        column: The name of the column's filter in `Take5Filters`, such as "job".
+
+    Returns:
+        The rows the other filters keep, in the same order.
+    """
+    others: Take5Filters = filters.model_copy(update={column: ()})
+    return tuple(row for row in rows if matches(row, others))
+
+
+def thought_gap_choices(rows: Iterable[Take5Row]) -> tuple[str, ...]:
+    """List the thought gaps choices that at least one row matches (E6).
+
+    Args:
+        rows: The rows the other filters keep.
+
+    Returns:
+        The choices, in the order of `THOUGHT_GAP_CHOICES`.
+    """
+    kept: tuple[Take5Row, ...] = tuple(rows)
+    return tuple(
+        choice
+        for choice in THOUGHT_GAP_CHOICES
+        if any(_has_thought_gaps(row, choice) for row in kept)
+    )
+
+
 def column_values(values: Iterable[str]) -> tuple[str, ...]:
     """List a column's values to tick, each once, ignoring capitals and end spaces (E6).
 

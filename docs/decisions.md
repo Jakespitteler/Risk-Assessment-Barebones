@@ -8,16 +8,17 @@ Newest first. One short entry per non-obvious decision.
   tick (spec E6, D135 to D137). A row with any ticked value is kept. Verdict, risk band and area move from above
   into their columns, so each filter shows once; words, dates, weekday, time of day and from paper stay above.
   The back end does every filter, taking a column's filter once per ticked value, so the CSV still holds the rows
-  shown, and it sends each column's values. The list opens over the page, so the table's sideways scrolling box
-  on a phone never cuts it off. "Clear filters" sits beside the count, outside the folded filters, and can't be
+  shown, and it sends each column's values: those of the rows every other filter keeps, so the lists narrow as in
+  Excel. The list opens over the page, so the table's sideways scrolling box
+  on a phone never cuts it off. "Clear filters" sits beside "Download CSV", outside the folded filters, and can't be
   pressed while no filter is on.
 - Why: Jake asked on 2026-11-25 to filter on the columns, keep the other filters above, and have a button to
   clear them, and chose the spreadsheet way over a row of boxes under the headings.
 - Not chosen: a row of filter boxes (built first, then replaced at Jake's choice); every filter above as well;
-  filtering in the browser (the CSV would differ); only the values the other filters leave, as Excel lists them
-  (more back-end work, and a list that changes as you filter).
-- Decided by: human (spreadsheet-style column filters, Clear filters), agent (what each column lists, for Jake to
-  approve).
+  filtering in the browser (the CSV would differ); every saved Take 5's values in each list, whatever is filtered
+  (Jake chose Excel's way).
+- Decided by: human (spreadsheet-style column filters, lists narrowed as in Excel, Clear filters beside Download
+  CSV), agent (the order of each list).
 
 ## 2026-11-24: ChatGPT is a second AI provider, with the `openai` package (task 0045)
 

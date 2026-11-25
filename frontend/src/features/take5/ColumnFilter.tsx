@@ -50,7 +50,7 @@ export function ColumnFilter({
         onClick={() => {
           setOpen(true);
         }}
-        className={`-ml-3 inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-1 rounded-lg px-1 hover:bg-surface-hover focus-visible:outline-4 focus-visible:outline-focus ${ticked.length > 0 ? "bg-action text-on-action hover:bg-action-hover" : "text-ink"}`}
+        className={`inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-1 rounded-lg px-1 hover:bg-surface-hover focus-visible:outline-4 focus-visible:outline-focus ${ticked.length > 0 ? "bg-action text-on-action hover:bg-action-hover" : "text-ink"}`}
       >
         <FunnelPicture filled={ticked.length > 0} />
         {ticked.length > 0 && (
@@ -171,7 +171,9 @@ function TickList({
           <legend className="sr-only">{title} values to tick</legend>
           {shown.length === 0 && (
             <p className="py-2 text-ink-muted">
-              {values.length === 0 ? "Nothing to filter yet." : "None found."}
+              {values.length === 0
+                ? "Nothing to tick with the other filters on."
+                : "None found."}
             </p>
           )}
           {shown.map((value) => (
