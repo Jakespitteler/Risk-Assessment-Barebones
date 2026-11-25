@@ -51,6 +51,7 @@ pytestmark
 pythonpath
 reinstalls
 reloader
+setx
 Spitteler
 sqlalchemy
 Starlette

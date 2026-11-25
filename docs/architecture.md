@@ -232,6 +232,7 @@ install.py                 installs everything again from scratch: checks git an
 test.py                    runs the tests, all or one kind, passing extra words to the test tool
 check.py                   runs every check, as CI does; `--fix` fixes what the tools can fix;
                            `--no-front-end` skips frontend/ (CI, for Markdown-only changes)
+set_ai_key.py              asks for the AI's key without showing it and saves it in backend/.env (task 0046)
 ```
 
 The four files directly under `domain/` know nothing about a Take 5. They are the shared building blocks, and
@@ -391,8 +392,10 @@ so a failed call is logged in one line and not as a bug (see Logging).
 The worker's name is never passed to an adapter (spec C1), except on a paper card's photo, which the AI reads
 it off; it is never sent to any other AI call (task 0033). The AI's key lives in the server's environment (or
 `backend/.env` on a developer's computer, copied from the template `backend/.env.example`, which names every
-setting and holds no key) and is never in the repo or sent to the phone. With no key, no AI is plugged in: the
-fixed question is always asked and the word rule judges every hazard. `api/app.py` has one table from
+setting and holds no key) and is never in the repo or sent to the phone. `uv run set_ai_key.py`, in the repo root,
+asks for the key without showing it and writes that line (task 0046). With no key, no AI is plugged in: the
+fixed question is always asked and the word rule judges every hazard, and `api/app.py` logs one warning naming
+the provider's key page (each adapter's `KEY_PAGE`) and that command. `api/app.py` has one table from
 `AiProvider` (a setting) to the adapter that builds that provider's models and the name of its quick model, which
 judges hazards unless `TAKE5_AI_HAZARD_MODEL` names another (spec D61). The main model reads photos of paper
 cards, at medium effort, unless `TAKE5_AI_SCAN_MODEL` names another (task 0033).
