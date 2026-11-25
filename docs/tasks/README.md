@@ -34,6 +34,8 @@ Built out of the order:
 - **0043, a table of saved Take 5s with filters and CSV export.** Jake asked on 2026-11-23, ahead of 0039.
 - **0044, start.py frees its ports from a leftover copy of the app.** Jake asked on 2026-11-24.
 - **0045, ChatGPT as a second AI provider.** Jake asked on 2026-11-24.
+- **0046, say how to set the AI key when none is set.** Jake asked on 2026-11-25.
+- **0047, the hazard being assessed stands out.** Jake asked on 2026-11-25.
 
 To investigate when we get to them (Jake, 2026-11-20). Each file holds the questions to settle first; none has
 a place in the order yet:

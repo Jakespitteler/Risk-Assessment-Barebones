@@ -81,8 +81,8 @@ def test_fix_formats_fixes_and_writes_the_api_types_without_checking() -> None:
 
 
 def test_fix_and_check_cover_the_commands_in_the_repo_root() -> None:
-    """Ruff and Pyright see start.py, install.py, check.py and test.py too."""
-    for name in ("start.py", "install.py", "check.py", "test.py"):
+    """Ruff and Pyright see every command in the repo root too."""
+    for name in ("start.py", "install.py", "check.py", "test.py", "set_ai_key.py"):
         assert f"../{name}" in check.PYTHON_FOLDERS
 
 

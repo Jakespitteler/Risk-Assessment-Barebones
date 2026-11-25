@@ -1078,6 +1078,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D131 | What the CSV holds (2026-11-23) | Every value, workers' names included, as the saved list shows them (E5) | Fewer columns; no names |
 | D132 | Time of day (2026-11-23) | The clock where it was started, in four 6-hour blocks, read in the asker's zone as the phone's isn't saved (E3) | The hour into a shift, which needs each site's shift times |
 | D133 | Which OpenAI models ChatGPT uses (2026-11-24) | `TAKE5_AI_PROVIDER=chatgpt` with an OpenAI key. OpenAI's flagship, `gpt-6.2-astra`, does every job but vague hazards, which its most efficient model, `gpt-6-luna`, judges, as Haiku does for Claude (D61). The same model settings work for either provider | One model for every job (proposed by Claude, for Jake to approve) |
+| D134 | Which hazard is being assessed (2026-11-25) | On the before, controls and after pages, the hazard shows under the page's heading in a card with an amber edge, labelled "Hazard N of M" (task 0047) | The hazard as the page's heading; a bold "Hazard:" before the plain line |
 
 ## Open questions
 

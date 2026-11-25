@@ -1168,7 +1168,8 @@ it("opens the assess step on the first hazard's before rating", async () => {
   expect(
     await screen.findByRole("heading", { name: "Before any controls" }),
   ).toBeTruthy();
-  expect(screen.getByText("Step 4 of 5 · Hazard 1 of 1")).toBeTruthy();
+  expect(screen.getByText("Step 4 of 5")).toBeTruthy();
+  expect(screen.getByText("Hazard 1 of 1")).toBeTruthy();
 });
 
 it("counts the page a draft kept before the step bar was left on as reached", () => {
