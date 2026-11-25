@@ -20,6 +20,7 @@ from risk_assessment.api.app import (
     build_hazard_judge,
     build_take5_ranker,
     create_app,
+    missing_key_help,
 )
 from risk_assessment.domain.take5.ranking import AI_RANKING_TIME_LIMIT_SECONDS
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
@@ -238,3 +239,47 @@ def test_chatgpt_reads_cards_at_medium_effort(monkeypatch: pytest.MonkeyPatch) -
 
     assert api.requests[0]["model"] == chatgpt.DEFAULT_MODEL
     assert api.requests[0]["reasoning"] == {"effort": "medium"}
+
+
+@pytest.mark.parametrize(
+    ("provider", "key_page"),
+    [
+        (AiProvider.CLAUDE, "https://console.anthropic.com/settings/keys"),
+        (AiProvider.CHATGPT, "https://platform.openai.com/api-keys"),
+    ],
+)
+def test_with_no_key_the_log_says_how_to_set_one(
+    provider: AiProvider,
+    key_page: str,
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The warning names the provider's key page and the command, on its own line."""
+    with caplog.at_level(logging.WARNING, logger="risk_assessment"):
+        create_app(
+            settings=Settings(
+                ai_key=SecretStr("  "),
+                ai_provider=provider,
+                database_path=tmp_path / "take5.sqlite3",
+            ),
+        )
+
+    assert caplog.messages == [missing_key_help(provider)]
+    assert key_page in caplog.messages[0]
+    assert "    uv run set_ai_key.py\n" in caplog.messages[0]
+
+
+def test_with_a_key_the_log_asks_for_none(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A set key means no warning about it."""
+    with caplog.at_level(logging.WARNING, logger="risk_assessment"):
+        create_app(
+            settings=Settings(
+                ai_key=SecretStr("made-up-key"),
+                database_path=tmp_path / "take5.sqlite3",
+            ),
+        )
+
+    assert "set_ai_key" not in caplog.text

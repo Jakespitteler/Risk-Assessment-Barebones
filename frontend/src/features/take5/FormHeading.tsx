@@ -46,8 +46,6 @@ export function FormHeading({
       />
       <p className="text-sm font-bold tracking-wide text-ink-muted uppercase">
         Step {step} of {STEP_COUNT}
-        {"hazard" in stage &&
-          ` · Hazard ${String(stage.hazard + 1)} of ${String(hazardCount)}`}
       </p>
       <h1
         ref={headingRef}
@@ -57,10 +55,38 @@ export function FormHeading({
         {TITLES[stage.page]}
       </h1>
       {"hazard" in stage && (
-        <p className="text-lg font-semibold [overflow-wrap:anywhere]">
-          {hazardDescription || `Hazard ${String(stage.hazard + 1)}`}
-        </p>
+        <HazardCard
+          hazardNumber={stage.hazard + 1}
+          hazardCount={hazardCount}
+          hazardDescription={hazardDescription}
+        />
       )}
     </header>
+  );
+}
+
+/**
+ * The hazard the worker is rating or controlling, in its own card with an amber edge, so
+ * it stands out from the page's text at a glance (task 0047).
+ */
+function HazardCard({
+  hazardNumber,
+  hazardCount,
+  hazardDescription,
+}: {
+  hazardNumber: number;
+  hazardCount: number;
+  hazardDescription: string;
+}) {
+  const hazardLabel = `Hazard ${String(hazardNumber)} of ${String(hazardCount)}`;
+  return (
+    <div className="rounded-lg border-l-4 border-brand bg-surface px-4 py-3 shadow-sm">
+      <p className="text-sm font-bold tracking-wide text-ink-muted uppercase">
+        {hazardLabel}
+      </p>
+      <p className="text-lg font-semibold [overflow-wrap:anywhere]">
+        {hazardDescription || `Hazard ${String(hazardNumber)}`}
+      </p>
+    </div>
   );
 }
