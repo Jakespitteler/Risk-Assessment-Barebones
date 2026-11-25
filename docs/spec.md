@@ -1017,7 +1017,7 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D126 | Fixing a paper card (2026-11-21) | Not offered, and refused: whoever checks a card isn't the worker who wrote it, and the proof of concept stays simple (P6) | "Fix this Take 5" on the checker's phone, copied from someone else's card |
 | D127 | Which date a ranked paper card shows (2026-11-21) | The date on the card, with its time when it has one; the ranking's API sends `started_at` and `from_paper` (P5) | The time it was scanned, the same for every card in a batch |
 | D133 | Which OpenAI models ChatGPT uses (2026-11-24) | `TAKE5_AI_PROVIDER=chatgpt` with an OpenAI key. OpenAI's flagship, `gpt-6.2-astra`, does every job but vague hazards, which its most efficient model, `gpt-6-luna`, judges, as Haiku does for Claude (D61). The same model settings work for either provider | One model for every job (proposed by Claude, for Jake to approve) |
-| D134 | Which hazard is being assessed (2026-11-25) | On the before, controls and after pages, the hazard shows under the page's heading in a white card with an amber edge, labelled "Hazard N of M" (task 0047) | The hazard as the page's heading; a bold "Hazard:" before the plain line |
+| D134 | Which hazard is being assessed (2026-11-25) | On the before, controls and after pages, the hazard shows under the page's heading in a card with an amber edge, labelled "Hazard N of M" (task 0047) | The hazard as the page's heading; a bold "Hazard:" before the plain line |
 
 ## Open questions
 
