@@ -1,4 +1,4 @@
-"""Integration tests for the Take 5 table and its CSV export (spec E1 to E5)."""
+"""Integration tests for the Take 5 table and its CSV export (spec E1 to E6)."""
 
 from typing import Any
 
@@ -114,7 +114,7 @@ def test_a_blank_filter_keeps_every_row(
             "from_paper",
             "job",
             "worker",
-            "min_importance",
+            "importance",
             "thought_gaps",
         )
     }
@@ -125,7 +125,7 @@ def test_a_blank_filter_keeps_every_row(
             "band",
             "weekday",
             "time_of_day",
-            "min_importance",
+            "importance",
             "thought_gaps",
         )
     }
@@ -142,36 +142,34 @@ def test_the_column_filters_narrow_the_rows_and_the_csv(
     client: TestClient,
     repository: SqliteTake5Repository,
 ) -> None:
-    """E6: the job, worker, importance and thought gaps columns narrow both."""
+    """E6: several ticked values per column narrow both, and each list is sent."""
     repository.add(started(SATURDAY_MORNING))
     repository.add(
         started(SATURDAY_MORNING, ranked_take5(description="Moving wheel")),
     )
-    columns: dict[str, str] = {
-        "job": "LV12",
-        "worker": "sam",
-        "min_importance": "13",
-        "thought_gaps": "Some gaps",
+    ticked: dict[str, str | list[str]] = PERTH | {
+        "job": "change tyre on LV12",
+        "worker": "Sam Example",
+        "importance": ["13", "18"],
+        "thought_gaps": ["Some gaps", "Rushed"],
     }
 
-    page: dict[str, Any] = client.get(
-        "/api/take5-table",
-        params=PERTH | columns,
-    ).json()
-    exported: Response = client.get("/api/take5-table.csv", params=PERTH | columns)
+    page: dict[str, Any] = client.get("/api/take5-table", params=ticked).json()
+    exported: Response = client.get("/api/take5-table.csv", params=ticked)
 
     assert [row["importance"] for row in page["rows"]] == [13]
     assert page["thought_gap_choices"] == ["No gaps", "Some gaps", "Rushed"]
+    assert page["jobs"] == ["Change tyre on LV12"]
+    assert page["workers"] == ["Sam Example"]
+    assert page["importances"] == [13, 8]
     assert len(exported.text.splitlines()) == 2
 
 
-def test_an_importance_that_isnt_a_whole_number_of_0_or_more_is_a_422(
-    client: TestClient,
-) -> None:
-    """E6: "-1" or "high" can't be read, so it is a form error."""
-    responses: list[Response] = [
-        client.get("/api/take5-table", params=PERTH | {"min_importance": value})
-        for value in ("-1", "high")
-    ]
+def test_an_importance_that_is_not_a_number_is_a_422(client: TestClient) -> None:
+    """E6: "high" can't be read, so it is a form error."""
+    response: Response = client.get(
+        "/api/take5-table",
+        params=PERTH | {"importance": "high"},
+    )
 
-    assert [response.status_code for response in responses] == [422, 422]
+    assert response.status_code == 422

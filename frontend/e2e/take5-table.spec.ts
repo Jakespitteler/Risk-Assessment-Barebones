@@ -29,11 +29,17 @@ for (const { width, name } of [
     const table = page.getByRole("region", {
       name: "Take 5s, the most important first",
     });
-    // The columns filter too, from the row under their headings (E6).
-    await table.getByLabel("Highest risk filter").selectOption("Extreme");
-    await expect(page).toHaveURL(/band=Extreme/);
-    await table.getByLabel("Job filter").pressSequentially("tyre");
-    await expect(page).toHaveURL(/job=tyre/);
+    // Each heading's filter opens a list of the column's values to tick (E6).
+    await table.getByRole("button", { name: "Filter Highest risk" }).click();
+    const list = page.getByRole("dialog", { name: "Filter highest risk" });
+    await list.getByLabel("Extreme").check();
+    await list.getByLabel("High", { exact: true }).check();
+    await capture(page, `${name}-ticking`);
+    await list.getByRole("button", { name: "Apply" }).click();
+    await expect(page).toHaveURL(/band=Extreme&band=High/);
+    await expect(
+      table.getByRole("button", { name: "Filter Highest risk, 2 ticked" }),
+    ).toBeFocused();
     await expect(table.getByText("Needs a JHA").first()).toBeVisible();
     await capture(page, name);
 
@@ -48,7 +54,9 @@ for (const { width, name } of [
     // One button turns every filter off, above and in the columns.
     await page.getByRole("button", { name: "Clear filters" }).click();
     await expect(page).toHaveURL(/\/take5-table$/);
-    await expect(table.getByLabel("Job filter")).toHaveValue("");
+    await expect(
+      table.getByRole("button", { name: "Filter Highest risk" }),
+    ).toBeVisible();
     await expect(page.getByLabel("Find words")).toHaveValue("");
     await expect(
       page.getByRole("button", { name: "Clear filters" }),

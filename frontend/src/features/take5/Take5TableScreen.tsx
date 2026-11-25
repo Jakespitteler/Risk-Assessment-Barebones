@@ -1,8 +1,4 @@
-import type {
-  InputHTMLAttributes,
-  ReactNode,
-  SelectHTMLAttributes,
-} from "react";
+import type { InputHTMLAttributes, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { Take5Row, Take5TablePage } from "../../api/take5";
 import { ApiError, take5TableCsvUrl, useTake5Table } from "../../api/take5";
@@ -10,6 +6,7 @@ import { Button } from "../../components/Button";
 import { Field } from "../../components/Field";
 import { FIELD_STYLE } from "../../components/fieldStyle";
 import { Screen } from "../../components/Screen";
+import { ColumnFilter } from "./ColumnFilter";
 import { formatAsWritten, formatDateTime } from "./formatDateTime";
 import { SavedListLink } from "./SavedListLink";
 
@@ -25,10 +22,26 @@ const FILTERS_ABOVE = [
   "time_of_day",
   "from_paper",
 ];
-// A filter under a column's heading: the same look as the boxes above, a size
-// smaller to fit a column.
-const COLUMN_FILTER =
-  "min-h-12 w-full rounded-lg border-2 border-line-field bg-surface px-2 py-1 text-base font-normal text-ink focus-visible:outline-4 focus-visible:outline-focus";
+// Each column heading's filter: its name in the address, and its values to tick,
+// as the back end sends them (E6). The started column has none; the dates above
+// cover it.
+const COLUMN_FILTERS: Partial<
+  Record<string, { name: string; choices: (page: Take5TablePage) => string[] }>
+> = {
+  Importance: {
+    name: "importance",
+    choices: (page) => page.importances.map(String),
+  },
+  Job: { name: "job", choices: (page) => page.jobs },
+  Verdict: { name: "verdict", choices: (page) => page.verdicts },
+  "Highest risk": { name: "band", choices: (page) => page.bands },
+  "Thought gaps": {
+    name: "thought_gaps",
+    choices: (page) => page.thought_gap_choices,
+  },
+  Worker: { name: "worker", choices: (page) => page.workers },
+  Location: { name: "area", choices: (page) => page.areas },
+};
 const DOWNLOAD_LINK =
   "flex min-h-14 items-center justify-center rounded-xl bg-action px-5 text-lg font-bold text-on-action hover:bg-action-hover focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
@@ -59,6 +72,12 @@ export function Take5TableScreen({
     onFilters(changed);
   };
   const rows = table.data?.rows ?? [];
+  const tick = (name: string, ticked: string[]) => {
+    const changed = new URLSearchParams(filters);
+    changed.delete(name);
+    for (const value of ticked) changed.append(name, value);
+    onFilters(changed);
+  };
   const clear = () => {
     onFilters(new URLSearchParams());
   };
@@ -198,13 +217,20 @@ export function Take5TableScreen({
           )}
           <RowsTable
             rows={rows}
-            columnFilters={
-              <ColumnFilters
-                page={table.data}
-                filters={filters}
-                onFilter={set}
-              />
-            }
+            filterOf={(title) => {
+              const column = COLUMN_FILTERS[title];
+              if (!column) return null;
+              return (
+                <ColumnFilter
+                  title={title}
+                  choices={column.choices(table.data)}
+                  ticked={filters.getAll(column.name)}
+                  onApply={(ticked) => {
+                    tick(column.name, ticked);
+                  }}
+                />
+              );
+            }}
           />
         </>
       )}
@@ -212,7 +238,7 @@ export function Take5TableScreen({
   );
 }
 
-/** A filter above the table with a fixed list of choices, and "Any" for none. */
+/** A filter with a fixed list of choices, and "Any" for no filter. */
 function Choice({
   name,
   label,
@@ -228,54 +254,27 @@ function Choice({
 }) {
   return (
     <Field name={name} label={label}>
-      <ChoiceList
+      <select
         id={name}
-        name={name}
-        choices={choices}
-        filters={filters}
-        onChoose={onChoose}
         className={FIELD_STYLE}
-      />
+        value={filters.get(name) ?? ""}
+        onChange={(event) => {
+          onChoose(name, event.target.value);
+        }}
+      >
+        <option value="">Any</option>
+        {[
+          ...choices,
+          ...(filters.get(name) && !choices.includes(filters.get(name) ?? "")
+            ? [filters.get(name) ?? ""]
+            : []),
+        ].map((choice) => (
+          <option key={choice} value={choice}>
+            {choice}
+          </option>
+        ))}
+      </select>
     </Field>
-  );
-}
-
-/**
- * A list box of a filter's choices, with "Any" for no filter. A choice in the
- * address that the back end no longer offers still shows, so the box says what
- * the table is filtered by.
- */
-function ChoiceList({
-  name,
-  choices,
-  filters,
-  onChoose,
-  ...box
-}: {
-  name: string;
-  choices: string[];
-  filters: URLSearchParams;
-  onChoose: (name: string, value: string) => void;
-} & SelectHTMLAttributes<HTMLSelectElement>) {
-  const chosen = filters.get(name) ?? "";
-  return (
-    <select
-      {...box}
-      value={chosen}
-      onChange={(event) => {
-        onChoose(name, event.target.value);
-      }}
-    >
-      <option value="">Any</option>
-      {[
-        ...choices,
-        ...(chosen && !choices.includes(chosen) ? [chosen] : []),
-      ].map((choice) => (
-        <option key={choice} value={choice}>
-          {choice}
-        </option>
-      ))}
-    </select>
   );
 }
 
@@ -327,73 +326,16 @@ function TypedFilter({
 }
 
 /**
- * The row of filters under the table's headings, one cell per column (E6). The
- * started column has none, as the date range above covers it.
- */
-function ColumnFilters({
-  page,
-  filters,
-  onFilter,
-}: {
-  page: Take5TablePage;
-  filters: URLSearchParams;
-  onFilter: (name: string, value: string) => void;
-}) {
-  const typed = (name: string, label: string, inputMode?: "numeric") => (
-    <TypedFilter
-      aria-label={label}
-      type={inputMode ? "number" : "search"}
-      inputMode={inputMode}
-      min={inputMode ? 0 : undefined}
-      placeholder={inputMode ? "At least" : "Words"}
-      className={COLUMN_FILTER}
-      value={filters.get(name) ?? ""}
-      onSettle={(value) => {
-        onFilter(name, value);
-      }}
-    />
-  );
-  const choice = (name: string, label: string, choices: string[]) => (
-    <ChoiceList
-      aria-label={label}
-      name={name}
-      choices={choices}
-      filters={filters}
-      onChoose={onFilter}
-      className={`${COLUMN_FILTER} min-w-40`}
-    />
-  );
-  return (
-    <tr className="border-t border-line">
-      {[
-        typed("min_importance", "Importance at least", "numeric"),
-        typed("job", "Job filter"),
-        choice("verdict", "Verdict filter", page.verdicts),
-        choice("band", "Highest risk filter", page.bands),
-        choice("thought_gaps", "Thought gaps filter", page.thought_gap_choices),
-        typed("worker", "Worker filter"),
-        choice("area", "Location filter", page.areas),
-        null,
-      ].map((filter, column) => (
-        <td key={column} className="px-2 pb-2 align-top">
-          {filter}
-        </td>
-      ))}
-    </tr>
-  );
-}
-
-/**
  * The rows as a table. On a phone it scrolls sideways in its own box, so the page
  * never does. The CSV holds every value; the table shows the ones to scan.
  */
 function RowsTable({
   rows,
-  columnFilters,
+  filterOf,
 }: {
   rows: Take5Row[];
-  /** The row of filters drawn under the headings. */
-  columnFilters: ReactNode;
+  /** A column heading's filter button, or null for none. */
+  filterOf: (title: string) => ReactNode;
 }) {
   return (
     <div
@@ -402,7 +344,7 @@ function RowsTable({
       role="region"
       aria-label="Take 5s, the most important first"
     >
-      <table className="w-full min-w-[72rem] border-collapse text-left">
+      <table className="w-full min-w-[56rem] border-collapse text-left">
         <thead className="bg-surface-subtle">
           <tr>
             {[
@@ -415,12 +357,18 @@ function RowsTable({
               "Location",
               "Started",
             ].map((title) => (
-              <th key={title} scope="col" className="px-3 py-2 font-bold">
-                {title}
+              <th
+                key={title}
+                scope="col"
+                className="px-3 py-2 align-top font-bold whitespace-nowrap"
+              >
+                <span className="flex flex-col items-start">
+                  {title}
+                  {filterOf(title)}
+                </span>
               </th>
             ))}
           </tr>
-          {columnFilters}
         </thead>
         <tbody>
           {rows.length === 0 && (

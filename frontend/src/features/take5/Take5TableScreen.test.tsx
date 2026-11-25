@@ -80,6 +80,9 @@ const PAGE: Take5TablePage = {
     "6 pm to midnight",
   ],
   thought_gap_choices: ["No gaps", "Some gaps", "Rushed"],
+  jobs: ["Change tyre on LV12"],
+  workers: ["Sam Example"],
+  importances: [23, 8],
 };
 
 function open(filters = "", onFilters = vi.fn()) {
@@ -100,7 +103,7 @@ it("lists every Take 5, the most important first, as the back end sends them (E1
   const table = screen.getByRole("region", {
     name: "Take 5s, the most important first",
   });
-  const [, , first, second] = within(table).getAllByRole("row");
+  const [, first, second] = within(table).getAllByRole("row");
   expect(within(first as HTMLElement).getByText("23")).toBeTruthy();
   expect(within(first as HTMLElement).getByText("18 Extreme")).toBeTruthy();
   expect(within(first as HTMLElement).getByText("Needs a JHA")).toBeTruthy();
@@ -119,10 +122,9 @@ it("asks the back end for the filters in the address, and downloads the same row
   open(filters);
   await screen.findByText("2 Take 5s match.");
   expect(calls).toEqual([tableUrl(filters)]);
-  expect(screen.getByLabelText("Verdict filter")).toHaveProperty(
-    "value",
-    "Don't start yet",
-  );
+  expect(
+    screen.getByRole("button", { name: "Filter Verdict, 1 ticked" }),
+  ).toBeTruthy();
   expect(
     screen.getByRole("link", { name: "Download CSV" }).getAttribute("href"),
   ).toBe(
@@ -148,12 +150,13 @@ it("offers the areas and bands the back end sends", async () => {
   stubApi({ [tableUrl()]: { status: 200, body: PAGE } });
   open();
   await screen.findByText("2 Take 5s match.");
-  const area = screen.getByLabelText("Location filter");
+  fireEvent.click(screen.getByRole("button", { name: "Filter Location" }));
+  const list = screen.getByRole("dialog", { name: "Filter location" });
   expect(
-    within(area)
-      .getAllByRole("option")
-      .map((option) => option.textContent),
-  ).toEqual(["Any", "Example workshop"]);
+    within(list)
+      .getAllByRole("checkbox")
+      .map((box) => box.closest("label")?.textContent),
+  ).toEqual(["Example workshop"]);
 });
 
 it("shows a paper card's own date, with no time of day (E3, P5)", async () => {
@@ -191,7 +194,7 @@ it("says when nothing matches, with no download", async () => {
   expect(screen.queryByRole("link", { name: "Download CSV" })).toBeNull();
   // The column filters stay, so the one that emptied the table can be changed.
   expect(screen.getByText("No Take 5s match these filters.")).toBeTruthy();
-  expect(screen.getByLabelText("Job filter")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Filter Job" })).toBeTruthy();
 });
 
 it("keeps every letter typed, and searches once typing pauses (E4)", async () => {
@@ -255,38 +258,32 @@ it("says 1 Take 5 matches, and shows how many filters are on", async () => {
   expect(screen.getByLabelText("From paper")).toHaveProperty("value", "false");
 });
 
-it("filters each column under its heading, with the choices the back end sends (E6)", async () => {
-  stubApi({ [tableUrl()]: { status: 200, body: PAGE } });
-  const onFilters = open();
+it("ticks several values in a column's filter into the address (E6)", async () => {
+  stubApi({ [tableUrl("band=Extreme")]: { status: 200, body: PAGE } });
+  const onFilters = open("band=Extreme");
   await screen.findByText("2 Take 5s match.");
-  const table = screen.getByRole("region", {
-    name: "Take 5s, the most important first",
-  });
-  expect(
-    within(within(table).getByLabelText("Thought gaps filter"))
-      .getAllByRole("option")
-      .map((option) => option.textContent),
-  ).toEqual(["Any", "No gaps", "Some gaps", "Rushed"]);
-  fireEvent.change(within(table).getByLabelText("Highest risk filter"), {
-    target: { value: "Extreme" },
-  });
+  fireEvent.click(screen.getByRole("button", { name: "Filter Thought gaps" }));
+  const list = screen.getByRole("dialog", { name: "Filter thought gaps" });
+  fireEvent.click(within(list).getByLabelText("No gaps"));
+  fireEvent.click(within(list).getByLabelText("Rushed"));
+  fireEvent.click(within(list).getByRole("button", { name: "Apply" }));
   expect((onFilters.mock.calls[0]?.[0] as URLSearchParams).toString()).toBe(
-    "band=Extreme",
+    "band=Extreme&thought_gaps=No+gaps&thought_gaps=Rushed",
   );
-  vi.useFakeTimers();
-  fireEvent.change(within(table).getByLabelText("Job filter"), {
-    target: { value: "LV12" },
-  });
-  fireEvent.change(within(table).getByLabelText("Importance at least"), {
-    target: { value: "13" },
-  });
-  vi.advanceTimersByTime(400);
-  vi.useRealTimers();
-  const sent = onFilters.mock.calls.map((call) =>
-    (call[0] as URLSearchParams).toString(),
-  );
-  expect(sent).toContain("job=LV12");
-  expect(sent).toContain("min_importance=13");
+  expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+it("lists each column's values as the back end sends them (E6)", async () => {
+  stubApi({ [tableUrl()]: { status: 200, body: PAGE } });
+  open();
+  await screen.findByText("2 Take 5s match.");
+  fireEvent.click(screen.getByRole("button", { name: "Filter Importance" }));
+  expect(
+    within(screen.getByRole("dialog", { name: "Filter importance" }))
+      .getAllByRole("checkbox")
+      .map((box) => box.closest("label")?.textContent),
+  ).toEqual(["23", "8"]);
+  expect(screen.queryByRole("button", { name: "Filter Started" })).toBeNull();
 });
 
 it("can't clear when no filter is on", async () => {
@@ -305,19 +302,21 @@ function LiveFilters({ start }: { start: string }) {
   return <Take5TableScreen filters={filters} onFilters={setFilters} />;
 }
 
-it("clears every filter, above and in the columns, and empties the typed boxes", async () => {
+it("clears every filter, above and in the columns, and empties the search box", async () => {
   stubApi({
     [tableUrl()]: { status: 200, body: PAGE },
-    [tableUrl("worker=sam&search=tyre")]: { status: 200, body: PAGE },
+    [tableUrl("worker=Sam+Example&search=tyre")]: { status: 200, body: PAGE },
   });
-  renderWithApi(<LiveFilters start="worker=sam&search=tyre" />);
+  renderWithApi(<LiveFilters start="worker=Sam+Example&search=tyre" />);
   await screen.findByText("2 Take 5s match.");
   // A column filter isn't counted in the folded box's heading.
   expect(screen.getByText("Filters (1 on)")).toBeTruthy();
-  expect(screen.getByLabelText("Worker filter")).toHaveProperty("value", "sam");
+  expect(
+    screen.getByRole("button", { name: "Filter Worker, 1 ticked" }),
+  ).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
   expect(await screen.findByText("Filters")).toBeTruthy();
-  expect(screen.getByLabelText("Worker filter")).toHaveProperty("value", "");
+  expect(screen.getByRole("button", { name: "Filter Worker" })).toBeTruthy();
   expect(screen.getByLabelText("Find words")).toHaveProperty("value", "");
   expect(screen.getByRole("button", { name: "Clear filters" })).toHaveProperty(
     "disabled",

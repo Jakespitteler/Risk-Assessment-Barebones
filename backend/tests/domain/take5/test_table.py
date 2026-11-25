@@ -17,6 +17,7 @@ from risk_assessment.domain.take5.table import (
     SOME_GAPS,
     Take5Filters,
     Take5Row,
+    column_values,
     matches,
     table_csv,
     table_rows,
@@ -172,8 +173,8 @@ def test_example_148_an_area_matches_as_risk_by_area_does() -> None:
         ),
     )
 
-    assert matches(workshop, Take5Filters(area="light-vehicle  workshop."))
-    assert not matches(workshop, Take5Filters(area="Crusher"))
+    assert matches(workshop, Take5Filters(area=("light-vehicle  workshop.",)))
+    assert not matches(workshop, Take5Filters(area=("Crusher",)))
 
 
 def test_example_149_a_cell_like_a_formula_is_never_run() -> None:
@@ -210,17 +211,17 @@ def test_example_150_the_careful_one_exported() -> None:
     assert len(header) == 23 + len(BOOKLET_TEMPLATE.questions)
 
 
-def test_example_151_a_column_looks_only_in_its_own_values() -> None:
-    """The job column finds "LV12"; the worker column doesn't look in the job (E6)."""
+def test_example_151_a_ticked_job_or_worker_keeps_its_rows() -> None:
+    """Ticked values match ignoring capitals; an unticked worker drops it (E6)."""
     careful: Take5Row = row(started(SATURDAY_MORNING))
 
-    assert matches(careful, Take5Filters(job="lv12"))
-    assert matches(careful, Take5Filters(worker="SAM"))
-    assert not matches(careful, Take5Filters(worker="tyre"))
+    assert matches(careful, Take5Filters(job=("change tyre on lv12",)))
+    assert matches(careful, Take5Filters(worker=("Alex Example", "SAM EXAMPLE")))
+    assert not matches(careful, Take5Filters(worker=("Alex Example",)))
 
 
-def test_example_152_importance_at_least_keeps_its_own_number() -> None:
-    """At least 13 keeps the 13 and drops the 8 (E6)."""
+def test_example_152_ticked_importances_keep_only_theirs() -> None:
+    """Ticking 13 and 18 keeps the 13 and drops the 8 (E6)."""
     careful: SavedTake5 = started(SATURDAY_MORNING)
     short_hazard: SavedTake5 = started(
         SATURDAY_MORNING,
@@ -229,38 +230,50 @@ def test_example_152_importance_at_least_keeps_its_own_number() -> None:
 
     rows: tuple[Take5Row, ...] = table_rows(
         [careful, short_hazard],
-        Take5Filters(min_importance=13),
+        Take5Filters(importance=(13, 18)),
         PERTH,
     )
 
     assert [each.importance for each in rows] == [13]
 
 
-def test_example_153_no_gaps_and_some_gaps_split_the_rows() -> None:
-    """The careful one has no gaps; a short hazard has some (E6)."""
-    careful: Take5Row = row(started(SATURDAY_MORNING))
-    short_hazard: Take5Row = row(ranked_take5(description="Moving wheel"))
+def test_example_153_no_gaps_or_rushed_keeps_either() -> None:
+    """Ticking "No gaps" and "Rushed" drops a short hazard that wasn't rushed (E6)."""
+    ticked = Take5Filters(thought_gaps=(NO_GAPS, RUSHED))
 
-    assert matches(careful, Take5Filters(thought_gaps=NO_GAPS))
-    assert not matches(careful, Take5Filters(thought_gaps=SOME_GAPS))
-    assert matches(short_hazard, Take5Filters(thought_gaps=SOME_GAPS))
-    assert not matches(short_hazard, Take5Filters(thought_gaps=NO_GAPS))
+    assert matches(row(started(SATURDAY_MORNING)), ticked)
+    assert matches(row(ranked_take5(minutes_taken=1)), ticked)
+    assert not matches(row(ranked_take5(description="Moving wheel")), ticked)
+    assert matches(
+        row(ranked_take5(description="Moving wheel")),
+        Take5Filters(thought_gaps=(SOME_GAPS,)),
+    )
 
 
-def test_example_154_rushed_keeps_only_a_rushed_take5() -> None:
-    """A short hazard is a gap but not rushed; under 2 minutes is (E6, W5)."""
-    rushed: Take5Row = row(ranked_take5(minutes_taken=1))
-    short_hazard: Take5Row = row(ranked_take5(description="Moving wheel"))
+def test_example_154_two_ticked_verdicts_keep_both() -> None:
+    """Ticking "Good to go" and "Not finished" drops "Don't start yet" (E4, E6)."""
+    ticked = Take5Filters(verdict=(GOOD_TO_GO, NOT_FINISHED))
+    stopped: SavedTake5 = started(SATURDAY_MORNING).model_copy(
+        update={"verdict": Verdict(can_start=False, reasons=("Talk to someone.",))},
+    )
 
-    assert matches(rushed, Take5Filters(thought_gaps=RUSHED))
-    assert not matches(short_hazard, Take5Filters(thought_gaps=RUSHED))
+    assert matches(row(started(SATURDAY_MORNING)), ticked)
+    assert not matches(row(stopped), ticked)
+
+
+def test_a_columns_values_are_listed_once_ignoring_capitals_a_to_z() -> None:
+    """The first spelling stands for the rest, and blanks are left out (E6)."""
+    assert column_values(["tyre change", "Crusher", "Tyre Change", " ", ""]) == (
+        "Crusher",
+        "tyre change",
+    )
 
 
 def test_an_unknown_thought_gaps_choice_keeps_no_rows() -> None:
     """A choice the column doesn't offer matches nothing, as a verdict does (E6)."""
     careful: Take5Row = row(started(SATURDAY_MORNING))
 
-    assert not matches(careful, Take5Filters(thought_gaps="Lots"))
+    assert not matches(careful, Take5Filters(thought_gaps=("Lots",)))
 
 
 @pytest.mark.parametrize(
@@ -291,15 +304,15 @@ def test_each_verdict_is_named_and_can_be_filtered(
     laid_out: Take5Row = row(take5)
 
     assert laid_out.verdict == named
-    assert matches(laid_out, Take5Filters(verdict=named))
+    assert matches(laid_out, Take5Filters(verdict=(named,)))
 
 
 def test_the_other_filters_keep_only_matching_rows() -> None:
     """Band, weekday, time of day and from paper each narrow the rows (E4)."""
     careful: Take5Row = row(started(SATURDAY_MORNING))
 
-    assert matches(careful, Take5Filters(band="Moderate", weekday="Saturday"))
-    assert not matches(careful, Take5Filters(band="Extreme"))
+    assert matches(careful, Take5Filters(band=("Moderate",), weekday="Saturday"))
+    assert not matches(careful, Take5Filters(band=("Extreme",)))
     assert not matches(careful, Take5Filters(time_of_day="Noon to 6 pm"))
     assert not matches(careful, Take5Filters(from_paper=True))
     assert matches(careful, Take5Filters(from_paper=False))
@@ -360,7 +373,7 @@ def test_every_word_searched_is_found_somewhere() -> None:
 
     assert matches(careful, Take5Filters(search="tyre sam"))
     assert not matches(careful, Take5Filters(search="tyre crusher"))
-    assert matches(careful, Take5Filters(area="..."))
+    assert matches(careful, Take5Filters(area=("...",)))
 
 
 def test_a_paper_card_keeps_its_written_date_wherever_it_is_asked_from() -> None:

@@ -7,7 +7,7 @@ here decides anything new about a Take 5; it only lays the values out.
 
 import csv
 import io
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from datetime import date, datetime, tzinfo
 from typing import ClassVar
 from uuid import UUID
@@ -120,22 +120,24 @@ class Take5Row(BaseModel):
 
 
 class Take5Filters(BaseModel):
-    """What to narrow the table to (E4). Each empty filter lets every row through.
+    """What to narrow the table to (E4, E6). Each empty filter lets every row through.
+
+    A column's filter holds the values ticked in it; a row with any of them is kept.
 
     Attributes:
         search: Words to find, each in the job, location or worker, ignoring capitals.
         start: The first day to show, by `Take5Row.started_on`.
         end: The last day to show.
-        verdict: One of `VERDICTS`.
-        band: A risk band, such as "Extreme".
-        area: An area, matched as A1 matches, ignoring capitals and punctuation.
         weekday: One of `WEEKDAYS`.
         time_of_day: One of `TIMES_OF_DAY`.
         from_paper: True for paper cards only, False for none.
-        job: Words to find, each in the job, ignoring capitals (E6).
-        worker: Words to find, each in the worker's name, ignoring capitals (E6).
-        min_importance: The lowest importance to show (E6).
-        thought_gaps: One of `THOUGHT_GAP_CHOICES` (E6).
+        verdict: The verdicts ticked, from `VERDICTS`.
+        band: The risk bands ticked, such as "Extreme".
+        area: The areas ticked, matched as A1 matches, ignoring capitals and marks.
+        job: The jobs ticked, ignoring capitals.
+        worker: The workers ticked, ignoring capitals.
+        importance: The importances ticked.
+        thought_gaps: The choices ticked, from `THOUGHT_GAP_CHOICES`.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -143,16 +145,16 @@ class Take5Filters(BaseModel):
     search: str = ""
     start: date | None = None
     end: date | None = None
-    verdict: str | None = None
-    band: str | None = None
-    area: str | None = None
     weekday: str | None = None
     time_of_day: str | None = None
     from_paper: bool | None = None
-    job: str = ""
-    worker: str = ""
-    min_importance: int | None = None
-    thought_gaps: str | None = None
+    verdict: tuple[str, ...] = ()
+    band: tuple[str, ...] = ()
+    area: tuple[str, ...] = ()
+    job: tuple[str, ...] = ()
+    worker: tuple[str, ...] = ()
+    importance: tuple[int, ...] = ()
+    thought_gaps: tuple[str, ...] = ()
 
 
 def take5_row(take5: SavedTake5, zone: tzinfo) -> Take5Row:
@@ -236,55 +238,75 @@ def matches(row: Take5Row, filters: Take5Filters) -> bool:
         True when the row passes them all.
     """
     found_in: str = f"{row.job}\n{row.location}\n{row.worker_name}".casefold()
-    area: str = area_key(filters.area or "")
     checks: tuple[bool, ...] = (
         all(word in found_in for word in filters.search.casefold().split()),
         filters.start is None or row.started_on >= filters.start,
         filters.end is None or row.started_on <= filters.end,
-        filters.verdict is None or row.verdict == filters.verdict,
-        filters.band is None or row.highest_band == filters.band,
-        not area or area_key(row.location) == area,
         filters.weekday is None or row.weekday == filters.weekday,
         filters.time_of_day is None or row.time_of_day == filters.time_of_day,
         filters.from_paper is None or row.from_paper == filters.from_paper,
-        _has_words(row.job, filters.job),
-        _has_words(row.worker_name, filters.worker),
-        filters.min_importance is None or row.importance >= filters.min_importance,
-        _has_thought_gaps(row, filters.thought_gaps),
+        _ticked(row.verdict, filters.verdict),
+        _ticked(row.highest_band, filters.band),
+        _ticked(
+            area_key(row.location),
+            tuple(key for key in map(area_key, filters.area) if key),
+        ),
+        _ticked(row.job.casefold(), tuple(job.casefold() for job in filters.job)),
+        _ticked(
+            row.worker_name.casefold(),
+            tuple(worker.casefold() for worker in filters.worker),
+        ),
+        _ticked(row.importance, filters.importance),
+        not filters.thought_gaps
+        or any(_has_thought_gaps(row, choice) for choice in filters.thought_gaps),
     )
     return all(checks)
 
 
-def _has_words(text: str, words: str) -> bool:
-    """Say whether every word searched is in a text, ignoring capitals (E6).
+def _ticked[Value](value: Value, ticked: tuple[Value, ...]) -> bool:
+    """Say whether a row's value is one of a column's ticked values (E6).
 
     Args:
-        text: A row's value, such as its job.
-        words: The words to find; none finds every text.
+        value: The row's value in that column.
+        ticked: The values ticked; none keeps every row.
 
     Returns:
-        True when each word is found.
+        True when nothing is ticked or the value is.
     """
-    return all(word in text.casefold() for word in words.casefold().split())
+    return not ticked or value in ticked
 
 
-def _has_thought_gaps(row: Take5Row, choice: str | None) -> bool:
-    """Say whether a row's thought gaps match the column's filter (E6).
+def _has_thought_gaps(row: Take5Row, choice: str) -> bool:
+    """Say whether a row's thought gaps match one of the column's choices (E6).
 
     Args:
         row: A row of the table.
-        choice: One of `THOUGHT_GAP_CHOICES`, or None for every row.
+        choice: One of `THOUGHT_GAP_CHOICES`.
 
     Returns:
         True when the row matches.
     """
-    if choice is None:
-        return True
     if choice == NO_GAPS:
         return not row.thought_gaps
     if choice == SOME_GAPS:
         return bool(row.thought_gaps)
     return choice == RUSHED and row.rushed
+
+
+def column_values(values: Iterable[str]) -> tuple[str, ...]:
+    """List a column's values to tick, each once, ignoring capitals, A to Z (E6).
+
+    Args:
+        values: The column's values, one per row.
+
+    Returns:
+        The values, by the first spelling found, leaving out blanks.
+    """
+    first_spellings: dict[str, str] = {}
+    for value in values:
+        if value.strip():
+            first_spellings.setdefault(value.casefold(), value)
+    return tuple(sorted(first_spellings.values(), key=str.casefold))
 
 
 def table_rows(

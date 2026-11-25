@@ -323,6 +323,9 @@ class Take5TablePage(BaseModel):
         weekdays: Monday to Sunday.
         times_of_day: The four blocks of the clock (E3).
         thought_gap_choices: The thought gaps column's filter choices (E6).
+        jobs: Every job, each once, to tick (E6).
+        workers: Every worker, each once, to tick (E6).
+        importances: Every importance, highest first, to tick (E6).
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -334,3 +337,6 @@ class Take5TablePage(BaseModel):
     weekdays: tuple[str, ...]
     times_of_day: tuple[str, ...]
     thought_gap_choices: tuple[str, ...]
+    jobs: tuple[str, ...]
+    workers: tuple[str, ...]
+    importances: tuple[int, ...]

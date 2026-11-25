@@ -1,7 +1,7 @@
 """The Take 5 table and its CSV export, turning HTTP into a service call (E1 to E5)."""
 
 from datetime import date, datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, Query, Response
@@ -58,40 +58,60 @@ def _blank(value: object) -> object:
     return None if isinstance(value, str) and not value.strip() else value
 
 
+def _ticks(values: object) -> object:
+    """Leave out the blanks among a column's ticked values (E6).
+
+    Args:
+        values: The values from the query, one per tick.
+
+    Returns:
+        The values that aren't blank, or what came when it isn't a list.
+    """
+    if not isinstance(values, list):
+        return values
+    return [
+        value
+        for value in cast("list[object]", values)
+        if not (isinstance(value, str) and not value.strip())
+    ]
+
+
+type TickedTexts = Annotated[list[str] | None, Query(), BeforeValidator(_ticks)]
+type TickedNumbers = Annotated[list[int] | None, Query(), BeforeValidator(_ticks)]
+
+
 def _filters(  # noqa: PLR0913 - one argument per filter on the page
     search: str = "",
     start: Annotated[date | None, Query(alias="from"), BeforeValidator(_blank)] = None,
     end: Annotated[date | None, Query(alias="to"), BeforeValidator(_blank)] = None,
-    verdict: str | None = None,
-    band: str | None = None,
-    area: str | None = None,
     weekday: str | None = None,
     time_of_day: str | None = None,
     from_paper: Annotated[bool | None, BeforeValidator(_blank)] = None,
-    job: str = "",
-    worker: str = "",
-    min_importance: Annotated[
-        int | None,
-        Query(ge=0),
-        BeforeValidator(_blank),
-    ] = None,
-    thought_gaps: str | None = None,
+    verdict: TickedTexts = None,
+    band: TickedTexts = None,
+    area: TickedTexts = None,
+    job: TickedTexts = None,
+    worker: TickedTexts = None,
+    importance: TickedNumbers = None,
+    thought_gaps: TickedTexts = None,
 ) -> Take5Filters:
     """Read the filters from the query (E4, E6). An empty or blank one keeps every row.
+
+    A column's filter can come more than once, once for each value ticked.
 
     Args:
         search: Words to find in the job, location or worker.
         start: The first day to show.
         end: The last day to show.
-        verdict: Such as "Don't start yet".
-        band: A risk band, such as "Extreme".
-        area: An area, as typed.
         weekday: Such as "Monday".
         time_of_day: Such as "6 am to noon".
         from_paper: True for paper cards only, False for none.
-        job: Words to find in the job.
-        worker: Words to find in the worker's name.
-        min_importance: The lowest importance to show.
+        verdict: Verdicts, such as "Don't start yet".
+        band: Risk bands, such as "Extreme".
+        area: Areas, as typed.
+        job: Jobs, as typed.
+        worker: Workers' names, as typed.
+        importance: Importances.
         thought_gaps: Such as "Rushed".
 
     Returns:
@@ -101,16 +121,16 @@ def _filters(  # noqa: PLR0913 - one argument per filter on the page
         search=search,
         start=start,
         end=end,
-        verdict=_given(verdict),
-        band=_given(band),
-        area=_given(area),
         weekday=_given(weekday),
         time_of_day=_given(time_of_day),
         from_paper=from_paper,
-        job=job,
-        worker=worker,
-        min_importance=min_importance,
-        thought_gaps=_given(thought_gaps),
+        verdict=tuple(verdict or ()),
+        band=tuple(band or ()),
+        area=tuple(area or ()),
+        job=tuple(job or ()),
+        worker=tuple(worker or ()),
+        importance=tuple(importance or ()),
+        thought_gaps=tuple(thought_gaps or ()),
     )
 
 
@@ -157,6 +177,9 @@ def create_table_router(service: Take5TableService) -> APIRouter:
             weekdays=WEEKDAYS,
             times_of_day=TIMES_OF_DAY,
             thought_gap_choices=THOUGHT_GAP_CHOICES,
+            jobs=table.jobs,
+            workers=table.workers,
+            importances=table.importances,
         )
 
     @router.get(

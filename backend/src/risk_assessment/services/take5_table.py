@@ -1,4 +1,4 @@
-"""Lay every saved Take 5 out as a filtered table, for the page and CSV (E1 to E5)."""
+"""Lay every saved Take 5 out as a filtered table, for the page and CSV (E1 to E6)."""
 
 from datetime import UTC, datetime, tzinfo
 from typing import ClassVar
@@ -10,6 +10,8 @@ from risk_assessment.domain.take5.saved import SavedTake5
 from risk_assessment.domain.take5.table import (
     Take5Filters,
     Take5Row,
+    column_values,
+    matches,
     table_csv,
     table_rows,
 )
@@ -21,12 +23,15 @@ _EVERY_TAKE5: datetime = datetime.min.replace(tzinfo=UTC)
 
 
 class Take5Table(BaseModel):
-    """The rows let through, and the areas a person can filter by.
+    """The rows let through, and the values each column's filter can tick.
 
     Attributes:
         rows: The rows, the most important first (E2).
         areas: Every area with a Take 5, by the spelling typed most (A1).
         bands: The card's risk bands, lowest first.
+        jobs: Every job, each once, A to Z (E6).
+        workers: Every worker, each once, A to Z (E6).
+        importances: Every importance, highest first (E6).
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
@@ -34,6 +39,9 @@ class Take5Table(BaseModel):
     rows: tuple[Take5Row, ...]
     areas: tuple[str, ...]
     bands: tuple[str, ...]
+    jobs: tuple[str, ...]
+    workers: tuple[str, ...]
+    importances: tuple[int, ...]
 
 
 class Take5TableService:
@@ -50,7 +58,7 @@ class Take5TableService:
         self._template: Take5Template = template
 
     def table(self, filters: Take5Filters, zone: tzinfo) -> Take5Table:
-        """Lay out and filter every saved Take 5 (E1 to E4).
+        """Lay out and filter every saved Take 5 (E1 to E4, E6).
 
         Args:
             filters: What to narrow the table to.
@@ -60,8 +68,9 @@ class Take5TableService:
             The rows, and what each filter can choose from.
         """
         take5s: tuple[SavedTake5, ...] = self._repository.list_saved_since(_EVERY_TAKE5)
+        every_row: tuple[Take5Row, ...] = table_rows(take5s, Take5Filters(), zone)
         return Take5Table(
-            rows=table_rows(take5s, filters, zone),
+            rows=tuple(row for row in every_row if matches(row, filters)),
             areas=tuple(
                 sorted(
                     (area.name for area in risk_by_area(take5s)),
@@ -69,6 +78,11 @@ class Take5TableService:
                 ),
             ),
             bands=self.bands,
+            jobs=column_values(row.job for row in every_row),
+            workers=column_values(row.worker_name for row in every_row),
+            importances=tuple(
+                sorted({row.importance for row in every_row}, reverse=True),
+            ),
         )
 
     def csv(self, filters: Take5Filters, zone: tzinfo) -> str:

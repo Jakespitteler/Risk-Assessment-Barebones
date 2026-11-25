@@ -165,7 +165,7 @@ export async function capture(page: Page, name: string) {
   await page.screenshot({ path: screenshotPath(name), fullPage: true });
   await expectReadable(page);
   const targets = page.locator(
-    "button, a, input:not([type=radio]), textarea, select, summary, label:has(input[type=radio])",
+    "button, a, input:not([type=radio], [type=checkbox]), textarea, select, summary, label:has(input[type=radio], input[type=checkbox])",
   );
   for (const target of await targets.all()) {
     if (!(await target.isVisible())) continue;

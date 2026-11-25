@@ -2,20 +2,22 @@
 
 Newest first. One short entry per non-obvious decision.
 
-## 2026-11-25: The Take 5 table's columns filter too, and Clear filters is always there (task 0048)
+## 2026-11-25: The Take 5 table's columns filter as a spreadsheet's do, and Clear filters is always there (task 0048)
 
-- Decision: a row of filters under the All Take 5s table's headings (spec E6, D135 to D137). The job and worker
-  columns find words, the importance column keeps "at least" a number, and the thought gaps column offers "No
-  gaps", "Some gaps" and "Rushed". Verdict, risk band and area move from above into their columns, so each filter
-  shows once; words, dates, weekday, time of day and from paper stay above. The back end does every filter, so the
-  CSV still holds the rows shown, and it sends the thought gaps choices. "Clear filters" sits beside the count,
-  outside the folded filters, and can't be pressed while no filter is on.
+- Decision: each heading of the All Take 5s table has a filter button that opens a list of the column's values to
+  tick (spec E6, D135 to D137). A row with any ticked value is kept. Verdict, risk band and area move from above
+  into their columns, so each filter shows once; words, dates, weekday, time of day and from paper stay above.
+  The back end does every filter, taking a column's filter once per ticked value, so the CSV still holds the rows
+  shown, and it sends each column's values. The list opens over the page, so the table's sideways scrolling box
+  on a phone never cuts it off. "Clear filters" sits beside the count, outside the folded filters, and can't be
+  pressed while no filter is on.
 - Why: Jake asked on 2026-11-25 to filter on the columns, keep the other filters above, and have a button to
-  clear them.
-- Not chosen: every filter above as well (the same filter twice); a filter button in each heading, as in a
-  spreadsheet (more code, and fiddly on a phone); filtering in the browser (the CSV would differ).
-- Decided by: human (column filters, the filter row, Clear filters), agent (what each column filters by, for Jake
-  to approve).
+  clear them, and chose the spreadsheet way over a row of boxes under the headings.
+- Not chosen: a row of filter boxes (built first, then replaced at Jake's choice); every filter above as well;
+  filtering in the browser (the CSV would differ); only the values the other filters leave, as Excel lists them
+  (more back-end work, and a list that changes as you filter).
+- Decided by: human (spreadsheet-style column filters, Clear filters), agent (what each column lists, for Jake to
+  approve).
 
 ## 2026-11-24: ChatGPT is a second AI provider, with the `openai` package (task 0045)
 

@@ -589,54 +589,6 @@
             }
           },
           {
-            "name": "verdict",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Verdict"
-            }
-          },
-          {
-            "name": "band",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Band"
-            }
-          },
-          {
-            "name": "area",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Area"
-            }
-          },
-          {
             "name": "weekday",
             "in": "query",
             "required": false,
@@ -685,12 +637,78 @@
             }
           },
           {
+            "name": "verdict",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Verdict"
+            }
+          },
+          {
+            "name": "band",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Band"
+            }
+          },
+          {
+            "name": "area",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Area"
+            }
+          },
+          {
             "name": "job",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "default": "",
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Job"
             }
           },
@@ -699,26 +717,37 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "default": "",
-              "title": "Worker"
-            }
-          },
-          {
-            "name": "min_importance",
-            "in": "query",
-            "required": false,
-            "schema": {
               "anyOf": [
                 {
-                  "type": "integer",
-                  "minimum": 0
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Min Importance"
+              "title": "Worker"
+            }
+          },
+          {
+            "name": "importance",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Importance"
             }
           },
           {
@@ -728,7 +757,10 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
                 },
                 {
                   "type": "null"
@@ -825,54 +857,6 @@
             }
           },
           {
-            "name": "verdict",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Verdict"
-            }
-          },
-          {
-            "name": "band",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Band"
-            }
-          },
-          {
-            "name": "area",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Area"
-            }
-          },
-          {
             "name": "weekday",
             "in": "query",
             "required": false,
@@ -921,12 +905,78 @@
             }
           },
           {
+            "name": "verdict",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Verdict"
+            }
+          },
+          {
+            "name": "band",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Band"
+            }
+          },
+          {
+            "name": "area",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Area"
+            }
+          },
+          {
             "name": "job",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "default": "",
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Job"
             }
           },
@@ -935,26 +985,37 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "default": "",
-              "title": "Worker"
-            }
-          },
-          {
-            "name": "min_importance",
-            "in": "query",
-            "required": false,
-            "schema": {
               "anyOf": [
                 {
-                  "type": "integer",
-                  "minimum": 0
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Min Importance"
+              "title": "Worker"
+            }
+          },
+          {
+            "name": "importance",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Importance"
             }
           },
           {
@@ -964,7 +1025,10 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
                 },
                 {
                   "type": "null"
@@ -2623,6 +2687,27 @@
             },
             "type": "array",
             "title": "Thought Gap Choices"
+          },
+          "jobs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Jobs"
+          },
+          "workers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Workers"
+          },
+          "importances": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Importances"
           }
         },
         "type": "object",
@@ -2633,10 +2718,13 @@
           "areas",
           "weekdays",
           "times_of_day",
-          "thought_gap_choices"
+          "thought_gap_choices",
+          "jobs",
+          "workers",
+          "importances"
         ],
         "title": "Take5TablePage",
-        "description": "Every saved Take 5 the filters let through, as rows, and the filters' choices.\n\nThe page draws these choices, so it holds no copy of them.\n\nAttributes:\n    rows: One row per Take 5, the most important first (E1, E2).\n    verdicts: The verdicts a row can have.\n    bands: The card's risk bands, lowest first.\n    areas: Every area with a Take 5, by the spelling typed most (A1).\n    weekdays: Monday to Sunday.\n    times_of_day: The four blocks of the clock (E3).\n    thought_gap_choices: The thought gaps column's filter choices (E6)."
+        "description": "Every saved Take 5 the filters let through, as rows, and the filters' choices.\n\nThe page draws these choices, so it holds no copy of them.\n\nAttributes:\n    rows: One row per Take 5, the most important first (E1, E2).\n    verdicts: The verdicts a row can have.\n    bands: The card's risk bands, lowest first.\n    areas: Every area with a Take 5, by the spelling typed most (A1).\n    weekdays: Monday to Sunday.\n    times_of_day: The four blocks of the clock (E3).\n    thought_gap_choices: The thought gaps column's filter choices (E6).\n    jobs: Every job, each once, to tick (E6).\n    workers: Every worker, each once, to tick (E6).\n    importances: Every importance, highest first, to tick (E6)."
       },
       "Take5Template": {
         "properties": {

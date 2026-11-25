@@ -26,6 +26,7 @@ frontmatter
 getpid
 getppid
 httpx
+importances
 inodes
 isort
 jsdom
@@ -59,6 +60,9 @@ testpaths
 trackpad
 tradeoffs
 unstub
+untick
+unticked
+unticks
 uvicorn
 venv
 vite

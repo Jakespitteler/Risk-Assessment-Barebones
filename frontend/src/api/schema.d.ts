@@ -1260,6 +1260,9 @@ export interface components {
          *         weekdays: Monday to Sunday.
          *         times_of_day: The four blocks of the clock (E3).
          *         thought_gap_choices: The thought gaps column's filter choices (E6).
+         *         jobs: Every job, each once, to tick (E6).
+         *         workers: Every worker, each once, to tick (E6).
+         *         importances: Every importance, highest first, to tick (E6).
          */
         Take5TablePage: {
             /** Rows */
@@ -1276,6 +1279,12 @@ export interface components {
             times_of_day: string[];
             /** Thought Gap Choices */
             thought_gap_choices: string[];
+            /** Jobs */
+            jobs: string[];
+            /** Workers */
+            workers: string[];
+            /** Importances */
+            importances: number[];
         };
         /**
          * Take5Template
@@ -1814,16 +1823,16 @@ export interface operations {
                 search?: string;
                 from?: string | null;
                 to?: string | null;
-                verdict?: string | null;
-                band?: string | null;
-                area?: string | null;
                 weekday?: string | null;
                 time_of_day?: string | null;
                 from_paper?: boolean | null;
-                job?: string;
-                worker?: string;
-                min_importance?: number | null;
-                thought_gaps?: string | null;
+                verdict?: string[] | null;
+                band?: string[] | null;
+                area?: string[] | null;
+                job?: string[] | null;
+                worker?: string[] | null;
+                importance?: number[] | null;
+                thought_gaps?: string[] | null;
             };
             header?: never;
             path?: never;
@@ -1858,16 +1867,16 @@ export interface operations {
                 search?: string;
                 from?: string | null;
                 to?: string | null;
-                verdict?: string | null;
-                band?: string | null;
-                area?: string | null;
                 weekday?: string | null;
                 time_of_day?: string | null;
                 from_paper?: boolean | null;
-                job?: string;
-                worker?: string;
-                min_importance?: number | null;
-                thought_gaps?: string | null;
+                verdict?: string[] | null;
+                band?: string[] | null;
+                area?: string[] | null;
+                job?: string[] | null;
+                worker?: string[] | null;
+                importance?: number[] | null;
+                thought_gaps?: string[] | null;
             };
             header?: never;
             path?: never;
