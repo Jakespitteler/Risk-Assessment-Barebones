@@ -74,3 +74,18 @@ it("keeps showing a ticked value the back end no longer lists, so it can be unti
   );
   expect(screen.getByLabelText("Zed")).toHaveProperty("checked", true);
 });
+
+it("keeps the focus in the list after a tap on its background, so Tab and Escape still work", () => {
+  show();
+  fireEvent.click(screen.getByRole("button", { name: "Filter Worker" }));
+  const list = screen.getByRole("dialog", { name: "Filter worker" });
+  list.focus();
+  expect(document.activeElement).toBe(list);
+  fireEvent.keyDown(list, { key: "Tab", shiftKey: true });
+  expect(document.activeElement).toBe(
+    within(list).getByRole("button", { name: "Cancel" }),
+  );
+  list.focus();
+  fireEvent.keyDown(list, { key: "Tab" });
+  expect(document.activeElement).toBe(within(list).getByLabelText("Ann"));
+});

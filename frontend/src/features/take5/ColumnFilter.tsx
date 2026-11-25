@@ -119,10 +119,12 @@ function TickList({
     ].filter((stop) => !stop.hasAttribute("disabled"));
     const first = stops[0];
     const last = stops[stops.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
+    // A tap on the list's background gives the list itself the focus.
+    const onList = document.activeElement === panel.current;
+    if (event.shiftKey && (onList || document.activeElement === first)) {
       event.preventDefault();
       last?.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
+    } else if (!event.shiftKey && (onList || document.activeElement === last)) {
       event.preventDefault();
       first?.focus();
     }
@@ -147,8 +149,11 @@ function TickList({
         role="dialog"
         aria-modal="true"
         aria-labelledby={headingId}
+        // Focusable by a tap, so the focus never falls to the page behind, where
+        // Escape and the Tab trap would stop working.
+        tabIndex={-1}
         onKeyDown={keepFocusInside}
-        className="flex max-h-[85vh] w-full flex-col gap-3 rounded-t-2xl border border-line bg-surface p-4 text-ink shadow-xl sm:max-w-md sm:rounded-2xl"
+        className="flex max-h-[85vh] w-full flex-col gap-3 rounded-t-2xl border border-line bg-surface p-4 text-ink shadow-xl focus:outline-none sm:max-w-md sm:rounded-2xl"
       >
         <h2 id={headingId} className="text-xl font-extrabold">
           Filter {title.toLowerCase()}
