@@ -176,9 +176,9 @@ export function PatternsScreen() {
                 <p>
                   When Take 5s go wrong, by month, weekday and time of day, in
                   every saved Take 5. A pattern is shown when something happens
-                  at least twice as often in one group as in the rest, with at
-                  least 5 Take 5s on each side. Small numbers can be chance, so
-                  look at the Take 5s before acting on one.
+                  much more often in one group than in the rest, with its
+                  numbers. Small numbers can be chance, so look at the Take 5s
+                  before acting on one.
                 </p>
                 {data.sentences.length === 0 ? (
                   <Card>
