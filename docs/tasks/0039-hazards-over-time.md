@@ -1,9 +1,9 @@
 ---
 id: 0039
 title: Investigate how time of year, week and day relate to hazards and incidents
-status: todo
-owner:
-branch:
+status: in-progress
+owner: claude
+branch: claude/project-thread-wpcou2
 ---
 
 ## Goal
