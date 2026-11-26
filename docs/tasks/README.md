@@ -38,11 +38,12 @@ Built out of the order:
 - **0047, the hazard being assessed stands out.** Jake asked on 2026-11-25.
 - **0048, filter the Take 5 table's columns, and a Clear filters button.** Jake asked on 2026-11-25, on top of
   0043.
+- **0039, patterns over time.** Jake asked on 2026-11-26 for the next task; it waited for 0043's table (spec D138
+  to D141).
 
 To investigate when we get to them (Jake, 2026-11-20). Each file holds the questions to settle first; none has
 a place in the order yet:
 
-- **0039, how time of year, week and day relate to hazards and incidents.**
 - **0040, a photo of the job with the hazards circled**, later used to train or test an AI.
 
 When a task is added, or the human changes the order, update this list in the same pull request.

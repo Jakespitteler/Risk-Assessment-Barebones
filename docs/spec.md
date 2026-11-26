@@ -497,6 +497,35 @@ It works out each value by the rules above; nothing new is decided about a Take 
   and "Rushed" (W5), each only when some row matches it. A long list has a box to find a value in it. Every filter,
   above the table or in a column, narrows both the page and the CSV.
 
+### Patterns over time
+
+Plain sentences on when Take 5s go wrong, such as more heat hazards in summer, rushed Take 5s at the end of a shift
+or riskier jobs on a Monday, with the counts beneath (task 0039, decisions D138 to D141). Fixed rules, no AI:
+every number can be checked by hand, and nothing is saved.
+
+- **S1 Which Take 5s.** Every saved Take 5 counts, finished or not, paper cards included, however old. Each is laid
+  out as a table row first (E1 to E3), so its month, weekday and time of day are the table's, read in the zone of
+  whoever opens the page. It is worked out when the page opens.
+- **S2 Groups.** Take 5s are grouped three ways: by month (such as November 2026, each year apart), by weekday and
+  by time of day (E3's four blocks). A paper card with no time written on it has no time of day, so it is in no
+  time-of-day group and isn't compared by time of day.
+- **S3 Signs.** Five things are counted in each group: high risk (A3), rushed (W5), any thought gap (W2 to W5,
+  W10, P4), "Don't start yet", and a Yes to each hazard question on the card. Each is counted only among the Take
+  5s it can apply to: rushed among the timed ones (a paper card, or one with no start time, never is), "Don't start
+  yet" among the finished ones. A blank answer isn't a Yes.
+- **S4 Worth a sentence.** A sign in a group is worth a sentence when the group and all the other Take 5s both have
+  at least 5 it can apply to, the sign shows up at least 3 times in the group, and its rate there is at least twice
+  its rate in the others. The sentence gives both counts, such as "4 of 8 timed Take 5s on Mondays were rushed: 3
+  times the rate on other days (5 of 30).", or "..., and none of 30 on other days." when it never shows up
+  elsewhere. How many times is said to one decimal place, a whole number from 10, and exactly 2 as "twice". At most
+  5 are shown, the most times as common first (never elsewhere is the most); on a tie, the sign seen most often in
+  its group, then months before weekdays before times of day, each in time order, then the signs in S3's order with
+  the hazard questions in the card's order. Each sentence links to the All Take 5s table showing that group: its
+  weekday, its time of day, or its month as a date range (E4). With none, the page says no pattern stands out yet.
+- **S5 Counts.** Beneath the sentences, three tables count each group's Take 5s, high risk, rushed, thought gaps
+  and "Don't start yet": each month with a Take 5, oldest first; every weekday, Monday first; and every time of
+  day, from midnight. Paper cards with no time written on them are counted under the time-of-day table.
+
 ### Worked examples
 
 Each example becomes an automated test, named by its number. Add one for every rule and every boundary.
@@ -740,6 +769,22 @@ started on Saturday 21 Nov 2026 at 7:00 am in Perth.
 | 154 | Verdicts "Good to go" and "Not finished" ticked; one "Good to go", one "Don't start yet" | Only the first | E4, E6 |
 | 155 | Importance 13 ticked; the careful one (8) and one with "Moving wheel" (13) | The thought gaps list offers only "Some gaps"; the importance list still offers 8 and 13 | E6 |
 
+Patterns over time (S1 to S5). Unless the row says otherwise, each Take 5 is the ranking examples' careful one,
+started at 7:00 am in Perth on Monday 23 Nov 2026, Saturday 21 Nov 2026 or Saturday 24 Oct 2026.
+
+| # | Situation | Expected | Why |
+| --- | --- | --- | --- |
+| 156 | 10 on the Saturday, 5 rushed; 10 on the Monday, 1 rushed | "5 of 10 timed Take 5s on Saturdays were rushed: 5 times the rate on other days (1 of 10)." | S3, S4 |
+| 157 | 5 on the Monday, 3 high risk; 5 on the Saturday, none | "3 of 5 Take 5s on Mondays were high risk, and none of 5 on other days." | S4: the smallest sizes |
+| 158 | 4 on the Monday, all high risk, and 10 on the Saturday; or 5 and 4 | No sentence | S4: under 5 on one side |
+| 159 | 5 on the Monday, 2 high risk; 10 on the Saturday, none | No sentence | S4: seen under 3 times |
+| 160 | 10 on the Monday, 4 rushed; 10 on the Saturday, 2 rushed, or 3 | "... twice the rate on other days (2 of 10)."; with 3, no sentence | S4: exactly twice |
+| 161 | On the Monday 3 "Don't start yet", 2 "Good to go", 2 not finished; 5 "Good to go" on the Saturday | "3 of 5 finished Take 5s on Mondays were told “Don’t start yet”, and none of 5 on other days." | S3 |
+| 162 | 5 in November, 3 with Yes to "Other environmental and/or H&S hazards?"; 5 in October with No | "3 of 5 Take 5s in November 2026 answered Yes to ..., and none of 5 in other months.", linked to 1 to 30 Nov | S3, S4 |
+| 163 | At 7 am 5, 3 rushed; at 3 pm 5; 6 paper cards with no time, high risk | Only "3 of 5 timed Take 5s from 6 am to noon were rushed, ..."; 6 with no time of day | S2 |
+| 164 | 10 on the Monday: 5 high risk with Yes to every question, 5 rushed; 10 on the Saturday, 1 rushed | 5 sentences: high risk, then Yes to guards, vehicles, hazardous materials and isolation; rushed (5 times) isn't shown | S4 |
+| 165 | 2 on the Monday, high risk and rushed; 1 "Don't start yet" on the 21 Nov Saturday; 1 with a gap in October | Weekdays Monday to Sunday, Monday 2 / 2 / 2 / 0 / 0, Tuesday 0; months October 2026 (1), November 2026 (3) | S5 |
+
 ## Features
 
 ### F1: Rate a risk
@@ -922,6 +967,16 @@ or takes them into a spreadsheet, on a desktop or a phone.
   its headings, and the page never does.
 - Acceptance: worked examples 141 to 155 pass as tests.
 
+### F12: Patterns over time
+
+When Take 5s go wrong, by month, weekday and time of day, as plain sentences with the counts beneath (S1 to S5).
+For a safety person deciding when to look harder, on a desktop or a phone.
+
+- Acceptance: the saved list has "Patterns over time" beside "All Take 5s" once anything is saved.
+- Acceptance: each sentence gives its numbers and links to the All Take 5s table showing that group.
+- Acceptance: with no pattern it says none stands out yet; the page always says small numbers can be chance.
+- Acceptance: worked examples 156 to 165 pass as tests.
+
 ## Out of scope (for now)
 
 - AI that does the worker's thinking while they fill in a Take 5: marking their answer, follow-up questions,
@@ -1100,6 +1155,10 @@ Jake made each of these on 2026-11-13, except where the row gives another date. 
 | D135 | Column filters (2026-11-25) | A filter button in each column's heading opens a list of its values to tick, as in a spreadsheet; verdict, risk band and area move from above into their columns, and the rest stay above (E6) | A row of filter boxes under the headings; every filter above as well |
 | D136 | What each column lists (2026-11-25) | The values of the rows the other filters keep, as Excel does (Jake): importances highest first, jobs and workers once each A to Z, thought gaps as "No gaps", "Some gaps" or "Rushed". The started column has none, as the date range above covers it (E6) | Every saved Take 5's values, whatever is filtered; a list of days to tick |
 | D137 | Clear filters (2026-11-25) | Always shown beside "Download CSV" (Jake), outside the folded filters, and can't be pressed while no filter is on | Shown only while a filter is on, inside the folded filters |
+| D138 | Which signs a pattern looks for (2026-11-26) | High risk, rushed, any thought gap, "Don't start yet", and a Yes to each hazard question, which catches heat in summer (S3) | The first four only |
+| D139 | When a pattern is worth a sentence (2026-11-26) | At least 5 Take 5s in the group and in the rest, the sign at least 3 times in the group and at least twice the rate of the rest; the 5 strongest, each with its numbers (S4) | A statistical test, harder to check by hand |
+| D140 | Which Take 5s count (2026-11-26) | Every saved one, finished or not, paper included, each sign among those it can apply to (S1, S3) | Finished ones only; a time window |
+| D141 | Where it is (2026-11-26) | "Patterns over time" at `/patterns`, linked from the saved list; each sentence links to the table showing its group (F12) | No links |
 
 ## Open questions
 

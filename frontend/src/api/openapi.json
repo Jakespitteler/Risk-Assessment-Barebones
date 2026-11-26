@@ -1058,6 +1058,49 @@
         }
       }
     },
+    "/api/patterns": {
+      "get": {
+        "tags": [
+          "patterns"
+        ],
+        "summary": "Patterns",
+        "description": "Find patterns over time in every saved Take 5 (S1 to S5).\n\nArgs:\n    zone: The page's time zone, to read a phone's start time in (E3).",
+        "operationId": "patterns_api_patterns_get",
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Zone"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Patterns"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The time zone can't be read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormErrors"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/scans": {
       "post": {
         "tags": [
@@ -1568,6 +1611,45 @@
         "title": "FormErrors",
         "description": "The reply for every 422: what is missing or wrong, field by field.\n\nAttributes:\n    detail: A summary for the top of the screen.\n    errors: Each problem, with the dotted path of the field it belongs beside."
       },
+      "GroupCounts": {
+        "properties": {
+          "group": {
+            "type": "string",
+            "title": "Group"
+          },
+          "take5_count": {
+            "type": "integer",
+            "title": "Take5 Count"
+          },
+          "high_risk_count": {
+            "type": "integer",
+            "title": "High Risk Count"
+          },
+          "rushed_count": {
+            "type": "integer",
+            "title": "Rushed Count"
+          },
+          "thought_gaps_count": {
+            "type": "integer",
+            "title": "Thought Gaps Count"
+          },
+          "stopped_count": {
+            "type": "integer",
+            "title": "Stopped Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group",
+          "take5_count",
+          "high_risk_count",
+          "rushed_count",
+          "thought_gaps_count",
+          "stopped_count"
+        ],
+        "title": "GroupCounts",
+        "description": "How many Take 5s in one group showed each of the main signs (S5).\n\nAttributes:\n    group: The group's name, such as \"November 2026\", \"Monday\" or \"6 am to noon\".\n    take5_count: How many Take 5s are in it.\n    high_risk_count: How many needed a JHA before controls (A3).\n    rushed_count: How many were filled in in under 2 minutes (W5).\n    thought_gaps_count: How many have at least one thought gap.\n    stopped_count: How many were told \"Don't start yet\"."
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1778,6 +1860,79 @@
         ],
         "title": "PaperTake5Request",
         "description": "A checked paper card to save as written (spec P1, P5, task 0033).\n\nAttributes:\n    id: Made once by the page and sent again, unchanged, on every retry.\n    draft: The card as the person checked it, with the worker's name as written.\n    filled_in_at: The card's date, \"YYYY-MM-DD\" or \"YYYY-MM-DDTHH:MM\", as read\n        and checked, or None when it has none.\n    time_zone: The checker's time zone, such as \"Australia/Perth\", for the date."
+      },
+      "PatternSentence": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "table_filters": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Table Filters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "table_filters"
+        ],
+        "title": "PatternSentence",
+        "description": "One pattern worth a sentence, with the numbers behind it (S4).\n\nAttributes:\n    text: The sentence, such as \"4 of 8 Take 5s on Mondays were rushed: 3 times\n        the rate on other days (5 of 30).\"\n    table_filters: The All Take 5s table's filters that show the group's Take 5s,\n        as the table's address names them, such as {\"weekday\": \"Monday\"}."
+      },
+      "Patterns": {
+        "properties": {
+          "take5_count": {
+            "type": "integer",
+            "title": "Take5 Count"
+          },
+          "sentences": {
+            "items": {
+              "$ref": "#/components/schemas/PatternSentence"
+            },
+            "type": "array",
+            "title": "Sentences"
+          },
+          "by_month": {
+            "items": {
+              "$ref": "#/components/schemas/GroupCounts"
+            },
+            "type": "array",
+            "title": "By Month"
+          },
+          "by_weekday": {
+            "items": {
+              "$ref": "#/components/schemas/GroupCounts"
+            },
+            "type": "array",
+            "title": "By Weekday"
+          },
+          "by_time_of_day": {
+            "items": {
+              "$ref": "#/components/schemas/GroupCounts"
+            },
+            "type": "array",
+            "title": "By Time Of Day"
+          },
+          "no_time_of_day_count": {
+            "type": "integer",
+            "title": "No Time Of Day Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "take5_count",
+          "sentences",
+          "by_month",
+          "by_weekday",
+          "by_time_of_day",
+          "no_time_of_day_count"
+        ],
+        "title": "Patterns",
+        "description": "Patterns over time in every saved Take 5 (S1 to S5).\n\nAttributes:\n    take5_count: How many saved Take 5s were looked at.\n    sentences: The patterns worth a sentence, strongest first.\n    by_month: The counts in each month with a Take 5, oldest first.\n    by_weekday: The counts on each weekday, Monday first.\n    by_time_of_day: The counts in each time of day, from midnight.\n    no_time_of_day_count: How many paper cards have no time written on them, and\n        so aren't counted by time of day."
       },
       "Question": {
         "properties": {

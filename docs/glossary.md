@@ -120,6 +120,15 @@ helpers, and API types, which come from `src/api/schema.d.ts` through `src/api/t
 | Column filter | A heading's list of the column's values to tick; a row with any ticked value is kept. | `Take5Filters` (`verdict`, `band`, `area`, `job`, `worker`, `importance`, `thought_gaps`), `column_values`, `THOUGHT_GAP_CHOICES` | `ColumnFilter` | E6 |
 | CSV export | The rows kept, as a spreadsheet file, with formula-like cells made safe. | `table_csv` | "Download CSV" | E5 |
 
+## Patterns over time
+
+| Term | Meaning | Back end | Front end | Rules |
+| --- | --- | --- | --- | --- |
+| Patterns over time | Plain sentences on when Take 5s go wrong, by month, weekday and time of day, with the counts beneath. Opened from the saved list. | `PatternsService`, `patterns_over_time`, `Patterns` | `PatternsScreen`, `usePatterns`; type `Patterns` | S1, S5 |
+| Grouping | One way to group Take 5s by time: by month, weekday or time of day. | `Grouping`; `BY_MONTH`, `BY_WEEKDAY`, `BY_TIME_OF_DAY` | `by_month`, `by_weekday`, `by_time_of_day` | S2 |
+| Sign | Something a Take 5 can show, counted in each group: high risk, rushed, a thought gap, "Don't start yet", or a Yes to a hazard question. | `Sign`; `MAIN_SIGNS`, `signs_for` | `GroupCounts` | S3 |
+| Pattern | A sign at least twice as common in one group as in the rest, with enough Take 5s on each side; one sentence. | `PatternSentence`; `is_worth_a_sentence`, `pattern_sentences` | `PatternSentence` | S4 |
+
 ## Paper cards
 
 | Term | Meaning | Back end | Front end | Rules |

@@ -36,6 +36,9 @@ export type ScannedCardResponse = Schemas["ScannedCardResponse"];
 export type PaperTake5Request = Schemas["PaperTake5Request"];
 export type Take5TablePage = Schemas["Take5TablePage"];
 export type Take5Row = Schemas["Take5Row"];
+export type Patterns = Schemas["Patterns"];
+export type GroupCounts = Schemas["GroupCounts"];
+export type PatternSentence = Schemas["PatternSentence"];
 type FormErrors = Schemas["FormErrors"];
 
 // Long enough for one bar of signal, short enough that the worker isn't left waiting.
@@ -405,6 +408,23 @@ export function useTake5Table(filters: URLSearchParams) {
     queryFn: () => request<Take5TablePage>(`/api/take5-table?${query}`),
     retry: retryOnNetworkError,
     placeholderData: (previous) => previous,
+    refetchOnWindowFocus: false,
+    networkMode: NETWORK_MODE,
+  });
+}
+
+/**
+ * Patterns over time in every saved Take 5, as sentences with the counts beneath (spec
+ * S1 to S5). The phone's time zone is sent, so months, weekdays and times of day are read
+ * on its clock (E3).
+ */
+export function usePatterns() {
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return useQuery({
+    queryKey: ["patterns", zone],
+    queryFn: () =>
+      request<Patterns>(`/api/patterns?zone=${encodeURIComponent(zone)}`),
+    retry: retryOnNetworkError,
     refetchOnWindowFocus: false,
     networkMode: NETWORK_MODE,
   });
