@@ -324,3 +324,18 @@ def test_the_main_signs_come_before_the_hazard_questions() -> None:
         "had thought gaps",
         "were told “Don’t start yet”",
     ]
+
+
+def test_ten_times_or_more_is_a_whole_number() -> None:
+    """S4: 6 of 9 against 1 of 43 is 28.7 times, said as 29."""
+    rows: list[Take5Row] = [
+        *careful_rows(MONDAY_MORNING, 6, rushed=True),
+        *careful_rows(MONDAY_MORNING, 3),
+        *careful_rows(SATURDAY_MORNING, 1, rushed=True),
+        *careful_rows(SATURDAY_MORNING, 42),
+    ]
+
+    assert sentences(rows) == [
+        "6 of 9 timed Take 5s on Mondays were rushed: 29 times the rate on other days "
+        "(1 of 43).",
+    ]

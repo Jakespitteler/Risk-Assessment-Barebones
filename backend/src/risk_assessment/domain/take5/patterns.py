@@ -29,6 +29,8 @@ FEWEST_SIGNS: int = 3
 TIMES_AS_COMMON: int = 2
 # The page shows at most this many sentences, the strongest first (S4).
 MOST_SENTENCES: int = 5
+# From this many times as common, the sentence rounds to a whole number (S4).
+_WHOLE_TIMES_FROM: int = 10
 
 _MONTH_NAMES: tuple[str, ...] = (
     "January",
@@ -373,15 +375,15 @@ def times_as_common(comparison: _Comparison) -> float:
 
 
 def _times_in_words(ratio: float) -> str:
-    """Say a ratio in words, to one decimal place.
+    """Say a ratio in words: to one decimal place under 10, else a whole number.
 
     Args:
         ratio: How many times as common, 2 or more.
 
     Returns:
-        Such as "twice", "3 times" or "2.5 times".
+        Such as "twice", "3 times", "2.5 times" or "29 times".
     """
-    rounded: float = round(ratio, 1)
+    rounded: float = round(ratio) if ratio >= _WHOLE_TIMES_FROM else round(ratio, 1)
     if rounded == TIMES_AS_COMMON:
         return "twice"
     return f"{rounded:g} times"

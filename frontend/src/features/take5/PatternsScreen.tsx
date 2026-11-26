@@ -79,7 +79,10 @@ function CountsTable({
         <tbody>
           {counts.map((group) => (
             <tr key={group.group} className="border-t border-line">
-              <th scope="row" className="px-3 py-2 font-semibold">
+              <th
+                scope="row"
+                className="px-3 py-2 font-semibold whitespace-nowrap"
+              >
                 {group.group}
               </th>
               {[

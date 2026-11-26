@@ -514,14 +514,14 @@ every number can be checked by hand, and nothing is saved.
   5s it can apply to: rushed among the timed ones (a paper card, or one with no start time, never is), "Don't start
   yet" among the finished ones. A blank answer isn't a Yes.
 - **S4 Worth a sentence.** A sign in a group is worth a sentence when the group and all the other Take 5s both have
-  at least 5 it can apply to, the sign shows up at least 3 times in the group, and its rate there is at least
-  twice its rate in the others. The sentence gives both counts, such as "4 of 8 timed Take 5s on Mondays were
-  rushed: 3 times the rate on other days (5 of 30).", or "..., and none of 30 on other days." when it never shows
-  up elsewhere. The rate is said to one decimal place, and exactly 2 as "twice". At most 5 are shown, the most
-  times as common first (never elsewhere is the most); on a tie, the sign seen most often in its group, then months
-  before weekdays before times of day, each in time order, then the signs in S3's order with the hazard questions
-  in the card's order. Each sentence links to the All Take 5s table showing that group: its weekday, its time of
-  day, or its month as a date range (E4). With none, the page says no pattern stands out yet.
+  at least 5 it can apply to, the sign shows up at least 3 times in the group, and its rate there is at least twice
+  its rate in the others. The sentence gives both counts, such as "4 of 8 timed Take 5s on Mondays were rushed: 3
+  times the rate on other days (5 of 30).", or "..., and none of 30 on other days." when it never shows up
+  elsewhere. How many times is said to one decimal place, a whole number from 10, and exactly 2 as "twice". At most
+  5 are shown, the most times as common first (never elsewhere is the most); on a tie, the sign seen most often in
+  its group, then months before weekdays before times of day, each in time order, then the signs in S3's order with
+  the hazard questions in the card's order. Each sentence links to the All Take 5s table showing that group: its
+  weekday, its time of day, or its month as a date range (E4). With none, the page says no pattern stands out yet.
 - **S5 Counts.** Beneath the sentences, three tables count each group's Take 5s, high risk, rushed, thought gaps
   and "Don't start yet": each month with a Take 5, oldest first; every weekday, Monday first; and every time of
   day, from midnight. Paper cards with no time written on them are counted under the time-of-day table.
