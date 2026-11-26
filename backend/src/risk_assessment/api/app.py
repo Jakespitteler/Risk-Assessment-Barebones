@@ -15,6 +15,7 @@ from risk_assessment.ai.ranking import AiTake5Ranker
 from risk_assessment.ai.vague_hazard import AiHazardJudge
 from risk_assessment.api.area_routes import create_area_router
 from risk_assessment.api.errors import add_error_handlers
+from risk_assessment.api.pattern_routes import create_pattern_router
 from risk_assessment.api.ranking_routes import create_ranking_router
 from risk_assessment.api.scan_routes import create_scan_router
 from risk_assessment.api.table_routes import create_table_router
@@ -23,6 +24,7 @@ from risk_assessment.domain.take5.ranking import AI_RANKING_TIME_LIMIT_SECONDS
 from risk_assessment.domain.take5.template import BOOKLET_TEMPLATE
 from risk_assessment.services.areas import AreaRiskService
 from risk_assessment.services.card_scanning import CardScanner
+from risk_assessment.services.patterns import PatternsService
 from risk_assessment.services.ports import (
     CardReader,
     ChallengeAsker,
@@ -144,6 +146,9 @@ def create_app(
     app.include_router(create_area_router(area_service))
     app.include_router(
         create_table_router(Take5TableService(storage, BOOKLET_TEMPLATE)),
+    )
+    app.include_router(
+        create_pattern_router(PatternsService(storage, BOOKLET_TEMPLATE)),
     )
     scanner = CardScanner(
         card_reader if card_reader is not None else build_card_reader(app_settings),

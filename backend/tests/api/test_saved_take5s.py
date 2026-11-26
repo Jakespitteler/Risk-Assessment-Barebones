@@ -204,6 +204,7 @@ def test_no_endpoint_changes_a_saved_take5() -> None:
         "/api/ranked-take5s": {"get"},
         "/api/ranked-take5s/batch": {"post"},
         "/api/risk-by-area": {"get"},
+        "/api/patterns": {"get"},
         "/api/scans": {"post"},
         "/api/take5-table": {"get"},
         "/api/take5-table.csv": {"get"},

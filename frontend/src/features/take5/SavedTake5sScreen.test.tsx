@@ -140,6 +140,7 @@ it("says when nothing has been saved yet, and offers a new Take 5", async () => 
   expect(screen.queryByRole("list")).toBeNull();
   expect(screen.queryByRole("link", { name: "Today’s review" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Risk by area" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Patterns over time" })).toBeNull();
   expect(
     screen.getByRole("link", { name: "Scan paper cards" }).getAttribute("href"),
   ).toBe("/scan");
@@ -410,4 +411,11 @@ it("links to every Take 5 as a table once anything is saved (F11)", async () => 
   renderWithApi(<SavedTake5sScreen />);
   const link = await screen.findByRole("link", { name: "All Take 5s" });
   expect(link.getAttribute("href")).toBe("/take5-table");
+});
+
+it("links to patterns over time once anything is saved (F12)", async () => {
+  stubApi({ "GET /api/take5s": { status: 200, body: PAGE } });
+  renderWithApi(<SavedTake5sScreen />);
+  const link = await screen.findByRole("link", { name: "Patterns over time" });
+  expect(link.getAttribute("href")).toBe("/patterns");
 });

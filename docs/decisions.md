@@ -2,6 +2,20 @@
 
 Newest first. One short entry per non-obvious decision.
 
+## 2026-11-26: Patterns over time as sentences found by fixed rules (task 0039)
+
+- Decision: a "Patterns over time" page (spec S1 to S5, F12, D138 to D141). Every saved Take 5 is laid out as a
+  table row (E1 to E3), then grouped by month, weekday and time of day. Five signs are counted (high risk,
+  rushed, any thought gap, "Don't start yet", a Yes to each hazard question), each among the Take 5s it can apply
+  to. A sign is a sentence when both sides have at least 5 Take 5s, it shows at least 3 times in the group, and
+  its rate is at least twice the rest's, compared by multiplying across so rounding can't tip it. At most 5 are
+  shown, strongest first, each with both counts and a link to the table filtered to its group.
+- Why: Jake chose plain sentences on their own page, fixed rules and no AI on 2026-11-23, and every
+  recommendation for the rest on 2026-11-26. Reusing the table's rows keeps one definition of each value.
+- Not chosen: a statistical test (harder to check by hand, and misleading on a few dozen Take 5s); the first
+  four signs only (misses "heat in summer"); a time window (the proof of concept counts every saved Take 5).
+- Decided by: human (the choices above), agent (the thresholds' exact form, reusing the table's rows).
+
 ## 2026-11-25: The Take 5 table's columns filter as a spreadsheet's do, and Clear filters is always there (task 0048)
 
 - Decision: each heading of the All Take 5s table has a filter button that opens a list of the column's values to

@@ -212,6 +212,9 @@ export function SavedTake5sScreen({
                 <a className={LOOK_BACK_LINK} href="/take5-table">
                   All Take 5s
                 </a>
+                <a className={LOOK_BACK_LINK} href="/patterns">
+                  Patterns over time
+                </a>
               </>
             )}
             <a className={LOOK_BACK_LINK} href="/scan">

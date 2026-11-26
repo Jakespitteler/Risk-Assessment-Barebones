@@ -110,6 +110,9 @@ backend/
                 areas.py           Take 5s grouped by area, hottest first; no AI        (spec A1 to A5)
                 table.py           every saved Take 5 as a row, its filters and its CSV,
                                    from the rules above                         (spec E1 to E6)
+                patterns.py        patterns over time: table rows grouped by month, weekday and
+                                   time of day, the sentences worth showing and the counts; no AI
+                                                                                (spec S1 to S5)
                 scanned_card.py    ScannedCard: the AI's reading of a paper card, kept to the
                                    words the card allows, never rewritten       (task 0033)
                 paper.py           a checked paper card as a finished SavedTake5, as written, and
@@ -126,6 +129,8 @@ backend/
             areas.py           AreaRiskService: Take 5s by area, 30 days or all     (spec A2)
             take5_table.py     Take5TableService: every saved Take 5 as a filtered table, and
                                as CSV; saves nothing                            (spec E1 to E5)
+            patterns.py        PatternsService: patterns over time in every saved Take 5;
+                               saves nothing                                    (spec S1 to S5)
             card_scanning.py   CardScanner: checks a photo's type and size, has the AI read it,
                                saves nothing                                         (task 0033)
             ports.py           Take5Repository, ChallengeAsker, HazardJudge, Take5Ranker and
@@ -161,6 +166,7 @@ backend/
             take5_routes.py    one function per Take 5 endpoint
             ranking_routes.py  the ranking endpoint                                   (spec W1 to W9)
             area_routes.py     the risk-by-area endpoint                              (spec A1 to A5)
+            pattern_routes.py  the patterns-over-time endpoint                        (spec S1 to S5)
             schemas.py         the shapes of requests and responses, including the error replies
             errors.py          turns errors into the declared error replies; names the request
                                of an unexpected error in one log line above its trace
@@ -192,7 +198,8 @@ frontend/
                            download (Take5TableScreen.tsx, spec F11; its filters live in the URL, and
                            ColumnFilter.tsx is a heading's list of values to tick, E6), and risk
                            by area
-                           (RiskByAreaScreen.tsx, spec F9). formatDateTime.ts writes
+                           (RiskByAreaScreen.tsx, spec F9), and patterns over time
+                           (PatternsScreen.tsx, spec F12). formatDateTime.ts writes
                            every date the one way the spec sets (D17)
                            stage.ts is which page shows (kept in the URL); useTake5Draft.ts keeps the one
                            draft on the phone (localStorage), with its start time, the page it was left on and
@@ -276,6 +283,7 @@ What the terminal running `uv run start.py` shows (task 0028). The aim: a glance
 | `POST /api/ranked-take5s/batch` | Ranks just the saved Take 5s whose `ids` are sent (at most 200), such as a batch of scanned paper cards (F10): the same `RankedTake5s` as `GET /api/ranked-take5s`, by the same rules and AI. An ID that isn't saved is left out. A paper card's text, as the AI read it and the person checked it, is ranked like any Take 5's, and its name is never sent (P6) |
 | `GET /api/risk-by-area?today=` | Every area with a saved Take 5, or with `TAKE5_AREA_LAST_30_DAYS_ONLY=true` only those started in the last 30 days, hottest first (task 0038, spec A1 to A5, D119). `today` is midnight where the phone is, with its offset from UTC, and the 30 days are 29 days of 24 hours back from it; the reply is `RiskByArea`: `areas`, each an `AreaRisk` with its name, counts, highest score and band, and `common_yes`; and `last_30_days_only`, so the page can say which it counted. Worked out by the fixed rules in `domain/take5/areas.py`; no AI, nothing saved. A moment with no time zone is a 422 |
 | `GET /api/take5-table?zone=` | Every saved Take 5 as a row, the most important first (tasks 0043 and 0048, spec E1 to E4, E6): `Take5TablePage`, with the `rows` (each a `Take5Row`), and what the filters offer: `verdicts`, `bands`, `areas`, `weekdays`, `times_of_day`, `thought_gap_choices`, `jobs`, `workers` and `importances`. `zone` is the page's IANA time zone, for a Take 5 with no start time. Optional filters: `search`, `from` and `to` (dates), `weekday`, `time_of_day` and `from_paper`; and the column filters `verdict`, `band`, `area`, `job`, `worker`, `importance` and `thought_gaps`, each sent once per ticked value. Importance and the line are worked out each time by the ranking's rules (W1). A zone, date or importance that can't be read is a 422 `FormErrors`. Saves nothing |
+| `GET /api/patterns?zone=` | Patterns over time in every saved Take 5 (task 0039, spec S1 to S5): `Patterns`, with `take5_count`, the `sentences` worth showing (each a `PatternSentence`: its `text` and the `table_filters` that show its group in the All Take 5s table), and the counts `by_month`, `by_weekday` and `by_time_of_day` (each a `GroupCounts`), and `no_time_of_day_count`. `zone` is the page's IANA time zone, read as the table reads it (E3). Worked out by the fixed rules in `domain/take5/patterns.py` from the table's rows; no AI, nothing saved. An unknown zone is a 422 |
 | `GET /api/take5-table.csv?zone=` | The same rows as a CSV download (`text/csv`, `Content-Disposition: attachment`), one column per value and per question on the card, with a cell that starts like a formula made safe (spec E5) |
 | `POST /api/scans` | Reads one photo of a paper card (a multipart upload, field `photo`: JPEG, PNG, WebP or GIF, at most 7 MB) into a card for a person to check (task 0033): `ScannedCardResponse`, with the `draft` as written, `filled_in_at` as read, as `YYYY-MM-DD` or `YYYY-MM-DDTHH:MM` with no time zone and the `unreadable` paths. Saves nothing. No AI set up is a 503 `ErrorMessage`; a wrong type, too big, or a photo the AI couldn't read as a card is a 422 on `photo` |
 

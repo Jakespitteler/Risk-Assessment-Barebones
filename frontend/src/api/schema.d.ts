@@ -283,6 +283,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/patterns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Patterns
+         * @description Find patterns over time in every saved Take 5 (S1 to S5).
+         *
+         *     Args:
+         *         zone: The page's time zone, to read a phone's start time in (E3).
+         */
+        get: operations["patterns_api_patterns_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/scans": {
         parameters: {
             query?: never;
@@ -574,6 +597,32 @@ export interface components {
             /** Errors */
             errors: components["schemas"]["FieldError"][];
         };
+        /**
+         * GroupCounts
+         * @description How many Take 5s in one group showed each of the main signs (S5).
+         *
+         *     Attributes:
+         *         group: The group's name, such as "November 2026", "Monday" or "6 am to noon".
+         *         take5_count: How many Take 5s are in it.
+         *         high_risk_count: How many needed a JHA before controls (A3).
+         *         rushed_count: How many were filled in in under 2 minutes (W5).
+         *         thought_gaps_count: How many have at least one thought gap.
+         *         stopped_count: How many were told "Don't start yet".
+         */
+        GroupCounts: {
+            /** Group */
+            group: string;
+            /** Take5 Count */
+            take5_count: number;
+            /** High Risk Count */
+            high_risk_count: number;
+            /** Rushed Count */
+            rushed_count: number;
+            /** Thought Gaps Count */
+            thought_gaps_count: number;
+            /** Stopped Count */
+            stopped_count: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -711,6 +760,51 @@ export interface components {
             filled_in_at?: string | null;
             /** Time Zone */
             time_zone: string;
+        };
+        /**
+         * PatternSentence
+         * @description One pattern worth a sentence, with the numbers behind it (S4).
+         *
+         *     Attributes:
+         *         text: The sentence, such as "4 of 8 Take 5s on Mondays were rushed: 3 times
+         *             the rate on other days (5 of 30)."
+         *         table_filters: The All Take 5s table's filters that show the group's Take 5s,
+         *             as the table's address names them, such as {"weekday": "Monday"}.
+         */
+        PatternSentence: {
+            /** Text */
+            text: string;
+            /** Table Filters */
+            table_filters: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * Patterns
+         * @description Patterns over time in every saved Take 5 (S1 to S5).
+         *
+         *     Attributes:
+         *         take5_count: How many saved Take 5s were looked at.
+         *         sentences: The patterns worth a sentence, strongest first.
+         *         by_month: The counts in each month with a Take 5, oldest first.
+         *         by_weekday: The counts on each weekday, Monday first.
+         *         by_time_of_day: The counts in each time of day, from midnight.
+         *         no_time_of_day_count: How many paper cards have no time written on them, and
+         *             so aren't counted by time of day.
+         */
+        Patterns: {
+            /** Take5 Count */
+            take5_count: number;
+            /** Sentences */
+            sentences: components["schemas"]["PatternSentence"][];
+            /** By Month */
+            by_month: components["schemas"]["GroupCounts"][];
+            /** By Weekday */
+            by_weekday: components["schemas"]["GroupCounts"][];
+            /** By Time Of Day */
+            by_time_of_day: components["schemas"]["GroupCounts"][];
+            /** No Time Of Day Count */
+            no_time_of_day_count: number;
         };
         /**
          * Question
@@ -1894,6 +1988,37 @@ export interface operations {
                 };
             };
             /** @description A filter or the zone can't be read */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormErrors"];
+                };
+            };
+        };
+    };
+    patterns_api_patterns_get: {
+        parameters: {
+            query: {
+                zone: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Patterns"];
+                };
+            };
+            /** @description The time zone can't be read */
             422: {
                 headers: {
                     [name: string]: unknown;
