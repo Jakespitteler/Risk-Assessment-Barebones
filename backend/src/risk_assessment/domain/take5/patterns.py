@@ -6,8 +6,10 @@ module only compares groups of rows: no AI is used, and every number can be chec
 by hand.
 """
 
+import math
 from collections.abc import Callable, Sequence
 from datetime import date
+from fractions import Fraction
 from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict
@@ -358,24 +360,49 @@ def is_worth_a_sentence(comparison: _Comparison) -> bool:
     )
 
 
-def times_as_common(comparison: _Comparison) -> float:
+def times_as_common(comparison: _Comparison) -> Fraction | None:
     """Work out how many times as common a sign is in a group as elsewhere.
+
+    It is an exact fraction, so two patterns as strong as each other tie, and the
+    tie goes by S4's order rather than by a float's last digit.
 
     Args:
         comparison: The sign's counts in the group and elsewhere.
 
     Returns:
-        The ratio of the two rates, or infinity when it never shows up elsewhere.
+        The ratio of the two rates, or None when it never shows up elsewhere.
     """
     if comparison.shown_elsewhere == 0:
-        return float("inf")
-    rate_in_group: float = comparison.shown_in_group / comparison.in_group
-    rate_elsewhere: float = comparison.shown_elsewhere / comparison.elsewhere
-    return rate_in_group / rate_elsewhere
+        return None
+    return Fraction(
+        comparison.shown_in_group * comparison.elsewhere,
+        comparison.in_group * comparison.shown_elsewhere,
+    )
 
 
-def _times_in_words(ratio: float) -> str:
+def _strongest_first(comparison: _Comparison) -> tuple[Fraction | float, int]:
+    """Give the key that sorts patterns strongest first (S4).
+
+    Never seen elsewhere is the strongest; then the most times as common, then the
+    sign seen most often in its group. Any tie left keeps the order it was found in.
+
+    Args:
+        comparison: A sign's counts in a group and elsewhere.
+
+    Returns:
+        The key, smallest for the strongest.
+    """
+    ratio: Fraction | None = times_as_common(comparison)
+    return (
+        -ratio if ratio is not None else -math.inf,
+        -comparison.shown_in_group,
+    )
+
+
+def _times_in_words(ratio: Fraction) -> str:
     """Say a ratio in words: to one decimal place under 10, else a whole number.
+
+    A half rounds up, as a person checking by hand would (as W9's minutes do).
 
     Args:
         ratio: How many times as common, 2 or more.
@@ -383,10 +410,16 @@ def _times_in_words(ratio: float) -> str:
     Returns:
         Such as "twice", "3 times", "2.5 times" or "29 times".
     """
-    rounded: float = round(ratio) if ratio >= _WHOLE_TIMES_FROM else round(ratio, 1)
-    if rounded == TIMES_AS_COMMON:
+    half: Fraction = Fraction(1, 2)
+    tenths: int = (
+        math.floor(ratio + half) * 10
+        if ratio >= _WHOLE_TIMES_FROM
+        else math.floor(ratio * 10 + half)
+    )
+    if tenths == TIMES_AS_COMMON * 10:
         return "twice"
-    return f"{rounded:g} times"
+    whole, tenth = divmod(tenths, 10)
+    return f"{whole} times" if tenth == 0 else f"{whole}.{tenth} times"
 
 
 def sentence_text(comparison: _Comparison) -> str:
@@ -405,10 +438,11 @@ def sentence_text(comparison: _Comparison) -> str:
         f"{comparison.sign.counted} {grouping.in_words(comparison.group)} "
         f"{comparison.sign.described}"
     )
-    if comparison.shown_elsewhere == 0:
+    ratio: Fraction | None = times_as_common(comparison)
+    if ratio is None:
         return f"{found}, and none of {comparison.elsewhere} {grouping.elsewhere}."
     return (
-        f"{found}: {_times_in_words(times_as_common(comparison))} the rate "
+        f"{found}: {_times_in_words(ratio)} the rate "
         f"{grouping.elsewhere} "
         f"({comparison.shown_elsewhere} of {comparison.elsewhere})."
     )
@@ -457,13 +491,7 @@ def pattern_sentences(
         for sign in signs
         if is_worth_a_sentence(comparison := compare(rows, grouping, group, sign))
     ]
-    strongest_first: list[_Comparison] = sorted(
-        found,
-        key=lambda comparison: (
-            -times_as_common(comparison),
-            -comparison.shown_in_group,
-        ),
-    )
+    strongest_first: list[_Comparison] = sorted(found, key=_strongest_first)
     return tuple(
         PatternSentence(
             text=sentence_text(comparison),

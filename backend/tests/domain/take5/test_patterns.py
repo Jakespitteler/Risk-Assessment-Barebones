@@ -249,6 +249,11 @@ def test_example_164_at_most_five_sentences_strongest_first() -> None:
     assert texts[0] == (
         "5 of 10 Take 5s on Mondays were high risk, and none of 10 on other days."
     )
+    assert [text.split("“")[1].split("?")[0] for text in texts[1:4]] == [
+        "Will I be operating equipment with the guards removed",
+        "Am I or others at risk from the operation of vehicles or mobile equipment",
+        "Does the task involve hazardous materials",
+    ]
     assert texts[-1] == (
         "5 of 10 Take 5s on Mondays answered Yes to “Will I be performing a task "
         "without a specific isolation procedure?”, and none of 10 on other days."
@@ -338,4 +343,41 @@ def test_ten_times_or_more_is_a_whole_number() -> None:
     assert sentences(rows) == [
         "6 of 9 timed Take 5s on Mondays were rushed: 29 times the rate on other days "
         "(1 of 43).",
+    ]
+
+
+def test_a_half_tenth_rounds_up() -> None:
+    """S4: 9 of 20 against 1 of 5 is exactly 2.25 times, said as 2.3, not 2.2."""
+    rows: list[Take5Row] = [
+        *careful_rows(MONDAY_MORNING, 9, rushed=True),
+        *careful_rows(MONDAY_MORNING, 11),
+        *careful_rows(SATURDAY_MORNING, 1, rushed=True),
+        *careful_rows(SATURDAY_MORNING, 4),
+    ]
+
+    assert sentences(rows) == [
+        "9 of 20 timed Take 5s on Mondays were rushed: 2.3 times the rate on other "
+        "days (1 of 5).",
+    ]
+
+
+def test_patterns_as_strong_tie_by_how_often_the_sign_is_seen() -> None:
+    """S4: 6 of 10 against 3 of 15 and 4 of 10 against 2 of 15 are both exactly 3.
+
+    In floats the first works out a hair under 3 and the second at 3, so a tie must
+    be compared exactly for the sign seen more often to come first.
+    """
+    rows: list[Take5Row] = [
+        *careful_rows(MONDAY_MORNING, 6, rushed=True),
+        *careful_rows(MONDAY_MORNING, 4, needs_jha=True),
+        *careful_rows(SATURDAY_MORNING, 3, rushed=True),
+        *careful_rows(SATURDAY_MORNING, 2, needs_jha=True),
+        *careful_rows(SATURDAY_MORNING, 10),
+    ]
+
+    assert sentences(rows) == [
+        "6 of 10 timed Take 5s on Mondays were rushed: 3 times the rate on other days "
+        "(3 of 15).",
+        "4 of 10 Take 5s on Mondays were high risk: 3 times the rate on other days "
+        "(2 of 15).",
     ]
